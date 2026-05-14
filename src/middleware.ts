@@ -1,10 +1,19 @@
-import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default auth((req) => {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const isAuthenticated = !!req.auth;
 
+  const token = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET,
+    cookieName:
+      process.env.NODE_ENV === "production"
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token",
+  });
+
+  const isAuthenticated = !!token;
   const isAuthPage =
     pathname.startsWith("/login") || pathname.startsWith("/register");
 
@@ -21,15 +30,12 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (
-    pathname.startsWith("/admin") &&
-    req.auth?.user?.role !== "ADMIN"
-  ) {
+  if (pathname.startsWith("/admin") && token?.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
