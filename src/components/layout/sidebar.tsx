@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, LineChart, BookOpen, BarChart2,
   BrainCircuit, CalendarCheck, Bell, Settings,
-  ShieldCheck, TrendingUp, ChevronLeft, ChevronRight,
+  ShieldCheck, TrendingUp, ChevronLeft, ChevronRight, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -14,6 +14,7 @@ import { HelpDialog } from "@/components/layout/help-dialog";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/trades", label: "Trades", icon: LineChart },
+  { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/plans", label: "Trade Plans", icon: CalendarCheck },
   { href: "/reports", label: "Reports", icon: BarChart2 },
   { href: "/ai", label: "AI Assistant", icon: BrainCircuit },

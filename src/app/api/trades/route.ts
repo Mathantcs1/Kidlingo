@@ -85,6 +85,7 @@ export async function POST(req: Request) {
     data: {
       userId: session.user.id,
       groupId: data.groupId ?? null,
+      tradingAccountId: data.tradingAccountId ?? null,
       instrument: data.instrument.toUpperCase(),
       direction: data.direction,
       entryPrice: data.entryPrice,

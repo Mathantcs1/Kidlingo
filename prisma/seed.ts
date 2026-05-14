@@ -4,89 +4,165 @@ import { seedUserDefaults } from "../src/lib/seed-defaults";
 
 const prisma = new PrismaClient();
 
+function rnd(min: number, max: number) { return min + Math.random() * (max - min); }
+function rndInt(min: number, max: number) { return Math.floor(rnd(min, max + 1)); }
+function daysAgo(n: number) { return new Date(Date.now() - n * 86400000); }
+
+async function seedTrades(
+  userId: string,
+  accountId: string,
+  profile: {
+    instruments: string[];
+    strategies: string[];
+    count: number;
+    winBias: number; // 0–1, higher = more wins
+    avgMove: number; // avg price move fraction
+    maxDaysAgo: number;
+  }
+) {
+  const directions: ("LONG" | "SHORT")[] = ["LONG", "SHORT"];
+  const psychTags = ["Disciplined", "Revenge Trade", "FOMO", "Patient", "Overconfident", "Rule-based"];
+
+  for (let i = 0; i < profile.count; i++) {
+    const instrument = profile.instruments[rndInt(0, profile.instruments.length - 1)];
+    const direction = directions[Math.random() > 0.3 ? 0 : 1];
+    const basePrice = rnd(50, 500);
+    const entryPrice = basePrice;
+    const isWin = Math.random() < profile.winBias;
+    const move = rnd(0.005, profile.avgMove) * basePrice * (isWin ? 1 : -1);
+    const exitPrice = direction === "LONG" ? entryPrice + move : entryPrice - move;
+    const quantity = rndInt(5, 200);
+    const commission = Math.round(rnd(0, 8) * 100) / 100;
+    const rawPnl = (exitPrice - entryPrice) * quantity * (direction === "LONG" ? 1 : -1) - commission;
+    const pnl = Math.round(rawPnl * 100) / 100;
+    const dayOffset = rndInt(0, profile.maxDaysAgo);
+    const entryDate = daysAgo(dayOffset);
+    const exitDate = new Date(entryDate.getTime() + rnd(600000, 28800000));
+    const strategy = profile.strategies[rndInt(0, profile.strategies.length - 1)];
+
+    await prisma.trade.create({
+      data: {
+        userId,
+        tradingAccountId: accountId,
+        instrument,
+        direction,
+        entryPrice,
+        exitPrice,
+        quantity,
+        entryDate,
+        exitDate,
+        strategyTag: strategy,
+        psychology: psychTags[rndInt(0, psychTags.length - 1)],
+        commission,
+        pnl,
+        stopLoss: direction === "LONG" ? entryPrice * 0.98 : entryPrice * 1.02,
+        takeProfit: direction === "LONG" ? entryPrice * 1.05 : entryPrice * 0.95,
+        rMultiple: Math.round((pnl / (entryPrice * quantity * 0.02)) * 1000) / 1000,
+        status: "CLOSED",
+      },
+    });
+  }
+}
+
 async function main() {
-  // Create admin user
+  // ── Admin ──────────────────────────────────────────────────────────────────
   const adminPassword = await bcrypt.hash("Password123!", 12);
   const admin = await prisma.user.upsert({
     where: { email: "admin@tradingjournal.com" },
     update: {},
-    create: {
-      email: "admin@tradingjournal.com",
-      name: "Admin User",
-      password: adminPassword,
-      role: "ADMIN",
-    },
+    create: { email: "admin@tradingjournal.com", name: "Admin User", password: adminPassword, role: "ADMIN" },
   });
-
   await prisma.subscription.upsert({
     where: { userId: admin.id },
     update: {},
     create: { userId: admin.id, plan: "PRO", status: "ACTIVE" },
   });
-
   await seedUserDefaults(admin.id);
 
-  // Create trader user
+  // ── Demo Trader ────────────────────────────────────────────────────────────
   const traderPassword = await bcrypt.hash("Password123!", 12);
   const trader = await prisma.user.upsert({
     where: { email: "trader@tradingjournal.com" },
     update: {},
-    create: {
-      email: "trader@tradingjournal.com",
-      name: "Demo Trader",
-      password: traderPassword,
-      role: "TRADER",
-    },
+    create: { email: "trader@tradingjournal.com", name: "Demo Trader", password: traderPassword, role: "TRADER" },
   });
-
   await prisma.subscription.upsert({
     where: { userId: trader.id },
     update: {},
-    create: { userId: trader.id, plan: "BASIC", status: "ACTIVE" },
+    create: { userId: trader.id, plan: "PRO", status: "ACTIVE" },
   });
-
   await seedUserDefaults(trader.id);
 
-  // Create sample trades for demo trader
-  const instruments = ["AAPL", "TSLA", "SPY", "QQQ", "MSFT", "NVDA", "BTC/USD"];
-  const strategies = ["breakout", "mean-reversion", "trend-follow", "scalp"];
-  const directions: ("LONG" | "SHORT")[] = ["LONG", "SHORT"];
-
-  const existingTrades = await prisma.trade.count({ where: { userId: trader.id } });
-  if (existingTrades === 0) {
-    for (let i = 0; i < 50; i++) {
-      const instrument = instruments[Math.floor(Math.random() * instruments.length)];
-      const direction = directions[Math.floor(Math.random() * directions.length)];
-      const basePrice = 100 + Math.random() * 400;
-      const entryPrice = basePrice;
-      const move = (Math.random() - 0.45) * basePrice * 0.05;
-      const exitPrice = direction === "LONG" ? entryPrice + move : entryPrice - move;
-      const quantity = Math.floor(1 + Math.random() * 100);
-      const commission = Math.round(Math.random() * 10 * 100) / 100;
-      const pnl = (exitPrice - entryPrice) * quantity * (direction === "LONG" ? 1 : -1) - commission;
-      const daysAgo = Math.floor(Math.random() * 90);
-      const entryDate = new Date(Date.now() - daysAgo * 86400000);
-      const exitDate = new Date(entryDate.getTime() + Math.random() * 3600000 * 8);
-
-      await prisma.trade.create({
+  // ── Demo trading accounts ─────────────────────────────────────────────────
+  const existingAccounts = await prisma.tradingAccount.count({ where: { userId: trader.id } });
+  if (existingAccounts === 0) {
+    const [mainAccount, iraAccount, paperAccount] = await Promise.all([
+      prisma.tradingAccount.create({
         data: {
           userId: trader.id,
-          instrument,
-          direction,
-          entryPrice,
-          exitPrice,
-          quantity,
-          entryDate,
-          exitDate,
-          strategyTag: strategies[Math.floor(Math.random() * strategies.length)],
-          commission,
-          pnl: Math.round(pnl * 100) / 100,
-          stopLoss: direction === "LONG" ? entryPrice * 0.98 : entryPrice * 1.02,
-          takeProfit: direction === "LONG" ? entryPrice * 1.04 : entryPrice * 0.96,
-          status: "CLOSED",
+          name: "Main Account",
+          broker: "Webull",
+          accountType: "Margin",
+          currency: "USD",
+          color: "#3b82f6",
+          isDefault: true,
         },
-      });
-    }
+      }),
+      prisma.tradingAccount.create({
+        data: {
+          userId: trader.id,
+          name: "Roth IRA",
+          broker: "TD Ameritrade",
+          accountType: "Roth IRA",
+          currency: "USD",
+          color: "#10b981",
+          isDefault: false,
+        },
+      }),
+      prisma.tradingAccount.create({
+        data: {
+          userId: trader.id,
+          name: "Paper Trading",
+          broker: "ThinkorSwim",
+          accountType: "Paper Trading",
+          currency: "USD",
+          color: "#8b5cf6",
+          isDefault: false,
+        },
+      }),
+    ]);
+
+    // Main Account — active day-trader, 60% win rate
+    await seedTrades(trader.id, mainAccount.id, {
+      instruments: ["AAPL", "TSLA", "SPY", "QQQ", "NVDA", "AMD", "MSFT", "META"],
+      strategies: ["breakout", "momentum", "scalp", "VWAP-reclaim"],
+      count: 45,
+      winBias: 0.60,
+      avgMove: 0.035,
+      maxDaysAgo: 90,
+    });
+
+    // Roth IRA — long-term swing trader, 70% win rate, larger moves
+    await seedTrades(trader.id, iraAccount.id, {
+      instruments: ["SPY", "QQQ", "MSFT", "GOOGL", "AMZN", "BRK.B", "VTI"],
+      strategies: ["swing", "trend-follow", "earnings-play", "mean-reversion"],
+      count: 20,
+      winBias: 0.70,
+      avgMove: 0.065,
+      maxDaysAgo: 180,
+    });
+
+    // Paper Trading — experimental strategies, lower win rate
+    await seedTrades(trader.id, paperAccount.id, {
+      instruments: ["COIN", "MSTR", "GME", "AMC", "PLTR", "RIVN", "LCID"],
+      strategies: ["gap-fill", "reversal", "breakout", "options-play"],
+      count: 25,
+      winBias: 0.44,
+      avgMove: 0.08,
+      maxDaysAgo: 60,
+    });
+
+    console.log("Seeded 3 trading accounts with demo trades (Main, Roth IRA, Paper)");
   }
 
   console.log("Seeded: admin@tradingjournal.com and trader@tradingjournal.com (Password123!)");

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,18 +8,23 @@ import { Download, TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { formatCurrency, cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { AccountSelector } from "@/components/accounts/account-selector";
 
 export default function ReportsPage() {
+  const searchParams = useSearchParams();
+  const accountId = searchParams.get("account") ?? "";
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [groupBy, setGroupBy] = useState("instrument");
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/reports?groupBy=${groupBy}`)
+    const params = new URLSearchParams({ groupBy });
+    if (accountId) params.set("account", accountId);
+    fetch(`/api/reports?${params}`)
       .then((r) => r.json())
       .then((d) => { setData(d); setLoading(false); });
-  }, [groupBy]);
+  }, [groupBy, accountId]);
 
   async function handleExport() {
     const res = await fetch("/api/reports/export");
@@ -46,14 +52,17 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Reports</h1>
           <p className="text-muted-foreground text-sm">Detailed performance analysis</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport}>
-          <Download className="mr-2 h-4 w-4" />Export CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <AccountSelector />
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />Export CSV
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="instrument" onValueChange={(v) => setGroupBy(v === "instrument" ? "instrument" : v === "strategy" ? "strategy" : v === "dayOfWeek" ? "dayOfWeek" : "hour")}>

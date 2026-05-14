@@ -3,7 +3,7 @@ import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, LogOut, Settings, Menu,
   LayoutDashboard, LineChart, BarChart2, BrainCircuit,
-  CalendarCheck, Bell, ShieldCheck, TrendingUp } from "lucide-react";
+  CalendarCheck, Bell, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 import { HelpDialog } from "@/components/layout/help-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/trades", label: "Trades", icon: LineChart },
+  { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/plans", label: "Trade Plans", icon: CalendarCheck },
   { href: "/reports", label: "Reports", icon: BarChart2 },
   { href: "/ai", label: "AI Assistant", icon: BrainCircuit },

@@ -33,6 +33,7 @@ export const tradeSchema = z.object({
   takeProfit: z.coerce.number().positive().optional().nullable(),
   commission: z.coerce.number().min(0).optional().nullable(),
   groupId: z.string().optional().nullable(),
+  tradingAccountId: z.string().optional().nullable(),
   // Options / trade type fields
   tradeType: z.enum(["EQUITY", "OPTIONS"]).default("EQUITY"),
   optionType: z.enum(["CALL", "PUT"]).optional().nullable(),

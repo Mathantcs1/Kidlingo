@@ -13,7 +13,9 @@ export async function GET(req: Request) {
   const dateFrom = searchParams.get("dateFrom");
   const dateTo = searchParams.get("dateTo");
 
+  const accountId = searchParams.get("account");
   const where: Record<string, unknown> = { userId: session.user.id, status: "CLOSED" };
+  if (accountId) where.tradingAccountId = accountId;
   if (dateFrom || dateTo) {
     where.entryDate = {};
     if (dateFrom) (where.entryDate as Record<string, unknown>).gte = new Date(dateFrom);

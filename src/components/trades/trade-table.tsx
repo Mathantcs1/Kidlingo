@@ -22,6 +22,7 @@ interface TradeRow {
   pnl: number | null;
   rMultiple: number | null;
   strategyTag: string | null;
+  tradingAccount?: { id: string; name: string; color: string } | null;
 }
 
 interface TradeTableProps {
@@ -30,9 +31,10 @@ interface TradeTableProps {
   page: number;
   pageSize: number;
   role: string;
+  accounts?: { id: string; name: string; color: string }[];
 }
 
-export function TradeTable({ trades, total, page, pageSize, role }: TradeTableProps) {
+export function TradeTable({ trades, total, page, pageSize, role, accounts = [] }: TradeTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -55,20 +57,28 @@ export function TradeTable({ trades, total, page, pageSize, role }: TradeTablePr
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/40">
-              {["Date", "Instrument", "Direction", "Entry", "Exit", "Qty", "P&L", "R", "Strategy", "Status", ""].map((h) => (
+              {["Date", "Instrument", "Account", "Direction", "Entry", "Exit", "Qty", "P&L", "R", "Strategy", "Status", ""].map((h) => (
                 <th key={h} className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {trades.length === 0 && (
-              <tr><td colSpan={11} className="px-3 py-8 text-center text-muted-foreground text-sm">No trades found. Add your first trade!</td></tr>
+              <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground text-sm">No trades found. Add your first trade!</td></tr>
             )}
             {trades.map((trade) => (
               <tr key={trade.id} className="border-b hover:bg-muted/20 transition-colors cursor-pointer"
                 onClick={() => router.push(`/trades/${trade.id}`)}>
                 <td className="px-3 py-2.5 whitespace-nowrap text-xs">{formatDate(trade.entryDate)}</td>
                 <td className="px-3 py-2.5 font-medium">{trade.instrument}</td>
+                <td className="px-3 py-2.5">
+                  {trade.tradingAccount ? (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ background: trade.tradingAccount.color }} />
+                      <span className="text-xs text-muted-foreground truncate max-w-[80px]">{trade.tradingAccount.name}</span>
+                    </div>
+                  ) : <span className="text-xs text-muted-foreground">—</span>}
+                </td>
                 <td className="px-3 py-2.5">
                   <Badge variant="outline" className={cn("text-xs", trade.direction === "LONG" ? "text-emerald-500 border-emerald-500/30" : "text-red-500 border-red-500/30")}>
                     {trade.direction}

@@ -9,15 +9,20 @@ import { DailyPnlChart } from "@/components/dashboard/daily-pnl-chart";
 import { CalendarHeatmap } from "@/components/dashboard/calendar-heatmap";
 import { InstrumentDonut } from "@/components/dashboard/instrument-donut";
 import { BestWorstTrades } from "@/components/dashboard/best-worst-trades";
+import { AccountSelector } from "@/components/accounts/account-selector";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const session = await auth();
   if (!session) redirect("/login");
 
+  const { account } = await searchParams;
+  const where: Record<string, unknown> = { userId: session.user.id };
+  if (account) where.tradingAccountId = account;
+
   const trades = await prisma.trade.findMany({
-    where: { userId: session.user.id },
+    where,
     orderBy: { entryDate: "asc" },
     select: {
       id: true, instrument: true, direction: true, pnl: true, rMultiple: true,
@@ -39,9 +44,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Your trading performance overview</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Your trading performance overview</p>
+        </div>
+        <AccountSelector />
       </div>
 
       <StatsCards stats={stats} />
