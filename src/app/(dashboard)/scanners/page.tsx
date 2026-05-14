@@ -22,6 +22,7 @@ interface ScannerResponse {
   sectors: string[];
   usingReal: boolean;
   lastUpdated: string;
+  dataSource?: string;
 }
 
 const TABS = [
@@ -188,7 +189,7 @@ export default function ScannersPage() {
       {data?.usingReal ? (
         <div className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
           <span className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-          <span>Live data via <strong>Polygon.io</strong> — prices delayed up to 15 min on free tier.</span>
+          <span>Live data via <strong>{data?.dataSource ?? "Yahoo Finance + Twelve Data"}</strong> — prices delayed up to 15 min on free tier.</span>
         </div>
       ) : (
         <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
