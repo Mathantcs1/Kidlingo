@@ -1,8 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getAnthropic() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? "" });
+}
+function getOpenAI() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" });
+}
 
 export type AiProvider = "CLAUDE" | "OPENAI";
 
@@ -27,7 +31,7 @@ export async function analyzeTrade(
   const message = `Analyze this trade:\n${JSON.stringify(tradeData, null, 2)}`;
 
   if (provider === "CLAUDE") {
-    const msg = await anthropic.messages.create({
+    const msg = await getAnthropic().messages.create({
       model: "claude-opus-4-5",
       max_tokens: 1024,
       system: TRADE_ANALYSIS_SYSTEM,
@@ -36,7 +40,7 @@ export async function analyzeTrade(
     return (msg.content[0] as { text: string }).text;
   }
 
-  const completion = await openai.chat.completions.create({
+  const completion = await getOpenAI().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: TRADE_ANALYSIS_SYSTEM },
@@ -56,7 +60,7 @@ export async function generatePortfolioSummary(
   const system = PORTFOLIO_SYSTEM(period);
 
   if (provider === "CLAUDE") {
-    const msg = await anthropic.messages.create({
+    const msg = await getAnthropic().messages.create({
       model: "claude-opus-4-5",
       max_tokens: 2048,
       system,
@@ -65,7 +69,7 @@ export async function generatePortfolioSummary(
     return (msg.content[0] as { text: string }).text;
   }
 
-  const completion = await openai.chat.completions.create({
+  const completion = await getOpenAI().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: system },
@@ -83,7 +87,7 @@ export async function* streamChat(
   const system = CHAT_SYSTEM(userContext);
 
   if (provider === "CLAUDE") {
-    const stream = anthropic.messages.stream({
+    const stream = getAnthropic().messages.stream({
       model: "claude-opus-4-5",
       max_tokens: 1024,
       system,
@@ -100,7 +104,7 @@ export async function* streamChat(
     return;
   }
 
-  const stream = await openai.chat.completions.create({
+  const stream = await getOpenAI().chat.completions.create({
     model: "gpt-4o",
     messages: [{ role: "system", content: system }, ...messages],
     stream: true,
