@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { TradeTable } from "@/components/trades/trade-table";
+import { ImportDialog } from "@/components/trades/import-dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -59,9 +60,12 @@ export default async function TradesPage({
           <p className="text-muted-foreground text-sm">{total} total trades</p>
         </div>
         {session.user.role !== "VIEWER" && (
-          <Button asChild size="sm">
-            <Link href="/trades/new"><Plus className="mr-2 h-4 w-4" />New Trade</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <ImportDialog />
+            <Button asChild size="sm">
+              <Link href="/trades/new"><Plus className="mr-2 h-4 w-4" />New Trade</Link>
+            </Button>
+          </div>
         )}
       </div>
       <TradeTable trades={serialized} total={total} page={page} pageSize={pageSize} role={session.user.role} />
