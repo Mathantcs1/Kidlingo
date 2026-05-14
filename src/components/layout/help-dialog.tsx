@@ -19,7 +19,7 @@ const sections: HelpSection[] = [
     icon: BookOpen,
     content: (
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Welcome to TradingJournal — your all-in-one trading performance tracker.</p>
+        <p className="text-sm text-muted-foreground">Welcome to TradePulse — your all-in-one trading performance tracker.</p>
         <HelpBlock title="Roles">
           <HelpRow label="Trader" desc="Full access: create, edit, and delete trades, plans, and alerts." />
           <HelpRow label="Viewer" desc="Read-only access. Can view dashboard and reports but cannot create or modify data." />

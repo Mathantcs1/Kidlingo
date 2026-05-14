@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, LineChart, BookOpen, BarChart2,
   BrainCircuit, CalendarCheck, Bell, Settings,
-  ShieldCheck, TrendingUp, ChevronLeft, ChevronRight, Wallet,
+  ShieldCheck, Activity, ChevronLeft, ChevronRight, Wallet,
   ScanLine, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -45,11 +45,13 @@ export function Sidebar({ role }: SidebarProps) {
     >
       {/* Logo */}
       <div className={cn("flex items-center gap-2 px-4 py-5 border-b border-slate-700", collapsed && "justify-center px-2")}>
-        <div className="p-1.5 bg-blue-600 rounded-md shrink-0">
-          <TrendingUp className="h-4 w-4 text-white" />
+        <div className="p-1.5 rounded-md shrink-0 bg-gradient-to-br from-blue-500 to-violet-600 shadow-lg shadow-blue-500/25">
+          <Activity className="h-4 w-4 text-white" />
         </div>
         {!collapsed && (
-          <span className="font-bold text-white text-sm truncate">TradingJournal</span>
+          <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400 text-sm truncate tracking-tight">
+            TradePulse
+          </span>
         )}
       </div>
 

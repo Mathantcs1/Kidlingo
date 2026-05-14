@@ -4,7 +4,7 @@ import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, LogOut, Settings, Menu,
   LayoutDashboard, LineChart, BarChart2, BrainCircuit,
-  CalendarCheck, Bell, ShieldCheck, TrendingUp, Wallet,
+  CalendarCheck, Bell, ShieldCheck, Activity, Wallet,
   ScanLine, Zap } from "lucide-react";
 import { HelpDialog } from "@/components/layout/help-dialog";
 import { AccountSelector } from "@/components/accounts/account-selector";
@@ -58,10 +58,10 @@ export function Header({ user }: HeaderProps) {
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0 bg-slate-900 border-slate-700">
             <div className="flex items-center gap-2 px-4 py-5 border-b border-slate-700">
-              <div className="p-1.5 bg-blue-600 rounded-md">
-                <TrendingUp className="h-4 w-4 text-white" />
+              <div className="p-1.5 rounded-md bg-gradient-to-br from-blue-500 to-violet-600 shadow-lg shadow-blue-500/25">
+                <Activity className="h-4 w-4 text-white" />
               </div>
-              <span className="font-bold text-white text-sm">TradingJournal</span>
+              <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400 text-sm tracking-tight">TradePulse</span>
             </div>
             <nav className="flex-1 py-4 space-y-1 px-2">
               {navItems.map(({ href, label, icon: Icon }) => {

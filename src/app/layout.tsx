@@ -7,9 +7,9 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TradingJournal - Track, Analyze & Improve Your Trading",
+  title: "TradePulse — Chart Your Edge",
   description:
-    "Professional trading journal with AI analysis, advanced charts, and multi-user support.",
+    "Professional trading journal with AI analysis, real-time scanners, advanced charts, and multi-user support.",
 };
 
 export default function RootLayout({
