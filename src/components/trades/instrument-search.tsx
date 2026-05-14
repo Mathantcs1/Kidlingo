@@ -34,6 +34,7 @@ interface InstrumentSearchProps {
   value: string;
   onChange: (symbol: string) => void;
   onPriceLoaded?: (price: number | null) => void;
+  onSelect?: (symbol: string) => void;
 }
 
 function fmt(n: number | null, decimals = 2): string {
@@ -52,7 +53,7 @@ function fmtVol(n: number | null): string {
   return `${n}`;
 }
 
-export function InstrumentSearch({ value, onChange, onPriceLoaded }: InstrumentSearchProps) {
+export function InstrumentSearch({ value, onChange, onPriceLoaded, onSelect }: InstrumentSearchProps) {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -104,6 +105,7 @@ export function InstrumentSearch({ value, onChange, onPriceLoaded }: InstrumentS
   async function selectSymbol(symbol: string) {
     setQuery(symbol);
     onChange(symbol);
+    onSelect?.(symbol);
     setShowDropdown(false);
     setSuggestions([]);
     setLoadingQuote(true);
@@ -114,6 +116,8 @@ export function InstrumentSearch({ value, onChange, onPriceLoaded }: InstrumentS
         const data: Quote = await res.json();
         setQuote(data);
         onPriceLoaded?.(data.price);
+      } else {
+        onPriceLoaded?.(null);
       }
     } finally {
       setLoadingQuote(false);

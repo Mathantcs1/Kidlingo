@@ -68,16 +68,14 @@ export function PlanForm({ dropdownValues }: PlanFormProps) {
     setValue("instrument", symbol);
   }
 
+  function handleSymbolSelect(symbol: string) {
+    setConfirmedSymbol(symbol);
+    requestAnimationFrame(() => {
+      chartRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }
+
   function handlePriceLoaded(price: number | null) {
-    // Symbol was confirmed via dropdown — show the chart now
-    const sym = selectedSymbolRef.current;
-    if (sym) {
-      setConfirmedSymbol(sym);
-      // Scroll chart into view on narrow screens where it's below the form
-      requestAnimationFrame(() => {
-        chartRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      });
-    }
     if (price != null && !entryPrice) {
       setValue("entryPrice", price as unknown as number);
     }
@@ -125,6 +123,7 @@ export function PlanForm({ dropdownValues }: PlanFormProps) {
               <InstrumentSearch
                 value={selectedSymbol}
                 onChange={handleInstrumentChange}
+                onSelect={handleSymbolSelect}
                 onPriceLoaded={handlePriceLoaded}
               />
               {errors.instrument && (

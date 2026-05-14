@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,17 +57,17 @@ export function CandlestickChart({ symbol, priceLevels = [], className }: Candle
     });
   }, []);
 
-  // Responsive width via ResizeObserver
-  useEffect(() => {
+  // Measure width synchronously before paint, then keep updated via ResizeObserver
+  useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0].contentRect.width;
-      if (w > 0) setWidth(w);
-    });
+    const measure = () => {
+      const w = el.getBoundingClientRect().width;
+      setWidth(w > 0 ? w : 500);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    const initial = el.getBoundingClientRect().width;
-    if (initial > 0) setWidth(initial);
     return () => ro.disconnect();
   }, []);
 
@@ -167,7 +167,7 @@ export function CandlestickChart({ symbol, priceLevels = [], className }: Candle
           </div>
         )}
 
-        {width > 0 && candles.length > 0 && (
+        {candles.length > 0 && (
           <svg
             width={width}
             height={height}
