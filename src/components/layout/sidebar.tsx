@@ -34,17 +34,17 @@ export function Sidebar({ role }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "relative flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 hidden md:flex",
+        "relative flex-col bg-slate-900 border-r border-slate-700 transition-all duration-300 hidden md:flex shrink-0",
         collapsed ? "w-16" : "w-60"
       )}
     >
       {/* Logo */}
-      <div className={cn("flex items-center gap-2 px-4 py-5 border-b border-sidebar-border", collapsed && "justify-center px-2")}>
+      <div className={cn("flex items-center gap-2 px-4 py-5 border-b border-slate-700", collapsed && "justify-center px-2")}>
         <div className="p-1.5 bg-blue-600 rounded-md shrink-0">
           <TrendingUp className="h-4 w-4 text-white" />
         </div>
         {!collapsed && (
-          <span className="font-bold text-sidebar-foreground text-sm truncate">TradingJournal</span>
+          <span className="font-bold text-white text-sm truncate">TradingJournal</span>
         )}
       </div>
 
@@ -57,10 +57,10 @@ export function Sidebar({ role }: SidebarProps) {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
                 active
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  ? "bg-blue-600 text-white"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white",
                 collapsed && "justify-center px-2"
               )}
               title={collapsed ? label : undefined}
@@ -75,7 +75,7 @@ export function Sidebar({ role }: SidebarProps) {
           <>
             <div className={cn("mt-4 mb-1 px-3", collapsed && "px-0")}>
               {!collapsed && (
-                <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">Admin</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Admin</p>
               )}
             </div>
             {adminItems.map(({ href, label, icon: Icon }) => {
@@ -85,10 +85,10 @@ export function Sidebar({ role }: SidebarProps) {
                   key={href}
                   href={href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
                     active
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent",
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white",
                     collapsed && "justify-center px-2"
                   )}
                   title={collapsed ? label : undefined}
@@ -103,11 +103,11 @@ export function Sidebar({ role }: SidebarProps) {
       </nav>
 
       {/* Settings at bottom */}
-      <div className="border-t border-sidebar-border py-3 px-2">
+      <div className="border-t border-slate-700 py-3 px-2">
         <Link
           href="/settings"
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
+            "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors",
             collapsed && "justify-center px-2"
           )}
           title={collapsed ? "Settings" : undefined}
@@ -120,7 +120,7 @@ export function Sidebar({ role }: SidebarProps) {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className="absolute -right-3 top-20 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground hover:text-foreground shadow-sm"
+        className="absolute -right-3 top-20 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-slate-400 hover:text-white shadow-sm"
       >
         {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
       </button>
