@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trading Journal – User Manual</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; font-size: 13px; line-height: 1.7; color: #1a1a1a; background: #fff; }
+  .page { max-width: 800px; margin: 0 auto; padding: 40px 50px; }
+
+  h1 { font-size: 28px; font-weight: bold; margin-bottom: 6px; color: #111; }
+  h2 { font-size: 18px; font-weight: bold; margin: 36px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #111; color: #111; }
+  h3 { font-size: 14px; font-weight: bold; margin: 20px 0 6px; color: #222; }
+  h4 { font-size: 13px; font-weight: bold; margin: 14px 0 4px; color: #333; }
+
+  p { margin-bottom: 10px; }
+  ul, ol { margin: 8px 0 12px 22px; }
+  li { margin-bottom: 4px; }
+
+  .subtitle { font-size: 15px; color: #555; margin-bottom: 4px; }
+  .version { font-size: 12px; color: #888; margin-bottom: 30px; }
+
+  .cover { text-align: center; padding: 80px 0 60px; border-bottom: 3px solid #111; margin-bottom: 40px; }
+  .cover h1 { font-size: 36px; margin-bottom: 10px; }
+
+  .toc { background: #f8f8f8; border: 1px solid #ddd; padding: 20px 28px; margin-bottom: 40px; border-radius: 4px; }
+  .toc h2 { border: none; margin-top: 0; font-size: 15px; }
+  .toc ol { margin-left: 18px; }
+  .toc li { margin-bottom: 3px; font-size: 13px; }
+
+  .callout { background: #f0f4ff; border-left: 4px solid #4466cc; padding: 12px 16px; margin: 14px 0; border-radius: 0 4px 4px 0; }
+  .callout.tip { background: #f0fff4; border-color: #22aa66; }
+  .callout.warn { background: #fffbf0; border-color: #cc8800; }
+
+  .credentials { background: #1a1a1a; color: #e8e8e8; padding: 14px 18px; border-radius: 6px; font-family: monospace; font-size: 12px; margin: 12px 0; line-height: 2; }
+  .credentials span { color: #88cc88; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
+  th { background: #1a1a1a; color: #fff; padding: 8px 12px; text-align: left; }
+  td { padding: 7px 12px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+  .badge.free { background: #e0e0e0; color: #333; }
+  .badge.basic { background: #dbeafe; color: #1d4ed8; }
+  .badge.pro { background: #f3e8ff; color: #7e22ce; }
+  .badge.admin { background: #fde8e8; color: #991b1b; }
+
+  .step { display: flex; gap: 12px; margin-bottom: 10px; }
+  .step-num { flex-shrink: 0; width: 24px; height: 24px; background: #1a1a1a; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-top: 2px; }
+  .step-body { flex: 1; }
+
+  code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 12px; }
+  .url { color: #2255cc; font-family: monospace; font-size: 12px; }
+
+  hr { border: none; border-top: 1px solid #ddd; margin: 30px 0; }
+
+  @media print {
+    body { font-size: 12px; }
+    .page { padding: 20px 30px; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    .cover { page-break-after: always; }
+    .toc { page-break-after: always; }
+    .callout, .credentials, table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- COVER -->
+<div class="cover">
+  <h1>Trading Journal</h1>
+  <p class="subtitle">Complete User Manual</p>
+  <p class="version">Version 1.0 &nbsp;|&nbsp; May 2026</p>
+  <p style="color:#555;font-size:12px;">Cloud-hosted at <span class="url">https://kidlingo-rho.vercel.app</span></p>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li>Getting Started — Login &amp; Registration</li>
+    <li>Dashboard Overview</li>
+    <li>Managing Trades</li>
+    <li>Reports &amp; Analytics</li>
+    <li>Daily Trade Plans</li>
+    <li>Price Alerts</li>
+    <li>AI Analysis &amp; Chat</li>
+    <li>Settings &amp; Customisation</li>
+    <li>Admin Panel</li>
+    <li>Subscription Plans</li>
+    <li>Keyboard Shortcuts &amp; Tips</li>
+  </ol>
+</div>
+
+<!-- 1. GETTING STARTED -->
+<h2>1. Getting Started — Login &amp; Registration</h2>
+
+<h3>Accessing the App</h3>
+<p>Open your browser and navigate to:</p>
+<p><span class="url">https://kidlingo-rho.vercel.app</span></p>
+<p>You will be redirected to the login page automatically if you are not signed in.</p>
+
+<h3>Default Demo Credentials</h3>
+<div class="credentials">
+  <span>Admin account</span><br>
+  Email: admin@tradingjournal.com<br>
+  Password: Password123!<br><br>
+  <span>Trader account (50 sample trades)</span><br>
+  Email: trader@tradingjournal.com<br>
+  Password: Password123!
+</div>
+
+<h3>Registering a New Account</h3>
+<div class="step"><div class="step-num">1</div><div class="step-body">Click <strong>Create an account</strong> on the login page.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body">Enter your full name, email address, and a password (min. 8 characters).</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body">Click <strong>Register</strong>. Your account is created with the FREE plan.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-body">You are automatically logged in and taken to the dashboard.</div></div>
+
+<div class="callout tip">
+  <strong>Tip:</strong> New accounts default to the FREE plan (20 trades/month). An admin can upgrade your plan from the Admin Panel.
+</div>
+
+<h3>Signing Out</h3>
+<p>Click your avatar in the top-right corner of any page, then select <strong>Sign Out</strong>.</p>
+
+<!-- 2. DASHBOARD -->
+<h2>2. Dashboard Overview</h2>
+<p>The dashboard is your performance command centre. It loads pre-computed statistics from all your trades and refreshes automatically when you add or edit a trade.</p>
+
+<h3>Stat Cards</h3>
+<table>
+  <tr><th>Card</th><th>What It Shows</th></tr>
+  <tr><td><strong>Total P&amp;L</strong></td><td>Sum of profit/loss across all closed trades</td></tr>
+  <tr><td><strong>Win Rate</strong></td><td>Percentage of trades that ended in profit</td></tr>
+  <tr><td><strong>Profit Factor</strong></td><td>Gross profit ÷ gross loss (above 1.5 is strong)</td></tr>
+  <tr><td><strong>Avg R:R</strong></td><td>Average reward-to-risk ratio per trade</td></tr>
+  <tr><td><strong>Max Drawdown</strong></td><td>Largest peak-to-trough drop in equity (%)</td></tr>
+  <tr><td><strong>Sharpe Ratio</strong></td><td>Risk-adjusted return (above 1 is acceptable)</td></tr>
+</table>
+
+<h3>Charts</h3>
+<ul>
+  <li><strong>Equity Curve</strong> — running cumulative P&amp;L over time with gradient fill</li>
+  <li><strong>Daily P&amp;L Bar Chart</strong> — green bars for profit days, red for loss days</li>
+  <li><strong>Calendar Heatmap</strong> — monthly grid coloured by daily P&amp;L magnitude; navigate months with arrows</li>
+  <li><strong>Instrument Breakdown</strong> — donut chart of trade count by instrument</li>
+  <li><strong>Best &amp; Worst Trades</strong> — top 3 wins and worst 3 losses at a glance</li>
+</ul>
+
+<!-- 3. MANAGING TRADES -->
+<h2>3. Managing Trades</h2>
+
+<h3>Viewing Your Trades</h3>
+<p>Click <strong>Trades</strong> in the left sidebar. The table shows all trades sorted by entry date (newest first) with colour-coded P&amp;L (green = profit, red = loss).</p>
+
+<h4>Filtering</h4>
+<p>Use the filter bar at the top to narrow by:</p>
+<ul>
+  <li>Date range (from / to)</li>
+  <li>Instrument (e.g. AAPL, BTC/USD)</li>
+  <li>Direction (Long / Short)</li>
+  <li>Status (Open / Closed)</li>
+  <li>Strategy tag</li>
+</ul>
+
+<h4>Sorting</h4>
+<p>Click any column header to sort ascending; click again for descending.</p>
+
+<h3>Creating a Trade</h3>
+<div class="step"><div class="step-num">1</div><div class="step-body">Click <strong>New Trade</strong> (top-right on the Trades page) or navigate to <span class="url">/trades/new</span>.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body">Fill in the required fields: <strong>Instrument, Direction, Entry Price, Quantity, Entry Date</strong>.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body">Optionally add Exit Price &amp; Date, Stop Loss, Take Profit, Commission, Strategy Tag, Session Type, Psychology notes, and a screenshot.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-body">Watch the <strong>Live P&amp;L Preview</strong> panel update as you type — it shows estimated P&amp;L and R:R ratio in real time.</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-body">Click <strong>Save Trade</strong>. P&amp;L and R-Multiple are calculated server-side and stored.</div></div>
+
+<div class="callout">
+  <strong>Note:</strong> Leaving Exit Price empty saves the trade as <strong>OPEN</strong>. Fill it in later by editing the trade to mark it closed.
+</div>
+
+<h3>Editing a Trade</h3>
+<p>From the Trades table, click the <strong>⋮</strong> menu on any row → <strong>Edit</strong>. All fields are editable. P&amp;L is recalculated on save.</p>
+
+<h3>Deleting a Trade</h3>
+<p>Click <strong>⋮</strong> → <strong>Delete</strong>. Deletion is permanent.</p>
+
+<h3>Trade Detail View</h3>
+<p>Click any trade row to open its detail page. You will see:</p>
+<ul>
+  <li><strong>Entry/Exit Timeline Chart</strong> — visualises entry, stop loss, take profit, and exit price levels</li>
+  <li><strong>AI Analysis panel</strong> — click <em>Analyse Trade</em> to get AI coaching feedback</li>
+  <li>Full trade metadata including notes and psychology journal</li>
+</ul>
+
+<!-- 4. REPORTS -->
+<h2>4. Reports &amp; Analytics</h2>
+<p>Navigate to <strong>Reports</strong> in the sidebar. Five tabs provide different analytical views.</p>
+
+<table>
+  <tr><th>Tab</th><th>What It Shows</th></tr>
+  <tr><td><strong>By Instrument</strong></td><td>Win rate, total P&amp;L, trade count, avg P&amp;L per instrument</td></tr>
+  <tr><td><strong>By Strategy</strong></td><td>Same metrics broken down by strategy tag</td></tr>
+  <tr><td><strong>By Day of Week</strong></td><td>Which days (Mon–Sun) are most profitable</td></tr>
+  <tr><td><strong>By Hour</strong></td><td>Which trading hours produce the best results</td></tr>
+  <tr><td><strong>Risk Metrics</strong></td><td>Win/loss streak, max consecutive wins/losses, avg win, avg loss, largest single trade</td></tr>
+</table>
+
+<h3>CSV Export</h3>
+<p>Available on <span class="badge basic">BASIC</span> and <span class="badge pro">PRO</span> plans. Click <strong>Export CSV</strong> at the top of the Reports page to download all trades as a spreadsheet.</p>
+
+<!-- 5. DAILY TRADE PLANS -->
+<h2>5. Daily Trade Plans</h2>
+<p>Trade plans are pre-market setups you create <em>before</em> executing a trade. They enforce discipline by forcing you to define criteria upfront.</p>
+
+<h3>Creating a Plan</h3>
+<div class="step"><div class="step-num">1</div><div class="step-body">Click <strong>Plans</strong> in the sidebar → <strong>New Plan</strong>.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body">Set the <strong>Trading Date, Instrument, Direction, Entry Price, Stop Loss, Take Profit</strong>.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body">Optionally write a <strong>Rationale</strong> explaining why you are taking this trade.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-body">Toggle <strong>Enable Price Alerts</strong> ON to automatically create alerts for your entry, SL, and TP levels.</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-body">Click <strong>Save Plan</strong>. Three price alerts are created automatically.</div></div>
+
+<h3>Plan Statuses</h3>
+<table>
+  <tr><th>Status</th><th>Meaning</th></tr>
+  <tr><td>PENDING</td><td>Plan created, waiting for price to reach entry</td></tr>
+  <tr><td>TRIGGERED</td><td>Entry price was hit — time to execute the trade</td></tr>
+  <tr><td>EXPIRED</td><td>Plan date passed without triggering</td></tr>
+  <tr><td>CANCELLED</td><td>Manually cancelled before triggering</td></tr>
+</table>
+
+<h3>Converting a Plan to a Trade</h3>
+<p>Open a plan's detail page and click <strong>Convert to Trade</strong>. The trade form opens pre-filled with the plan's instrument, direction, prices, and dates. Review, add exit details, and save.</p>
+
+<!-- 6. PRICE ALERTS -->
+<h2>6. Price Alerts</h2>
+<p>Price alerts notify you when an instrument reaches a target price. They are checked every <strong>30 seconds</strong> while the app is open in your browser.</p>
+
+<h3>How Alerts Work</h3>
+<ol>
+  <li>Alerts are created automatically when you save a Trade Plan with alerts enabled.</li>
+  <li>You can also create manual alerts from <strong>Alerts</strong> in the sidebar.</li>
+  <li>Every 30 seconds the app checks current prices via Yahoo Finance / Alpha Vantage.</li>
+  <li>When a price crosses a threshold a <strong>toast notification</strong> appears on screen.</li>
+  <li>The alert status changes to <strong>TRIGGERED</strong> in the alerts table.</li>
+</ol>
+
+<h3>Alert Types</h3>
+<table>
+  <tr><th>Type</th><th>Triggers When</th></tr>
+  <tr><td>ENTRY_HIT</td><td>Price reaches your planned entry level</td></tr>
+  <tr><td>STOP_HIT</td><td>Price reaches your stop loss level</td></tr>
+  <tr><td>EXIT_HIT</td><td>Price reaches your take profit level</td></tr>
+  <tr><td>PRICE_ABOVE</td><td>Price rises above a custom target</td></tr>
+  <tr><td>PRICE_BELOW</td><td>Price falls below a custom target</td></tr>
+</table>
+
+<h3>Managing Alerts</h3>
+<ul>
+  <li><strong>Check Now</strong> — manually force a price check immediately</li>
+  <li><strong>Dismiss</strong> — mark a triggered alert as acknowledged</li>
+  <li><strong>Dismiss All</strong> — clear all triggered alerts at once</li>
+</ul>
+
+<div class="callout warn">
+  <strong>Note:</strong> Price data depends on external APIs. Free-tier Alpha Vantage allows 25 requests/day. For live trading use, add your own Alpha Vantage API key in Vercel environment variables (<code>ALPHA_VANTAGE_API_KEY</code>).
+</div>
+
+<!-- 7. AI FEATURES -->
+<h2>7. AI Analysis &amp; Chat</h2>
+<p>The app integrates with both <strong>Claude (Anthropic)</strong> and <strong>GPT-4o (OpenAI)</strong>. You choose your preferred provider in Settings.</p>
+
+<div class="callout warn">
+  <strong>Requires API key:</strong> AI features need <code>ANTHROPIC_API_KEY</code> or <code>OPENAI_API_KEY</code> set in the Vercel environment variables. Contact your admin if AI is not working.
+</div>
+
+<h3>Per-Trade Analysis</h3>
+<div class="step"><div class="step-num">1</div><div class="step-body">Open any trade detail page.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body">Scroll to the <strong>AI Analysis</strong> panel and click <strong>Analyse Trade</strong>.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body">The AI returns feedback covering pattern recognition, risk assessment, psychology observations, and 3 specific improvement suggestions.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-body">Results are <strong>cached</strong> — re-opening the same trade shows the stored analysis instantly without using another API call.</div></div>
+
+<h3>Portfolio Summary</h3>
+<p>On the <strong>AI</strong> page (sidebar), click <strong>Weekly Summary</strong> or <strong>Monthly Summary</strong> to generate an AI overview of your recent performance covering strengths, weaknesses, and 3 action items.</p>
+
+<h3>AI Chat</h3>
+<p>The chat interface on the AI page lets you ask questions about your trading performance. Responses stream in real time. Example questions:</p>
+<ul>
+  <li>"What is my best-performing strategy?"</li>
+  <li>"Why do I lose more on Fridays?"</li>
+  <li>"How can I improve my risk management?"</li>
+</ul>
+
+<h3>Switching AI Provider</h3>
+<p>Go to <strong>Settings → Profile → AI Provider</strong> and select either Claude or GPT-4o. Save changes. All subsequent AI calls use the new provider.</p>
+
+<!-- 8. SETTINGS -->
+<h2>8. Settings &amp; Customisation</h2>
+<p>Access via <strong>Settings</strong> in the sidebar or your avatar menu.</p>
+
+<h3>Profile Tab</h3>
+<ul>
+  <li><strong>Full Name</strong> — update your display name</li>
+  <li><strong>Email</strong> — read-only (cannot be changed)</li>
+  <li><strong>AI Provider</strong> — choose Claude or GPT-4o</li>
+</ul>
+
+<h3>Custom Fields Tab</h3>
+<p>Every dropdown in the trade form uses your personal list of values. You can customise five categories:</p>
+
+<table>
+  <tr><th>Category</th><th>Used In</th></tr>
+  <tr><td>Strategy Tags</td><td>Trade form — Strategy field</td></tr>
+  <tr><td>Instruments / Watchlist</td><td>Trade form — Instrument field</td></tr>
+  <tr><td>Psychology Tags</td><td>Trade form — Psychology field</td></tr>
+  <tr><td>Trade Setups</td><td>Trade form — Setup field</td></tr>
+  <tr><td>Session Types</td><td>Trade form — Session field</td></tr>
+</table>
+
+<h4>Adding a Value</h4>
+<p>Type the name in the input box at the bottom of each category section and press <strong>Enter</strong> or click the <strong>+</strong> button.</p>
+
+<h4>Setting a Default</h4>
+<p>Click the <strong>☆</strong> (star) icon on any value to make it the pre-selected default in new trade forms.</p>
+
+<h4>Deleting a Value</h4>
+<p>Click the <strong>🗑</strong> (trash) icon. Existing trades that used this value are not affected.</p>
+
+<!-- 9. ADMIN PANEL -->
+<h2>9. Admin Panel</h2>
+<p>Only users with the <span class="badge admin">ADMIN</span> role can access <span class="url">/admin</span>.</p>
+
+<h3>User Management</h3>
+<p>Navigate to <strong>Admin → Users</strong> to see all registered users. You can:</p>
+<ul>
+  <li>Change a user's <strong>role</strong> (ADMIN / TRADER / VIEWER) using the dropdown in the table</li>
+  <li>View each user's email, registration date, and current plan</li>
+</ul>
+
+<div class="callout warn">
+  <strong>Viewer role:</strong> Users with the VIEWER role can see data but cannot create, edit, or delete trades.
+</div>
+
+<h3>Subscription Management</h3>
+<p>Navigate to <strong>Admin → Subscriptions</strong> to manage plans for all users:</p>
+<ul>
+  <li>Change a user's plan (FREE / BASIC / PRO) using the dropdown</li>
+  <li>Changes take effect immediately on the user's next request</li>
+</ul>
+
+<h3>Groups</h3>
+<p>Navigate to <strong>Admin → Groups</strong> to view trading groups. Groups allow multiple traders to share a common trade log.</p>
+
+<!-- 10. SUBSCRIPTION PLANS -->
+<h2>10. Subscription Plans</h2>
+
+<table>
+  <tr>
+    <th>Feature</th>
+    <th><span class="badge free">FREE</span></th>
+    <th><span class="badge basic">BASIC</span></th>
+    <th><span class="badge pro">PRO</span></th>
+  </tr>
+  <tr><td>Trades per month</td><td>20</td><td>200</td><td>Unlimited</td></tr>
+  <tr><td>AI analyses per month</td><td>5</td><td>50</td><td>Unlimited</td></tr>
+  <tr><td>Trade plans</td><td>5</td><td>50</td><td>Unlimited</td></tr>
+  <tr><td>Trading groups</td><td>—</td><td>1</td><td>Unlimited</td></tr>
+  <tr><td>CSV export</td><td>—</td><td>✓</td><td>✓</td></tr>
+  <tr><td>AI chat</td><td>—</td><td>✓</td><td>✓</td></tr>
+</table>
+
+<p>To upgrade your plan, ask your administrator to change it in <strong>Admin → Subscriptions</strong>.</p>
+
+<!-- 11. TIPS -->
+<h2>11. Keyboard Shortcuts &amp; Tips</h2>
+
+<h3>Navigation Tips</h3>
+<ul>
+  <li>Click the <strong>≡</strong> button in the sidebar header to collapse it and gain more screen space.</li>
+  <li>On mobile, the sidebar slides in as a drawer — tap the hamburger icon in the header.</li>
+  <li>The <strong>theme toggle</strong> (sun/moon icon in the header) switches between dark and light mode.</li>
+</ul>
+
+<h3>Trade Entry Tips</h3>
+<ul>
+  <li>Use the <strong>Live P&amp;L Preview</strong> panel on the right side of the trade form to validate your risk before saving.</li>
+  <li>If you pre-filled a trade from a Trade Plan, all plan fields are carried over automatically.</li>
+  <li>You can upload a <strong>chart screenshot</strong> to the trade for future reference.</li>
+</ul>
+
+<h3>Dashboard Tips</h3>
+<ul>
+  <li>Click the <strong>← →</strong> arrows on the Calendar Heatmap to navigate months.</li>
+  <li>Hover over any chart bar or point for exact values.</li>
+</ul>
+
+<h3>AI Tips</h3>
+<ul>
+  <li>Analysis results are cached — closing and reopening a trade detail page does not use another API call.</li>
+  <li>Switch providers in Settings if one API key is not working.</li>
+  <li>The AI chat has context about your account — ask it questions like "How many trades did I win this month?"</li>
+</ul>
+
+<hr>
+<p style="text-align:center;color:#888;font-size:11px;margin-top:20px;">
+  Trading Journal &nbsp;|&nbsp; https://kidlingo-rho.vercel.app &nbsp;|&nbsp; v1.0 May 2026
+</p>
+
+</div>
+</body>
+</html>
