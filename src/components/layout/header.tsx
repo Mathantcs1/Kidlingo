@@ -4,7 +4,8 @@ import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, LogOut, Settings, Menu,
   LayoutDashboard, LineChart, BarChart2, BrainCircuit,
-  CalendarCheck, Bell, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
+  CalendarCheck, Bell, ShieldCheck, TrendingUp, Wallet,
+  ScanLine, Zap } from "lucide-react";
 import { HelpDialog } from "@/components/layout/help-dialog";
 import { AccountSelector } from "@/components/accounts/account-selector";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,6 +22,8 @@ const navItems = [
   { href: "/trades", label: "Trades", icon: LineChart },
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/plans", label: "Trade Plans", icon: CalendarCheck },
+  { href: "/scanners", label: "Scanners", icon: ScanLine },
+  { href: "/unusual-trades", label: "Unusual Trades", icon: Zap },
   { href: "/reports", label: "Reports", icon: BarChart2 },
   { href: "/ai", label: "AI Assistant", icon: BrainCircuit },
   { href: "/alerts", label: "Alerts", icon: Bell },

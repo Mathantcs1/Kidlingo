@@ -5,6 +5,7 @@ import {
   LayoutDashboard, LineChart, BookOpen, BarChart2,
   BrainCircuit, CalendarCheck, Bell, Settings,
   ShieldCheck, TrendingUp, ChevronLeft, ChevronRight, Wallet,
+  ScanLine, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -16,6 +17,8 @@ const navItems = [
   { href: "/trades", label: "Trades", icon: LineChart },
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/plans", label: "Trade Plans", icon: CalendarCheck },
+  { href: "/scanners", label: "Scanners", icon: ScanLine, badge: "NEW" },
+  { href: "/unusual-trades", label: "Unusual Trades", icon: Zap, badge: "NEW" },
   { href: "/reports", label: "Reports", icon: BarChart2 },
   { href: "/ai", label: "AI Assistant", icon: BrainCircuit },
   { href: "/alerts", label: "Alerts", icon: Bell },
@@ -52,7 +55,7 @@ export function Sidebar({ role }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 py-4 space-y-1 px-2">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label, icon: Icon, badge }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
@@ -68,7 +71,16 @@ export function Sidebar({ role }: SidebarProps) {
               title={collapsed ? label : undefined}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {!collapsed && label}
+              {!collapsed && (
+                <>
+                  <span className="flex-1">{label}</span>
+                  {badge && (
+                    <span className="ml-auto rounded px-1.5 py-0.5 text-[9px] font-bold bg-blue-500 text-white leading-none">
+                      {badge}
+                    </span>
+                  )}
+                </>
+              )}
             </Link>
           );
         })}
