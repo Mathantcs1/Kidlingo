@@ -8,18 +8,78 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum Role { ADMIN TRADER VIEWER }
-enum AiProvider { CLAUDE OPENAI }
-enum TradeDirection { LONG SHORT }
-enum TradeStatus { OPEN CLOSED }
-enum TradeType  { EQUITY OPTIONS }
-enum OptionType { CALL PUT }
-enum PlanStatus { PENDING TRIGGERED EXPIRED CANCELLED }
-enum AlertType { ENTRY_HIT EXIT_HIT STOP_HIT PRICE_ABOVE PRICE_BELOW }
-enum AlertStatus { ACTIVE TRIGGERED DISMISSED }
-enum SubscriptionPlan { FREE BASIC PRO }
-enum SubscriptionStatus { ACTIVE CANCELLED PAST_DUE TRIALING }
-enum DropdownCategory { STRATEGY_TAG INSTRUMENT PSYCHOLOGY_TAG TRADE_SETUP SESSION_TYPE }
+enum Role {
+  ADMIN
+  TRADER
+  VIEWER
+}
+
+enum AiProvider {
+  CLAUDE
+  OPENAI
+}
+
+enum TradeDirection {
+  LONG
+  SHORT
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
+}
+
+enum TradeType {
+  EQUITY
+  OPTIONS
+}
+
+enum OptionType {
+  CALL
+  PUT
+}
+
+enum PlanStatus {
+  PENDING
+  TRIGGERED
+  EXPIRED
+  CANCELLED
+}
+
+enum AlertType {
+  ENTRY_HIT
+  EXIT_HIT
+  STOP_HIT
+  PRICE_ABOVE
+  PRICE_BELOW
+}
+
+enum AlertStatus {
+  ACTIVE
+  TRIGGERED
+  DISMISSED
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+enum DropdownCategory {
+  STRATEGY_TAG
+  INSTRUMENT
+  PSYCHOLOGY_TAG
+  TRADE_SETUP
+  SESSION_TYPE
+}
 
 model User {
   id            String     @id @default(cuid())
