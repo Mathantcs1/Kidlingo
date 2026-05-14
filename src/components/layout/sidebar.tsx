@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { HelpDialog } from "@/components/layout/help-dialog";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -102,8 +103,9 @@ export function Sidebar({ role }: SidebarProps) {
         )}
       </nav>
 
-      {/* Settings at bottom */}
-      <div className="border-t border-slate-700 py-3 px-2">
+      {/* Bottom: Help + Settings */}
+      <div className="border-t border-slate-700 py-3 px-2 space-y-1">
+        <HelpDialog role={role} collapsed={collapsed} />
         <Link
           href="/settings"
           className={cn(

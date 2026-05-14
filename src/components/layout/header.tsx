@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, LogOut, Settings, Menu,
   LayoutDashboard, LineChart, BarChart2, BrainCircuit,
   CalendarCheck, Bell, ShieldCheck, TrendingUp } from "lucide-react";
+import { HelpDialog } from "@/components/layout/help-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +79,8 @@ export function Header({ user }: HeaderProps) {
                   </Link>
                 </>
               )}
-              <div className="mt-4 border-t border-slate-700 pt-3">
+              <div className="mt-4 border-t border-slate-700 pt-3 space-y-1">
+                <HelpDialog role={user.role} />
                 <Link href="/settings"
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
