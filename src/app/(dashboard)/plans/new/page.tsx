@@ -14,7 +14,7 @@ export default async function NewPlanPage() {
   });
 
   return (
-    <div className="max-w-xl mx-auto space-y-4">
+    <div className="max-w-6xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold">New Trade Plan</h1>
       <PlanForm dropdownValues={dropdownValues} />
     </div>

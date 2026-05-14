@@ -14,6 +14,8 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
+import { InstrumentSearch } from "@/components/trades/instrument-search";
+import { CandlestickChart } from "@/components/charts/candlestick-chart";
 
 type FormData = z.infer<typeof tradePlanSchema>;
 
@@ -24,6 +26,8 @@ interface PlanFormProps {
 export function PlanForm({ dropdownValues }: PlanFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState("");
+
   const byCategory = (cat: string) => dropdownValues.filter((v) => v.category === cat);
   const getDefault = (cat: string) => byCategory(cat).find((v) => v.isDefault)?.value ?? "";
 
@@ -41,10 +45,29 @@ export function PlanForm({ dropdownValues }: PlanFormProps) {
   const entryPrice = watch("entryPrice");
   const stopLoss = watch("stopLoss");
   const takeProfit = watch("takeProfit");
+  const direction = watch("direction") ?? "LONG";
 
   const rr = entryPrice && stopLoss && takeProfit
     ? ((Number(takeProfit) - Number(entryPrice)) / (Number(entryPrice) - Number(stopLoss)))
     : null;
+
+  // Price level lines passed to the chart
+  const priceLevels = [
+    entryPrice && { price: Number(entryPrice), label: "Entry", color: "#3b82f6" },
+    stopLoss && { price: Number(stopLoss), label: "SL", color: "#ef4444", dash: true },
+    takeProfit && { price: Number(takeProfit), label: "TP", color: "#10b981", dash: true },
+  ].filter(Boolean) as { price: number; label: string; color: string; dash?: boolean }[];
+
+  function handleInstrumentChange(symbol: string) {
+    setSelectedSymbol(symbol);
+    setValue("instrument", symbol);
+  }
+
+  function handlePriceLoaded(price: number | null) {
+    if (price != null && !entryPrice) {
+      setValue("entryPrice", price as unknown as number);
+    }
+  }
 
   async function onSubmit(data: FormData) {
     setLoading(true);
@@ -64,81 +87,102 @@ export function PlanForm({ dropdownValues }: PlanFormProps) {
     router.refresh();
   }
 
+  const showChart = Boolean(selectedSymbol);
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {rr !== null && !isNaN(rr) && rr > 0 && (
-        <Card className="border-blue-500/30 bg-blue-500/5">
-          <CardContent className="py-2 px-4 text-sm">
-            Risk/Reward: <span className="font-bold text-blue-400">{rr.toFixed(2)}R</span>
+    <div className={showChart ? "grid grid-cols-1 xl:grid-cols-2 gap-6 items-start" : ""}>
+      {/* Left: form */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {rr !== null && !isNaN(rr) && rr > 0 && (
+          <Card className="border-blue-500/30 bg-blue-500/5">
+            <CardContent className="py-2 px-4 text-sm">
+              Risk/Reward: <span className="font-bold text-blue-400">{rr.toFixed(2)}R</span>
+              {direction === "SHORT" && (rr < 0) && (
+                <span className="ml-2 text-xs text-muted-foreground">(check direction vs levels)</span>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader><CardTitle className="text-sm">Plan Details</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Date *</Label>
+              <Input type="date" {...register("date")} />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Instrument *</Label>
+              <InstrumentSearch
+                value={selectedSymbol}
+                onChange={handleInstrumentChange}
+                onPriceLoaded={handlePriceLoaded}
+              />
+              {errors.instrument && (
+                <p className="text-xs text-destructive">{errors.instrument.message}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Direction *</Label>
+              <Select defaultValue="LONG" onValueChange={(v) => setValue("direction", v as "LONG" | "SHORT")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LONG">🟢 Long</SelectItem>
+                  <SelectItem value="SHORT">🔴 Short</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Entry Price *</Label>
+              <Input type="number" step="any" {...register("entryPrice")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Stop Loss *</Label>
+              <Input type="number" step="any" {...register("stopLoss")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Take Profit *</Label>
+              <Input type="number" step="any" {...register("takeProfit")} />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Rationale</Label>
+              <Textarea placeholder="Why are you taking this trade? What setup do you see?" {...register("rationale")} rows={3} />
+            </div>
+            <div className="col-span-2 flex items-center justify-between">
+              <div>
+                <Label>Enable Alerts</Label>
+                <p className="text-xs text-muted-foreground">Get notified when price hits entry, stop, or target</p>
+              </div>
+              <Switch
+                checked={alertsEnabled}
+                onCheckedChange={(v) => setValue("alertsEnabled", v)}
+              />
+            </div>
           </CardContent>
         </Card>
+
+        <div className="flex gap-3 justify-end">
+          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+          <Button type="submit" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Plan
+          </Button>
+        </div>
+      </form>
+
+      {/* Right: candlestick chart */}
+      {showChart && (
+        <div className="space-y-2">
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-sm font-semibold">{selectedSymbol}</h2>
+            <span className="text-xs text-muted-foreground">Price Chart</span>
+          </div>
+          <CandlestickChart
+            symbol={selectedSymbol}
+            priceLevels={priceLevels}
+          />
+        </div>
       )}
-
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Plan Details</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label>Date *</Label>
-            <Input type="date" {...register("date")} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Instrument *</Label>
-            <Select defaultValue={getDefault("INSTRUMENT")} onValueChange={(v) => setValue("instrument", v)}>
-              <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-              <SelectContent>
-                {byCategory("INSTRUMENT").map((v) => (
-                  <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input placeholder="Or type symbol" {...register("instrument")} className="mt-1 text-xs" />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Direction *</Label>
-            <Select defaultValue="LONG" onValueChange={(v) => setValue("direction", v as "LONG" | "SHORT")}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LONG">🟢 Long</SelectItem>
-                <SelectItem value="SHORT">🔴 Short</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Entry Price *</Label>
-            <Input type="number" step="any" {...register("entryPrice")} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Stop Loss *</Label>
-            <Input type="number" step="any" {...register("stopLoss")} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Take Profit *</Label>
-            <Input type="number" step="any" {...register("takeProfit")} />
-          </div>
-          <div className="col-span-2 space-y-1.5">
-            <Label>Rationale</Label>
-            <Textarea placeholder="Why are you taking this trade? What setup do you see?" {...register("rationale")} rows={3} />
-          </div>
-          <div className="col-span-2 flex items-center justify-between">
-            <div>
-              <Label>Enable Alerts</Label>
-              <p className="text-xs text-muted-foreground">Get notified when price hits entry, stop, or target</p>
-            </div>
-            <Switch
-              checked={alertsEnabled}
-              onCheckedChange={(v) => setValue("alertsEnabled", v)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex gap-3 justify-end">
-        <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-        <Button type="submit" disabled={loading}>
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Create Plan
-        </Button>
-      </div>
-    </form>
+    </div>
   );
 }
