@@ -1,12 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
-
-function getAnthropic() {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? "" });
-}
-function getOpenAI() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" });
-}
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+function getAnthropic() { const A = require("@anthropic-ai/sdk"); return new A.default({ apiKey: process.env.ANTHROPIC_API_KEY ?? "no-key" }); }
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+function getOpenAI() { const O = require("openai"); return new O.default({ apiKey: process.env.OPENAI_API_KEY ?? "no-key" }); }
 
 export type AiProvider = "CLAUDE" | "OPENAI";
 
