@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
 import { InstrumentSearch } from "@/components/trades/instrument-search";
@@ -26,7 +26,12 @@ interface PlanFormProps {
 export function PlanForm({ dropdownValues }: PlanFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  // selectedSymbol tracks the raw input; confirmedSymbol tracks what's been
+  // validated via the dropdown (triggers the chart).
   const [selectedSymbol, setSelectedSymbol] = useState("");
+  const [confirmedSymbol, setConfirmedSymbol] = useState("");
+  const selectedSymbolRef = useRef("");
+  const chartRef = useRef<HTMLDivElement>(null);
 
   const byCategory = (cat: string) => dropdownValues.filter((v) => v.category === cat);
   const getDefault = (cat: string) => byCategory(cat).find((v) => v.isDefault)?.value ?? "";
@@ -45,13 +50,12 @@ export function PlanForm({ dropdownValues }: PlanFormProps) {
   const entryPrice = watch("entryPrice");
   const stopLoss = watch("stopLoss");
   const takeProfit = watch("takeProfit");
-  const direction = watch("direction") ?? "LONG";
 
-  const rr = entryPrice && stopLoss && takeProfit
-    ? ((Number(takeProfit) - Number(entryPrice)) / (Number(entryPrice) - Number(stopLoss)))
-    : null;
+  const rr =
+    entryPrice && stopLoss && takeProfit
+      ? (Number(takeProfit) - Number(entryPrice)) / (Number(entryPrice) - Number(stopLoss))
+      : null;
 
-  // Price level lines passed to the chart
   const priceLevels = [
     entryPrice && { price: Number(entryPrice), label: "Entry", color: "#3b82f6" },
     stopLoss && { price: Number(stopLoss), label: "SL", color: "#ef4444", dash: true },
@@ -59,11 +63,21 @@ export function PlanForm({ dropdownValues }: PlanFormProps) {
   ].filter(Boolean) as { price: number; label: string; color: string; dash?: boolean }[];
 
   function handleInstrumentChange(symbol: string) {
+    selectedSymbolRef.current = symbol;
     setSelectedSymbol(symbol);
     setValue("instrument", symbol);
   }
 
   function handlePriceLoaded(price: number | null) {
+    // Symbol was confirmed via dropdown — show the chart now
+    const sym = selectedSymbolRef.current;
+    if (sym) {
+      setConfirmedSymbol(sym);
+      // Scroll chart into view on narrow screens where it's below the form
+      requestAnimationFrame(() => {
+        chartRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    }
     if (price != null && !entryPrice) {
       setValue("entryPrice", price as unknown as number);
     }
@@ -87,19 +101,14 @@ export function PlanForm({ dropdownValues }: PlanFormProps) {
     router.refresh();
   }
 
-  const showChart = Boolean(selectedSymbol);
-
   return (
-    <div className={showChart ? "grid grid-cols-1 xl:grid-cols-2 gap-6 items-start" : ""}>
+    <div className={confirmedSymbol ? "grid grid-cols-1 lg:grid-cols-2 gap-6 items-start" : ""}>
       {/* Left: form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {rr !== null && !isNaN(rr) && rr > 0 && (
           <Card className="border-blue-500/30 bg-blue-500/5">
             <CardContent className="py-2 px-4 text-sm">
               Risk/Reward: <span className="font-bold text-blue-400">{rr.toFixed(2)}R</span>
-              {direction === "SHORT" && (rr < 0) && (
-                <span className="ml-2 text-xs text-muted-foreground">(check direction vs levels)</span>
-              )}
             </CardContent>
           </Card>
         )}
@@ -146,12 +155,18 @@ export function PlanForm({ dropdownValues }: PlanFormProps) {
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Rationale</Label>
-              <Textarea placeholder="Why are you taking this trade? What setup do you see?" {...register("rationale")} rows={3} />
+              <Textarea
+                placeholder="Why are you taking this trade? What setup do you see?"
+                {...register("rationale")}
+                rows={3}
+              />
             </div>
             <div className="col-span-2 flex items-center justify-between">
               <div>
                 <Label>Enable Alerts</Label>
-                <p className="text-xs text-muted-foreground">Get notified when price hits entry, stop, or target</p>
+                <p className="text-xs text-muted-foreground">
+                  Get notified when price hits entry, stop, or target
+                </p>
               </div>
               <Switch
                 checked={alertsEnabled}
@@ -170,17 +185,14 @@ export function PlanForm({ dropdownValues }: PlanFormProps) {
         </div>
       </form>
 
-      {/* Right: candlestick chart */}
-      {showChart && (
-        <div className="space-y-2">
+      {/* Right (or below on small screens): candlestick chart */}
+      {confirmedSymbol && (
+        <div ref={chartRef} className="space-y-2">
           <div className="flex items-baseline gap-2">
-            <h2 className="text-sm font-semibold">{selectedSymbol}</h2>
+            <h2 className="text-sm font-semibold">{confirmedSymbol}</h2>
             <span className="text-xs text-muted-foreground">Price Chart</span>
           </div>
-          <CandlestickChart
-            symbol={selectedSymbol}
-            priceLevels={priceLevels}
-          />
+          <CandlestickChart symbol={confirmedSymbol} priceLevels={priceLevels} />
         </div>
       )}
     </div>
