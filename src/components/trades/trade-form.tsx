@@ -10,22 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, TrendingUp, TrendingDown } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency, cn, toDecimal } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { calculatePnl, calculateRMultiple } from "@/lib/calculations";
+import { InstrumentSearch } from "./instrument-search";
 
 type FormData = z.infer<typeof tradeSchema>;
 
 interface DropdownValue {
-  id: string;
-  category: string;
-  value: string;
-  label: string;
-  color: string | null;
-  isDefault: boolean;
+  id: string; category: string; value: string; label: string; color: string | null; isDefault: boolean;
 }
 
 interface TradeFormProps {
@@ -38,6 +35,26 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [tradeType, setTradeType] = useState<"EQUITY" | "OPTIONS">(
+    (existingTrade as Record<string, unknown>)?.tradeType as "EQUITY" | "OPTIONS" ?? "EQUITY"
+  );
+  const [optionType, setOptionType] = useState<"CALL" | "PUT">(
+    (existingTrade as Record<string, unknown>)?.optionType as "CALL" | "PUT" ?? "CALL"
+  );
+  const [numContracts, setNumContracts] = useState<number>(
+    ((existingTrade as Record<string, unknown>)?.numContracts as number) ?? 1
+  );
+  const [strikePrice, setStrikePrice] = useState<string>(
+    String((existingTrade as Record<string, unknown>)?.strikePrice ?? "")
+  );
+  const [expirationDate, setExpirationDate] = useState<string>(
+    (existingTrade as Record<string, unknown>)?.expirationDate
+      ? new Date((existingTrade as Record<string, unknown>).expirationDate as string).toISOString().slice(0, 10)
+      : ""
+  );
+  const [underlyingPrice, setUnderlyingPrice] = useState<string>(
+    String((existingTrade as Record<string, unknown>)?.underlyingPrice ?? "")
+  );
 
   const byCategory = (cat: string) => dropdownValues.filter((v) => v.category === cat);
   const getDefault = (cat: string) => byCategory(cat).find((v) => v.isDefault)?.value ?? "";
@@ -56,6 +73,7 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
   });
 
   const watchedValues = useWatch({ control });
+
   const livePnl = (() => {
     const { direction, entryPrice, exitPrice, quantity, commission } = watchedValues;
     if (!direction || !entryPrice || !exitPrice || !quantity) return null;
@@ -63,34 +81,42 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
   })();
 
   const liveRR = (() => {
-    const { direction, entryPrice, stopLoss, exitPrice, quantity } = watchedValues;
+    const { direction, entryPrice, stopLoss, quantity } = watchedValues;
     if (!livePnl || !stopLoss || !entryPrice || !quantity) return null;
     return calculateRMultiple(livePnl, Number(entryPrice), Number(stopLoss), Number(quantity));
   })();
 
+  const totalOptionsCost = tradeType === "OPTIONS" && watchedValues.entryPrice && numContracts
+    ? Number(watchedValues.entryPrice) * numContracts * 100
+    : null;
+
   async function onSubmit(data: FormData) {
     setLoading(true);
     setError("");
+
+    const payload: Record<string, unknown> = {
+      ...data,
+      tradeType,
+      ...(tradeType === "OPTIONS" && {
+        optionType,
+        strikePrice: strikePrice ? Number(strikePrice) : undefined,
+        expirationDate: expirationDate ? new Date(expirationDate).toISOString() : undefined,
+        numContracts,
+        underlyingPrice: underlyingPrice ? Number(underlyingPrice) : undefined,
+        quantity: numContracts * 100,
+      }),
+    };
+
     const url = existingTrade ? `/api/trades/${existingTrade.id}` : "/api/trades";
     const method = existingTrade ? "PUT" : "POST";
-
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const json = await res.json();
     setLoading(false);
 
     if (!res.ok) {
-      if (json.upgrade) {
-        setError(json.error);
-        return;
-      }
-      setError(json.error ?? "Failed to save trade");
+      setError(json.upgrade ? json.error : (json.error ?? "Failed to save trade"));
       return;
     }
-
     toast({ title: existingTrade ? "Trade updated" : "Trade added" });
     router.push("/trades");
     router.refresh();
@@ -100,13 +126,14 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
 
-      {/* Live preview */}
+      {/* Live P&L preview */}
       {livePnl !== null && (
         <Card className={cn("border-2", livePnl >= 0 ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5")}>
           <CardContent className="flex items-center justify-between py-3 px-4">
             <div className="flex items-center gap-2">
               {livePnl >= 0 ? <TrendingUp className="h-4 w-4 text-emerald-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
               <span className="text-sm font-medium">Estimated P&L</span>
+              {tradeType === "OPTIONS" && <span className="text-xs text-muted-foreground">(premium × 100 per contract)</span>}
             </div>
             <div className="flex items-center gap-4">
               <span className={cn("text-lg font-bold", livePnl >= 0 ? "text-emerald-500" : "text-red-500")}>
@@ -122,83 +149,206 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
         </Card>
       )}
 
+      {/* Trade Type Toggle */}
       <Card>
-        <CardHeader><CardTitle className="text-sm">Trade Details</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="instrument">Instrument *</Label>
-            <Select defaultValue={getDefault("INSTRUMENT")} onValueChange={(v) => setValue("instrument", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select or type..." />
-              </SelectTrigger>
-              <SelectContent>
-                {byCategory("INSTRUMENT").map((v) => (
-                  <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input placeholder="Or type symbol (e.g. AAPL)" {...register("instrument")} className="mt-1 text-xs" />
-            {errors.instrument && <p className="text-xs text-red-400">{errors.instrument.message}</p>}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Direction *</Label>
-            <Select defaultValue="LONG" onValueChange={(v) => setValue("direction", v as "LONG" | "SHORT")}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LONG">🟢 Long</SelectItem>
-                <SelectItem value="SHORT">🔴 Short</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Entry Price *</Label>
-            <Input type="number" step="any" placeholder="0.00" {...register("entryPrice")} />
-            {errors.entryPrice && <p className="text-xs text-red-400">{errors.entryPrice.message}</p>}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Exit Price</Label>
-            <Input type="number" step="any" placeholder="0.00 (leave empty if open)" {...register("exitPrice")} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Quantity *</Label>
-            <Input type="number" step="any" placeholder="0" {...register("quantity")} />
-            {errors.quantity && <p className="text-xs text-red-400">{errors.quantity.message}</p>}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Commission</Label>
-            <Input type="number" step="any" placeholder="0.00" {...register("commission")} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Entry Date *</Label>
-            <Input type="datetime-local" {...register("entryDate")} />
-            {errors.entryDate && <p className="text-xs text-red-400">{errors.entryDate.message}</p>}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Exit Date</Label>
-            <Input type="datetime-local" {...register("exitDate")} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Stop Loss</Label>
-            <Input type="number" step="any" placeholder="0.00" {...register("stopLoss")} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Take Profit</Label>
-            <Input type="number" step="any" placeholder="0.00" {...register("takeProfit")} />
+        <CardHeader className="pb-3"><CardTitle className="text-sm">Trade Type</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex rounded-lg border border-border overflow-hidden w-fit">
+            {(["EQUITY", "OPTIONS"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTradeType(t)}
+                className={cn(
+                  "px-6 py-2 text-sm font-medium transition-colors",
+                  tradeType === t
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {t === "EQUITY" ? "📈 Equity / ETF" : "⚡ Options"}
+              </button>
+            ))}
           </div>
         </CardContent>
       </Card>
 
+      {/* Core trade details */}
+      <Card>
+        <CardHeader><CardTitle className="text-sm">Trade Details</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          {/* Instrument search */}
+          <div className="space-y-1.5">
+            <Label>Instrument *</Label>
+            <InstrumentSearch
+              value={watchedValues.instrument ?? ""}
+              onChange={(v) => setValue("instrument", v)}
+              onPriceLoaded={(price) => {
+                if (price) {
+                  setUnderlyingPrice(String(price));
+                  if (tradeType === "EQUITY") setValue("entryPrice", price as unknown as string);
+                }
+              }}
+            />
+            {errors.instrument && <p className="text-xs text-red-400">{errors.instrument.message}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Direction *</Label>
+              <Select defaultValue={existingTrade?.direction ?? "LONG"} onValueChange={(v) => setValue("direction", v as "LONG" | "SHORT")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LONG">{tradeType === "OPTIONS" ? "🟢 Buy (Long)" : "🟢 Long"}</SelectItem>
+                  <SelectItem value="SHORT">{tradeType === "OPTIONS" ? "🔴 Sell/Write (Short)" : "🔴 Short"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Entry Date *</Label>
+              <Input type="datetime-local" {...register("entryDate")} />
+              {errors.entryDate && <p className="text-xs text-red-400">{errors.entryDate.message}</p>}
+            </div>
+
+            {tradeType === "EQUITY" ? (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Entry Price *</Label>
+                  <Input type="number" step="any" placeholder="0.00" {...register("entryPrice")} />
+                  {errors.entryPrice && <p className="text-xs text-red-400">{errors.entryPrice.message}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Exit Price</Label>
+                  <Input type="number" step="any" placeholder="Leave empty if open" {...register("exitPrice")} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Quantity *</Label>
+                  <Input type="number" step="any" placeholder="Shares" {...register("quantity")} />
+                  {errors.quantity && <p className="text-xs text-red-400">{errors.quantity.message}</p>}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Entry Premium <span className="text-xs text-muted-foreground">(per share)</span> *</Label>
+                  <Input type="number" step="any" placeholder="e.g. 3.50" {...register("entryPrice")} />
+                  {errors.entryPrice && <p className="text-xs text-red-400">{errors.entryPrice.message}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Exit Premium <span className="text-xs text-muted-foreground">(per share)</span></Label>
+                  <Input type="number" step="any" placeholder="Leave empty if open" {...register("exitPrice")} />
+                </div>
+              </>
+            )}
+
+            <div className="space-y-1.5">
+              <Label>Stop Loss</Label>
+              <Input type="number" step="any" placeholder="0.00" {...register("stopLoss")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Take Profit</Label>
+              <Input type="number" step="any" placeholder="0.00" {...register("takeProfit")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Exit Date</Label>
+              <Input type="datetime-local" {...register("exitDate")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Commission</Label>
+              <Input type="number" step="any" placeholder="0.00" {...register("commission")} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Options contract details */}
+      {tradeType === "OPTIONS" && (
+        <Card className="border-purple-500/30 bg-purple-500/5">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Badge variant="outline" className="text-purple-400 border-purple-500/40">OPTIONS</Badge>
+              Contract Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Option Type */}
+            <div className="space-y-1.5">
+              <Label>Option Type *</Label>
+              <div className="flex rounded-lg border border-border overflow-hidden w-fit">
+                {(["CALL", "PUT"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setOptionType(t)}
+                    className={cn(
+                      "px-5 py-2 text-sm font-medium transition-colors",
+                      optionType === t
+                        ? t === "CALL" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+                        : "bg-background text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    {t === "CALL" ? "📈 CALL" : "📉 PUT"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Strike Price *</Label>
+                <Input
+                  type="number" step="any" placeholder="e.g. 150.00"
+                  value={strikePrice}
+                  onChange={(e) => setStrikePrice(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Expiration Date *</Label>
+                <Input
+                  type="date"
+                  value={expirationDate}
+                  onChange={(e) => setExpirationDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Number of Contracts *</Label>
+                <Input
+                  type="number" min="1" placeholder="1"
+                  value={numContracts}
+                  onChange={(e) => {
+                    const n = Math.max(1, parseInt(e.target.value) || 1);
+                    setNumContracts(n);
+                    setValue("quantity", (n * 100) as unknown as string);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">1 contract = 100 shares</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Underlying Price</Label>
+                <Input
+                  type="number" step="any" placeholder="Stock price at entry"
+                  value={underlyingPrice}
+                  onChange={(e) => setUnderlyingPrice(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Auto-filled from quote</p>
+              </div>
+            </div>
+
+            {/* Total cost summary */}
+            {totalOptionsCost !== null && (
+              <div className="rounded-md bg-muted p-3 flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total Contract Value</span>
+                <span className="font-bold">
+                  {numContracts} contract{numContracts !== 1 ? "s" : ""} × {Number(watchedValues.entryPrice).toFixed(2)} × 100 = <span className="text-primary">${totalOptionsCost.toFixed(2)}</span>
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Categorization */}
       <Card>
         <CardHeader><CardTitle className="text-sm">Categorization</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-3 gap-4">
@@ -213,7 +363,6 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-1.5">
             <Label>Session Type</Label>
             <Select defaultValue={getDefault("SESSION_TYPE") || undefined} onValueChange={(v) => setValue("sessionType", v)}>
@@ -225,7 +374,6 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-1.5">
             <Label>Trade Setup</Label>
             <Select defaultValue={getDefault("TRADE_SETUP") || undefined} onValueChange={(v) => setValue("tradeSetup", v)}>
@@ -240,12 +388,13 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
         </CardContent>
       </Card>
 
+      {/* Notes */}
       <Card>
         <CardHeader><CardTitle className="text-sm">Notes & Psychology</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Trade Notes</Label>
-            <Textarea placeholder="What happened? Entry rationale, observations..." rows={4} {...register("notes")} />
+            <Textarea placeholder="Entry rationale, observations..." rows={4} {...register("notes")} />
           </div>
           <div className="space-y-1.5">
             <Label>Psychology</Label>
