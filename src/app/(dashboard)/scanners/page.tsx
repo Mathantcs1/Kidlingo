@@ -20,6 +20,7 @@ interface ScannerResult {
 interface ScannerResponse {
   results: ScannerResult[];
   sectors: string[];
+  usingReal: boolean;
   lastUpdated: string;
 }
 
@@ -184,13 +185,19 @@ export default function ScannersPage() {
       </div>
 
       {/* Info banner */}
-      <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-        <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-        <span>
-          Using simulated data. Connect Polygon.io or Unusual Whales in{" "}
-          <strong>Settings → Integrations</strong> for live market data.
-        </span>
-      </div>
+      {data?.usingReal ? (
+        <div className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+          <span>Live data via <strong>Polygon.io</strong> — prices delayed up to 15 min on free tier.</span>
+        </div>
+      ) : (
+        <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>
+            Using simulated data. Add <strong>POLYGON_API_KEY</strong> to your environment for live market data.
+          </span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-border">

@@ -32,6 +32,7 @@ interface Summary {
 interface UnusualTradesResponse {
   summary: Summary;
   trades: UnusualTrade[];
+  usingReal: boolean;
 }
 
 function IvDistributionChart({ data }: { data: { range: string; count: number }[] }) {
@@ -150,13 +151,17 @@ export default function UnusualTradesPage() {
       </div>
 
       {/* Info banner */}
-      <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-        <Info className="h-4 w-4 mt-0.5 shrink-0" />
-        <span>
-          Showing IV/OI anomalies with simulated data. Connect{" "}
-          <strong>Unusual Whales API</strong> for live unusual options activity and dark pool prints.
-        </span>
-      </div>
+      {data?.usingReal ? (
+        <div className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+          <span>Live options flow from <strong>Yahoo Finance</strong> — scanned NVDA, TSLA, AAPL, AMD, MSTR, SOFI, GME, PLTR, COIN, META.</span>
+        </div>
+      ) : (
+        <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+          <Info className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>Showing IV/OI anomalies with simulated data. Live options data loads automatically when market data is available.</span>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
