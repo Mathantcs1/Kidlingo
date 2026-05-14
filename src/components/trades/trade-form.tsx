@@ -11,9 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TrendingUp, TrendingDown } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Loader2, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ACCOUNT_STORAGE_KEY } from "@/components/accounts/account-selector";
 import { formatCurrency, cn, toDecimal } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { calculatePnl, calculateRMultiple } from "@/lib/calculations";
@@ -31,10 +32,15 @@ interface TradeFormProps {
   existingTrade?: FormData & { id: string };
 }
 
+interface TradingAccount { id: string; name: string; broker: string | null; color: string; isDefault: boolean; }
+
 export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [accounts, setAccounts] = useState<TradingAccount[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [tradeType, setTradeType] = useState<"EQUITY" | "OPTIONS">(
     (existingTrade as Record<string, unknown>)?.tradeType as "EQUITY" | "OPTIONS" ?? "EQUITY"
   );
@@ -55,6 +61,27 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
   const [underlyingPrice, setUnderlyingPrice] = useState<string>(
     String((existingTrade as Record<string, unknown>)?.underlyingPrice ?? "")
   );
+
+  // Load accounts and set default
+  useEffect(() => {
+    fetch("/api/accounts").then((r) => r.json()).then((data: TradingAccount[]) => {
+      if (!Array.isArray(data)) return;
+      setAccounts(data);
+      if (existingTrade) {
+        const et = existingTrade as Record<string, unknown>;
+        setSelectedAccountId((et.tradingAccountId as string) ?? "");
+      } else {
+        // Priority: URL param > localStorage > default account
+        const urlAccount = searchParams.get("account");
+        const storedAccount = localStorage.getItem(ACCOUNT_STORAGE_KEY);
+        const defaultAccount = data.find((a) => a.isDefault);
+        const resolved = urlAccount ?? storedAccount ?? defaultAccount?.id ?? "";
+        setSelectedAccountId(resolved);
+        setValue("tradingAccountId", resolved || null);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const byCategory = (cat: string) => dropdownValues.filter((v) => v.category === cat);
   const getDefault = (cat: string) => byCategory(cat).find((v) => v.isDefault)?.value ?? "";
@@ -96,6 +123,7 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
 
     const payload: Record<string, unknown> = {
       ...data,
+      tradingAccountId: selectedAccountId || null,
       tradeType,
       ...(tradeType === "OPTIONS" && {
         optionType,
@@ -177,6 +205,47 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
       <Card>
         <CardHeader><CardTitle className="text-sm">Trade Details</CardTitle></CardHeader>
         <CardContent className="space-y-4">
+          {/* Account selector */}
+          {accounts.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Wallet className="h-3.5 w-3.5" />
+                Trading Account
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedAccountId(""); setValue("tradingAccountId", null); }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                    !selectedAccountId
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-muted-foreground"
+                  }`}
+                >
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                  None
+                </button>
+                {accounts.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => { setSelectedAccountId(a.id); setValue("tradingAccountId", a.id); }}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                      selectedAccountId === a.id
+                        ? "border-2 font-medium"
+                        : "border-border text-muted-foreground hover:border-muted-foreground"
+                    }`}
+                    style={selectedAccountId === a.id ? { borderColor: a.color, color: a.color, background: `${a.color}15` } : {}}
+                  >
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: a.color }} />
+                    {a.name}
+                    {a.broker && <span className="text-xs opacity-60">· {a.broker}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Instrument search */}
           <div className="space-y-1.5">
             <Label>Instrument *</Label>

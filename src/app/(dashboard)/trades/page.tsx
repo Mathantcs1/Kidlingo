@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { TradeTable } from "@/components/trades/trade-table";
 import { ImportDialog } from "@/components/trades/import-dialog";
-import { AccountSelector } from "@/components/accounts/account-selector";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -65,17 +64,14 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
           <h1 className="text-2xl font-bold">Trades</h1>
           <p className="text-muted-foreground text-sm">{total} total trades</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <AccountSelector />
-          {session.user.role !== "VIEWER" && (
-            <>
-              <ImportDialog />
-              <Button asChild size="sm">
-                <Link href="/trades/new"><Plus className="mr-2 h-4 w-4" />New Trade</Link>
-              </Button>
-            </>
-          )}
-        </div>
+        {session.user.role !== "VIEWER" && (
+          <div className="flex items-center gap-2">
+            <ImportDialog />
+            <Button asChild size="sm">
+              <Link href="/trades/new"><Plus className="mr-2 h-4 w-4" />New Trade</Link>
+            </Button>
+          </div>
+        )}
       </div>
       <TradeTable trades={serialized} total={total} page={page} pageSize={pageSize} role={session.user.role} accounts={accounts} />
     </div>

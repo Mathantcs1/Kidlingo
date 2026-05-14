@@ -1,10 +1,12 @@
 "use client";
+import { Suspense } from "react";
 import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, LogOut, Settings, Menu,
   LayoutDashboard, LineChart, BarChart2, BrainCircuit,
   CalendarCheck, Bell, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 import { HelpDialog } from "@/components/layout/help-dialog";
+import { AccountSelector } from "@/components/accounts/account-selector";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,9 @@ const navItems = [
   { href: "/alerts", label: "Alerts", icon: Bell },
 ];
 
+// Pages where the account selector is shown in header (filters data)
+const ACCOUNT_FILTER_PATHS = ["/dashboard", "/trades", "/reports", "/ai"];
+
 interface HeaderProps {
   user: { name?: string | null; email?: string | null; image?: string | null; role: string; aiProvider: string };
 }
@@ -33,10 +38,14 @@ export function Header({ user }: HeaderProps) {
   const pathname = usePathname();
   const initials = user.name?.split(" ").map((n) => n[0]).join("").toUpperCase() ?? "U";
 
+  const showAccountFilter = ACCOUNT_FILTER_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border px-4 md:px-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-      {/* Mobile hamburger + logo */}
-      <div className="flex items-center gap-3">
+    <header className="flex h-14 items-center justify-between border-b border-border px-4 md:px-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 gap-3">
+      {/* Left: Mobile hamburger + role badge */}
+      <div className="flex items-center gap-2 shrink-0">
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
@@ -95,20 +104,22 @@ export function Header({ user }: HeaderProps) {
           </SheetContent>
         </Sheet>
 
-        {/* Desktop: role badge */}
-        <div className="hidden md:flex items-center gap-2">
-          {user.role === "ADMIN" && <Badge variant="secondary" className="text-xs">ADMIN</Badge>}
-          {user.role === "VIEWER" && <Badge variant="outline" className="text-xs">READ ONLY</Badge>}
-        </div>
-
-        {/* Mobile: role badge next to hamburger */}
-        <div className="flex md:hidden items-center gap-2">
-          {user.role === "ADMIN" && <Badge variant="secondary" className="text-xs">ADMIN</Badge>}
-        </div>
+        {user.role === "ADMIN" && <Badge variant="secondary" className="text-xs hidden md:inline-flex">ADMIN</Badge>}
+        {user.role === "VIEWER" && <Badge variant="outline" className="text-xs hidden md:inline-flex">READ ONLY</Badge>}
+        {user.role === "ADMIN" && <Badge variant="secondary" className="text-xs md:hidden">ADMIN</Badge>}
       </div>
 
-      {/* Right side actions */}
-      <div className="flex items-center gap-2">
+      {/* Centre: Account selector — shown on data pages */}
+      {showAccountFilter && (
+        <div className="flex-1 flex justify-start">
+          <Suspense fallback={<div className="h-8 w-36 rounded-md bg-muted animate-pulse" />}>
+            <AccountSelector />
+          </Suspense>
+        </div>
+      )}
+
+      {/* Right: theme + avatar */}
+      <div className="flex items-center gap-2 shrink-0 ml-auto">
         <Button variant="ghost" size="icon"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="h-8 w-8">

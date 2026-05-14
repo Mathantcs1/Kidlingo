@@ -9,7 +9,6 @@ import { DailyPnlChart } from "@/components/dashboard/daily-pnl-chart";
 import { CalendarHeatmap } from "@/components/dashboard/calendar-heatmap";
 import { InstrumentDonut } from "@/components/dashboard/instrument-donut";
 import { BestWorstTrades } from "@/components/dashboard/best-worst-trades";
-import { AccountSelector } from "@/components/accounts/account-selector";
 
 export const dynamic = "force-dynamic";
 
@@ -44,12 +43,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Your trading performance overview</p>
-        </div>
-        <AccountSelector />
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground text-sm">Your trading performance overview</p>
       </div>
 
       <StatsCards stats={stats} />

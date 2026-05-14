@@ -2,13 +2,13 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { Wallet, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
-interface Account {
+export interface TradingAccount {
   id: string;
   name: string;
   broker: string | null;
@@ -18,11 +18,13 @@ interface Account {
   tradeCount: number;
 }
 
-export function AccountSelector() {
+export const ACCOUNT_STORAGE_KEY = "tj_selected_account";
+
+export function AccountSelector({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const currentId = searchParams.get("account") ?? "all";
 
   const load = useCallback(() => {
@@ -35,8 +37,13 @@ export function AccountSelector() {
 
   function select(id: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (id === "all") params.delete("account");
-    else params.set("account", id);
+    if (id === "all") {
+      params.delete("account");
+      localStorage.removeItem(ACCOUNT_STORAGE_KEY);
+    } else {
+      params.set("account", id);
+      localStorage.setItem(ACCOUNT_STORAGE_KEY, id);
+    }
     params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
@@ -46,14 +53,18 @@ export function AccountSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 h-8 text-xs max-w-[180px]"
+        >
           <div
             className="w-2.5 h-2.5 rounded-full shrink-0"
             style={{ background: current?.color ?? "hsl(var(--muted-foreground))" }}
           />
-          <Wallet className="h-3.5 w-3.5" />
-          {current?.name ?? "All Accounts"}
-          <ChevronDown className="h-3 w-3 opacity-50" />
+          <Wallet className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{current?.name ?? (compact ? "All" : "All Accounts")}</span>
+          <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-52">

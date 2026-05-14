@@ -8,8 +8,6 @@ import { Download, TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { formatCurrency, cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { AccountSelector } from "@/components/accounts/account-selector";
-
 export default function ReportsPage() {
   const searchParams = useSearchParams();
   const accountId = searchParams.get("account") ?? "";
@@ -57,12 +55,9 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold">Reports</h1>
           <p className="text-muted-foreground text-sm">Detailed performance analysis</p>
         </div>
-        <div className="flex items-center gap-2">
-          <AccountSelector />
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />Export CSV
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={handleExport}>
+          <Download className="mr-2 h-4 w-4" />Export CSV
+        </Button>
       </div>
 
       <Tabs defaultValue="instrument" onValueChange={(v) => setGroupBy(v === "instrument" ? "instrument" : v === "strategy" ? "strategy" : v === "dayOfWeek" ? "dayOfWeek" : "hour")}>
