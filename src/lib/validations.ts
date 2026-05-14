@@ -33,6 +33,13 @@ export const tradeSchema = z.object({
   takeProfit: z.coerce.number().positive().optional().nullable(),
   commission: z.coerce.number().min(0).optional().nullable(),
   groupId: z.string().optional().nullable(),
+  // Options / trade type fields
+  tradeType: z.enum(["EQUITY", "OPTIONS"]).default("EQUITY"),
+  optionType: z.enum(["CALL", "PUT"]).optional().nullable(),
+  strikePrice: z.coerce.number().positive().optional().nullable(),
+  expirationDate: z.coerce.date().optional().nullable(),
+  numContracts: z.coerce.number().int().positive().optional().nullable(),
+  underlyingPrice: z.coerce.number().positive().optional().nullable(),
 });
 
 export const tradeFilterSchema = z.object({

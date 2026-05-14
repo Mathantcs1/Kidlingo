@@ -29,6 +29,9 @@ enum TradeStatus {
   CLOSED
 }
 
+enum TradeType  { EQUITY OPTIONS }
+enum OptionType { CALL PUT }
+
 enum PlanStatus {
   PENDING
   TRIGGERED
@@ -188,6 +191,12 @@ model Trade {
   stopLoss      Decimal?       @db.Decimal(20, 8)
   takeProfit    Decimal?       @db.Decimal(20, 8)
   commission    Decimal?       @db.Decimal(10, 4)
+  tradeType       TradeType   @default(EQUITY)
+  optionType      OptionType?
+  strikePrice     Decimal?    @db.Decimal(20, 8)
+  expirationDate  DateTime?
+  numContracts    Int?
+  underlyingPrice Decimal?    @db.Decimal(20, 8)
   status        TradeStatus    @default(OPEN)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

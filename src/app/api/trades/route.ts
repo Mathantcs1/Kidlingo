@@ -104,6 +104,12 @@ export async function POST(req: Request) {
       pnl: pnl !== null ? pnl : null,
       rMultiple: rMultiple !== null ? rMultiple : null,
       status,
+      tradeType: data.tradeType ?? "EQUITY",
+      optionType: data.optionType ?? null,
+      strikePrice: data.strikePrice ?? null,
+      expirationDate: data.expirationDate ?? null,
+      numContracts: data.numContracts ?? null,
+      underlyingPrice: data.underlyingPrice ?? null,
     },
   });
 
