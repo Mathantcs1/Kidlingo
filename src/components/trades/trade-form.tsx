@@ -186,7 +186,7 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
               onPriceLoaded={(price) => {
                 if (price) {
                   setUnderlyingPrice(String(price));
-                  if (tradeType === "EQUITY") setValue("entryPrice", price as unknown as string);
+                  if (tradeType === "EQUITY") setValue("entryPrice", price as unknown as number);
                 }
               }}
             />
@@ -319,7 +319,7 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
                   onChange={(e) => {
                     const n = Math.max(1, parseInt(e.target.value) || 1);
                     setNumContracts(n);
-                    setValue("quantity", (n * 100) as unknown as string);
+                    setValue("quantity", (n * 100) as unknown as number);
                   }}
                 />
                 <p className="text-xs text-muted-foreground">1 contract = 100 shares</p>
