@@ -1,4 +1,7 @@
 {
   "buildCommand": "npx prisma generate && npx prisma db push --accept-data-loss && npx tsx prisma/seed.ts && npm run build",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "env": {
+    "PRISMA_GENERATE_SKIP_AUTOINSTALL": "true"
+  }
 }
