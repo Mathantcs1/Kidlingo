@@ -19,103 +19,148 @@ const SECTORS: Record<string, string> = {
   BABA:"Consumer",SNAP:"Technology",UBER:"Consumer",
 };
 
-// ── Yahoo Finance batch quote ─────────────────────────────────────────────────
-interface YahooQuote {
-  symbol: string;
+// ── Yahoo Finance v8 chart (no crumb/cookie needed) ───────────────────────────
+interface V8Meta {
+  symbol?: string;
   shortName?: string;
-  regularMarketPrice?: number;
-  regularMarketChangePercent?: number;
+  regularMarketPrice: number;
+  previousClose: number;
+  regularMarketOpen?: number;
   regularMarketVolume?: number;
   averageDailyVolume10Day?: number;
   marketCap?: number;
-  regularMarketOpen?: number;
-  regularMarketPreviousClose?: number;
 }
 
-async function fetchYahooQuotes(symbols: string[]): Promise<Record<string, YahooQuote>> {
-  const hosts = ["query1.finance.yahoo.com", "query2.finance.yahoo.com"];
+async function fetchYahooV8(symbol: string): Promise<{
+  price: number; changePercent: number; volume: number; relVolume: number;
+  marketCap: number; openPrice: number; prevClose: number;
+  name: string; sparkline: number[];
+} | null> {
+  const hosts = ["query2.finance.yahoo.com", "query1.finance.yahoo.com"];
   for (const host of hosts) {
     try {
-      const url = `https://${host}/v7/finance/quote?symbols=${symbols.join(",")}&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,averageDailyVolume10Day,marketCap,shortName,regularMarketOpen,regularMarketPreviousClose`;
+      const url = `https://${host}/v8/finance/chart/${encodeURIComponent(symbol)}?range=1mo&interval=1wk&includePrePost=false`;
       const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" },
-        next: { revalidate: 60 },
-      });
-      if (!res.ok) continue;
-      const data = await res.json();
-      const result: Record<string, YahooQuote> = {};
-      for (const q of data?.quoteResponse?.result ?? []) {
-        result[q.symbol] = q;
-      }
-      if (Object.keys(result).length > 0) return result;
-    } catch {
-      continue;
-    }
-  }
-  return {};
-}
-
-// ── Yahoo Finance batch sparkline (7 weeks of closes) ─────────────────────────
-async function fetchYahooSpark(symbols: string[]): Promise<Record<string, number[]>> {
-  const hosts = ["query1.finance.yahoo.com", "query2.finance.yahoo.com"];
-  for (const host of hosts) {
-    try {
-      const url = `https://${host}/v7/finance/spark?symbols=${symbols.join(",")}&range=1mo&interval=1wk`;
-      const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" },
+        headers: {
+          "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "application/json, text/plain, */*",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Referer": "https://finance.yahoo.com/",
+          "Origin": "https://finance.yahoo.com",
+        },
         next: { revalidate: 300 },
       });
       if (!res.ok) continue;
       const data = await res.json();
-      const result: Record<string, number[]> = {};
-      for (const item of data?.spark?.result ?? []) {
-        const closes: number[] = item?.response?.[0]?.close ?? [];
-        if (closes.length) result[item.symbol] = closes.slice(-7);
-      }
-      if (Object.keys(result).length > 0) return result;
+      const result = data?.chart?.result?.[0];
+      const meta: V8Meta = result?.meta;
+      if (!meta?.regularMarketPrice) continue;
+
+      const closes: (number | null)[] = result?.indicators?.quote?.[0]?.close ?? [];
+      const sparkline = closes.filter((v): v is number => v !== null && !isNaN(v)).slice(-7);
+
+      const vol = meta.regularMarketVolume ?? 0;
+      const avgVol = meta.averageDailyVolume10Day ?? 0;
+      const relVolume = avgVol > 0 ? parseFloat((vol / avgVol).toFixed(2)) : 1;
+      const changePercent = meta.previousClose > 0
+        ? parseFloat(((meta.regularMarketPrice - meta.previousClose) / meta.previousClose * 100).toFixed(2))
+        : 0;
+
+      return {
+        price: meta.regularMarketPrice,
+        changePercent,
+        volume: parseFloat((vol / 1e6).toFixed(1)),
+        relVolume,
+        marketCap: meta.marketCap ?? 0,
+        openPrice: meta.regularMarketOpen ?? meta.regularMarketPrice,
+        prevClose: meta.previousClose,
+        name: meta.shortName ?? symbol,
+        sparkline,
+      };
     } catch {
       continue;
     }
   }
-  return {};
+  return null;
 }
 
-// ── Twelve Data RSI ────────────────────────────────────────────────────────────
-async function fetchRSI(symbol: string): Promise<number> {
+// ── Twelve Data batch quotes (fallback) ───────────────────────────────────────
+interface TwelveQuote {
+  symbol?: string;
+  name?: string;
+  close?: string;
+  percent_change?: string;
+  volume?: string;
+  average_volume?: string;
+  open?: string;
+  previous_close?: string;
+  status?: string;
+}
+
+async function fetchTwelveDataQuotes(symbols: string[]): Promise<Record<string, TwelveQuote>> {
   const apiKey = process.env.TWELVE_DATA_API_KEY;
-  if (!apiKey) return estimateRSI(symbol);
+  if (!apiKey) return {};
   try {
-    const url = `https://api.twelvedata.com/rsi?symbol=${encodeURIComponent(symbol)}&interval=1day&time_period=14&outputsize=1&apikey=${apiKey}`;
+    const url = `https://api.twelvedata.com/quote?symbol=${symbols.join(",")}&apikey=${apiKey}`;
     const res = await fetch(url, { next: { revalidate: 300 } });
-    if (!res.ok) return estimateRSI(symbol);
+    if (!res.ok) return {};
     const data = await res.json();
-    if (data.status === "error") return estimateRSI(symbol);
-    const v = parseFloat(data.values?.[0]?.rsi ?? "");
-    return isNaN(v) ? estimateRSI(symbol) : parseFloat(v.toFixed(1));
+    // Single symbol returns object directly; multiple returns object keyed by symbol
+    if (symbols.length === 1) {
+      return data?.symbol ? { [data.symbol]: data as TwelveQuote } : {};
+    }
+    const result: Record<string, TwelveQuote> = {};
+    for (const sym of symbols) {
+      if (data[sym]?.symbol) result[sym] = data[sym] as TwelveQuote;
+    }
+    return result;
   } catch {
-    return estimateRSI(symbol);
+    return {};
   }
 }
 
-// Fallback RSI estimate — real change data isn't available so use last known base
+// ── Twelve Data RSI (1hr cache to stay within free-tier 800 credits/day) ──────
 const RSI_SEED: Record<string, number> = {
   NVDA:72,TSLA:58,AAPL:54,AMD:66,META:68,AMZN:65,MSFT:55,GOOGL:58,
   COIN:71,PLTR:74,SOFI:78,MSTR:76,GME:81,AMC:79,MARA:77,RIOT:74,
   BBAI:83,SPCE:80,SOUN:71,CLSK:68,HUT:65,SMCI:62,NFLX:63,BABA:52,
   OKLO:84,RKLB:81,IONQ:79,PATH:76,DJT:28,RIVN:31,LCID:34,BYND:38,PARA:42,
 };
-function estimateRSI(symbol: string): number {
-  return RSI_SEED[symbol] ?? 50;
+
+async function fetchRSI(symbol: string): Promise<number> {
+  const apiKey = process.env.TWELVE_DATA_API_KEY;
+  if (!apiKey) return RSI_SEED[symbol] ?? 50;
+  try {
+    const url = `https://api.twelvedata.com/rsi?symbol=${encodeURIComponent(symbol)}&interval=1day&time_period=14&outputsize=1&apikey=${apiKey}`;
+    const res = await fetch(url, { next: { revalidate: 3600 } }); // 1hr cache
+    if (!res.ok) return RSI_SEED[symbol] ?? 50;
+    const data = await res.json();
+    if (data.status === "error") return RSI_SEED[symbol] ?? 50;
+    const v = parseFloat(data.values?.[0]?.rsi ?? "");
+    return isNaN(v) ? (RSI_SEED[symbol] ?? 50) : parseFloat(v.toFixed(1));
+  } catch {
+    return RSI_SEED[symbol] ?? 50;
+  }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-function fmtMktCap(n: number | undefined): string {
+function fmtMktCap(n: number): string {
   if (!n) return "—";
   if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e9)  return `$${(n / 1e9).toFixed(1)}B`;
+  if (n >= 1e6)  return `$${(n / 1e6).toFixed(1)}M`;
   return `$${n}`;
 }
+
+// Hardcoded market caps as reference for Twelve Data fallback (updated ~2025)
+const MKTCAP_FALLBACK: Record<string, number> = {
+  AAPL:3e12,MSFT:3.1e12,NVDA:2.4e12,AMZN:1.9e12,GOOGL:2.2e12,META:1.3e12,TSLA:5.5e11,
+  MSFT2:3.1e12,AMD:2.6e11,COIN:5.8e10,PLTR:5.3e10,SOFI:9e9,MSTR:2.4e10,GME:5.2e9,
+  AMC:1.8e9,MARA:4.8e9,RIOT:3.1e9,BBAI:8e8,SPCE:6e8,SOUN:2.7e9,CLSK:2.9e9,HUT:1.5e9,
+  SMCI:5e10,NFLX:2.7e11,OKLO:3.8e9,RKLB:4.1e9,IONQ:2.8e9,PATH:8.4e9,RIVN:1.2e10,
+  LCID:6.4e9,SPY:0,QQQ:0,DJT:6.1e9,BYND:5e8,PARA:6.8e9,APPS:4e8,BABA:2.2e11,
+  SNAP:2e10,UBER:1.3e11,
+};
 
 function deriveSignal(chg: number, relVol: number, rsi: number): string {
   if ((chg > 6 || rsi > 75) && relVol > 1.7) return "Strong Breakout";
@@ -188,7 +233,7 @@ const SIM: Record<string, SimRow[]> = {
   ],
 };
 
-function buildSimulated(tab: string): { symbol: string; name: string; price: number; changePercent: number; volume: number; relVolume: number; rsi: number; marketCap: string; signal: string; sector: string; sparkline: number[] }[] {
+function buildSimulated(tab: string): { symbol:string; name:string; price:number; changePercent:number; volume:number; relVolume:number; rsi:number; marketCap:string; signal:string; sector:string; sparkline:number[] }[] {
   const seed = Math.floor(Date.now() / 60000) % 100;
   return (SIM[tab] ?? SIM.momentum).map((item, idx) => {
     const noise = ((seed * 31 + idx * 7) * 9301 % 233280) / 233280;
@@ -197,80 +242,109 @@ function buildSimulated(tab: string): { symbol: string; name: string; price: num
 }
 
 // ── Real data pipeline ─────────────────────────────────────────────────────────
-async function buildFromYahoo(tab: string) {
+async function buildFromReal(tab: string) {
   const symbols = WATCHLISTS[tab] ?? WATCHLISTS.momentum;
 
-  // Fetch quotes + sparklines in parallel
-  const [quotes, sparks] = await Promise.all([
-    fetchYahooQuotes(symbols),
-    fetchYahooSpark(symbols),
-  ]);
+  // Try Yahoo Finance v8 chart for all symbols in parallel (no crumb needed)
+  const v8Results = await Promise.allSettled(symbols.map((sym) => fetchYahooV8(sym)));
 
-  if (Object.keys(quotes).length === 0) return null; // Yahoo failed
+  const v8Map: Record<string, Awaited<ReturnType<typeof fetchYahooV8>>> = {};
+  let yahooHits = 0;
+  v8Results.forEach((r, i) => {
+    if (r.status === "fulfilled" && r.value) {
+      v8Map[symbols[i]] = r.value;
+      yahooHits++;
+    }
+  });
 
-  // Fetch RSI for each symbol in parallel (cached per-ticker)
+  // If Yahoo v8 returned fewer than half the symbols, fall back to Twelve Data
+  let tdMap: Record<string, TwelveQuote> = {};
+  if (yahooHits < symbols.length / 2) {
+    tdMap = await fetchTwelveDataQuotes(symbols);
+  }
+
+  // Need at least some data to proceed
+  if (yahooHits === 0 && Object.keys(tdMap).length === 0) return null;
+
+  // Fetch RSI in parallel (1hr cached)
   const rsiMap: Record<string, number> = {};
-  await Promise.allSettled(
-    symbols.map(async (sym) => {
-      rsiMap[sym] = await fetchRSI(sym);
-    })
-  );
+  await Promise.allSettled(symbols.map(async (sym) => {
+    rsiMap[sym] = await fetchRSI(sym);
+  }));
 
-  const results = symbols
-    .map((sym) => {
-      const q = quotes[sym];
-      if (!q?.regularMarketPrice) return null;
-      const price = q.regularMarketPrice;
-      const chg = parseFloat((q.regularMarketChangePercent ?? 0).toFixed(2));
-      const vol = parseFloat(((q.regularMarketVolume ?? 0) / 1e6).toFixed(1));
-      const avgVol = q.averageDailyVolume10Day ?? 0;
-      const relVol = avgVol > 0 ? parseFloat(((q.regularMarketVolume ?? 0) / avgVol).toFixed(2)) : 1;
-      const rsi = rsiMap[sym] ?? 50;
-      // Gap: how much did price open above/below prev close?
-      const gapPct = q.regularMarketPreviousClose && q.regularMarketOpen
-        ? Math.abs((q.regularMarketOpen - q.regularMarketPreviousClose) / q.regularMarketPreviousClose * 100)
-        : Math.abs(chg);
+  const results = symbols.map((sym) => {
+    const v8 = v8Map[sym];
+    const td = tdMap[sym];
 
-      return {
-        symbol: sym,
-        name: q.shortName ?? sym,
-        price,
-        changePercent: chg,
-        volume: vol,
-        relVolume: relVol,
-        rsi,
-        marketCap: fmtMktCap(q.marketCap),
-        signal: deriveSignal(chg, relVol, rsi),
-        sector: SECTORS[sym] ?? "Other",
-        sparkline: sparks[sym] ?? syntheticSparkline(price, chg),
-        gapPct,
-      };
-    })
-    .filter(Boolean) as (ReturnType<typeof buildSimulated>[0] & { gapPct: number })[];
+    let price: number, changePercent: number, volume: number, relVolume: number, marketCap: number, openPrice: number, prevClose: number, name: string, sparkline: number[];
+
+    if (v8) {
+      ({ price, changePercent, volume, relVolume, marketCap, openPrice, prevClose, name, sparkline } = v8);
+    } else if (td?.close && td.status !== "error") {
+      price = parseFloat(td.close);
+      changePercent = parseFloat(td.percent_change ?? "0");
+      volume = parseFloat(((parseFloat(td.volume ?? "0")) / 1e6).toFixed(1));
+      const avgVol = parseFloat(td.average_volume ?? "0");
+      relVolume = avgVol > 0 ? parseFloat((parseFloat(td.volume ?? "0") / avgVol).toFixed(2)) : 1;
+      marketCap = MKTCAP_FALLBACK[sym] ?? 0;
+      openPrice = parseFloat(td.open ?? td.close ?? "0");
+      prevClose = parseFloat(td.previous_close ?? td.close ?? "0");
+      name = td.name ?? sym;
+      sparkline = syntheticSparkline(price, changePercent);
+    } else {
+      return null;
+    }
+
+    if (!price) return null;
+
+    const rsi = rsiMap[sym] ?? (RSI_SEED[sym] ?? 50);
+    const gapPct = prevClose > 0
+      ? Math.abs((openPrice - prevClose) / prevClose * 100)
+      : Math.abs(changePercent);
+
+    return {
+      symbol: sym,
+      name,
+      price,
+      changePercent,
+      volume,
+      relVolume,
+      rsi,
+      marketCap: fmtMktCap(marketCap),
+      signal: deriveSignal(changePercent, relVolume, rsi),
+      sector: SECTORS[sym] ?? "Other",
+      sparkline: sparkline.length >= 2 ? sparkline : syntheticSparkline(price, changePercent),
+      gapPct,
+    };
+  }).filter(Boolean) as ({ symbol:string; name:string; price:number; changePercent:number; volume:number; relVolume:number; rsi:number; marketCap:string; signal:string; sector:string; sparkline:number[]; gapPct:number })[];
+
+  if (results.length === 0) return null;
 
   // Sort by tab criteria
   if (tab === "volume") results.sort((a, b) => b.relVolume - a.relVolume);
   else if (tab === "gap") results.sort((a, b) => b.gapPct - a.gapPct);
   else if (tab === "options") results.sort((a, b) => b.volume - a.volume);
-  else results.sort((a, b) => b.changePercent - a.changePercent); // momentum
+  else results.sort((a, b) => b.changePercent - a.changePercent);
 
   return results.slice(0, 10);
 }
 
 // ── Route ──────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-  const tab = req.nextUrl.searchParams.get("tab") ?? "momentum";
+  const tab    = req.nextUrl.searchParams.get("tab")    ?? "momentum";
   const signal = req.nextUrl.searchParams.get("signal") ?? "all";
   const sector = req.nextUrl.searchParams.get("sector") ?? "all";
 
   let results: ReturnType<typeof buildSimulated>;
   let usingReal = false;
+  let dataSource = "Simulated";
 
   try {
-    const real = await buildFromYahoo(tab);
+    const real = await buildFromReal(tab);
     if (real && real.length > 0) {
       results = real;
       usingReal = true;
+      dataSource = "Yahoo Finance + Twelve Data";
     } else {
       results = buildSimulated(tab);
     }
@@ -290,7 +364,7 @@ export async function GET(req: NextRequest) {
     results: filtered,
     sectors,
     usingReal,
-    dataSource: usingReal ? "Yahoo Finance + Twelve Data" : "Simulated",
+    dataSource,
     lastUpdated: new Date().toISOString(),
   });
 }
