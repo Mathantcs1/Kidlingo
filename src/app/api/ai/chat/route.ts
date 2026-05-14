@@ -29,11 +29,16 @@ export async function POST(req: Request) {
 
   const provider = (session.user.aiProvider ?? "CLAUDE") as "CLAUDE" | "OPENAI";
 
+  const userKeys = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { anthropicApiKey: true, openaiApiKey: true },
+  });
+
   const stream = new ReadableStream({
     async start(controller) {
       try {
         const encoder = new TextEncoder();
-        for await (const chunk of streamChat(provider, messages, userContext)) {
+        for await (const chunk of streamChat(provider, messages, userContext, userKeys ?? undefined)) {
           controller.enqueue(encoder.encode(chunk));
         }
         controller.close();

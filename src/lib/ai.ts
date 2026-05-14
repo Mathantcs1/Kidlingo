@@ -1,9 +1,14 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-function getAnthropic() { const A = require("@anthropic-ai/sdk"); return new A.default({ apiKey: process.env.ANTHROPIC_API_KEY ?? "no-key" }); }
+function getAnthropic(apiKey?: string | null) { const A = require("@anthropic-ai/sdk"); return new A.default({ apiKey: apiKey || (process.env.ANTHROPIC_API_KEY ?? "no-key") }); }
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-function getOpenAI() { const O = require("openai"); return new O.default({ apiKey: process.env.OPENAI_API_KEY ?? "no-key" }); }
+function getOpenAI(apiKey?: string | null) { const O = require("openai"); return new O.default({ apiKey: apiKey || (process.env.OPENAI_API_KEY ?? "no-key") }); }
 
 export type AiProvider = "CLAUDE" | "OPENAI";
+
+export interface UserApiKeys {
+  anthropicApiKey?: string | null;
+  openaiApiKey?: string | null;
+}
 
 const TRADE_ANALYSIS_SYSTEM = `You are an expert trading coach analyzing a trade journal entry. Provide:
 1. **Pattern Recognition** - what setup/pattern was used
@@ -21,12 +26,13 @@ const CHAT_SYSTEM = (context: string) =>
 
 export async function analyzeTrade(
   provider: AiProvider,
-  tradeData: Record<string, unknown>
+  tradeData: Record<string, unknown>,
+  userKeys?: UserApiKeys
 ): Promise<string> {
   const message = `Analyze this trade:\n${JSON.stringify(tradeData, null, 2)}`;
 
   if (provider === "CLAUDE") {
-    const msg = await getAnthropic().messages.create({
+    const msg = await getAnthropic(userKeys?.anthropicApiKey).messages.create({
       model: "claude-opus-4-5",
       max_tokens: 1024,
       system: TRADE_ANALYSIS_SYSTEM,
@@ -35,7 +41,7 @@ export async function analyzeTrade(
     return (msg.content[0] as { text: string }).text;
   }
 
-  const completion = await getOpenAI().chat.completions.create({
+  const completion = await getOpenAI(userKeys?.openaiApiKey).chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: TRADE_ANALYSIS_SYSTEM },
@@ -49,13 +55,14 @@ export async function analyzeTrade(
 export async function generatePortfolioSummary(
   provider: AiProvider,
   trades: Record<string, unknown>[],
-  period: "weekly" | "monthly"
+  period: "weekly" | "monthly",
+  userKeys?: UserApiKeys
 ): Promise<string> {
   const message = `${period.toUpperCase()} PERFORMANCE DATA (${trades.length} trades):\n${JSON.stringify(trades, null, 2)}`;
   const system = PORTFOLIO_SYSTEM(period);
 
   if (provider === "CLAUDE") {
-    const msg = await getAnthropic().messages.create({
+    const msg = await getAnthropic(userKeys?.anthropicApiKey).messages.create({
       model: "claude-opus-4-5",
       max_tokens: 2048,
       system,
@@ -64,7 +71,7 @@ export async function generatePortfolioSummary(
     return (msg.content[0] as { text: string }).text;
   }
 
-  const completion = await getOpenAI().chat.completions.create({
+  const completion = await getOpenAI(userKeys?.openaiApiKey).chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: system },
@@ -77,12 +84,13 @@ export async function generatePortfolioSummary(
 export async function* streamChat(
   provider: AiProvider,
   messages: { role: "user" | "assistant"; content: string }[],
-  userContext: string
+  userContext: string,
+  userKeys?: UserApiKeys
 ): AsyncGenerator<string> {
   const system = CHAT_SYSTEM(userContext);
 
   if (provider === "CLAUDE") {
-    const stream = getAnthropic().messages.stream({
+    const stream = getAnthropic(userKeys?.anthropicApiKey).messages.stream({
       model: "claude-opus-4-5",
       max_tokens: 1024,
       system,
@@ -99,7 +107,7 @@ export async function* streamChat(
     return;
   }
 
-  const stream = await getOpenAI().chat.completions.create({
+  const stream = await getOpenAI(userKeys?.openaiApiKey).chat.completions.create({
     model: "gpt-4o",
     messages: [{ role: "system", content: system }, ...messages],
     stream: true,

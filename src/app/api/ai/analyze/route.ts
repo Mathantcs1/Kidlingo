@@ -53,7 +53,12 @@ export async function POST(req: Request) {
     status: trade.status,
   };
 
-  const content = await analyzeTrade(provider, tradeData);
+  const userKeys = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { anthropicApiKey: true, openaiApiKey: true },
+  });
+
+  const content = await analyzeTrade(provider, tradeData, userKeys ?? undefined);
 
   await prisma.aiAnalysis.create({
     data: {

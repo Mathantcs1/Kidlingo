@@ -42,7 +42,12 @@ export async function POST(req: Request) {
     entryDate: t.entryDate,
   }));
 
-  const summary = await generatePortfolioSummary(provider, tradeData, period as "weekly" | "monthly");
+  const userKeys = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { anthropicApiKey: true, openaiApiKey: true },
+  });
+
+  const summary = await generatePortfolioSummary(provider, tradeData, period as "weekly" | "monthly", userKeys ?? undefined);
 
   await prisma.aiAnalysis.create({
     data: {

@@ -15,7 +15,7 @@ export default async function SettingsPage() {
   const [user, dropdownValues, subscription] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, name: true, email: true, aiProvider: true, role: true },
+      select: { id: true, name: true, email: true, aiProvider: true, role: true, anthropicApiKey: true, openaiApiKey: true },
     }),
     prisma.userDropdownValue.findMany({
       where: { userId: session.user.id },
@@ -25,6 +25,13 @@ export default async function SettingsPage() {
   ]);
 
   if (!user) redirect("/login");
+
+  const mask = (key: string | null | undefined) => (key ? `...${key.slice(-4)}` : null);
+  const apiKeyHints = {
+    anthropic: mask(user.anthropicApiKey),
+    openai: mask(user.openaiApiKey),
+  };
+  const userForForm = { id: user.id, name: user.name, email: user.email, aiProvider: user.aiProvider, role: user.role };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -40,7 +47,7 @@ export default async function SettingsPage() {
         </TabsList>
 
         <TabsContent value="profile">
-          <SettingsForm user={user} subscription={subscription} />
+          <SettingsForm user={userForForm} subscription={subscription} apiKeyHints={apiKeyHints} />
         </TabsContent>
 
         <TabsContent value="dropdowns">
