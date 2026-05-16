@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TradePulse — Deployment Guide</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 780px; margin: 0 auto; }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    .subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 32px; }
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #3b82f6, #7c3aed);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 28px;
+      transition: opacity 0.2s;
+    }
+    .copy-btn:hover { opacity: 0.88; }
+    .copy-btn.copied { background: linear-gradient(135deg, #16a34a, #15803d); }
+    .step {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .step-num {
+      background: linear-gradient(135deg, #3b82f6, #7c3aed);
+      color: white;
+      font-weight: 700;
+      font-size: 0.75rem;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-title { font-weight: 600; font-size: 1rem; color: #f1f5f9; }
+    .step-body { padding-left: 38px; }
+    ul, ol { padding-left: 18px; }
+    li { color: #94a3b8; font-size: 0.88rem; line-height: 1.9; }
+    li strong { color: #cbd5e1; }
+    code {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #7dd3fc;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 0.82rem;
+      font-family: 'Fira Code', monospace;
+    }
+    pre {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.82rem;
+      color: #7dd3fc;
+      white-space: pre;
+    }
+    .tag {
+      display: inline-block;
+      background: #1e3a5f;
+      color: #60a5fa;
+      border: 1px solid #2563eb44;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .note {
+      background: #1c1917;
+      border-left: 3px solid #f59e0b;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      margin-top: 10px;
+      font-size: 0.83rem;
+      color: #fbbf24;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>TradePulse — Deployment Steps</h1>
+  <p class="subtitle">Neon PostgreSQL · Vercel · Google OAuth</p>
+
+  <button class="copy-btn" id="copyBtn" onclick="copyAll()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    <span id="copyLabel">Copy All Steps</span>
+  </button>
+
+  <!-- STEP 1 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">Create Neon Database</div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Go to <strong>neon.tech</strong> → Sign up / Log in</li>
+        <li>Click <strong>New Project</strong> → name it (e.g. <code>tradepulse</code>)</li>
+        <li>Region: <strong>US East (AWS)</strong></li>
+        <li>After creation, go to <strong>Connection Details</strong></li>
+        <li>Copy the <strong>Pooled connection string</strong> → this is your <code>DATABASE_URL</code></li>
+        <li>Copy the <strong>Direct connection string</strong> → this is your <code>DIRECT_URL</code></li>
+      </ol>
+      <div class="note">⚠ The pooled URL contains <code>pgbouncer=true</code> and a <code>-pooler</code> subdomain. Keep both strings — Prisma uses them differently.</div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">Push Code to GitHub</div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Create a GitHub repo (e.g. <code>Mathantcs1/Kidlingo</code>)</li>
+        <li>Push the project to branch <code>claude/trading-journal-app-4Djdr</code></li>
+        <li>Make sure <code>vercel.json</code> is present at the root:</li>
+      </ol>
+      <pre><code>{
+  "buildCommand": "npx prisma generate && npm run build",
+  "framework": "nextjs"
+}</code></pre>
+      <ol start="4">
+        <li>Make sure <code>prisma/schema.prisma</code> has both <code>url</code> and <code>directUrl</code>:</li>
+      </ol>
+      <pre><code>datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}</code></pre>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">Deploy on Vercel</div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Go to <strong>vercel.com</strong> → <strong>Add New Project</strong></li>
+        <li>Import from GitHub → select the repo</li>
+        <li>Vercel auto-detects Next.js — leave framework as is</li>
+        <li>Before clicking Deploy, go to <strong>Environment Variables</strong> and add all variables (see Step 4)</li>
+        <li>Click <strong>Deploy</strong></li>
+        <li>Note your live URL — e.g. <code>https://kidlingo-rho.vercel.app</code></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div class="step-title">Set Environment Variables in Vercel</div>
+    </div>
+    <div class="step-body">
+      <p style="color:#94a3b8;font-size:0.88rem;margin-bottom:10px;">Go to Vercel → Project → Settings → Environment Variables and add:</p>
+      <pre><code>DATABASE_URL        = postgresql://...pooler...?pgbouncer=true
+DIRECT_URL          = postgresql://...direct...
+AUTH_SECRET         = (run: openssl rand -base64 32)
+AUTH_URL            = https://your-app.vercel.app
+AUTH_GOOGLE_ID      = (from Google Cloud Console)
+AUTH_GOOGLE_SECRET  = (from Google Cloud Console)
+TWELVE_DATA_API_KEY = (from twelvedata.com — free account)
+POLYGON_API_KEY     = (from polygon.io — free account)
+ANTHROPIC_API_KEY   = (optional — for AI features)
+OPENAI_API_KEY      = (optional — for AI features)
+UPLOADTHING_SECRET  = (optional — for screenshot uploads)
+UPLOADTHING_APP_ID  = (optional — for screenshot uploads)</code></pre>
+      <div class="note">⚠ After adding variables, redeploy from Vercel dashboard for them to take effect.</div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">5</div>
+      <div class="step-title">Run Database Migration</div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>The build command <code>npx prisma generate && npm run build</code> auto-generates the Prisma client</li>
+        <li>For the first deploy, run migrations manually from your local machine:</li>
+      </ol>
+      <pre><code>npx prisma migrate deploy</code></pre>
+      <ol start="3">
+        <li>This creates all tables in the Neon database</li>
+        <li>To seed an admin user (optional):</li>
+      </ol>
+      <pre><code>npx prisma db seed</code></pre>
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">6</div>
+      <div class="step-title">Set Up Google OAuth</div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Go to <strong>console.cloud.google.com</strong></li>
+        <li>Create a new project → <strong>APIs & Services → OAuth Consent Screen</strong></li>
+        <li>Choose <strong>External</strong> → fill app name + email → Save</li>
+        <li>Add your Gmail as a <strong>Test User</strong></li>
+        <li>Go to <strong>Credentials → Create Credentials → OAuth Client ID</strong></li>
+        <li>Type: <strong>Web application</strong></li>
+        <li>Add these <strong>Authorized Redirect URIs</strong>:</li>
+      </ol>
+      <pre><code>https://your-app.vercel.app/api/auth/callback/google
+http://localhost:3000/api/auth/callback/google</code></pre>
+      <ol start="8">
+        <li>Click Create → copy <strong>Client ID</strong> and <strong>Client Secret</strong></li>
+        <li>Paste into Vercel env vars as <code>AUTH_GOOGLE_ID</code> and <code>AUTH_GOOGLE_SECRET</code></li>
+        <li>Redeploy on Vercel</li>
+      </ol>
+      <div class="note">⚠ Common error — <code>redirect_uri_mismatch</code>: The URI in Google Console must match your live URL character-for-character (no trailing slash).</div>
+    </div>
+  </div>
+
+  <!-- STEP 7 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">7</div>
+      <div class="step-title">Verify Deployment</div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Visit your live URL → you should see the TradePulse login page</li>
+        <li>Register a new account with email/password</li>
+        <li>Test Google sign-in — should redirect back to <code>/dashboard</code></li>
+        <li>Check Vercel logs if anything fails: <strong>Vercel → Project → Functions → Logs</strong></li>
+        <li>Check DB connection: <strong>Neon Console → Tables</strong> — all tables should be visible</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const content = `
+TradePulse — Deployment Steps (Neon + Vercel + Google OAuth)
+=============================================================
+
+STEP 1 — Create Neon Database
+- Go to neon.tech → Sign up / Log in
+- Click New Project → name it (e.g. tradepulse), Region: US East
+- Go to Connection Details after creation
+- Copy Pooled connection string → DATABASE_URL
+- Copy Direct connection string → DIRECT_URL
+NOTE: Pooled URL contains pgbouncer=true and a -pooler subdomain. Keep both.
+
+STEP 2 — Push Code to GitHub
+- Create GitHub repo (e.g. Mathantcs1/Kidlingo)
+- Push to branch: claude/trading-journal-app-4Djdr
+- vercel.json at root:
+  { "buildCommand": "npx prisma generate && npm run build", "framework": "nextjs" }
+- prisma/schema.prisma datasource:
+  datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+  }
+
+STEP 3 — Deploy on Vercel
+- Go to vercel.com → Add New Project → Import from GitHub
+- Vercel auto-detects Next.js
+- Add environment variables BEFORE clicking Deploy (see Step 4)
+- Click Deploy → note your live URL (e.g. https://kidlingo-rho.vercel.app)
+
+STEP 4 — Set Environment Variables in Vercel
+Go to: Vercel → Project → Settings → Environment Variables
+
+  DATABASE_URL        = postgresql://...pooler...?pgbouncer=true
+  DIRECT_URL          = postgresql://...direct...
+  AUTH_SECRET         = (run: openssl rand -base64 32)
+  AUTH_URL            = https://your-app.vercel.app
+  AUTH_GOOGLE_ID      = (from Google Cloud Console)
+  AUTH_GOOGLE_SECRET  = (from Google Cloud Console)
+  TWELVE_DATA_API_KEY = (from twelvedata.com — free account)
+  POLYGON_API_KEY     = (from polygon.io — free account)
+  ANTHROPIC_API_KEY   = (optional — for AI features)
+  OPENAI_API_KEY      = (optional — for AI features)
+  UPLOADTHING_SECRET  = (optional — for screenshot uploads)
+  UPLOADTHING_APP_ID  = (optional — for screenshot uploads)
+
+NOTE: Redeploy after adding variables.
+
+STEP 5 — Run Database Migration
+- Build command auto-runs: npx prisma generate && npm run build
+- For first deploy, run locally:
+    npx prisma migrate deploy
+- Optional seed:
+    npx prisma db seed
+
+STEP 6 — Set Up Google OAuth
+- Go to console.cloud.google.com → New Project
+- APIs & Services → OAuth Consent Screen → External → fill name + email
+- Add your Gmail as a Test User
+- Credentials → Create Credentials → OAuth Client ID → Web application
+- Add Authorized Redirect URIs:
+    https://your-app.vercel.app/api/auth/callback/google
+    http://localhost:3000/api/auth/callback/google
+- Copy Client ID → AUTH_GOOGLE_ID in Vercel
+- Copy Client Secret → AUTH_GOOGLE_SECRET in Vercel
+- Redeploy on Vercel
+NOTE: redirect_uri_mismatch error = URI in Google Console doesn't match live URL exactly.
+
+STEP 7 — Verify Deployment
+- Visit live URL → TradePulse login page should appear
+- Register with email/password
+- Test Google sign-in → should go to /dashboard
+- Check logs: Vercel → Project → Functions → Logs
+- Check DB: Neon Console → Tables (all tables should exist)
+`;
+
+  function copyAll() {
+    navigator.clipboard.writeText(content.trim()).then(() => {
+      const btn = document.getElementById('copyBtn');
+      const label = document.getElementById('copyLabel');
+      btn.classList.add('copied');
+      label.textContent = '✓ Copied!';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        label.textContent = 'Copy All Steps';
+      }, 2500);
+    });
+  }
+</script>
+</body>
+</html>
