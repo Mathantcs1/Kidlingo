@@ -10,6 +10,7 @@ import { TradeTimeline } from "@/components/charts/trade-timeline";
 import { Pencil, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { TradeCharts } from "@/components/trades/trade-charts";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +95,8 @@ export default async function TradeDetailPage({
       </div>
 
       <TradeTimeline trade={serialized} />
+
+      <TradeCharts entryUrl={trade.screenshotUrl} exitUrl={trade.exitScreenshotUrl} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>

@@ -196,7 +196,8 @@ model Trade {
   tradeSetup    String?
   notes         String?        @db.Text
   psychology    String?        @db.Text
-  screenshotUrl String?
+  screenshotUrl String?        @db.Text
+  exitScreenshotUrl String?    @db.Text
   pnl           Decimal?       @db.Decimal(20, 2)
   rMultiple     Decimal?       @db.Decimal(10, 4)
   stopLoss      Decimal?       @db.Decimal(20, 8)

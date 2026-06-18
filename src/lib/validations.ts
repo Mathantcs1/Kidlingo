@@ -44,6 +44,7 @@ export const tradeSchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
   psychology: z.string().max(2000).optional().nullable(),
   screenshotUrl: z.preprocess(emptyToUndefined, z.string().url().optional().nullable()),
+  exitScreenshotUrl: z.preprocess(emptyToUndefined, z.string().url().optional().nullable()),
   stopLoss: optionalPositiveNumber(),
   takeProfit: optionalPositiveNumber(),
   commission: optionalNonNegativeNumber(),

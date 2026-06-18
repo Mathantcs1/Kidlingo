@@ -29,7 +29,14 @@ export default async function TradesPage({ searchParams }: { searchParams: Promi
       orderBy: { entryDate: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { tradingAccount: { select: { id: true, name: true, color: true } } },
+      select: {
+        id: true, instrument: true, direction: true, status: true,
+        entryDate: true, exitDate: true, createdAt: true, updatedAt: true,
+        entryPrice: true, exitPrice: true, quantity: true,
+        pnl: true, rMultiple: true, strategyTag: true,
+        stopLoss: true, takeProfit: true, commission: true, expirationDate: true,
+        tradingAccount: { select: { id: true, name: true, color: true } },
+      },
     }),
     prisma.trade.count({ where }),
     prisma.tradingAccount.findMany({

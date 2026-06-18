@@ -19,6 +19,7 @@ import { formatCurrency, cn, toDecimal } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { calculatePnl, calculateRMultiple } from "@/lib/calculations";
 import { InstrumentSearch } from "./instrument-search";
+import { ChartAttachment } from "./chart-attachment";
 
 type FormData = z.infer<typeof tradeSchema>;
 
@@ -482,6 +483,23 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
           </CardContent>
         </Card>
       )}
+
+      {/* Chart screenshots */}
+      <Card>
+        <CardHeader><CardTitle className="text-sm">Chart Screenshots</CardTitle></CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
+          <ChartAttachment
+            label="Entry Chart"
+            value={watchedValues.screenshotUrl ?? null}
+            onChange={(dataUrl) => setValue("screenshotUrl", dataUrl ?? undefined)}
+          />
+          <ChartAttachment
+            label="Exit Chart"
+            value={watchedValues.exitScreenshotUrl ?? null}
+            onChange={(dataUrl) => setValue("exitScreenshotUrl", dataUrl ?? undefined)}
+          />
+        </CardContent>
+      </Card>
 
       {/* Categorization */}
       <Card>

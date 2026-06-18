@@ -76,6 +76,7 @@ export async function PUT(
       notes: data.notes ?? null,
       psychology: data.psychology ?? null,
       screenshotUrl: data.screenshotUrl ?? null,
+      exitScreenshotUrl: data.exitScreenshotUrl ?? null,
       stopLoss: data.stopLoss ?? null,
       takeProfit: data.takeProfit ?? null,
       commission: data.commission ?? null,

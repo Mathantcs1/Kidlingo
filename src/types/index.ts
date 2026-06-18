@@ -70,6 +70,7 @@ export interface TradeWithAnalysis {
   notes: string | null;
   psychology: string | null;
   screenshotUrl: string | null;
+  exitScreenshotUrl: string | null;
   pnl: string | number | null;
   rMultiple: string | number | null;
   stopLoss: string | number | null;
