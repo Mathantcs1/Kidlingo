@@ -1,5 +1,20 @@
 import { z } from "zod";
 
+const emptyToUndefined = (val: unknown) =>
+  val === "" || val === null ? undefined : val;
+
+const optionalPositiveNumber = () =>
+  z.preprocess(emptyToUndefined, z.coerce.number().positive().optional().nullable());
+
+const optionalNonNegativeNumber = () =>
+  z.preprocess(emptyToUndefined, z.coerce.number().min(0).optional().nullable());
+
+const optionalPositiveInt = () =>
+  z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional().nullable());
+
+const optionalDate = () =>
+  z.preprocess(emptyToUndefined, z.coerce.date().optional().nullable());
+
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -19,28 +34,28 @@ export const tradeSchema = z.object({
   instrument: z.string().min(1, "Instrument is required").max(20),
   direction: z.enum(["LONG", "SHORT"]),
   entryPrice: z.coerce.number().positive("Entry price must be positive"),
-  exitPrice: z.coerce.number().positive().optional().nullable(),
+  exitPrice: optionalPositiveNumber(),
   quantity: z.coerce.number().positive("Quantity must be positive"),
   entryDate: z.coerce.date(),
-  exitDate: z.coerce.date().optional().nullable(),
+  exitDate: optionalDate(),
   strategyTag: z.string().optional().nullable(),
   sessionType: z.string().optional().nullable(),
   tradeSetup: z.string().optional().nullable(),
   notes: z.string().max(5000).optional().nullable(),
   psychology: z.string().max(2000).optional().nullable(),
-  screenshotUrl: z.string().url().optional().nullable(),
-  stopLoss: z.coerce.number().positive().optional().nullable(),
-  takeProfit: z.coerce.number().positive().optional().nullable(),
-  commission: z.coerce.number().min(0).optional().nullable(),
+  screenshotUrl: z.preprocess(emptyToUndefined, z.string().url().optional().nullable()),
+  stopLoss: optionalPositiveNumber(),
+  takeProfit: optionalPositiveNumber(),
+  commission: optionalNonNegativeNumber(),
   groupId: z.string().optional().nullable(),
   tradingAccountId: z.string().optional().nullable(),
   // Options / trade type fields
   tradeType: z.enum(["EQUITY", "OPTIONS"]).default("EQUITY"),
   optionType: z.enum(["CALL", "PUT"]).optional().nullable(),
-  strikePrice: z.coerce.number().positive().optional().nullable(),
-  expirationDate: z.coerce.date().optional().nullable(),
-  numContracts: z.coerce.number().int().positive().optional().nullable(),
-  underlyingPrice: z.coerce.number().positive().optional().nullable(),
+  strikePrice: optionalPositiveNumber(),
+  expirationDate: optionalDate(),
+  numContracts: optionalPositiveInt(),
+  underlyingPrice: optionalPositiveNumber(),
 });
 
 export const tradeFilterSchema = z.object({
@@ -95,6 +110,6 @@ export const dropdownValueSchema = z.object({
 export const subscriptionUpdateSchema = z.object({
   plan: z.enum(["FREE", "BASIC", "PRO"]),
   status: z.enum(["ACTIVE", "CANCELLED", "PAST_DUE", "TRIALING"]).optional(),
-  trialEndsAt: z.coerce.date().optional().nullable(),
-  expiresAt: z.coerce.date().optional().nullable(),
+  trialEndsAt: optionalDate(),
+  expiresAt: optionalDate(),
 });
