@@ -1,13 +1,16 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileText, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Loader2, X } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Loader2, X, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { parseWebull, parseRobinhood, detectBroker, type ImportedTrade } from "@/lib/trade-importers";
 import { toast } from "@/hooks/use-toast";
+import { ACCOUNT_STORAGE_KEY } from "@/components/accounts/account-selector";
+
+interface TradingAccount { id: string; name: string; broker: string | null; color: string; isDefault: boolean; }
 
 type Broker = "webull" | "robinhood";
 
@@ -147,6 +150,22 @@ export function ImportDialog() {
   const [errors, setErrors] = useState<string[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [accounts, setAccounts] = useState<TradingAccount[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/accounts").then((r) => r.json()).then((data: TradingAccount[]) => {
+      if (!Array.isArray(data)) return;
+      setAccounts(data);
+      setSelectedAccountId((prev) => {
+        if (prev) return prev;
+        const stored = localStorage.getItem(ACCOUNT_STORAGE_KEY);
+        const defaultAccount = data.find((a) => a.isDefault);
+        return stored ?? defaultAccount?.id ?? "";
+      });
+    });
+  }, [open]);
 
   function reset() {
     setFileName(null);
@@ -193,7 +212,7 @@ export function ImportDialog() {
       const res = await fetch("/api/trades/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trades }),
+        body: JSON.stringify({ trades, tradingAccountId: selectedAccountId || null }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Import failed");
@@ -237,6 +256,49 @@ export function ImportDialog() {
 
           {/* Instructions */}
           <InstructionsPanel broker={broker} />
+
+          {/* Account selector */}
+          {accounts.length > 0 && (
+            <div>
+              <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                <Wallet className="h-3.5 w-3.5" />
+                Import into account
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAccountId("")}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-colors",
+                    !selectedAccountId
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-muted-foreground"
+                  )}
+                >
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                  None
+                </button>
+                {accounts.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setSelectedAccountId(a.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-colors",
+                      selectedAccountId === a.id
+                        ? "border-2 font-medium"
+                        : "border-border text-muted-foreground hover:border-muted-foreground"
+                    )}
+                    style={selectedAccountId === a.id ? { borderColor: a.color, color: a.color, background: `${a.color}15` } : {}}
+                  >
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: a.color }} />
+                    {a.name}
+                    {a.broker && <span className="text-xs opacity-60">· {a.broker}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* File upload */}
           <div>

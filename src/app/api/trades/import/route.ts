@@ -22,6 +22,7 @@ const importedTradeSchema = z.object({
 
 const bodySchema = z.object({
   trades: z.array(importedTradeSchema).min(1).max(500),
+  tradingAccountId: z.string().optional().nullable(),
 });
 
 export async function POST(req: Request) {
@@ -35,11 +36,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
   }
 
-  const { trades } = parsed.data;
+  const { trades, tradingAccountId } = parsed.data;
+
+  if (tradingAccountId) {
+    const account = await prisma.tradingAccount.findFirst({
+      where: { id: tradingAccountId, userId: session.user.id },
+      select: { id: true },
+    });
+    if (!account) return NextResponse.json({ error: "Trading account not found" }, { status: 404 });
+  }
 
   const created = await prisma.trade.createMany({
     data: trades.map((t) => ({
       userId: session.user.id,
+      tradingAccountId: tradingAccountId ?? undefined,
       instrument: t.instrument.toUpperCase(),
       direction: t.direction,
       entryPrice: t.entryPrice,
