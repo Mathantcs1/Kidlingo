@@ -117,6 +117,24 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
     ? Number(watchedValues.entryPrice) * numContracts * 100
     : null;
 
+  const riskRewardBar = (() => {
+    const entry = Number(watchedValues.entryPrice);
+    const stop = Number(watchedValues.stopLoss);
+    const target = Number(watchedValues.takeProfit);
+    if (!entry || !stop || !target) return null;
+    const min = Math.min(entry, stop, target);
+    const max = Math.max(entry, stop, target);
+    const range = max - min || 1;
+    const pct = (v: number) => ((v - min) / range) * 100;
+    const riskAmt = Math.abs(entry - stop);
+    const rewardAmt = Math.abs(target - entry);
+    return {
+      entryPct: pct(entry), stopPct: pct(stop), targetPct: pct(target),
+      riskAmt, rewardAmt,
+      rrRatio: riskAmt > 0 ? rewardAmt / riskAmt : null,
+    };
+  })();
+
   async function onSubmit(data: FormData) {
     setLoading(true);
     setError("");
@@ -156,7 +174,10 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
 
       {/* Live P&L preview */}
       {livePnl !== null && (
-        <Card className={cn("border-2", livePnl >= 0 ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5")}>
+        <Card className={cn(
+          "border-2 transition-colors duration-300 animate-in fade-in slide-in-from-top-2",
+          livePnl >= 0 ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"
+        )}>
           <CardContent className="flex items-center justify-between py-3 px-4">
             <div className="flex items-center gap-2">
               {livePnl >= 0 ? <TrendingUp className="h-4 w-4 text-emerald-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
@@ -164,11 +185,11 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
               {tradeType === "OPTIONS" && <span className="text-xs text-muted-foreground">(premium × 100 per contract)</span>}
             </div>
             <div className="flex items-center gap-4">
-              <span className={cn("text-lg font-bold", livePnl >= 0 ? "text-emerald-500" : "text-red-500")}>
+              <span className={cn("text-lg font-bold transition-colors duration-300", livePnl >= 0 ? "text-emerald-500" : "text-red-500")}>
                 {formatCurrency(livePnl)}
               </span>
               {liveRR !== null && (
-                <span className={cn("text-sm font-medium", liveRR >= 0 ? "text-emerald-500" : "text-red-500")}>
+                <span className={cn("text-sm font-medium transition-colors duration-300", liveRR >= 0 ? "text-emerald-500" : "text-red-500")}>
                   {liveRR.toFixed(2)}R
                 </span>
               )}
@@ -188,10 +209,10 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
                 type="button"
                 onClick={() => setTradeType(t)}
                 className={cn(
-                  "px-6 py-2 text-sm font-medium transition-colors",
+                  "px-6 py-2 text-sm font-medium transition-all duration-150",
                   tradeType === t
                     ? "bg-primary text-primary-foreground"
-                    : "bg-background text-muted-foreground hover:bg-muted"
+                    : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
                 {t === "EQUITY" ? "📈 Equity / ETF" : "⚡ Options"}
@@ -328,12 +349,57 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
               <Input type="number" step="any" placeholder="0.00" {...register("commission")} />
             </div>
           </div>
+
+          {/* Live risk/reward visual */}
+          {riskRewardBar && (
+            <div className="space-y-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-300">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">
+                  Risk <span className="font-semibold text-red-400">{formatCurrency(riskRewardBar.riskAmt)}</span>
+                </span>
+                {riskRewardBar.rrRatio !== null && (
+                  <span className="font-medium">1 : {riskRewardBar.rrRatio.toFixed(2)} R:R</span>
+                )}
+                <span className="text-muted-foreground">
+                  Reward <span className="font-semibold text-emerald-400">{formatCurrency(riskRewardBar.rewardAmt)}</span>
+                </span>
+              </div>
+              <div className="relative h-2 rounded-full bg-muted">
+                <div
+                  className="absolute inset-y-0 rounded-full bg-red-500/40 transition-all duration-300"
+                  style={{
+                    left: `${Math.min(riskRewardBar.stopPct, riskRewardBar.entryPct)}%`,
+                    width: `${Math.abs(riskRewardBar.entryPct - riskRewardBar.stopPct)}%`,
+                  }}
+                />
+                <div
+                  className="absolute inset-y-0 rounded-full bg-emerald-500/40 transition-all duration-300"
+                  style={{
+                    left: `${Math.min(riskRewardBar.entryPct, riskRewardBar.targetPct)}%`,
+                    width: `${Math.abs(riskRewardBar.targetPct - riskRewardBar.entryPct)}%`,
+                  }}
+                />
+                {[
+                  { pct: riskRewardBar.stopPct, color: "bg-red-500", label: "Stop Loss" },
+                  { pct: riskRewardBar.entryPct, color: "bg-primary", label: "Entry" },
+                  { pct: riskRewardBar.targetPct, color: "bg-emerald-500", label: "Take Profit" },
+                ].map((marker) => (
+                  <div
+                    key={marker.label}
+                    title={marker.label}
+                    className={cn("absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-background shadow transition-all duration-300 hover:scale-125", marker.color)}
+                    style={{ left: `calc(${marker.pct}% - 6px)` }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Options contract details */}
       {tradeType === "OPTIONS" && (
-        <Card className="border-purple-500/30 bg-purple-500/5">
+        <Card className="border-purple-500/30 bg-purple-500/5 animate-in fade-in slide-in-from-top-2 duration-300">
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <Badge variant="outline" className="text-purple-400 border-purple-500/40">OPTIONS</Badge>
@@ -351,10 +417,10 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
                     type="button"
                     onClick={() => setOptionType(t)}
                     className={cn(
-                      "px-5 py-2 text-sm font-medium transition-colors",
+                      "px-5 py-2 text-sm font-medium transition-all duration-150",
                       optionType === t
                         ? t === "CALL" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
-                        : "bg-background text-muted-foreground hover:bg-muted"
+                        : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                   >
                     {t === "CALL" ? "📈 CALL" : "📉 PUT"}

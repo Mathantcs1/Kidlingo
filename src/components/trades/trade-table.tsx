@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
-import { MoreHorizontal, Eye, Pencil, Trash2, BrainCircuit, ChevronLeft, ChevronRight } from "lucide-react";
-import { useTransition } from "react";
+import { MoreHorizontal, Eye, Pencil, Trash2, BrainCircuit, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 
@@ -34,9 +34,28 @@ interface TradeTableProps {
   accounts?: { id: string; name: string; color: string }[];
 }
 
+type SortKey = "entryDate" | "instrument" | "entryPrice" | "exitPrice" | "quantity" | "pnl" | "rMultiple";
+
+const HEADERS: { label: string; key?: SortKey }[] = [
+  { label: "Date", key: "entryDate" },
+  { label: "Instrument", key: "instrument" },
+  { label: "Account" },
+  { label: "Direction" },
+  { label: "Entry", key: "entryPrice" },
+  { label: "Exit", key: "exitPrice" },
+  { label: "Qty", key: "quantity" },
+  { label: "P&L", key: "pnl" },
+  { label: "R", key: "rMultiple" },
+  { label: "Strategy" },
+  { label: "Status" },
+  { label: "" },
+];
+
 export function TradeTable({ trades, total, page, pageSize, role, accounts = [] }: TradeTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this trade? This cannot be undone.")) return;
@@ -49,6 +68,31 @@ export function TradeTable({ trades, total, page, pageSize, role, accounts = [] 
     }
   }
 
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
+  const sortedTrades = useMemo(() => {
+    if (!sortKey) return trades;
+    const arr = [...trades];
+    arr.sort((a, b) => {
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      if (av === null || av === undefined) return 1;
+      if (bv === null || bv === undefined) return -1;
+      if (typeof av === "string" && typeof bv === "string") {
+        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
+      return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
+    });
+    return arr;
+  }, [trades, sortKey, sortDir]);
+
   const totalPages = Math.ceil(total / pageSize);
 
   return (
@@ -57,8 +101,25 @@ export function TradeTable({ trades, total, page, pageSize, role, accounts = [] 
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/40">
-              {["Date", "Instrument", "Account", "Direction", "Entry", "Exit", "Qty", "P&L", "R", "Strategy", "Status", ""].map((h) => (
-                <th key={h} className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+              {HEADERS.map((h) => (
+                <th key={h.label || "actions"} className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">
+                  {h.key ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(h.key!)}
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                      {h.label}
+                      <ArrowUpDown
+                        className={cn(
+                          "h-3 w-3 transition-transform duration-150",
+                          sortKey === h.key ? "text-foreground" : "text-muted-foreground/50",
+                          sortKey === h.key && sortDir === "asc" && "rotate-180"
+                        )}
+                      />
+                    </button>
+                  ) : h.label}
+                </th>
               ))}
             </tr>
           </thead>
@@ -66,8 +127,8 @@ export function TradeTable({ trades, total, page, pageSize, role, accounts = [] 
             {trades.length === 0 && (
               <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground text-sm">No trades found. Add your first trade!</td></tr>
             )}
-            {trades.map((trade) => (
-              <tr key={trade.id} className="border-b hover:bg-muted/20 transition-colors cursor-pointer"
+            {sortedTrades.map((trade) => (
+              <tr key={trade.id} className="group border-b hover:bg-muted/20 transition-colors cursor-pointer"
                 onClick={() => router.push(`/trades/${trade.id}`)}>
                 <td className="px-3 py-2.5 whitespace-nowrap text-xs">{formatDate(trade.entryDate)}</td>
                 <td className="px-3 py-2.5 font-medium">{trade.instrument}</td>
@@ -84,13 +145,13 @@ export function TradeTable({ trades, total, page, pageSize, role, accounts = [] 
                     {trade.direction}
                   </Badge>
                 </td>
-                <td className="px-3 py-2.5 text-xs">${trade.entryPrice.toFixed(2)}</td>
-                <td className="px-3 py-2.5 text-xs">{trade.exitPrice ? `$${trade.exitPrice.toFixed(2)}` : "—"}</td>
-                <td className="px-3 py-2.5 text-xs">{trade.quantity}</td>
-                <td className={cn("px-3 py-2.5 font-semibold text-xs", trade.pnl === null ? "text-muted-foreground" : trade.pnl >= 0 ? "text-emerald-500" : "text-red-500")}>
+                <td className="px-3 py-2.5 text-xs tabular-nums">${trade.entryPrice.toFixed(2)}</td>
+                <td className="px-3 py-2.5 text-xs tabular-nums">{trade.exitPrice ? `$${trade.exitPrice.toFixed(2)}` : "—"}</td>
+                <td className="px-3 py-2.5 text-xs tabular-nums">{trade.quantity}</td>
+                <td className={cn("px-3 py-2.5 font-semibold text-xs tabular-nums transition-colors", trade.pnl === null ? "text-muted-foreground" : trade.pnl >= 0 ? "text-emerald-500" : "text-red-500")}>
                   {trade.pnl !== null ? formatCurrency(trade.pnl) : "—"}
                 </td>
-                <td className={cn("px-3 py-2.5 text-xs", trade.rMultiple === null ? "text-muted-foreground" : trade.rMultiple >= 0 ? "text-emerald-500" : "text-red-500")}>
+                <td className={cn("px-3 py-2.5 text-xs tabular-nums", trade.rMultiple === null ? "text-muted-foreground" : trade.rMultiple >= 0 ? "text-emerald-500" : "text-red-500")}>
                   {trade.rMultiple !== null ? `${trade.rMultiple.toFixed(2)}R` : "—"}
                 </td>
                 <td className="px-3 py-2.5 text-xs text-muted-foreground">{trade.strategyTag ?? "—"}</td>
@@ -100,31 +161,44 @@ export function TradeTable({ trades, total, page, pageSize, role, accounts = [] 
                   </Badge>
                 </td>
                 <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
-                        <MoreHorizontal className="h-3.5 w-3.5" />
+                  <div className="flex items-center justify-end gap-1">
+                    {role !== "VIEWER" && (
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                        asChild
+                      >
+                        <Link href={`/trades/${trade.id}/edit`} title="Quick edit">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Link>
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/trades/${trade.id}`}><Eye className="mr-2 h-4 w-4" />View</Link>
-                      </DropdownMenuItem>
-                      {role !== "VIEWER" && (
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <MoreHorizontal className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/trades/${trade.id}/edit`}><Pencil className="mr-2 h-4 w-4" />Edit</Link>
+                          <Link href={`/trades/${trade.id}`}><Eye className="mr-2 h-4 w-4" />View</Link>
                         </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => router.push(`/trades/${trade.id}?analyze=1`)} className="text-blue-500">
-                        <BrainCircuit className="mr-2 h-4 w-4" />AI Analysis
-                      </DropdownMenuItem>
-                      {role !== "VIEWER" && (
-                        <DropdownMenuItem onClick={() => handleDelete(trade.id)} className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />Delete
+                        {role !== "VIEWER" && (
+                          <DropdownMenuItem asChild>
+                            <Link href={`/trades/${trade.id}/edit`}><Pencil className="mr-2 h-4 w-4" />Edit</Link>
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => router.push(`/trades/${trade.id}?analyze=1`)} className="text-blue-500">
+                          <BrainCircuit className="mr-2 h-4 w-4" />AI Analysis
                         </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        {role !== "VIEWER" && (
+                          <DropdownMenuItem onClick={() => handleDelete(trade.id)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />Delete
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </td>
               </tr>
             ))}
