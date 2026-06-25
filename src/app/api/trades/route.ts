@@ -74,10 +74,11 @@ export async function POST(req: Request) {
       data.entryPrice,
       data.exitPrice,
       data.quantity,
-      data.commission ?? 0
+      data.commission ?? 0,
+      data.tradeType ?? "EQUITY"
     );
     if (data.stopLoss) {
-      rMultiple = calculateRMultiple(pnl, data.entryPrice, data.stopLoss, data.quantity);
+      rMultiple = calculateRMultiple(pnl, data.entryPrice, data.stopLoss, data.quantity, data.tradeType ?? "EQUITY");
     }
   }
 

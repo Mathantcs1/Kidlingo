@@ -103,15 +103,15 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
   const watchedValues = useWatch({ control });
 
   const livePnl = (() => {
-    const { direction, entryPrice, exitPrice, quantity, commission } = watchedValues;
+    const { direction, entryPrice, exitPrice, quantity, commission, tradeType } = watchedValues;
     if (!direction || !entryPrice || !exitPrice || !quantity) return null;
-    return calculatePnl(direction, Number(entryPrice), Number(exitPrice), Number(quantity), Number(commission ?? 0));
+    return calculatePnl(direction, Number(entryPrice), Number(exitPrice), Number(quantity), Number(commission ?? 0), tradeType ?? "EQUITY");
   })();
 
   const liveRR = (() => {
-    const { direction, entryPrice, stopLoss, quantity } = watchedValues;
+    const { direction, entryPrice, stopLoss, quantity, tradeType } = watchedValues;
     if (!livePnl || !stopLoss || !entryPrice || !quantity) return null;
-    return calculateRMultiple(livePnl, Number(entryPrice), Number(stopLoss), Number(quantity));
+    return calculateRMultiple(livePnl, Number(entryPrice), Number(stopLoss), Number(quantity), tradeType ?? "EQUITY");
   })();
 
   const totalOptionsCost = tradeType === "OPTIONS" && watchedValues.entryPrice && numContracts

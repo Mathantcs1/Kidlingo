@@ -5,21 +5,25 @@ export function calculatePnl(
   entryPrice: number,
   exitPrice: number,
   quantity: number,
-  commission = 0
+  commission = 0,
+  tradeType: "EQUITY" | "OPTIONS" = "EQUITY"
 ): number {
-  const multiplier = direction === "LONG" ? 1 : -1;
-  return multiplier * (exitPrice - entryPrice) * quantity - commission;
+  const dirMultiplier = direction === "LONG" ? 1 : -1;
+  const contractMultiplier = tradeType === "OPTIONS" ? 100 : 1;
+  return dirMultiplier * (exitPrice - entryPrice) * quantity * contractMultiplier - commission;
 }
 
 export function calculateRMultiple(
   pnl: number,
   entryPrice: number,
   stopLoss: number,
-  quantity: number
+  quantity: number,
+  tradeType: "EQUITY" | "OPTIONS" = "EQUITY"
 ): number | null {
   const riskPerUnit = Math.abs(entryPrice - stopLoss);
   if (riskPerUnit === 0 || quantity === 0) return null;
-  const riskAmount = riskPerUnit * quantity;
+  const contractMultiplier = tradeType === "OPTIONS" ? 100 : 1;
+  const riskAmount = riskPerUnit * quantity * contractMultiplier;
   return pnl / riskAmount;
 }
 
