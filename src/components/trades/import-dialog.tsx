@@ -216,7 +216,10 @@ export function ImportDialog() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Import failed");
-      toast({ title: `Imported ${data.imported} trades successfully` });
+      const parts: string[] = [];
+      if (data.created > 0) parts.push(`${data.created} new`);
+      if (data.updated > 0) parts.push(`${data.updated} updated`);
+      toast({ title: `Import complete: ${parts.join(", ")} trade${data.imported !== 1 ? "s" : ""}` });
       setOpen(false);
       reset();
       router.refresh();

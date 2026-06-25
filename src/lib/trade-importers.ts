@@ -89,6 +89,44 @@ function parseOptionInstrument(raw: string): {
   return { underlying: raw.toUpperCase(), optionType: null, strike: null, expiry: null };
 }
 
+// ── consolidate partial closes of same entry into one trade ──────────────────
+
+function consolidateClosedTrades(trades: ImportedTrade[]): ImportedTrade[] {
+  const key = (t: ImportedTrade) =>
+    `${t.instrument}|${t.direction}|${t.entryDate}|${t.entryPrice}|${t.tradeType}|${t.optionType ?? ""}|${t.strikePrice ?? ""}`;
+
+  const groups = new Map<string, ImportedTrade[]>();
+  for (const t of trades) {
+    const k = key(t);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(t);
+  }
+
+  return Array.from(groups.values()).map((group) => {
+    if (group.length === 1) return group[0];
+    const totalQty = group.reduce((s, t) => s + t.quantity, 0);
+    const weightedExit =
+      group.reduce((s, t) => s + (t.exitPrice ?? 0) * t.quantity, 0) / totalQty;
+    const totalPnl = group.reduce((s, t) => s + (t.pnl ?? 0), 0);
+    const totalComm = group.reduce((s, t) => s + (t.commission ?? 0), 0);
+    const latestExit = group.reduce(
+      (max, t) =>
+        !max || new Date(t.exitDate!).getTime() > new Date(max).getTime()
+          ? t.exitDate
+          : max,
+      null as string | null
+    );
+    return {
+      ...group[0],
+      quantity: totalQty,
+      exitPrice: Math.round(weightedExit * 10000) / 10000,
+      pnl: Math.round(totalPnl * 100) / 100,
+      commission: Math.round(totalComm * 100) / 100,
+      exitDate: latestExit,
+    };
+  });
+}
+
 // ── matching: fills → round-trip trades ──────────────────────────────────────
 
 interface OpenLeg {
@@ -217,8 +255,11 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
     }
   }
 
-  trades.sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime());
-  return trades;
+  const closed = consolidateClosedTrades(trades.filter((t) => t.status === "CLOSED"));
+  const open = trades.filter((t) => t.status === "OPEN");
+  const result = [...closed, ...open];
+  result.sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime());
+  return result;
 }
 
 // ── Webull parser ─────────────────────────────────────────────────────────────
