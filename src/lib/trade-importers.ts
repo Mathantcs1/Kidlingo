@@ -159,7 +159,8 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
       while (remaining > 0 && legs.length > 0) {
         const leg = legs[0];
         const matched = Math.min(remaining, leg.partialQty);
-        const pnl = (fill.price - leg.fill.price) * matched - (fill.commission + leg.fill.commission) * (matched / fill.quantity);
+        const contractMultiplier = fill.tradeType === "OPTIONS" ? 100 : 1;
+        const pnl = (fill.price - leg.fill.price) * matched * contractMultiplier - (fill.commission + leg.fill.commission) * (matched / fill.quantity);
         trades.push({
           instrument: key,
           direction: "LONG",
@@ -197,7 +198,8 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
       while (remaining > 0 && legs.length > 0) {
         const leg = legs[0];
         const matched = Math.min(remaining, leg.partialQty);
-        const pnl = (leg.fill.price - fill.price) * matched - (fill.commission + leg.fill.commission) * (matched / fill.quantity);
+        const contractMultiplier = fill.tradeType === "OPTIONS" ? 100 : 1;
+        const pnl = (leg.fill.price - fill.price) * matched * contractMultiplier - (fill.commission + leg.fill.commission) * (matched / fill.quantity);
         trades.push({
           instrument: key,
           direction: "SHORT",

@@ -149,11 +149,12 @@ export async function POST(req: Request) {
         const exitPrice = t.entryPrice; // SELL price = exit price of the original position
         const existingEntryPrice = Number(oppositeMatch.entryPrice);
         const existingQty = Number(oppositeMatch.quantity);
-        // Compute P&L based on the existing position's direction
+        // Options contracts carry a 100× multiplier on the price difference
+        const contractMultiplier = t.tradeType === "OPTIONS" ? 100 : 1;
         const rawPnl =
           oppositeMatch.direction === "LONG"
-            ? (exitPrice - existingEntryPrice) * existingQty
-            : (existingEntryPrice - exitPrice) * existingQty;
+            ? (exitPrice - existingEntryPrice) * existingQty * contractMultiplier
+            : (existingEntryPrice - exitPrice) * existingQty * contractMultiplier;
         toUpdate.push({
           id: oppositeMatch.id,
           exitPrice,
