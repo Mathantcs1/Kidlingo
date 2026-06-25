@@ -102,6 +102,14 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
 
   const watchedValues = useWatch({ control });
 
+  // Keep the form's quantity field in sync with numContracts when in OPTIONS mode
+  // so the live P&L preview and submission both use contracts (not shares × 100).
+  useEffect(() => {
+    if (tradeType === "OPTIONS") {
+      setValue("quantity", numContracts as unknown as number);
+    }
+  }, [tradeType, numContracts, setValue]);
+
   const livePnl = (() => {
     const { direction, entryPrice, exitPrice, quantity, commission, tradeType } = watchedValues;
     if (!direction || !entryPrice || !exitPrice || !quantity) return null;
@@ -150,7 +158,7 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
         expirationDate: expirationDate ? new Date(expirationDate).toISOString() : undefined,
         numContracts,
         underlyingPrice: underlyingPrice ? Number(underlyingPrice) : undefined,
-        quantity: numContracts * 100,
+        quantity: numContracts,
       }),
     };
 
@@ -208,7 +216,7 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
               <button
                 key={t}
                 type="button"
-                onClick={() => setTradeType(t)}
+                onClick={() => { setTradeType(t); setValue("tradeType", t as "EQUITY" | "OPTIONS"); }}
                 className={cn(
                   "px-6 py-2 text-sm font-medium transition-all duration-150",
                   tradeType === t
@@ -455,7 +463,7 @@ export function TradeForm({ dropdownValues, prefill, existingTrade }: TradeFormP
                   onChange={(e) => {
                     const n = Math.max(1, parseInt(e.target.value) || 1);
                     setNumContracts(n);
-                    setValue("quantity", (n * 100) as unknown as number);
+                    setValue("quantity", n as unknown as number);
                   }}
                 />
                 <p className="text-xs text-muted-foreground">1 contract = 100 shares</p>
