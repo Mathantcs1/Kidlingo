@@ -28,6 +28,9 @@ export interface ImportedTrade {
   strikePrice: number | null;
   expirationDate: string | null;
   pnl: number | null;
+  // True when a SELL/COVER fill had no matching open in this CSV — it's closing an
+  // existing position rather than opening a new one in the opposite direction.
+  isUnmatchedClose?: boolean;
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -132,6 +135,7 @@ function consolidateClosedTrades(trades: ImportedTrade[]): ImportedTrade[] {
 interface OpenLeg {
   fill: ParsedFill;
   partialQty: number;
+  isUnmatchedClose?: boolean;
 }
 
 export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
@@ -176,10 +180,16 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
         remaining -= matched;
         if (leg.partialQty <= 0) legs.shift();
       }
-      // leftover sell without matching buy → short trade
+      // Unmatched SELL: no prior BUY in this CSV — mark as an unmatched close so
+      // the server can look for an existing OPEN LONG to update instead of creating
+      // a spurious SHORT position.
       if (remaining > 0) {
         if (!openShorts.has(key)) openShorts.set(key, []);
-        openShorts.get(key)!.push({ fill: { ...fill, quantity: remaining, action: "SHORT" }, partialQty: remaining });
+        openShorts.get(key)!.push({
+          fill: { ...fill, quantity: remaining, action: "SHORT" },
+          partialQty: remaining,
+          isUnmatchedClose: true,
+        });
       }
     } else if (fill.action === "COVER") {
       let remaining = fill.quantity;
@@ -208,6 +218,15 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
         remaining -= matched;
         if (leg.partialQty <= 0) legs.shift();
       }
+      // Unmatched COVER: no prior SHORT in this CSV — mark so server can find existing OPEN SHORT.
+      if (remaining > 0) {
+        if (!openLongs.has(key)) openLongs.set(key, []);
+        openLongs.get(key)!.push({
+          fill: { ...fill, quantity: remaining, action: "BUY" },
+          partialQty: remaining,
+          isUnmatchedClose: true,
+        });
+      }
     }
   }
 
@@ -230,6 +249,7 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
         strikePrice: leg.fill.strikePrice,
         expirationDate: leg.fill.expirationDate ? leg.fill.expirationDate.toISOString() : null,
         pnl: null,
+        isUnmatchedClose: leg.isUnmatchedClose ?? false,
       });
     }
   }
@@ -251,6 +271,7 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
         strikePrice: leg.fill.strikePrice,
         expirationDate: leg.fill.expirationDate ? leg.fill.expirationDate.toISOString() : null,
         pnl: null,
+        isUnmatchedClose: leg.isUnmatchedClose ?? false,
       });
     }
   }

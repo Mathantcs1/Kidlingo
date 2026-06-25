@@ -18,6 +18,7 @@ const importedTradeSchema = z.object({
   strikePrice: z.number().nullable(),
   expirationDate: z.string().nullable(),
   pnl: z.number().nullable(),
+  isUnmatchedClose: z.boolean().optional().default(false),
 });
 
 const bodySchema = z.object({
@@ -52,73 +53,142 @@ export async function POST(req: Request) {
     if (!account) return NextResponse.json({ error: "Trading account not found" }, { status: 404 });
   }
 
-  // Fetch all existing open trades for this user to enable upsert matching.
-  // We don't filter by tradingAccountId here so manually-created trades without
-  // an account still get matched when importing into a specific account.
+  // Fetch all existing open trades. We deliberately don't filter by tradingAccountId
+  // so that manually-entered trades without an account are still matched.
   const existingOpen = await prisma.trade.findMany({
     where: { userId: session.user.id, status: "OPEN" },
-    select: { id: true, instrument: true, direction: true, entryDate: true, entryPrice: true },
+    select: {
+      id: true,
+      instrument: true,
+      direction: true,
+      entryDate: true,
+      entryPrice: true,
+      quantity: true,
+    },
   });
 
-  // Find an existing open trade that represents the same position as the import row.
-  // Match on: same instrument + direction, same calendar day for entry, entry price within $0.01.
-  function findOpenMatch(t: ImportTrade): string | null {
-    const importEntryDate = new Date(t.entryDate);
-    const match = existingOpen.find(
-      (e) =>
-        e.instrument.toUpperCase() === t.instrument.toUpperCase() &&
-        e.direction === t.direction &&
-        sameDay(e.entryDate, importEntryDate) &&
-        Math.abs(Number(e.entryPrice) - t.entryPrice) < 0.01
+  const matchedIds = new Set<string>();
+
+  // Match: same instrument + direction, same calendar day for entry, price within $0.01
+  function findSameDirMatch(t: ImportTrade) {
+    const importDate = new Date(t.entryDate);
+    return (
+      existingOpen.find(
+        (e) =>
+          !matchedIds.has(e.id) &&
+          e.instrument.toUpperCase() === t.instrument.toUpperCase() &&
+          e.direction === t.direction &&
+          sameDay(e.entryDate, importDate) &&
+          Math.abs(Number(e.entryPrice) - t.entryPrice) < 0.01
+      ) ?? null
     );
-    return match?.id ?? null;
   }
+
+  // Match: same instrument, opposite direction — for unmatched SELL/COVER fills that
+  // closed an existing position whose opening fill wasn't in this CSV.
+  function findOppositeDirMatch(t: ImportTrade) {
+    const oppositeDir = t.direction === "LONG" ? "SHORT" : "LONG";
+    return (
+      existingOpen.find(
+        (e) =>
+          !matchedIds.has(e.id) &&
+          e.instrument.toUpperCase() === t.instrument.toUpperCase() &&
+          e.direction === oppositeDir
+      ) ?? null
+    );
+  }
+
+  interface UpdateOp {
+    id: string;
+    exitPrice: number | null;
+    exitDate: Date | null;
+    commission: number | null;
+    pnl: number | null;
+    quantity?: number; // only set when closing a same-direction matched position
+  }
+
+  const toUpdate: UpdateOp[] = [];
+  const toCreate: ImportTrade[] = [];
 
   const closedTrades = trades.filter((t) => t.status === "CLOSED");
   const openTrades = trades.filter((t) => t.status === "OPEN");
 
-  const toUpdate: { id: string; trade: ImportTrade }[] = [];
-  const toCreate: ImportTrade[] = [];
-  const matchedIds = new Set<string>();
-
-  // Closed imports: update existing open position OR create a new closed trade.
+  // Phase 1 — CLOSED imports: update matching existing OPEN, or queue for creation
   for (const t of closedTrades) {
-    const matchId = findOpenMatch(t);
-    if (matchId && !matchedIds.has(matchId)) {
-      toUpdate.push({ id: matchId, trade: t });
-      matchedIds.add(matchId);
+    const match = findSameDirMatch(t);
+    if (match) {
+      toUpdate.push({
+        id: match.id,
+        exitPrice: t.exitPrice,
+        exitDate: t.exitDate ? new Date(t.exitDate) : null,
+        commission: t.commission,
+        pnl: t.pnl,
+        quantity: t.quantity,
+      });
+      matchedIds.add(match.id);
     } else {
       toCreate.push(t);
     }
   }
 
-  // Open imports: skip if an identical open position already exists in the DB.
+  // Phase 2 — OPEN imports
   for (const t of openTrades) {
-    const matchId = findOpenMatch(t);
-    if (!matchId || matchedIds.has(matchId)) {
-      toCreate.push(t);
+    // Skip if an identical same-direction open already exists
+    const sameMatch = findSameDirMatch(t);
+    if (sameMatch) {
+      matchedIds.add(sameMatch.id);
+      continue;
     }
-    // else: already present — skip to avoid duplicates
+
+    if (t.isUnmatchedClose) {
+      // This "open" is actually a SELL/COVER whose opening fill wasn't in this CSV.
+      // The importer turned it into a synthetic opposite-direction open — find the real
+      // existing position and close it.
+      const oppositeMatch = findOppositeDirMatch(t);
+      if (oppositeMatch) {
+        const exitPrice = t.entryPrice; // SELL price = exit price of the original position
+        const existingEntryPrice = Number(oppositeMatch.entryPrice);
+        const existingQty = Number(oppositeMatch.quantity);
+        // Compute P&L based on the existing position's direction
+        const rawPnl =
+          oppositeMatch.direction === "LONG"
+            ? (exitPrice - existingEntryPrice) * existingQty
+            : (existingEntryPrice - exitPrice) * existingQty;
+        toUpdate.push({
+          id: oppositeMatch.id,
+          exitPrice,
+          exitDate: new Date(t.entryDate),
+          commission: t.commission,
+          pnl: Math.round(rawPnl * 100) / 100,
+          // Don't update quantity — keep the original position size from when it was opened
+        });
+        matchedIds.add(oppositeMatch.id);
+        continue;
+      }
+    }
+
+    // No match found — create as a new record
+    toCreate.push(t);
   }
 
-  // Update existing open → closed
+  // Execute updates
   await Promise.all(
-    toUpdate.map(({ id, trade: t }) =>
+    toUpdate.map((op) =>
       prisma.trade.update({
-        where: { id },
+        where: { id: op.id },
         data: {
-          quantity: t.quantity,
-          exitPrice: t.exitPrice ?? undefined,
-          exitDate: t.exitDate ? new Date(t.exitDate) : undefined,
-          commission: t.commission ?? undefined,
+          ...(op.quantity !== undefined ? { quantity: op.quantity } : {}),
+          exitPrice: op.exitPrice ?? undefined,
+          exitDate: op.exitDate ?? undefined,
+          commission: op.commission ?? undefined,
           status: "CLOSED",
-          pnl: t.pnl ?? undefined,
+          pnl: op.pnl ?? undefined,
         },
       })
     )
   );
 
-  // Create remaining trades
+  // Create remaining new trades
   let created = { count: 0 };
   if (toCreate.length > 0) {
     created = await prisma.trade.createMany({
