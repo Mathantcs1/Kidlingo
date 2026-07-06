@@ -56,48 +56,66 @@ export function Header({ user }: HeaderProps) {
               <span className="sr-only">Open menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0 bg-slate-900 border-slate-700">
-            <div className="flex items-center gap-2 px-4 py-5 border-b border-slate-700">
-              <div className="p-1.5 rounded-md bg-gradient-to-br from-blue-500 to-violet-600 shadow-lg shadow-blue-500/25">
-                <Activity className="h-4 w-4 text-white" />
+          <SheetContent
+            side="left"
+            className="w-64 p-0"
+            style={{
+              backgroundColor: "hsl(var(--sidebar-background))",
+              borderColor: "hsl(var(--sidebar-border))",
+            }}
+          >
+            <div
+              className="flex items-center gap-2.5 px-4 py-[18px] border-b"
+              style={{ borderColor: "hsl(var(--sidebar-border))" }}
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 ring-1 ring-amber-500/25">
+                <Activity className="h-4 w-4 text-amber-400" />
               </div>
-              <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400 text-sm tracking-tight">TradePulse</span>
+              <span className="text-sm font-bold tracking-tight text-white/90">
+                Trade<span className="text-amber-400">Pulse</span>
+              </span>
             </div>
-            <nav className="flex-1 py-4 space-y-1 px-2">
+            <nav className="flex-1 py-3 space-y-0.5 px-2">
               {navItems.map(({ href, label, icon: Icon }) => {
                 const active = pathname === href || pathname.startsWith(href + "/");
                 return (
                   <Link key={href} href={href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
-                      active ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      "group flex items-center gap-3 px-2.5 py-2 rounded-md text-sm font-medium transition-all duration-150",
+                      active
+                        ? "bg-[hsl(var(--sidebar-accent))] text-amber-300 shadow-[inset_2px_0_0_hsl(38,90%,50%)]"
+                        : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-accent-foreground))]"
                     )}>
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className={cn("h-4 w-4 shrink-0", active ? "text-amber-400" : "")} />
                     {label}
                   </Link>
                 );
               })}
               {user.role === "ADMIN" && (
                 <>
-                  <div className="mt-4 mb-1 px-3">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Admin</p>
+                  <div className="mt-4 mb-1 px-2.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "hsl(var(--sidebar-foreground) / 0.5)" }}>Admin</p>
                   </div>
                   <Link href="/admin"
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
-                      pathname.startsWith("/admin") ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      "group flex items-center gap-3 px-2.5 py-2 rounded-md text-sm font-medium transition-all duration-150",
+                      pathname.startsWith("/admin")
+                        ? "bg-[hsl(var(--sidebar-accent))] text-amber-300 shadow-[inset_2px_0_0_hsl(38,90%,50%)]"
+                        : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-accent-foreground))]"
                     )}>
-                    <ShieldCheck className="h-4 w-4 shrink-0" />
+                    <ShieldCheck className={cn("h-4 w-4 shrink-0", pathname.startsWith("/admin") ? "text-amber-400" : "")} />
                     Admin Panel
                   </Link>
                 </>
               )}
-              <div className="mt-4 border-t border-slate-700 pt-3 space-y-1">
+              <div className="mt-4 pt-3 space-y-0.5 border-t" style={{ borderColor: "hsl(var(--sidebar-border))" }}>
                 <HelpDialog role={user.role} />
                 <Link href="/settings"
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
-                    pathname === "/settings" ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    "group flex items-center gap-3 px-2.5 py-2 rounded-md text-sm font-medium transition-all duration-150",
+                    pathname === "/settings"
+                      ? "bg-[hsl(var(--sidebar-accent))] text-amber-300 shadow-[inset_2px_0_0_hsl(38,90%,50%)]"
+                      : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-accent-foreground))]"
                   )}>
                   <Settings className="h-4 w-4 shrink-0" />
                   Settings

@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { HelpDialog } from "@/components/layout/help-dialog";
 
 const navItems = [
@@ -39,24 +38,31 @@ export function Sidebar({ role }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "relative flex-col bg-slate-900 border-r border-slate-700 transition-all duration-300 hidden md:flex shrink-0",
-        collapsed ? "w-16" : "w-60"
+        "relative flex-col border-r transition-all duration-300 hidden md:flex shrink-0",
+        "bg-[hsl(var(--sidebar-background))] border-[hsl(var(--sidebar-border))]",
+        collapsed ? "w-[60px]" : "w-60"
       )}
     >
       {/* Logo */}
-      <div className={cn("flex items-center gap-2 px-4 py-5 border-b border-slate-700", collapsed && "justify-center px-2")}>
-        <div className="p-1.5 rounded-md shrink-0 bg-gradient-to-br from-blue-500 to-violet-600 shadow-lg shadow-blue-500/25">
-          <Activity className="h-4 w-4 text-white" />
+      <div
+        className={cn(
+          "flex items-center gap-2.5 border-b px-4 py-[18px]",
+          "border-[hsl(var(--sidebar-border))]",
+          collapsed && "justify-center px-0"
+        )}
+      >
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 ring-1 ring-amber-500/25">
+          <Activity className="h-4 w-4 text-amber-400" />
         </div>
         {!collapsed && (
-          <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400 text-sm truncate tracking-tight">
-            TradePulse
+          <span className="text-sm font-bold tracking-tight text-white/90">
+            Trade<span className="text-amber-400">Pulse</span>
           </span>
         )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-4 space-y-1 px-2">
+      <nav className="flex-1 py-3 space-y-0.5 px-2">
         {navItems.map(({ href, label, icon: Icon, badge }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -64,20 +70,25 @@ export function Sidebar({ role }: SidebarProps) {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                "group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-all duration-150",
                 active
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                  ? "bg-[hsl(var(--sidebar-accent))] text-amber-300 shadow-[inset_2px_0_0_hsl(38,90%,50%)]"
+                  : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-accent-foreground))]",
                 collapsed && "justify-center px-2"
               )}
               title={collapsed ? label : undefined}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-colors",
+                  active ? "text-amber-400" : "group-hover:text-white/80"
+                )}
+              />
               {!collapsed && (
                 <>
                   <span className="flex-1">{label}</span>
                   {badge && (
-                    <span className="ml-auto rounded px-1.5 py-0.5 text-[9px] font-bold bg-blue-500 text-white leading-none">
+                    <span className="ml-auto rounded px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-300 leading-none tracking-wide">
                       {badge}
                     </span>
                   )}
@@ -89,9 +100,11 @@ export function Sidebar({ role }: SidebarProps) {
 
         {role === "ADMIN" && (
           <>
-            <div className={cn("mt-4 mb-1 px-3", collapsed && "px-0")}>
+            <div className={cn("mt-4 mb-1 px-2.5", collapsed && "px-0")}>
               {!collapsed && (
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Admin</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--sidebar-foreground)/0.5)]">
+                  Admin
+                </p>
               )}
             </div>
             {adminItems.map(({ href, label, icon: Icon }) => {
@@ -101,15 +114,20 @@ export function Sidebar({ role }: SidebarProps) {
                   key={href}
                   href={href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                    "group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-all duration-150",
                     active
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                      ? "bg-[hsl(var(--sidebar-accent))] text-amber-300 shadow-[inset_2px_0_0_hsl(38,90%,50%)]"
+                      : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-accent-foreground))]",
                     collapsed && "justify-center px-2"
                   )}
                   title={collapsed ? label : undefined}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <Icon
+                    className={cn(
+                      "h-4 w-4 shrink-0",
+                      active ? "text-amber-400" : "group-hover:text-white/80"
+                    )}
+                  />
                   {!collapsed && label}
                 </Link>
               );
@@ -119,17 +137,25 @@ export function Sidebar({ role }: SidebarProps) {
       </nav>
 
       {/* Bottom: Help + Settings */}
-      <div className="border-t border-slate-700 py-3 px-2 space-y-1">
+      <div
+        className={cn(
+          "border-t py-3 px-2 space-y-0.5",
+          "border-[hsl(var(--sidebar-border))]"
+        )}
+      >
         <HelpDialog role={role} collapsed={collapsed} />
         <Link
           href="/settings"
           className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors",
+            "group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-all duration-150",
+            pathname === "/settings"
+              ? "bg-[hsl(var(--sidebar-accent))] text-amber-300 shadow-[inset_2px_0_0_hsl(38,90%,50%)]"
+              : "text-[hsl(var(--sidebar-foreground))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-accent-foreground))]",
             collapsed && "justify-center px-2"
           )}
           title={collapsed ? "Settings" : undefined}
         >
-          <Settings className="h-4 w-4 shrink-0" />
+          <Settings className="h-4 w-4 shrink-0 group-hover:text-white/80" />
           {!collapsed && "Settings"}
         </Link>
       </div>
@@ -137,7 +163,11 @@ export function Sidebar({ role }: SidebarProps) {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className="absolute -right-3 top-20 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-slate-400 hover:text-white shadow-sm"
+        className={cn(
+          "absolute -right-3 top-20 z-10 flex h-6 w-6 items-center justify-center rounded-full",
+          "border bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--sidebar-foreground))]",
+          "border-[hsl(var(--sidebar-border))] hover:text-white transition-colors shadow-sm"
+        )}
       >
         {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
       </button>

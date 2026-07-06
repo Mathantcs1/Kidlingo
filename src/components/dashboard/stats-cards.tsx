@@ -83,14 +83,14 @@ export function StatsCards({ stats }: { stats: DashboardStats }) {
       {cards.map((card) => (
         <Card
           key={card.title}
-          className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-muted-foreground/30"
+          className="group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 hover:border-amber-500/20 dark:hover:shadow-black/20"
         >
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
             <CardTitle className="text-xs font-medium text-muted-foreground">{card.title}</CardTitle>
-            <card.icon className={cn("h-4 w-4", card.color)} />
+            <card.icon className={cn("h-4 w-4 transition-transform duration-200 group-hover:scale-110", card.color)} />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className={cn("text-xl font-bold tabular-nums", card.color)}>
+            <div className={cn("text-xl font-bold tabular-nums tracking-tight", card.color)}>
               <AnimatedNumber value={card.raw} format={card.format} />
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">{card.sub}</p>
