@@ -55,10 +55,43 @@ function parseQty(s: string): number {
   return Math.abs(parseFloat(s.replace(/[,\s]/g, "")) || 0);
 }
 
+// Timezone abbreviations Webull/US brokers emit → UTC offsets. Building an
+// explicit ISO-8601 string (e.g. "2026-07-02T13:34:06-04:00") is critical:
+// Safari/iOS refuses to parse the space-separated "2026-07-02 13:34:06 EDT"
+// form and returns Invalid Date, which silently drops every row on mobile.
+const TZ_OFFSETS: Record<string, string> = {
+  EDT: "-04:00", EST: "-05:00",
+  CDT: "-05:00", CST: "-06:00",
+  MDT: "-06:00", MST: "-07:00",
+  PDT: "-07:00", PST: "-08:00",
+  UTC: "+00:00", GMT: "+00:00",
+};
+
 function parseDate(s: string): Date | null {
   if (!s) return null;
-  const d = new Date(s.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, "$3-$1-$2"));
-  return isNaN(d.getTime()) ? null : d;
+  const raw = s.trim();
+  if (!raw) return null;
+
+  // "MM/DD/YYYY[ HH:MM[:SS]] [TZ]" — the Webull / Robinhood shape.
+  const m = raw.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?(?:\s*([A-Z]{2,4}))?/
+  );
+  if (m) {
+    const [, mm, dd, yyyy, hh = "0", min = "0", ss = "0", tz] = m;
+    const pad = (n: string) => n.padStart(2, "0");
+    const offset = tz && TZ_OFFSETS[tz] ? TZ_OFFSETS[tz] : "";
+    const iso = `${yyyy}-${pad(mm)}-${pad(dd)}T${pad(hh)}:${pad(min)}:${pad(ss)}${offset}`;
+    const d = new Date(iso);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // ISO-8601 or anything the engine parses natively (works cross-browser).
+  const direct = new Date(raw);
+  if (!isNaN(direct.getTime())) return direct;
+
+  // Last-resort fallback for unusual separators.
+  const d2 = new Date(raw.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, "$3-$1-$2"));
+  return isNaN(d2.getTime()) ? null : d2;
 }
 
 // Parse an options description like "AAPL 01/19/2024 Call $185.00"
@@ -77,11 +110,11 @@ function parseOptionInstrument(raw: string): {
       strike: parseFloat(callMatch[4]),
     };
   }
-  // "AAPL01192024C00185000" OCC format
+  // OCC format "SPY260702C00745000" — SYMBOL + YYMMDD + C/P + strike(×1000).
   const occMatch = raw.match(/^([A-Z]+)(\d{6})([CP])(\d+)/i);
   if (occMatch) {
-    const ds = occMatch[2];
-    const expiry = new Date(`20${ds.slice(4, 6)}-${ds.slice(0, 2)}-${ds.slice(2, 4)}`);
+    const ds = occMatch[2]; // YYMMDD
+    const expiry = new Date(`20${ds.slice(0, 2)}-${ds.slice(2, 4)}-${ds.slice(4, 6)}`);
     return {
       underlying: occMatch[1].toUpperCase(),
       expiry: isNaN(expiry.getTime()) ? null : expiry,
@@ -138,6 +171,17 @@ interface OpenLeg {
   isUnmatchedClose?: boolean;
 }
 
+// Fills are matched into round trips by this key. For options it must include
+// the full contract identity (type/strike/expiry) so that different strikes of
+// the same underlying — e.g. the two legs of a vertical spread — never match
+// against each other.
+function matchKey(f: ParsedFill): string {
+  if (f.tradeType === "OPTIONS") {
+    return `${f.instrument}|${f.optionType ?? ""}|${f.strikePrice ?? ""}|${f.expirationDate ? f.expirationDate.toISOString().slice(0, 10) : ""}`;
+  }
+  return f.instrument;
+}
+
 export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
   fills.sort((a, b) => a.date.getTime() - b.date.getTime());
   const openLongs: Map<string, OpenLeg[]> = new Map();
@@ -145,11 +189,44 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
   const trades: ImportedTrade[] = [];
 
   for (const fill of fills) {
-    const key = fill.instrument;
+    const key = matchKey(fill);
 
     if (fill.action === "BUY") {
-      if (!openLongs.has(key)) openLongs.set(key, []);
-      openLongs.get(key)!.push({ fill, partialQty: fill.quantity });
+      // A BUY first closes any open SHORT for this instrument (FIFO) — this
+      // handles the short leg of a spread that was sold-to-open then
+      // bought-to-close, since Webull's "Side" column doesn't distinguish
+      // open from close. Only the remainder opens a new LONG.
+      let remaining = fill.quantity;
+      const shortLegs = openShorts.get(key) ?? [];
+      while (remaining > 0 && shortLegs.length > 0) {
+        const leg = shortLegs[0];
+        const matched = Math.min(remaining, leg.partialQty);
+        const contractMultiplier = fill.tradeType === "OPTIONS" ? 100 : 1;
+        const pnl = (leg.fill.price - fill.price) * matched * contractMultiplier - (fill.commission + leg.fill.commission) * (matched / fill.quantity);
+        trades.push({
+          instrument: fill.instrument,
+          direction: "SHORT",
+          entryPrice: leg.fill.price,
+          exitPrice: fill.price,
+          quantity: matched,
+          entryDate: leg.fill.date.toISOString(),
+          exitDate: fill.date.toISOString(),
+          commission: leg.fill.commission + fill.commission,
+          status: "CLOSED",
+          tradeType: fill.tradeType,
+          optionType: fill.optionType,
+          strikePrice: fill.strikePrice,
+          expirationDate: fill.expirationDate ? fill.expirationDate.toISOString() : null,
+          pnl: Math.round(pnl * 100) / 100,
+        });
+        leg.partialQty -= matched;
+        remaining -= matched;
+        if (leg.partialQty <= 0) shortLegs.shift();
+      }
+      if (remaining > 0) {
+        if (!openLongs.has(key)) openLongs.set(key, []);
+        openLongs.get(key)!.push({ fill: { ...fill, quantity: remaining }, partialQty: remaining });
+      }
     } else if (fill.action === "SHORT") {
       if (!openShorts.has(key)) openShorts.set(key, []);
       openShorts.get(key)!.push({ fill, partialQty: fill.quantity });
@@ -162,7 +239,7 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
         const contractMultiplier = fill.tradeType === "OPTIONS" ? 100 : 1;
         const pnl = (fill.price - leg.fill.price) * matched * contractMultiplier - (fill.commission + leg.fill.commission) * (matched / fill.quantity);
         trades.push({
-          instrument: key,
+          instrument: fill.instrument,
           direction: "LONG",
           entryPrice: leg.fill.price,
           exitPrice: fill.price,
@@ -201,7 +278,7 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
         const contractMultiplier = fill.tradeType === "OPTIONS" ? 100 : 1;
         const pnl = (leg.fill.price - fill.price) * matched * contractMultiplier - (fill.commission + leg.fill.commission) * (matched / fill.quantity);
         trades.push({
-          instrument: key,
+          instrument: fill.instrument,
           direction: "SHORT",
           entryPrice: leg.fill.price,
           exitPrice: fill.price,
@@ -233,11 +310,11 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
   }
 
   // Remaining open positions
-  for (const [key, legs] of openLongs.entries()) {
+  for (const legs of openLongs.values()) {
     for (const leg of legs) {
       if (leg.partialQty <= 0) continue;
       trades.push({
-        instrument: key,
+        instrument: leg.fill.instrument,
         direction: "LONG",
         entryPrice: leg.fill.price,
         exitPrice: null,
@@ -255,11 +332,11 @@ export function fillsToTrades(fills: ParsedFill[]): ImportedTrade[] {
       });
     }
   }
-  for (const [key, legs] of openShorts.entries()) {
+  for (const legs of openShorts.values()) {
     for (const leg of legs) {
       if (leg.partialQty <= 0) continue;
       trades.push({
-        instrument: key,
+        instrument: leg.fill.instrument,
         direction: "SHORT",
         entryPrice: leg.fill.price,
         exitPrice: null,
