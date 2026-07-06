@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy, Check } from "lucide-react";
 import Link from "next/link";
+import { isInAppBrowser } from "@/lib/webview";
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
@@ -35,6 +36,12 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [inApp, setInApp] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setInApp(isInAppBrowser());
+  }, []);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -61,10 +68,20 @@ export function LoginForm() {
     await signIn("google", { callbackUrl: "/dashboard" });
   }
 
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable — user can copy from the address bar */
+    }
+  }
+
   return (
-    <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+    <Card className="border-border bg-card/60 backdrop-blur">
       <CardHeader>
-        <CardTitle className="text-white">Welcome back</CardTitle>
+        <CardTitle>Welcome back</CardTitle>
         <CardDescription>Sign in to your trading journal</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -80,10 +97,9 @@ export function LoginForm() {
               id="email"
               type="email"
               placeholder="you@example.com"
-              className="bg-slate-700 border-slate-600"
               {...register("email")}
             />
-            {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
@@ -91,10 +107,9 @@ export function LoginForm() {
               id="password"
               type="password"
               placeholder="••••••••"
-              className="bg-slate-700 border-slate-600"
               {...register("password")}
             />
-            {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
+            {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -103,26 +118,53 @@ export function LoginForm() {
         </form>
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-slate-600" />
+            <span className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-slate-800 px-2 text-slate-400">Or continue with</span>
+            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
           </div>
         </div>
-        <Button
-          variant="outline"
-          className="w-full border-slate-600"
-          onClick={handleGoogle}
-          disabled={googleLoading}
-        >
-          {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
-          Sign in with Google
-        </Button>
+
+        {inApp ? (
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 space-y-3">
+            <p className="text-sm text-amber-600 dark:text-amber-300">
+              <span className="font-semibold">Open in your browser to use Google.</span>{" "}
+              You&apos;re in an in-app browser, and Google blocks sign-in here for
+              security. Tap the <span className="font-semibold">•••</span> menu and choose
+              &ldquo;Open in Safari/Chrome,&rdquo; or copy the link below.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={copyLink}
+            >
+              {copied ? (
+                <><Check className="mr-2 h-4 w-4" />Link copied</>
+              ) : (
+                <><Copy className="mr-2 h-4 w-4" />Copy sign-in link</>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              You can still sign in with your email and password above.
+            </p>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleGoogle}
+            disabled={googleLoading}
+          >
+            {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+            Sign in with Google
+          </Button>
+        )}
       </CardContent>
       <CardFooter className="justify-center">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-blue-400 hover:underline">
+          <Link href="/register" className="font-medium text-primary hover:underline">
             Sign up
           </Link>
         </p>
