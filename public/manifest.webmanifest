@@ -1,0 +1,11 @@
+{
+  "name": "Fairshare",
+  "short_name": "Fairshare",
+  "description": "Split shared expenses. Free, unlimited, offline, private.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
