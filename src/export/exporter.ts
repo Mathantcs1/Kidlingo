@@ -138,9 +138,11 @@ interface TempFile {
 
 /**
  * Renders the project to an H.264 (+ AAC when anything is audible) MP4. The file is streamed into a temp
- * file in OPFS (`clipforge-export/`) and returned as a Blob backed by that file; call `cleanupExportTemp()`
- * once it has been saved. If OPFS is unavailable the file is built in memory instead (BufferTarget), which
- * limits very long 4K exports to what fits in RAM.
+ * file in OPFS (`clipforge-export/`) and returned as a Blob backed by that file (see exportTempName); it stays
+ * there until `cleanupExportTemp()` runs (before the next export, and at app start). If OPFS is unavailable the
+ * file is built in memory instead (BufferTarget), which limits very long 4K exports to what fits in RAM. The
+ * audio mix is rendered in EXPORT_WINDOW_SECONDS windows interleaved with the frames, so memory does not grow
+ * with the project length.
  *
  * Rejects with ExportError('Nothing to export') for an empty timeline, and with
  * DOMException('Aborted', 'AbortError') when `signal` aborts; either way every decoder, encoder, GL object

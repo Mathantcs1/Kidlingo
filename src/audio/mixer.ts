@@ -21,6 +21,8 @@ const MIN_WAIT_MS = 50;
 
 interface Session {
   gen: number;
+  /** Aborted on stop so pending decodes end early. */
+  abort: AbortController;
   ctx: AudioContext;
   from: number;
   ctxStart: number;
@@ -67,6 +69,7 @@ class LiveMixer implements Mixer {
     const clips = audibleClips(p);
     const s: Session = {
       gen,
+      abort: new AbortController(),
       ctx,
       from,
       ctxStart: 0,
@@ -81,7 +84,13 @@ class LiveMixer implements Mixer {
       wake: null,
     };
     this.session = s;
-    const first = s.windows.length ? await this.decodeWindow(s, s.windows[0]) : [];
+    let first: [Segment, DecodedAudio][] = [];
+    try {
+      if (s.windows.length) first = await this.decodeWindow(s, s.windows[0]);
+    } catch (e) {
+      if (gen !== this.generation) return;
+      throw e;
+    }
     if (gen !== this.generation) return;
     s.master = ctx.createGain();
     s.master.connect(ctx.destination);
@@ -100,6 +109,7 @@ class LiveMixer implements Mixer {
     if (!s) return;
     clearTimeout(s.timer);
     s.wake?.();
+    s.abort.abort();
     for (const node of [...s.nodes.keys()]) this.release(s, node, true);
     s.master?.disconnect();
   }
@@ -145,8 +155,10 @@ class LiveMixer implements Mixer {
       let decoded: DecodedAudio | null;
       try {
         const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN);
-        decoded = await decodeAudioRange(seg.mediaId, from, Math.min(clip.out, seg.srcTo + CUT_MARGIN), s.ctx);
+        const to = Math.min(clip.out, seg.srcTo + CUT_MARGIN);
+        decoded = await decodeAudioRange(seg.mediaId, from, to, s.ctx, s.abort.signal);
       } catch (e) {
+        if (s.gen !== this.generation) return [];
         const name = s.names.get(seg.mediaId) ?? seg.mediaId;
         throw new Error(`Could not read the audio of "${name}": ${e instanceof Error ? e.message : String(e)}`);
       }

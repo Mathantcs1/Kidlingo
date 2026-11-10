@@ -35,13 +35,11 @@ test('Play on a 10-minute clip starts moving the playhead within 1.5 s and decod
     .poll(async () => (await playerState(page)).playhead, { timeout: 1500, intervals: [25] })
     .toBeGreaterThan(before + 0.02);
   const firstAdvance = Date.now() - t0;
-  console.log(`time to first playhead advance: ${firstAdvance} ms`);
   expect(firstAdvance).toBeLessThan(1500);
 
   // The next window is decoded in the background while the first one plays.
   await expect.poll(async () => (await audioStats(page)).windows, { timeout: 5000 }).toBeGreaterThanOrEqual(2);
   const stats = await audioStats(page);
-  console.log(`live playback largest AudioBuffer: ${stats.largestBuffer} samples`);
   // A whole-clip decode would be 600 s x 8 kHz; two windows plus margins stay far below a tenth of that.
   expect(stats.largestBuffer).toBeGreaterThan(0);
   expect(stats.largestBuffer).toBeLessThanOrEqual((LIVE_WINDOW + 1) * 8000);
