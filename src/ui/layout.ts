@@ -27,6 +27,23 @@ export function formatTime(sec: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+/** Playhead position as m:ss.t (tenths, truncated so 1.99 s never reads as 0:02.0); invalid or negative reads 0:00.0. */
+export function formatTimecode(sec: number): string {
+  const tenths = Number.isFinite(sec) && sec > 0 ? Math.floor(sec * 10 + 1e-6) : 0;
+  const m = Math.floor(tenths / 600);
+  const s = Math.floor((tenths % 600) / 10);
+  return `${m}:${String(s).padStart(2, '0')}.${tenths % 10}`;
+}
+
+/**
+ * Where to scroll the timeline so the playhead at `x` px stays visible during playback: null while it is inside the
+ * viewport [scrollLeft, scrollLeft + width), else a position that puts it 10 % in from the left edge.
+ */
+export function followScroll(x: number, scrollLeft: number, width: number): number | null {
+  if (!(width > 0) || (x >= scrollLeft && x < scrollLeft + width)) return null;
+  return Math.max(0, Math.round(x - width * 0.1));
+}
+
 export interface Tick {
   time: number;
   label: string;

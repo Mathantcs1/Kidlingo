@@ -4,6 +4,7 @@ import { useEditor } from '../state/store';
 import Lane from './Lane';
 import { DEFAULT_PPS, MAX_PPS, MIN_PPS, contentSeconds, rulerTicks, timeToPx, trackLabels, zoom } from './layout';
 import { useClipDrag } from './useClipDrag';
+import { useFollowPlayhead } from './useFollowPlayhead';
 import { useScrub } from './useScrub';
 
 /** The timeline; `inert` while another tab owns the editor. */
@@ -11,6 +12,7 @@ export default function Timeline({ inert }: { inert: boolean }) {
   const project = useEditor((s) => s.history.present);
   const selection = useEditor((s) => s.selection);
   const playhead = useEditor((s) => s.playhead);
+  const playing = useEditor((s) => s.playing);
   const [pps, setPps] = useState(DEFAULT_PPS);
 
   const seconds = contentSeconds(timelineDuration(project));
@@ -21,6 +23,8 @@ export default function Timeline({ inert }: { inert: boolean }) {
   const rulerRef = useRef<HTMLDivElement>(null);
   const scrub = useScrub(rulerRef, pps);
   const { preview, begin } = useClipDrag(pps);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const onScroll = useFollowPlayhead(scrollRef, timeToPx(playhead, pps), playing);
 
   return (
     <section className="timeline" aria-label="Timeline" inert={inert}>
@@ -57,7 +61,7 @@ export default function Timeline({ inert }: { inert: boolean }) {
             </div>
           ))}
         </div>
-        <div className="timeline-scroll">
+        <div className="timeline-scroll" data-testid="timeline-scroll" ref={scrollRef} onScroll={onScroll}>
           <div className="timeline-content" style={{ width }}>
             <div className="ruler" data-testid="timeline-ruler" ref={rulerRef} {...scrub}>
               {rulerTicks(seconds, pps).map((t) => (

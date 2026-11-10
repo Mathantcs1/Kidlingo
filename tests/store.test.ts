@@ -137,4 +137,29 @@ describe('reconcileMedia', () => {
     expect(q.media.m3.missing).toBeFalsy();
     expect(p).toEqual(snapshot);
   });
+
+  it('clamps the playhead when the timeline shrinks (delete, undo, redo, load)', () => {
+    const s = useEditor.getState();
+    s.apply((p) => addClip(p, p.tracks[0].id, clip('c1')));
+    s.apply((p) => addClip(p, p.tracks[0].id, clip('c2', { start: 5 })));
+    useEditor.getState().setPlayhead(8);
+    useEditor.getState().apply((p) => deleteClip(p, 'c2'));
+    expect(useEditor.getState().playhead).toBe(5);
+    useEditor.getState().undo();
+    expect(useEditor.getState().playhead).toBe(5);
+    useEditor.getState().setPlayhead(9);
+    useEditor.getState().undo();
+    expect(useEditor.getState().playhead).toBe(5);
+    useEditor.getState().undo();
+    expect(useEditor.getState().playhead).toBe(0);
+    useEditor.getState().redo();
+    expect(useEditor.getState().playhead).toBe(0);
+  });
+
+  it('keeps the playhead when the timeline does not shrink below it', () => {
+    useEditor.getState().apply((p) => addClip(p, p.tracks[0].id, clip('c1')));
+    useEditor.getState().setPlayhead(3);
+    useEditor.getState().apply((p) => addClip(p, p.tracks[0].id, clip('c2', { start: 5 })));
+    expect(useEditor.getState().playhead).toBe(3);
+  });
 });

@@ -7,6 +7,8 @@ import {
   fitBox,
   formatKeyOf,
   formatTime,
+  formatTimecode,
+  followScroll,
   pxToTime,
   rulerTicks,
   timeToPx,
@@ -39,6 +41,41 @@ function withMedia(...ms: MediaRef[]): Project {
 }
 
 const clipsOf = (p: Project, kind: 'video' | 'audio') => p.tracks.find((t) => t.kind === kind)!.clips;
+
+describe('followScroll', () => {
+  it('leaves the scroll alone while the playhead is visible', () => {
+    expect(followScroll(100, 0, 800)).toBeNull();
+    expect(followScroll(799, 0, 800)).toBeNull();
+    expect(followScroll(1000, 900, 800)).toBeNull();
+  });
+
+  it('pages forward so the playhead sits near the left edge once it leaves the view', () => {
+    expect(followScroll(800, 0, 800)).toBe(800 - 80);
+    expect(followScroll(2000, 0, 800)).toBe(2000 - 80);
+  });
+
+  it('jumps back when the playhead is left of the view, never below 0', () => {
+    expect(followScroll(100, 900, 800)).toBe(20);
+    expect(followScroll(10, 900, 800)).toBe(0);
+  });
+
+  it('does nothing without a measured viewport', () => {
+    expect(followScroll(100, 0, 0)).toBeNull();
+  });
+});
+
+describe('formatTimecode', () => {
+  it('shows minutes, seconds and tenths without rounding up', () => {
+    expect(formatTimecode(0)).toBe('0:00.0');
+    expect(formatTimecode(1.5)).toBe('0:01.5');
+    expect(formatTimecode(1.99)).toBe('0:01.9');
+    expect(formatTimecode(0.3)).toBe('0:00.3');
+    expect(formatTimecode(65.25)).toBe('1:05.2');
+    expect(formatTimecode(3600)).toBe('60:00.0');
+    expect(formatTimecode(Number.NaN)).toBe('0:00.0');
+    expect(formatTimecode(-4)).toBe('0:00.0');
+  });
+});
 
 describe('layout', () => {
   it('converts between time and pixels', () => {

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Id, Project } from '../core/model';
 import { emptyProject } from '../core/model';
-import { TimelineError } from '../core/timeline';
+import { TimelineError, timelineDuration } from '../core/timeline';
 import { commit, createHistory, redo, undo } from './history';
 import type { History } from './history';
 import { describeStorageError } from '../media/storageErrors';
@@ -38,6 +38,12 @@ function pruneSelection(selection: Id[], p: Project): Id[] {
   return pruned.length === selection.length ? selection : pruned;
 }
 
+/** The playhead limited to the end of `p`'s timeline (0 for an empty one), so it never sits past the content. */
+function clampPlayhead(playhead: number, p: Project): number {
+  const end = timelineDuration(p);
+  return playhead > end ? Math.max(0, end) : playhead;
+}
+
 export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
   history: createHistory(emptyProject()),
   selection: [],
@@ -47,7 +53,7 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
   saveError: null,
 
   apply(fn) {
-    const { history, selection } = get();
+    const { history, selection, playhead } = get();
     let next: Project;
     try {
       next = fn(history.present);
@@ -61,19 +67,22 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
     set({
       history: commit(history, next),
       selection: pruneSelection(selection, next),
+      playhead: clampPlayhead(playhead, next),
       lastError: null,
     });
   },
   undo() {
     set((s) => {
       const history = undo(s.history);
-      return { history, selection: pruneSelection(s.selection, history.present), lastError: null };
+      const p = history.present;
+      return { history, selection: pruneSelection(s.selection, p), playhead: clampPlayhead(s.playhead, p), lastError: null };
     });
   },
   redo() {
     set((s) => {
       const history = redo(s.history);
-      return { history, selection: pruneSelection(s.selection, history.present), lastError: null };
+      const p = history.present;
+      return { history, selection: pruneSelection(s.selection, p), playhead: clampPlayhead(s.playhead, p), lastError: null };
     });
   },
   select(ids) {

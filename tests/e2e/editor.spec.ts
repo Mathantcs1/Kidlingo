@@ -368,10 +368,9 @@ test('undo drops selected clips it removes; split, delete and redo stay usable',
   // With the stale id gone, S falls back to splitting the clip under the playhead.
   await page.keyboard.press('s');
   await expect(page.getByTestId('timeline-clip')).toHaveCount(3);
-  await page.getByTestId('btn-merge').click();
-  await expect(page.getByTestId('error-toast')).toHaveCount(1);
-  await expect(page.getByTestId('error-toast')).toContainText('Select at least two clips to join');
-  await expect(page.getByTestId('error-toast').filter({ hasText: /Clip not found|Move the playhead/ })).toHaveCount(0);
+  // Merge needs two selected clips (the button is disabled below that), and nothing stale surfaced as an error.
+  await expect(page.getByTestId('btn-merge')).toBeDisabled();
+  await expect(page.getByTestId('error-toast')).toHaveCount(0);
 });
 
 test('without WebCodecs a banner shows and import is disabled', async ({ page }) => {

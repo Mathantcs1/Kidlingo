@@ -3,7 +3,7 @@ import { useEditor } from '../state/store';
 import { deleteSelected, mergeSelected, redo, rippleDeleteSelected, splitAtPlayhead, togglePlay, undo } from './commands';
 import { videoClipCount } from './edits';
 import { openExport, startMerge } from './exportJob';
-import { formatTime } from './layout';
+import { formatTimecode } from './layout';
 import { usePlaybackStatus } from './usePlayback';
 
 export default function Toolbar({ editable, inert }: { editable: boolean; inert: boolean }) {
@@ -46,7 +46,7 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
           {buffering ? 'Loading…' : playing ? 'Pause' : 'Play'}
         </button>
         <span className="timecode" aria-label="Playhead position">
-          {formatTime(playhead)}
+          {formatTimecode(playhead)}
         </span>
       </div>
       <div className="toolbar-group">
@@ -81,7 +81,7 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
           type="button"
           data-testid="btn-merge"
           onClick={mergeSelected}
-          disabled={!editable}
+          disabled={!editable || selected < 2}
           title="Join the selected clips"
         >
           Merge
