@@ -14,13 +14,19 @@ export function addMedia(p: Project, m: MediaRef): Project {
   return { ...p, media: { ...p.media, [m.id]: m } };
 }
 
-/** Appends the media as a full-length clip at the end of the first track of its kind. */
-export function appendMedia(p: Project, mediaId: Id): Project {
+/**
+ * Appends the media as a full-length clip at the end of a track of its kind: the active track when it has that
+ * kind, else the first. Locked tracks are skipped (in array order); throws when every track of the kind is locked.
+ */
+export function appendMedia(p: Project, mediaId: Id, activeTrackId?: Id | null): Project {
   const m = p.media[mediaId];
   if (!m) throw new TimelineError(`Media not found: ${mediaId}`);
   const kind = m.kind === 'audio' ? 'audio' : 'video';
-  const track = p.tracks.find((t) => t.kind === kind);
-  if (!track) throw new TimelineError(`There is no ${kind} track to add ${m.name} to`);
+  const ofKind = p.tracks.filter((t) => t.kind === kind);
+  if (ofKind.length === 0) throw new TimelineError(`There is no ${kind} track to add ${m.name} to`);
+  const active = ofKind.find((t) => t.id === activeTrackId);
+  const track = [...(active ? [active] : []), ...ofKind].find((t) => !t.locked);
+  if (!track) throw new TimelineError('All tracks of this kind are locked');
   const start = track.clips.reduce((end, c) => Math.max(end, clipEnd(c)), 0);
   return addClip(p, track.id, clipFromMedia(m, track.id, start, p.format));
 }

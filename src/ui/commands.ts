@@ -44,7 +44,7 @@ export function mergeSelected(): void {
 }
 
 export function addToTimeline(mediaId: Id): void {
-  guard(() => editor().apply((p) => appendMedia(p, mediaId)));
+  guard(() => editor().apply((p) => appendMedia(p, mediaId, editor().activeTrackId)));
 }
 
 /** Starts or pauses playback. Call from the user gesture itself: starting unlocks the shared AudioContext. */

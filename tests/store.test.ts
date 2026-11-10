@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { emptyProject, defaultTransform } from '../src/core/model';
 import type { Clip } from '../src/core/model';
 import { addClip, deleteClip } from '../src/core/timeline';
+import { addTrack, removeTrack } from '../src/core/tracks';
 import { useEditor, flushAutosave } from '../src/state/store';
 import { reconcileMedia } from '../src/state/persist';
 import type { Project } from '../src/core/model';
@@ -161,5 +162,47 @@ describe('reconcileMedia', () => {
     useEditor.getState().setPlayhead(3);
     useEditor.getState().apply((p) => addClip(p, p.tracks[0].id, clip('c2', { start: 5 })));
     expect(useEditor.getState().playhead).toBe(3);
+  });
+
+  describe('activeTrackId', () => {
+    it('starts null; setActiveTrack sets a known id and ignores unknown ones', () => {
+      const s = useEditor.getState();
+      expect(s.activeTrackId).toBeNull();
+      const id = s.history.present.tracks[0].id;
+      s.setActiveTrack(id);
+      expect(useEditor.getState().activeTrackId).toBe(id);
+      useEditor.getState().setActiveTrack('nope');
+      expect(useEditor.getState().activeTrackId).toBe(id);
+      expect(useEditor.getState().lastError).toBeNull();
+      useEditor.getState().setActiveTrack(null);
+      expect(useEditor.getState().activeTrackId).toBeNull();
+    });
+
+    it('removing the active track via apply clears it; undo does not restore it; redo keeps it cleared', () => {
+      useEditor.getState().apply((p) => addTrack(p, 'video'));
+      const id = useEditor.getState().history.present.tracks[1].id;
+      useEditor.getState().setActiveTrack(id);
+      useEditor.getState().apply((p) => removeTrack(p, id));
+      expect(useEditor.getState().activeTrackId).toBeNull();
+      useEditor.getState().undo();
+      expect(useEditor.getState().activeTrackId).toBeNull();
+      useEditor.getState().redo();
+      expect(useEditor.getState().activeTrackId).toBeNull();
+    });
+
+    it('undo prunes an active track that the undone state does not have', () => {
+      useEditor.getState().apply((p) => addTrack(p, 'video'));
+      const id = useEditor.getState().history.present.tracks[1].id;
+      useEditor.getState().setActiveTrack(id);
+      useEditor.getState().undo();
+      expect(useEditor.getState().activeTrackId).toBeNull();
+    });
+
+    it('loadProject clears it', () => {
+      const s = useEditor.getState();
+      s.setActiveTrack(s.history.present.tracks[0].id);
+      useEditor.getState().loadProject(emptyProject());
+      expect(useEditor.getState().activeTrackId).toBeNull();
+    });
   });
 });

@@ -3,6 +3,7 @@ import { fitTransform } from '../src/core/merge';
 import { defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
+import { addTrack } from '../src/core/tracks';
 import {
   appendMedia,
   clipsUsingMedia,
@@ -203,7 +204,7 @@ describe('lock guards in edits', () => {
 
   it('appendMedia and dropMedia refuse a locked target track', () => {
     const p = lock(project(), 0);
-    expect(() => appendMedia(p, 'v')).toThrow(LOCKED);
+    expect(() => appendMedia(p, 'v')).toThrow('All tracks of this kind are locked');
     expect(() => dropMedia(p, p.tracks[0].id, 'v', 20)).toThrow(LOCKED);
     expect(() => appendMedia(unlock(p), 'v')).not.toThrow();
   });
@@ -221,5 +222,65 @@ describe('lock guards in edits', () => {
     expect(() => removeMediaFromProject(p, 'v')).toThrow(LOCKED);
     expect(removeMediaFromProject(p, 't').media.t).toBeUndefined();
     expect(removeMediaFromProject(unlock(p), 'v').media.v).toBeUndefined();
+  });
+});
+
+describe('appendMedia with an active track', () => {
+  const layered = (): Project => addTrack(addTrack(project(), 'video'), 'audio');
+  const vids = (p: Project) => p.tracks.filter((t) => t.kind === 'video');
+  const auds = (p: Project) => p.tracks.filter((t) => t.kind === 'audio');
+  const lockTrack = (p: Project, id: string): Project => ({ ...p, tracks: p.tracks.map((t) => (t.id === id ? { ...t, locked: true } : t)) });
+
+  it('without an active track uses the first track of the kind', () => {
+    const p = layered();
+    expect(appendMedia(p, 'v').tracks.find((t) => t.id === vids(p)[0].id)!.clips).toHaveLength(5);
+  });
+
+  it('uses the active track when its kind matches, starting at the end of that track', () => {
+    const p = layered();
+    const target = vids(p)[1];
+    const out = appendMedia(p, 'v', target.id);
+    const t = out.tracks.find((x) => x.id === target.id)!;
+    expect(t.clips).toHaveLength(1);
+    expect(t.clips[0].start).toBe(0);
+    expect(vids(out)[0].clips).toHaveLength(4);
+  });
+
+  it('routes audio to an active audio track, and images to a video track', () => {
+    const p = layered();
+    const out = appendMedia(p, 't', auds(p)[1].id);
+    expect(auds(out)[1].clips).toHaveLength(1);
+    const img: MediaRef = { id: 'i', name: 'i.png', kind: 'image', duration: 5, width: 100, height: 100, hasAudio: false };
+    const withImg = { ...p, media: { ...p.media, i: img } };
+    expect(appendMedia(withImg, 'i', vids(p)[1].id).tracks.find((t) => t.id === vids(p)[1].id)!.clips).toHaveLength(1);
+  });
+
+  it('ignores an active track of the wrong kind or an unknown one', () => {
+    const p = layered();
+    expect(appendMedia(p, 'v', auds(p)[0].id).tracks.find((t) => t.id === vids(p)[0].id)!.clips).toHaveLength(5);
+    expect(appendMedia(p, 'v', 'nope').tracks.find((t) => t.id === vids(p)[0].id)!.clips).toHaveLength(5);
+  });
+
+  it('falls through a locked active track to the next unlocked track of the kind', () => {
+    const p0 = layered();
+    const p = lockTrack(p0, vids(p0)[1].id);
+    const out = appendMedia(p, 'v', vids(p)[1].id);
+    expect(vids(out)[0].clips).toHaveLength(5);
+    expect(vids(out)[1].clips).toHaveLength(0);
+  });
+
+  it('skips a locked first track when there is no active track', () => {
+    const p0 = layered();
+    const p = lockTrack(p0, vids(p0)[0].id);
+    const out = appendMedia(p, 'v');
+    expect(vids(out)[1].clips).toHaveLength(1);
+  });
+
+  it('throws when every track of the kind is locked', () => {
+    let p = layered();
+    for (const t of vids(p)) p = lockTrack(p, t.id);
+    expect(() => appendMedia(p, 'v', vids(p)[1].id)).toThrow('All tracks of this kind are locked');
+    expect(() => appendMedia(p, 'v')).toThrow(TimelineError);
+    expect(() => appendMedia(p, 't')).not.toThrow();
   });
 });

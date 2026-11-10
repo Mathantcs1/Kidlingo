@@ -1,15 +1,18 @@
 import { create } from 'zustand';
 import type { Id, Project } from '../core/model';
 import { emptyProject } from '../core/model';
-import { TimelineError, timelineDuration } from '../core/timeline';
+import { TimelineError } from '../core/timeline';
 import { commit, createHistory, redo, undo } from './history';
 import type { History } from './history';
 import { describeStorageError } from '../media/storageErrors';
 import { saveProject } from './persist';
+import { reconcileUi } from './selection';
 
 export interface EditorState {
   history: History<Project>;
   selection: Id[];
+  /** The track new media is added to (UI state like `selection`: not saved, not part of undo). */
+  activeTrackId: Id | null;
   playhead: number;
   playing: boolean;
   lastError: string | null;
@@ -22,38 +25,24 @@ export interface EditorActions {
   undo(): void;
   redo(): void;
   select(ids: Id[]): void;
+  /** Unknown ids are ignored; null clears. */
+  setActiveTrack(id: Id | null): void;
   setPlayhead(t: number): void;
   setPlaying(b: boolean): void;
   loadProject(p: Project): void;
 }
 
-function clipIds(p: Project): Set<Id> {
-  return new Set(p.tracks.flatMap((t) => t.clips.map((c) => c.id)));
-}
-
-/** The selection without ids missing from `p`; the same array when nothing was dropped. */
-function pruneSelection(selection: Id[], p: Project): Id[] {
-  const ids = clipIds(p);
-  const pruned = selection.filter((id) => ids.has(id));
-  return pruned.length === selection.length ? selection : pruned;
-}
-
-/** The playhead limited to the end of `p`'s timeline (0 for an empty one), so it never sits past the content. */
-function clampPlayhead(playhead: number, p: Project): number {
-  const end = timelineDuration(p);
-  return playhead > end ? Math.max(0, end) : playhead;
-}
-
 export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
   history: createHistory(emptyProject()),
   selection: [],
+  activeTrackId: null,
   playhead: 0,
   playing: false,
   lastError: null,
   saveError: null,
 
   apply(fn) {
-    const { history, selection, playhead } = get();
+    const { history } = get();
     let next: Project;
     try {
       next = fn(history.present);
@@ -66,8 +55,7 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
     }
     set({
       history: commit(history, next),
-      selection: pruneSelection(selection, next),
-      playhead: clampPlayhead(playhead, next),
+      ...reconcileUi(get(), next),
       lastError: null,
     });
   },
@@ -75,18 +63,22 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
     set((s) => {
       const history = undo(s.history);
       const p = history.present;
-      return { history, selection: pruneSelection(s.selection, p), playhead: clampPlayhead(s.playhead, p), lastError: null };
+      return { history, ...reconcileUi(s, p), lastError: null };
     });
   },
   redo() {
     set((s) => {
       const history = redo(s.history);
       const p = history.present;
-      return { history, selection: pruneSelection(s.selection, p), playhead: clampPlayhead(s.playhead, p), lastError: null };
+      return { history, ...reconcileUi(s, p), lastError: null };
     });
   },
   select(ids) {
     set({ selection: ids });
+  },
+  setActiveTrack(id) {
+    if (id !== null && !get().history.present.tracks.some((t) => t.id === id)) return;
+    set({ activeTrackId: id });
   },
   setPlayhead(t) {
     set({ playhead: t });
@@ -98,6 +90,7 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
     set({
       history: createHistory(p),
       selection: [],
+      activeTrackId: null,
       playhead: 0,
       playing: false,
       lastError: null,
