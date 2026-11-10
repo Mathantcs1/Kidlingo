@@ -28,9 +28,21 @@ describe('exportSize', () => {
     expect(exportSize(withFormat(1080, 1920), '4k')).toEqual({ width: 2160, height: 3840 });
   });
 
-  it('scales a 4:5 project so the long side is 1920 / 3840', () => {
-    expect(exportSize(withFormat(1080, 1350), '1080p')).toEqual({ width: 1536, height: 1920 });
-    expect(exportSize(withFormat(1080, 1350), '4k')).toEqual({ width: 3072, height: 3840 });
+  it('keeps square and 4:5 projects at 1080 on the short side (2160 at 4k)', () => {
+    expect(exportSize(withFormat(1080, 1080), '1080p')).toEqual({ width: 1080, height: 1080 });
+    expect(exportSize(withFormat(1080, 1080), '4k')).toEqual({ width: 2160, height: 2160 });
+    expect(exportSize(withFormat(1080, 1350), '1080p')).toEqual({ width: 1080, height: 1350 });
+    expect(exportSize(withFormat(1080, 1350), '4k')).toEqual({ width: 2160, height: 2700 });
+  });
+
+  it('fits a very wide project inside the 1920x1080 / 3840x2160 frame', () => {
+    expect(exportSize(withFormat(1000, 100), '1080p')).toEqual({ width: 1920, height: 192 });
+    expect(exportSize(withFormat(100, 1000), '4k')).toEqual({ width: 384, height: 3840 });
+  });
+
+  it('uses an explicit long side when given (test-only override)', () => {
+    expect(exportSize(withFormat(1080, 1080), '1080p', 160)).toEqual({ width: 160, height: 160 });
+    expect(exportSize(withFormat(101, 57), '1080p', 101)).toEqual({ width: 100, height: 56 });
   });
 });
 

@@ -1,9 +1,11 @@
 import { existsSync } from 'node:fs';
 import { defineConfig } from '@playwright/test';
 
-// Sandbox has a preinstalled Chromium that may not match this Playwright's expected revision.
+// Chromium to launch: PW_CHROMIUM_PATH if set, else the sandbox's preinstalled build (which may not match this
+// Playwright's expected revision), else Playwright's own download. The swiftshader flags give headless Chromium a
+// software WebGL2; --no-sandbox is needed when running as root in a container.
 const preinstalled = '/opt/pw-browsers/chromium';
-const executablePath = existsSync(preinstalled) ? preinstalled : undefined;
+const executablePath = process.env.PW_CHROMIUM_PATH ?? (existsSync(preinstalled) ? preinstalled : undefined);
 
 export default defineConfig({
   testDir: 'tests/e2e',
