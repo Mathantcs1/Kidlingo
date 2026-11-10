@@ -2,6 +2,8 @@
 
 Date: 2026-11-10
 
+> **Status:** the multi-layer timeline (Plan 2: video layers and audio tracks with hide/mute/solo/lock, picture-in-picture via layered tracks with on-canvas and numeric position/scale/rotation/opacity, project data v2 with v1 migration) is shipped on branch `feature/layers`. The remaining roadmap is Plans 3–5: audio editing, visual effects and looks, and animation and motion (see the roadmap in `docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md`). The design below is unchanged.
+
 ## Purpose and success criteria
 
 A local-first, in-browser video editor for a YouTube creator on a Mac, for mixed content (vlogs, tutorials, shorts). Success: the user can import clips, arrange and trim them on a timeline, add text titles, transitions and audio, and export an H.264/AAC MP4 ready to upload to YouTube. No account, no backend, no uploads. Mac is the target; works in Chrome and Safari 17+.

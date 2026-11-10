@@ -21,6 +21,8 @@ It is a static site built with React, TypeScript and Vite.
   to rename it (or focus it and press Enter or F2); the **M** button mutes, the **S** button solos (a "Solo on" badge shows while any track is soloed), the lock refuses every
   edit on the track, the eye hides a video layer from preview and export; the arrows reorder layers and `×` removes a
   track (asking first if it has clips). **+ Video layer** and **+ Audio track** add tracks. Each is one undo step.
+  Mute and solo apply to the sound of video clips on a video layer too; while any track (of either kind) is soloed,
+  only soloed tracks are heard. Hidden layers and muted tracks are left out of the export exactly as in the preview.
 - **New-layer drop zones**: drop media from the bin, or drag a clip, onto the strip above the top video layer (or
   below the bottom audio track) to put it on a brand-new layer/track of its kind in one undo step.
 - **Editing**: select clips (Shift-, Ctrl- or Cmd-click to select more than one), drag to move, drag the clip edges to trim, split at
@@ -37,7 +39,8 @@ It is a static site built with React, TypeScript and Vite.
 - **Picture-in-picture on the preview**: drag, scale and rotate a clip directly on the preview; hold Shift to snap
   rotation, Alt to disable snapping. Select one video or image clip under the playhead (on a visible, unlocked
   layer) and drag inside its outline to move it (it snaps to the frame centre and edges), a corner to scale it
-  about its centre, or the round handle above it to rotate it. Each drag is one undo step; Escape cancels it.
+  about its centre, or the round handle above it to rotate it (hold Shift to snap the angle to 15° steps). Each
+  drag is one undo step; Escape cancels it.
   Alt (Option on a Mac) disables snapping while you drag. A very large clip whose corners fall outside the preview
   panel can still be scaled and rotated with the inspector's numeric fields.
 - **Merge** joins the selected clips back to back with no gaps. **Merge all into one clip** renders the whole
@@ -66,14 +69,15 @@ It is a static site built with React, TypeScript and Vite.
 
 ## Roadmap (planned, not implemented yet)
 
-None of the following exist yet. They are planned as follow-up plans (Plans 2-4, outlined in the roadmap section
-of [docs/superpowers/plans/2026-11-10-clipforge-foundation.md](docs/superpowers/plans/2026-11-10-clipforge-foundation.md)):
+The multi-layer timeline (layers, track flags, picture-in-picture) is Plan 2 and is implemented. None of the
+following exist yet. They are planned as follow-up plans (Plans 3-5, outlined in the roadmap section of
+[docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md](docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md)):
 
-- **Plan 2, audio editing**: multiple audio tracks, detaching audio from video, waveforms, voiceover recording,
-  audio effects, ducking, pitch-preserving speed changes.
-- **Plan 3, visual effects and looks**: shader effects (color, blur, stylize, chroma key), LUT looks and `.cube`
+- **Plan 3, audio editing**: detaching audio from video, waveforms, voiceover recording, per-clip fades and pan,
+  track volume, audio effects, ducking.
+- **Plan 4, visual effects and looks**: shader effects (color, blur, stylize, chroma key), LUT looks and `.cube`
   import, overlays.
-- **Plan 4, animation and motion**: keyframes and easing, motion paths, text with animation presets,
+- **Plan 5, animation and motion**: keyframes and easing, motion paths, text with animation presets,
   transitions, speed ramps, reverse, crop/rotate/flip.
 
 There is currently no transition, text or effects tool.
@@ -155,6 +159,16 @@ Shortcuts are ignored while you type in a text field or select, and while the ex
 
 In the export dialog, Escape closes it (unless an export is running) and Tab stays inside the dialog.
 
+Layers and the preview:
+
+- On a track header, Enter or F2 renames the focused track name (Enter saves, Escape cancels). Tabbing into a header
+  makes that track the active one.
+- Space on a button you reached with the keyboard (Tab), such as a track's M/S/lock/eye button, presses that button
+  instead of starting playback; after a mouse click on a button, Space still plays and pauses.
+- While dragging a clip on the preview: Shift snaps rotation to 15° steps, Alt (Option on a Mac) turns snapping
+  off, Escape cancels the drag.
+- In the inspector's numeric fields: Up/Down step the value (Shift ×10), Enter applies, Escape reverts.
+
 ## Limits and known trade-offs
 
 - **Audio memory**: playback decodes audio in windows of about 20 seconds just ahead of the playhead, so Play
@@ -168,7 +182,10 @@ In the export dialog, Escape closes it (unless an export is running) and Tab sta
   repo's tests run in headless Chromium on Linux, which has no native AAC encoder, so the WASM path is the one
   that is tested; the native AAC path has not been tested here.
 - Not tested on a real Mac, in Safari or with real phone footage; the tests use generated clips.
-- One video track and one audio track; no effects, transitions or text yet (see the roadmap).
+- **Tracks**: up to 8 video layers and 8 audio tracks; a project always keeps at least one of each. Layers are
+  reordered with the header arrows (not by dragging headers). The preview only opens decoders for clips on visible
+  layers under the playhead, so hidden layers cost nothing while playing.
+- No effects, transitions or text yet (see the roadmap).
 
 ## Development
 
@@ -213,7 +230,7 @@ No special headers (COOP/COEP) are required.
   headers. A missing `/assets/*` file therefore gets a real 404 instead of the app shell, so a tab left open across
   a redeploy cannot cache an HTML page under an old chunk name; when such a tab needs a chunk that is gone, it
   says "ClipForge was updated — reload the page." The `Permissions-Policy` header disables the microphone
-  (`microphone=()`); it must be relaxed when voiceover recording (Plan 2) lands. Import the repository in Vercel or
+  (`microphone=()`); it must be relaxed when voiceover recording (Plan 3) lands. Import the repository in Vercel or
   run `vercel --prod`.
 - **Netlify / Cloudflare Pages:** build command `npm run build`, publish directory `dist`. A single-page fallback
   is optional because the app has one route.

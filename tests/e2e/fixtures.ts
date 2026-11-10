@@ -70,6 +70,11 @@ export function ensureFixtures(): string {
   // Mirrored (horizontal flip after rotation) variants; ffmpeg's -display_hflip writes the display matrix.
   encode(at('quad-hflip.mp4'), ['-display_hflip', '-i', at('quad.mp4'), '-c', 'copy']);
   encode(at('quad-cw90-hflip.mp4'), ['-display_rotation', '270', '-display_hflip', '-i', at('quad.mp4'), '-c', 'copy']);
+  // 160x80 still: left half red, right half blue (an asymmetric overlay for the layers journey).
+  encode(at('journey.png'), [
+    '-f', 'lavfi', '-i', 'color=c=red:s=80x80', '-f', 'lavfi', '-i', 'color=c=blue:s=80x80',
+    '-filter_complex', 'hstack', '-frames:v', '1',
+  ]);
   // Valid files in containers ClipForge cannot open.
   encode(at('legacy.avi'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '0.5', '-c:v', 'mpeg4']);
   encode(at('legacy.wmv'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '0.5', '-c:v', 'wmv2']);
