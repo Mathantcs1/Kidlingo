@@ -165,12 +165,21 @@ test('switching to Vertical keeps a customised PiP in place relative to the fram
   const pip = await transformOf(page, 'pip');
   expect(pip.x).toBeCloseTo(600 * (1080 / 1920), 6);
   expect(pip.y).toBeCloseTo(-300 * (1920 / 1080), 6);
-  expect(pip.scale).toBeCloseTo(0.5 * (1080 / 1920), 6);
+  // Ruling J: scale × √(area ratio); 16:9 ↔ 9:16 keeps the area, so the scale stays.
+  expect(pip.scale).toBeCloseTo(0.5 * Math.sqrt((1080 * 1920) / (1920 * 1080)), 6);
   expect([pip.rotation, pip.opacity]).toEqual([0, 1]);
   // The blue 192×108 background was untouched (fit at 10×): it refits to the new canvas.
   expect(await transformOf(page, 'bg')).toEqual({ x: 0, y: 0, scale: 1080 / 192, rotation: 0, opacity: 1 });
   // Same relative spot of the 1080×1920 frame: (0.8125·1080, 0.222·1920).
   await expectPixel(page, 1080 * 0.8125, 1920 * (240 / 1080), isGreen, 'PiP after the switch');
+
+  // Square and back: the round trip restores the placement exactly (one undo step each way).
+  await page.getByTestId('format-select').selectOption('square');
+  await page.getByTestId('format-select').selectOption('vertical');
+  await expect.poll(() => undoDepth(page)).toBe(depth + 3);
+  const trip = await transformOf(page, 'pip');
+  for (const k of ['x', 'y', 'scale', 'rotation', 'opacity'] as const) expect(Math.abs(trip[k] - pip[k]), k).toBeLessThanOrEqual(1e-9);
+  for (let i = 0; i < 2; i++) await page.getByTestId('btn-undo').click();
 
   await page.getByTestId('btn-undo').click();
   await expect.poll(() => page.evaluate(() => window.__clipforge!.getState().history.present.format.width)).toBe(1920);

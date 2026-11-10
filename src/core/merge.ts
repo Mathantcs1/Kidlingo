@@ -87,13 +87,14 @@ function atFit(t: Transform, fit: Transform): boolean {
 
 /**
  * Switches the canvas to `key`. A visual clip whose x, y and scale still equal its fit for the old canvas (within
- * 1e-6) is refit to the new one; a customised clip (moved or scaled) keeps its relative placement: x·w′/w, y·h′/h,
- * scale·min(w′/w, h′/h) kept within `scaleBounds` of its scale. Rotation and opacity are always kept, so a faded or
- * rotated full-frame clip still refits. That is lossy: a round trip through another aspect can leave a customised
- * clip smaller (the min ratio). An unusable old canvas size (non-positive or non-finite) refits every clip. Audio
- * clips and media without a known size are left alone. Intentionally ignores track locks: the format is a
- * sequence-level setting and every clip, locked or not, must follow it. Returns `p` itself when the canvas size
- * does not change (no undo step).
+ * 1e-6) is refit to the new one (and so stays untouched on the next switch); a customised clip (moved or scaled)
+ * keeps its relative placement: x·w′/w, y·h′/h, and scale·√((w′·h′)/(w·h)) (the geometric mean of the axis
+ * ratios) kept within `scaleBounds` of its scale. That makes a round trip A → B → A exactly invertible for
+ * customised clips (barring the scale clamp), and untouched clips refit back to the same fit. Rotation and opacity
+ * are always kept, so a faded or rotated full-frame clip still refits. An unusable old canvas size (non-positive or
+ * non-finite) refits every clip. Audio clips and media without a known size are left alone. Intentionally ignores
+ * track locks: the format is a sequence-level setting and every clip, locked or not, must follow it. Returns `p`
+ * itself when the canvas size does not change (no undo step).
  */
 export function reframeProject(p: Project, key: FormatKey): Project {
   const { width, height } = FORMATS[key];
@@ -113,7 +114,7 @@ export function reframeProject(p: Project, key: FormatKey): Project {
       return { ...c, transform: { ...t, x, y, scale } };
     }
     const [lo, hi] = scaleBounds(t.scale);
-    const scale = Math.min(hi, Math.max(lo, t.scale * Math.min(rx, ry)));
+    const scale = Math.min(hi, Math.max(lo, t.scale * Math.sqrt(rx * ry)));
     return { ...c, transform: { ...t, x: t.x * rx, y: t.y * ry, scale } };
   };
   return {

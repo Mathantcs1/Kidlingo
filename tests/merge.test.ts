@@ -3,6 +3,7 @@ import { emptyProject, defaultTransform, clipEnd } from '../src/core/model';
 import type { Clip, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
 import { joinClips, snapTime, fitTransform, reframeProject } from '../src/core/merge';
+import type { FormatKey } from '../src/core/formats';
 
 const mk = (id: string, start: number, dur: number, over: Partial<Clip> = {}): Clip => ({
   id,
@@ -212,19 +213,23 @@ describe('reframeProject keeps customised placement (Ruling G)', () => {
     expect(byId(r, 'FILL').transform).toEqual(fit(sq, 1080, 1920, 'fill'));
   });
 
-  it('keeps a customised PiP clip in proportion: x·w′/w, y·h′/h, scale·min ratio; rotation/opacity kept', () => {
+  it('keeps a customised PiP clip in proportion: x·w′/w, y·h′/h, scale·√(area ratio); rotation/opacity kept', () => {
     const r = reframeProject(build(), 'vertical');
     const t = byId(r, 'PIP').transform;
     expect(t.x).toBeCloseTo(300 * (1080 / 1920), 9);
     expect(t.y).toBeCloseTo(-200 * (1920 / 1080), 9);
-    expect(t.scale).toBeCloseTo(0.25 * (1080 / 1920), 9);
+    // Ruling J: 16:9 → 9:16 keeps the area, so the scale stays.
+    expect(t.scale).toBeCloseTo(0.25, 9);
     expect(t.rotation).toBe(30);
     expect(t.opacity).toBe(0.5);
   });
 
   it('treats a customised blur clip the same way and keeps its fit mode', () => {
     const r = reframeProject(build(), 'square');
-    expect(byId(r, 'BL').transform).toEqual({ x: -100 * (1080 / 1920), y: 50, scale: 2 * (1080 / 1920), rotation: 0, opacity: 1 });
+    const bl = byId(r, 'BL').transform;
+    expect(bl).toMatchObject({ y: 50, rotation: 0, opacity: 1 });
+    expect(bl.x).toBeCloseTo(-100 * (1080 / 1920), 9);
+    expect(bl.scale).toBeCloseTo(2 * Math.sqrt(1080 / 1920), 9);
     expect(byId(r, 'BL').fit).toBe('blur');
   });
 
@@ -247,7 +252,7 @@ describe('reframeProject keeps customised placement (Ruling G)', () => {
   it('keeps the scale within scaleBounds of the old scale', () => {
     const p = build();
     const tiny = { ...p, tracks: p.tracks.map((t) => (t.id === 'L2' ? { ...t, clips: [{ ...t.clips[0], transform: { ...pipT, scale: 0.02 } }] } : t)) };
-    expect(byId(reframeProject(tiny, 'vertical'), 'PIP').transform.scale).toBe(0.02);
+    expect(byId(reframeProject(tiny, 'square'), 'PIP').transform.scale).toBe(0.02);
     // A custom 960×540 canvas to 1920×1080 doubles: a 15× clip stops at 20×, a 30× clip (already above) stays.
     const custom = (s: number): Project => ({ ...tiny, format: { ...tiny.format, width: 960, height: 540 }, tracks: tiny.tracks.map((t) => (t.id === 'L2' ? { ...t, clips: [{ ...t.clips[0], transform: { ...pipT, scale: s } }] } : t)) });
     expect(byId(reframeProject(custom(15), 'youtube'), 'PIP').transform.scale).toBe(20);
@@ -263,7 +268,7 @@ describe('reframeProject keeps customised placement (Ruling G)', () => {
 
   it('Ruling I: a rotated clip still at its fit position and scale refits and keeps its rotation', () => {
     const p = build();
-    // (A 'fit' clip cannot tell: its fit scale changes by exactly the min ratio. A 'fill' clip can.)
+    // (A 'fill' clip: its refit scale differs from any proportional rescale, so the test can tell.)
     const rotated = { ...p, tracks: p.tracks.map((t) => (t.id === 'L3' ? { ...t, clips: [t.clips[0], { ...t.clips[1], transform: { ...fit(sq, 1920, 1080, 'fill'), rotation: 10 } }] } : t)) };
     expect(byId(reframeProject(rotated, 'vertical'), 'FILL').transform).toEqual({ ...fit(sq, 1080, 1920, 'fill'), rotation: 10 });
   });
@@ -284,16 +289,43 @@ describe('reframeProject keeps customised placement (Ruling G)', () => {
     expect(reframeProject(p, 'youtube')).toBe(p);
   });
 
-  it('A→B→A refits untouched clips to the same fit; customised clips follow the formulas both ways', () => {
-    const p = build();
-    const back = reframeProject(reframeProject(p, 'square'), 'youtube');
-    expect(byId(back, 'BG').transform).toEqual(byId(p, 'BG').transform);
-    // Lossy by design: 1920×1080 → 1080×1080 scales by min(0.5625, 1) = 0.5625, the way back by min(1.78, 1) = 1,
-    // so the scale does not return (x and y do, as each axis uses its own ratio).
-    const t = byId(back, 'PIP').transform;
-    expect(t.x).toBeCloseTo(300, 9);
-    expect(t.y).toBeCloseTo(-200, 9);
-    expect(t.scale).toBeCloseTo(0.25 * 0.5625, 9);
+  describe('Ruling J: a round trip A → B → A restores every clip exactly', () => {
+    const custom = { x: 300, y: -200, scale: 3, rotation: 10, opacity: 0.5 };
+    const keys: FormatKey[] = ['youtube', 'vertical', 'square', 'portrait'];
+    const pairs = keys.flatMap((a) => keys.filter((b) => b !== a).map((b) => [a, b] as const));
+    /** build() in format `a` (untouched clips refit there) with the PiP placed at `custom` (scale overridable). */
+    const start = (a: FormatKey, scale = custom.scale): Project => {
+      const q = a === 'youtube' ? build() : reframeProject(build(), a);
+      return { ...q, tracks: q.tracks.map((t) => (t.id === 'L2' ? { ...t, clips: [{ ...t.clips[0], transform: { ...custom, scale } }] } : t)) };
+    };
+    const close = (a: Clip['transform'], b: Clip['transform']) => {
+      for (const k of ['x', 'y', 'scale', 'rotation', 'opacity'] as const) expect(Math.abs(a[k] - b[k]), k).toBeLessThanOrEqual(1e-9);
+    };
+
+    it.each(pairs)('%s → %s → back', (a, b) => {
+      const p = start(a);
+      const back = reframeProject(reframeProject(p, b), a);
+      expect(back.format).toEqual(p.format);
+      for (const id of ['PIP', 'BL', 'BG', 'FILL']) close(byId(back, id).transform, byId(p, id).transform);
+    });
+
+    it('YouTube → Vertical → YouTube twice keeps a placed clip at scale 3', () => {
+      let p = start('youtube');
+      for (let i = 0; i < 2; i++) p = reframeProject(reframeProject(p, 'vertical'), 'youtube');
+      close(byId(p, 'PIP').transform, custom);
+    });
+
+    it('a clip above 20× stays above 20×; the scale clamp (never grow past max(20, current)) is the one exception', () => {
+      const p = start('youtube', 30);
+      const sq = reframeProject(p, 'square');
+      expect(byId(sq, 'PIP').transform.scale).toBeCloseTo(22.5, 9);
+      // Back up by 4/3 would give 30, but growing is capped at max(20, 22.5): x/y still return exactly.
+      const back = byId(reframeProject(sq, 'youtube'), 'PIP').transform;
+      expect(back.scale).toBeCloseTo(22.5, 9);
+      close({ ...back, scale: 30 }, { ...custom, scale: 30 });
+      // Below the cap the same clip round-trips exactly.
+      close(byId(reframeProject(reframeProject(start('youtube', 12), 'square'), 'youtube'), 'PIP').transform, { ...custom, scale: 12 });
+    });
   });
 
   it('does not mutate the input', () => {

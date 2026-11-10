@@ -54,9 +54,10 @@ It is a static site built with React, TypeScript and Vite.
 - **Formats**: YouTube 16:9 (1920x1080), Vertical 9:16 for Reels/Shorts/TikTok (1080x1920), Square 1:1
   (1080x1080) and Portrait 4:5 (1080x1350). Changing the format refits every clip still at its fit framing to the
   new canvas (faded or rotated full-frame clips still refit, keeping their opacity and rotation); a clip you moved
-  or scaled keeps its place relative to the frame (position scaled per axis, size by the smaller of the two
-  ratios), so a picture-in-picture in the top-right corner stays there. Switching back and forth between aspect
-  ratios can leave such a clip smaller; undo restores it exactly.
+  or scaled keeps its place relative to the frame (position scaled per axis, size by the square root of the area
+  ratio), so a picture-in-picture in the top-right corner stays there. Switching to another format and back
+  restores the placement exactly (only a clip that would have to grow past 20× and past its current size is
+  held at that size).
 - **Preview** of the frame under the playhead, rendered with WebGL2, and **playback** with sound (Play/Pause).
 - **Undo/redo** for every edit, and **autosave**: the project is restored when you reopen the page (a pending
   change is also saved when the tab is hidden or closed). If saving fails (for example because browser storage is

@@ -138,7 +138,7 @@ test('two layers: place a PNG top-right, hide/mute, format round trip, export, u
   await expect(mute).toHaveAttribute('aria-pressed', 'false');
   expect((await project(page)).tracks.find((t) => t.id === videoTrack)!.muted).toBe(false);
 
-  // Vertical keeps the PNG's relative placement (Ruling G): x, y scale per axis, scale by the smaller ratio.
+  // Vertical keeps the PNG's relative placement (Rulings G/J): x, y scale per axis, scale by √(area ratio).
   await page.getByTestId('format-select').selectOption('vertical');
   await expect(page.getByTestId('format-select')).toHaveValue('vertical');
   const vf = { width: 1080, height: 1920 };
@@ -147,20 +147,18 @@ test('two layers: place a PNG top-right, hide/mute, format round trip, export, u
   const ry = 1920 / 1080;
   expect(vt.x).toBeCloseTo(target.x * rx, 6);
   expect(vt.y).toBeCloseTo(target.y * ry, 6);
-  expect(vt.scale).toBeCloseTo(target.scale * Math.min(rx, ry), 6);
+  expect(vt.scale).toBeCloseTo(target.scale * Math.sqrt(rx * ry), 6);
   const vs = halves(vf, vt);
   expect(vs.red[0]).toBeGreaterThan(vf.width / 2);
   expect(vs.red[1]).toBeLessThan(vf.height / 2);
   await expectPixel(page, ...vs.red, isRed, 'PNG red half (vertical)');
   await expectPixel(page, ...vs.blue, isBlue, 'PNG blue half (vertical)');
 
-  // Back to YouTube: position returns exactly; scale shrinks once more (smaller ratio again, Ruling G).
+  // Back to YouTube: the round trip restores the ORIGINAL transform exactly (Ruling J).
   await page.getByTestId('format-select').selectOption('youtube');
   await expect(page.getByTestId('format-select')).toHaveValue('youtube');
   const yt = await transformOf(page, png.id);
-  expect(yt.x).toBeCloseTo(target.x, 6);
-  expect(yt.y).toBeCloseTo(target.y, 6);
-  expect(yt.scale).toBeCloseTo(vt.scale * rx, 6);
+  for (const k of ['x', 'y', 'scale', 'rotation', 'opacity'] as const) expect(Math.abs(yt[k] - target[k]), k).toBeLessThanOrEqual(1e-9);
   const ys = halves(fmt, yt);
   await expectPixel(page, ...ys.red, isRed, 'PNG red half (back to YouTube)');
   await expectPixel(page, ...ys.blue, isBlue, 'PNG blue half (back to YouTube)');
