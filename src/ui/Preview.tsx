@@ -1,5 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useEditor } from '../state/store';
 import { fitBox, previewSize } from './layout';
 import { PreviewRenderer } from './previewRenderer';
@@ -9,6 +8,13 @@ import { toGlUnavailable } from '../render/glErrors';
 import { buildDetailsText, describeGlFailure, probeRenderer } from './previewFailure';
 import { PreviewFailure } from './PreviewFailure';
 import type { GlFailureView } from './PreviewFailure';
+import TransformOverlay from './TransformOverlay';
+import { withClipTransform } from './transformEdits';
+import { useElementSize } from './useElementSize';
+import type { LiveTransform } from './useTransformDrag';
+
+/** CSS px kept free around the canvas inside the stage, so overlay handles beyond its edges stay on screen. */
+const HANDLE_ROOM = 36;
 
 /** A plain message (chunk reload, lost context), or a renderer start-up failure with details and Try again. */
 type Failure = { message: string } | { gl: GlFailureView };
@@ -21,27 +27,13 @@ function glFailure(e: unknown): Failure {
   return { gl: { ...describeGlFailure(err, userAgent), details: buildDetailsText(err, { userAgent, renderer: probeRenderer() }) } };
 }
 
-/** Tracks the content-box size of an element. */
-function useElementSize<T extends HTMLElement>(): [RefObject<T | null>, { width: number; height: number }] {
-  const ref = useRef<T>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = (): void => setSize({ width: el.clientWidth, height: el.clientHeight });
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  return [ref, size];
-}
-
 /**
  * The preview panel: a WebGL canvas at the project's aspect ratio, fitted to the panel, showing the frame
- * under the playhead. It re-renders on playhead, project, format and size changes (latest request wins).
+ * under the playhead. It re-renders on playhead, project, format and size changes (latest request wins). While
+ * `editable`, the selected picture clip gets the on-canvas transform overlay; a drag on it is previewed live here
+ * (a throwaway project through the same renderer) and reaches the store only on release.
  */
-export default function Preview() {
+export default function Preview({ editable }: { editable: boolean }) {
   const project = useEditor((s) => s.history.present);
   const playhead = useEditor((s) => s.playhead);
   const [stageRef, size] = useElementSize<HTMLDivElement>();
@@ -53,7 +45,13 @@ export default function Preview() {
   /** Bumped when a renderer becomes ready, so its first frame is requested. */
   const [generation, setGeneration] = useState(0);
 
-  const box = fitBox(size, project.format);
+  const [live, setLive] = useState<LiveTransform | null>(null);
+  const shown = useMemo(() => (live ? withClipTransform(project, live.clipId, live.transform) : project), [project, live]);
+
+  const room = { width: Math.max(0, size.width - 2 * HANDLE_ROOM), height: Math.max(0, size.height - 2 * HANDLE_ROOM) };
+  const box = fitBox(room, project.format);
+  // The canvas is centred in the stage (flex), so its content box starts half the spare room in.
+  const canvasBox = { left: (size.width - box.width) / 2, top: (size.height - box.height) / 2, ...box };
   const pixels = previewSize(project.format);
 
   // One renderer per mount (and per Try again); StrictMode's extra mount/unmount disposes the first, so no GL
@@ -97,8 +95,8 @@ export default function Preview() {
     const r = rendererRef.current;
     if (!r) return;
     r.resize(pixels.width, pixels.height);
-    r.request(project, playhead);
-  }, [project, playhead, pixels.width, pixels.height, generation]);
+    r.request(shown, playhead);
+  }, [shown, playhead, pixels.width, pixels.height, generation]);
 
   return (
     <section className="preview" aria-label="Preview">
@@ -112,6 +110,9 @@ export default function Preview() {
           height={pixels.height}
           style={{ width: box.width, height: box.height, display: failure ? 'none' : undefined }}
         />
+        {editable && !failure && (
+          <TransformOverlay project={project} playhead={playhead} box={canvasBox} canvasRef={canvasRef} live={live} onLive={setLive} />
+        )}
         {failure && 'message' in failure && (
           <p className="preview-message" role="status" data-testid="preview-unavailable">
             {failure.message}

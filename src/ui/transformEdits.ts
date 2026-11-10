@@ -61,3 +61,17 @@ function writeTransform(p: Project, clipId: Id, fn: (cur: Transform, clip: Clip)
     tracks: p.tracks.map((t) => (t.id === track.id ? { ...t, clips: t.clips.map((c) => (c.id === clipId ? updated : c)) } : t)),
   };
 }
+
+/**
+ * `p` with clip `clipId` drawn at `t`, for the live preview of an on-canvas drag only: no guards, no clamping, never
+ * committed to history (the drag commits through `setClipTransform` on release). `p` itself if the clip is gone.
+ */
+export function withClipTransform(p: Project, clipId: Id, t: Transform): Project {
+  if (!p.tracks.some((tr) => tr.clips.some((c) => c.id === clipId))) return p;
+  return {
+    ...p,
+    tracks: p.tracks.map((tr) =>
+      tr.clips.some((c) => c.id === clipId) ? { ...tr, clips: tr.clips.map((c) => (c.id === clipId ? { ...c, transform: t } : c)) } : tr,
+    ),
+  };
+}

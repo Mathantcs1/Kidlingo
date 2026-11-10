@@ -50,7 +50,7 @@ export default function App() {
         <TopBar editable={ready} inert={locked} />
         <main className="workspace" inert={locked}>
           <MediaBin supported={canImport} ready={ready} />
-          <Preview />
+          <Preview editable={ready} />
           <Inspector editable={ready} />
         </main>
         <Toolbar editable={ready} inert={locked} />

@@ -18,7 +18,7 @@ import {
   setClipVolume,
   splitAt,
 } from '../src/ui/edits';
-import { resetClipTransform, setClipTransform } from '../src/ui/transformEdits';
+import { resetClipTransform, setClipTransform, withClipTransform } from '../src/ui/transformEdits';
 
 const video: MediaRef = { id: 'v', name: 'v.mp4', kind: 'video', duration: 10, width: 1920, height: 1080, fps: 30, hasAudio: true };
 const other: MediaRef = { ...video, id: 'w', name: 'w.mp4' };
@@ -389,5 +389,23 @@ describe('setClipTransform scale bounds and -0', () => {
     const moved = setClipTransform(project(), 'a', { x: 5, y: 5, rotation: 10 });
     const tr = setClipTransform(moved, 'a', { x: -0, y: -0, rotation: -0 }).tracks[0].clips[0].transform;
     expect(Object.is(tr.x, 0) && Object.is(tr.y, 0) && Object.is(tr.rotation, 0)).toBe(true);
+  });
+});
+
+describe('withClipTransform (live drag preview)', () => {
+  const t = { x: 1, y: 2, scale: 0.5, rotation: 30, opacity: 1 };
+  it('draws the clip at the given transform without touching the other clips, tracks or the input', () => {
+    const p = project();
+    const before = JSON.stringify(p);
+    const out = withClipTransform(p, 'a', t);
+    expect(out.tracks[0].clips.find((c) => c.id === 'a')!.transform).toBe(t);
+    expect(out.tracks[0].clips[1]).toBe(p.tracks[0].clips[1]);
+    expect(out.tracks.slice(1)).toEqual(p.tracks.slice(1));
+    expect(out.tracks[1]).toBe(p.tracks[1]);
+    expect(JSON.stringify(p)).toBe(before);
+  });
+  it('is the same project when the clip is gone', () => {
+    const p = project();
+    expect(withClipTransform(p, 'nope', t)).toBe(p);
   });
 });
