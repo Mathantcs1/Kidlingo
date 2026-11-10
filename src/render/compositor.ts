@@ -1,9 +1,9 @@
 import { activeClipsAt } from '../core/timeline';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
-import { getMediaFile } from '../media/storage';
 import { QuadRenderer, RenderTarget, clipMatrix, createContext, createTexture, fullscreenMatrix, letterbox, rotatedSize, uploadTexture, uvMatrix } from './gl';
 import type { Mat3, Rect, Size, TextureSlot } from './gl';
+import { ImageTextures } from './images';
 
 export interface Compositor {
   /**
@@ -15,8 +15,16 @@ export interface Compositor {
   canvas: HTMLCanvasElement | OffscreenCanvas;
   /** Sets the canvas's pixel size. Transforms stay in `p.format` pixels; the output is fitted to the canvas. */
   resize(w: number, h: number): void;
-  /** Deletes all GL objects and closes cached bitmaps. Idempotent. */
+  /** Deletes all GL objects. Idempotent. */
   dispose(): void;
+  /** Counts of live GL textures and the largest image texture side (instrumentation for tests). */
+  stats(): CompositorStats;
+}
+
+export interface CompositorStats {
+  videoTextures: number;
+  imageTextures: number;
+  maxImageSide: number;
 }
 
 export interface CompositorOptions {
@@ -26,11 +34,6 @@ export interface CompositorOptions {
 
 /** The blurred background is rendered at about this fraction of the output size, then upscaled. */
 const BLUR_DOWNSCALE = 16;
-
-interface ImageEntry {
-  bitmap: ImageBitmap;
-  slot: TextureSlot;
-}
 
 interface Draw {
   clip: Clip;
@@ -52,9 +55,7 @@ class GlCompositor implements Compositor {
   private readonly blurTarget: RenderTarget;
   /** Textures per video source; a source used by several clips in one frame gets one texture per use. */
   private readonly videoSlots = new Map<VideoSource, TextureSlot[]>();
-  private readonly images = new Map<Id, ImageEntry>();
-  /** Images that could not be read or decoded; never retried for the life of this compositor. */
-  private readonly failedImages = new Set<Id>();
+  private readonly images: ImageTextures;
   private queue: Promise<unknown> = Promise.resolve();
   private disposed = false;
   private lost = false;
@@ -68,6 +69,7 @@ class GlCompositor implements Compositor {
     (canvas as EventTarget).addEventListener('webglcontextlost', this.onLost);
     this.quad = new QuadRenderer(this.gl);
     this.blurTarget = new RenderTarget(this.gl);
+    this.images = new ImageTextures(this.gl);
   }
 
   renderFrame(p: Project, t: number, sources: Map<Id, VideoSource>): Promise<void> {
@@ -88,14 +90,15 @@ class GlCompositor implements Compositor {
     const gl = this.gl;
     for (const slots of this.videoSlots.values()) for (const s of slots) gl.deleteTexture(s.tex);
     this.videoSlots.clear();
-    for (const e of this.images.values()) {
-      gl.deleteTexture(e.slot.tex);
-      e.bitmap.close();
-    }
-    this.images.clear();
-    this.failedImages.clear();
+    this.images.dispose();
     this.blurTarget.dispose();
     this.quad.dispose();
+  }
+
+  stats(): CompositorStats {
+    let videoTextures = 0;
+    for (const slots of this.videoSlots.values()) videoTextures += slots.length;
+    return { videoTextures, imageTextures: this.images.count, maxImageSide: this.images.maxSide };
   }
 
   private assertUsable(): void {
@@ -112,14 +115,18 @@ class GlCompositor implements Compositor {
     // canvas yet, so the browser can never present a half-composited frame while we wait on decoders.
     const draws: Draw[] = [];
     const uses = new Map<VideoSource, number>();
+    const shownImages = new Set<Id>();
     for (const clip of visualClipsAt(p, t)) {
       const media = p.media[clip.mediaId];
-      // Unknown media is skipped too: pruneImages would otherwise delete its texture before it is drawn.
+      // Clips of unknown or missing media are skipped.
       if (!media || media.missing) continue;
       if (clip.kind === 'image') {
-        const entry = await this.image(clip.mediaId);
+        const slot = await this.images.get(media, () => !this.disposed && !this.lost);
         this.assertUsable();
-        if (entry) draws.push({ clip, tex: entry.slot.tex, size: entry.slot, uv: UPRIGHT });
+        shownImages.add(clip.mediaId);
+        // Transforms are in the image's own pixels, whatever resolution its texture was decoded at.
+        const size = media.width && media.height ? { width: media.width, height: media.height } : slot;
+        if (slot && size) draws.push({ clip, tex: slot.tex, size, uv: UPRIGHT });
         continue;
       }
       const source = sources.get(clip.id) ?? sources.get(clip.mediaId);
@@ -139,7 +146,7 @@ class GlCompositor implements Compositor {
       draws.push({ clip, tex: slot.tex, size, uv: uvMatrix(source.rotation) });
     }
     this.pruneVideoSlots(sources);
-    this.pruneImages(p);
+    this.images.prune(shownImages, p);
 
     // Phase 2 (sync): composite.
     this.assertUsable();
@@ -194,39 +201,6 @@ class GlCompositor implements Compositor {
       for (const s of slots) this.gl.deleteTexture(s.tex);
       this.videoSlots.delete(source);
     }
-  }
-
-  /** Drops cached images whose media is no longer in the project. */
-  private pruneImages(p: Project): void {
-    for (const [id, e] of this.images) {
-      if (p.media[id]) continue;
-      this.gl.deleteTexture(e.slot.tex);
-      e.bitmap.close();
-      this.images.delete(id);
-    }
-  }
-
-  /** Loads, uploads and caches an image's bitmap; null if it cannot be read (remembered, so never retried per frame). */
-  private async image(mediaId: Id): Promise<ImageEntry | null> {
-    const cached = this.images.get(mediaId);
-    if (cached) return cached;
-    if (this.failedImages.has(mediaId)) return null;
-    let bitmap: ImageBitmap;
-    try {
-      bitmap = await createImageBitmap(await getMediaFile(mediaId));
-    } catch {
-      if (!this.disposed) this.failedImages.add(mediaId);
-      return null;
-    }
-    if (this.disposed || this.lost) {
-      bitmap.close();
-      return null;
-    }
-    const slot: TextureSlot = { tex: createTexture(this.gl), width: 0, height: 0 };
-    uploadTexture(this.gl, slot, bitmap, bitmap.width, bitmap.height);
-    const entry = { bitmap, slot };
-    this.images.set(mediaId, entry);
-    return entry;
   }
 }
 
