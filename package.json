@@ -11,6 +11,7 @@
     "e2e": "playwright test --trace off"
   },
   "dependencies": {
+    "@mediabunny/aac-encoder": "1.65.2",
     "idb-keyval": "6.3.0",
     "mediabunny": "1.65.2",
     "react": "19.3.1",

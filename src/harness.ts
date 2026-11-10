@@ -8,6 +8,70 @@ import { fitTransform } from './core/merge';
 import { newId } from './core/model';
 import type { Id, MediaRef, Project } from './core/model';
 import type { VideoSource } from './media/decode';
+import { ALL_FORMATS, AudioBufferSink, BlobSource, Input } from 'mediabunny';
+import { cleanupExportTemp, exportProject } from './export/exporter';
+import { createMixer, renderMixdown } from './audio/mixer';
+
+interface ExportInfo {
+  format: string;
+  videoCodec: string | null;
+  audioCodec: string | null;
+  duration: number;
+  width: number;
+  height: number;
+  /** Peak absolute sample of the decoded audio track (0 without audio). */
+  audioPeak: number;
+}
+
+/** Parses an exported file with Mediabunny and decodes its audio to find the peak level. */
+async function inspectMp4(blob: Blob): Promise<ExportInfo> {
+  const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS });
+  try {
+    const format = (await input.getFormat()).name;
+    const v = await input.getPrimaryVideoTrack();
+    const a = await input.getPrimaryAudioTrack();
+    let audioPeak = 0;
+    if (a) {
+      for await (const { buffer } of new AudioBufferSink(a).buffers()) {
+        for (let c = 0; c < buffer.numberOfChannels; c++) {
+          for (const x of buffer.getChannelData(c)) audioPeak = Math.max(audioPeak, Math.abs(x));
+        }
+      }
+    }
+    return {
+      format,
+      videoCodec: v ? await v.getCodec() : null,
+      audioCodec: a ? await a.getCodec() : null,
+      duration: await input.computeDuration(),
+      width: v ? await v.getDisplayWidth() : 0,
+      height: v ? await v.getDisplayHeight() : 0,
+      audioPeak,
+    };
+  } finally {
+    input.dispose();
+  }
+}
+
+async function listExportTemp(): Promise<string[]> {
+  const root = await navigator.storage.getDirectory();
+  const dir = (await root.getDirectoryHandle('clipforge-export', { create: true })) as unknown as {
+    keys(): AsyncIterable<string>;
+  };
+  const names: string[] = [];
+  for await (const n of dir.keys()) names.push(n);
+  return names.sort();
+}
+
+function peak(buffer: AudioBuffer, from: number, to: number): number {
+  const a = Math.max(0, Math.floor(from * buffer.sampleRate));
+  const b = Math.min(buffer.length, Math.ceil(to * buffer.sampleRate));
+  let m = 0;
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    const data = buffer.getChannelData(c);
+    for (let i = a; i < b; i++) m = Math.max(m, Math.abs(data[i]));
+  }
+  return m;
+}
 
 /** A solid-colour PNG of the given size. */
 async function makePng(width: number, height: number, rgb: [number, number, number]): Promise<Blob> {
@@ -95,6 +159,79 @@ const cf = {
       compositor.dispose();
       for (const s of sources.values()) s.close();
     }
+  },
+  exportProject,
+  cleanupExportTemp,
+  listExportTemp,
+  inspectMp4,
+  renderMixdown,
+  createMixer,
+  /**
+   * Exports `p` (quality '1080p', optional test-only long side) and inspects the result. With `abortAt`, aborts
+   * once progress reaches that fraction. Never rejects: errors come back as `error`.
+   */
+  async runExport(
+    p: Project,
+    opts: { maxLongSide?: number; abortAt?: number },
+  ): Promise<{
+    progress: number[];
+    info: ExportInfo | null;
+    error: { name: string; message: string; isDomException: boolean } | null;
+    tempEntries: number;
+  }> {
+    const progress: number[] = [];
+    const controller = new AbortController();
+    try {
+      const blob = await exportProject(p, {
+        quality: '1080p',
+        maxLongSide: opts.maxLongSide,
+        signal: controller.signal,
+        onProgress: (f) => {
+          progress.push(f);
+          if (opts.abortAt !== undefined && f >= opts.abortAt) controller.abort();
+        },
+      });
+      const info = await inspectMp4(blob);
+      return { progress, info, error: null, tempEntries: (await listExportTemp()).length };
+    } catch (e) {
+      const err = e as Error;
+      return {
+        progress,
+        info: null,
+        error: { name: err.name, message: err.message, isDomException: e instanceof DOMException },
+        tempEntries: (await listExportTemp()).length,
+      };
+    }
+  },
+  /** Renders a mixdown and returns its shape plus the peak level in each [from, to) window (seconds). */
+  async mixdownStats(
+    p: Project,
+    sampleRate: number,
+    windows: [number, number][],
+  ): Promise<{ length: number; sampleRate: number; channels: number; peaks: number[] } | null> {
+    const buffer = await renderMixdown(p, sampleRate);
+    if (!buffer) return null;
+    return {
+      length: buffer.length,
+      sampleRate: buffer.sampleRate,
+      channels: buffer.numberOfChannels,
+      peaks: windows.map(([a, b]) => peak(buffer, a, b)),
+    };
+  },
+  /** Plays from 1 s, reads the clock, then stops twice. */
+  async liveMixerSmoke(p: Project): Promise<{ before: number; played: boolean; during: number; stoppedTwice: boolean }> {
+    const mixer = createMixer();
+    const before = mixer.currentTime();
+    await mixer.play(p, 1);
+    const during = mixer.currentTime();
+    let stoppedTwice = true;
+    try {
+      mixer.stop();
+      mixer.stop();
+    } catch {
+      stoppedTwice = false;
+    }
+    return { before, played: true, during, stoppedTwice };
   },
   /** Imports the Nth file currently selected in `#harness-file`. */
   importInputFile(index: number): Promise<MediaRef> {
