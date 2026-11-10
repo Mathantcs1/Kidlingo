@@ -1,5 +1,5 @@
-import { newId } from '../core/model';
-import type { Id, Project } from '../core/model';
+import { clipEnd, newId } from '../core/model';
+import type { Clip, Id, Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
@@ -184,15 +184,27 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
     checkAbort();
 
     compositor = createExportCompositor(createCompositor, width, height);
-    for (const track of p.tracks) {
-      if (track.kind !== 'video') continue;
-      for (const clip of track.clips) {
-        const media = p.media[clip.mediaId];
-        if (clip.kind !== 'video' || !media || media.missing) continue;
+    // Decoders are opened when their clip comes under the playhead and closed as soon as it has passed, so only
+    // the clips visible in the current frame hold a decoder, cached frames and a texture.
+    const videoClips: Clip[] = p.tracks
+      .filter((track) => track.kind === 'video')
+      .flatMap((track) => track.clips)
+      .filter((clip) => clip.kind === 'video' && p.media[clip.mediaId] && !p.media[clip.mediaId].missing);
+    const syncSources = async (t: number): Promise<void> => {
+      for (const clip of videoClips) {
+        const active = clip.start <= t && t < clipEnd(clip);
+        const open = sources.get(clip.id);
+        if (open && !active) {
+          open.close();
+          sources.delete(clip.id);
+        }
+      }
+      for (const clip of videoClips) {
+        if (sources.has(clip.id) || !(clip.start <= t && t < clipEnd(clip))) continue;
         sources.set(clip.id, await openVideoSource(clip.mediaId));
         checkAbort();
       }
-    }
+    };
 
     let target: InstanceType<typeof mb.StreamTarget> | InstanceType<typeof mb.BufferTarget>;
     if (hasOpfs()) {
@@ -237,6 +249,7 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
       const t = n / fps;
       // Keep audio a slice ahead of the video so the muxer can interleave without buffering a whole track.
       await feedAudioUntil(t + AUDIO_SLICE);
+      await syncSources(t);
       await compositor.renderFrame(p, t, sources);
       await video.add(t, 1 / fps);
       progress(((n + 1) / frameCount) * FRAMES_SHARE);

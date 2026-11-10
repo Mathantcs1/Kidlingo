@@ -12,6 +12,8 @@ export interface PreviewCallbacks {
 }
 
 const LOST = 'WebGL context lost';
+/** Sources of clips no longer under the playhead kept open for quick scrubbing back. */
+const KEEP_RECENT = 2;
 
 interface Request {
   p: Project;
@@ -20,8 +22,9 @@ interface Request {
 
 /**
  * Renders (project, time) requests into a canvas. While a render runs only the newest request is kept, so
- * scrubbing and playback never build a backlog. Sources are opened lazily for video clips under the playhead,
- * closed when their clip leaves the project, and a clip whose source fails to open is never retried.
+ * scrubbing and playback never build a backlog. Sources are opened lazily for video clips under the playhead and
+ * closed once their clip is neither under the playhead nor among the KEEP_RECENT most recently shown; a clip whose
+ * source fails to open is not retried while it stays in the project.
  */
 export class PreviewRenderer {
   private readonly sources = new Map<Id, VideoSource>();
@@ -92,18 +95,32 @@ export class PreviewRenderer {
     if (!this.disposed && !this.pending) this.canvas.dataset.renderState = 'idle';
   }
 
-  /** Closes sources of clips no longer in `p` and opens sources for video clips visible at `t`. */
+  /**
+   * Opens sources for the video clips visible at `t` and closes the others, except the KEEP_RECENT most recently
+   * shown ones (cheap scrubbing back and forth over a cut). Also forgets failures of clips/media that are gone.
+   */
   private async syncSources(p: Project, t: number): Promise<void> {
     const live = new Set(p.tracks.flatMap((tr) => tr.clips.map((c) => c.id)));
+    for (const id of this.failedClips) if (!live.has(id)) this.failedClips.delete(id);
+    for (const id of this.reportedMedia) if (!p.media[id]) this.reportedMedia.delete(id);
+    const videoTracks = new Set(p.tracks.filter((tr) => tr.kind === 'video').flatMap((tr) => tr.clips.map((c) => c.id)));
+    const active = activeClipsAt(p, t).filter((c) => c.kind === 'video' && videoTracks.has(c.id));
+    const activeIds = new Set(active.map((c) => c.id));
+    // Map order is least recently shown first: move the active ones to the end.
+    for (const id of activeIds) {
+      const s = this.sources.get(id);
+      if (!s) continue;
+      this.sources.delete(id);
+      this.sources.set(id, s);
+    }
+    const recent = [...this.sources.keys()].filter((id) => !activeIds.has(id) && live.has(id)).slice(-KEEP_RECENT);
+    const keep = new Set([...activeIds, ...recent]);
     for (const [id, s] of this.sources) {
-      if (live.has(id)) continue;
+      if (keep.has(id)) continue;
       s.close();
       this.sources.delete(id);
     }
-    const videoTracks = new Set(p.tracks.filter((tr) => tr.kind === 'video').flatMap((tr) => tr.clips.map((c) => c.id)));
-    const wanted = activeClipsAt(p, t).filter(
-      (c) => c.kind === 'video' && videoTracks.has(c.id) && !this.sources.has(c.id) && !this.failedClips.has(c.id),
-    );
+    const wanted = active.filter((c) => !this.sources.has(c.id) && !this.failedClips.has(c.id));
     if (wanted.length === 0) return;
     // Loaded on first use so the media toolkit stays out of the startup bundle.
     const { openVideoSource } = await import('../media/decode');

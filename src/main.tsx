@@ -13,6 +13,8 @@ interface DevHook {
   listMediaIds(): Promise<Id[]>;
   flushAutosave(): Promise<void>;
   getState(): EditorState & EditorActions;
+  /** Open/peak counts of video decoders (see media/decode). */
+  videoSourceStats(): Promise<{ open: number; peak: number; opened: number }>;
 }
 
 declare global {
@@ -22,7 +24,13 @@ declare global {
 }
 
 if (import.meta.env.DEV) {
-  window.__clipforge = { removeMedia, listMediaIds, flushAutosave, getState: () => useEditor.getState() };
+  window.__clipforge = {
+    removeMedia,
+    listMediaIds,
+    flushAutosave,
+    getState: () => useEditor.getState(),
+    videoSourceStats: async () => (await import('./media/decode')).videoSourceStats(),
+  };
 }
 
 createRoot(document.getElementById('root')!).render(
