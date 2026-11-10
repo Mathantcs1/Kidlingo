@@ -2,7 +2,7 @@
 import type { Id } from '../core/model';
 import { unlockAudio } from '../audio/context';
 import { useEditor } from '../state/store';
-import { appendMedia, deleteClips, liveSelection, mergeClips, splitAt } from './edits';
+import { appendMedia, deleteClips, liveSelection, mergeClips, rippleDeleteClips, splitAt } from './edits';
 import { guard } from './Toast';
 
 const editor = () => useEditor.getState();
@@ -25,6 +25,14 @@ export function deleteSelected(): void {
   guard(() => {
     const ids = selected();
     if (ids.length > 0) editor().apply((p) => deleteClips(p, ids));
+  });
+}
+
+/** Deletes the selected clips and closes their gaps (one undo step). */
+export function rippleDeleteSelected(): void {
+  guard(() => {
+    const ids = selected();
+    if (ids.length > 0) editor().apply((p) => rippleDeleteClips(p, ids));
   });
 }
 

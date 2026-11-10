@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { deleteSelected, redo, splitAtPlayhead, togglePlay, undo } from './commands';
+import { deleteSelected, redo, rippleDeleteSelected, splitAtPlayhead, togglePlay, undo } from './commands';
 import { isTextEntry } from './keys';
 import type { Shortcut } from './keys';
 import { shortcutFor } from './keys';
@@ -8,6 +8,7 @@ const COMMANDS: Record<Shortcut, () => void> = {
   play: togglePlay,
   split: splitAtPlayhead,
   delete: deleteSelected,
+  rippleDelete: rippleDeleteSelected,
   undo,
   redo,
 };

@@ -1,6 +1,6 @@
 // DOM-free keyboard helpers for the editor shortcuts.
 
-export type Shortcut = 'play' | 'split' | 'delete' | 'undo' | 'redo';
+export type Shortcut = 'play' | 'split' | 'delete' | 'rippleDelete' | 'undo' | 'redo';
 
 /** The parts of a KeyboardEvent the shortcut map reads. */
 export interface KeyLike {
@@ -41,6 +41,6 @@ export function shortcutFor(e: KeyLike): Shortcut | null {
   if (e.altKey || e.ctrlKey || e.metaKey || e.repeat) return null;
   if (e.code === 'Space' || e.key === ' ') return 'play';
   if (key === 's' && !e.shiftKey) return 'split';
-  if (e.key === 'Delete' || e.key === 'Backspace') return 'delete';
+  if (e.key === 'Delete' || e.key === 'Backspace') return e.shiftKey ? 'rippleDelete' : 'delete';
   return null;
 }

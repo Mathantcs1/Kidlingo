@@ -165,7 +165,7 @@ button:disabled,
 .workspace {
   grid-area: work;
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(200px, 240px);
   min-height: 0;
 }
 

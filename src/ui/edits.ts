@@ -1,7 +1,7 @@
 // Pure project edits behind the editor's buttons and shortcuts (composed from core/ operations).
-import { joinClips } from '../core/merge';
+import { fitTransform, joinClips } from '../core/merge';
 import { clipEnd } from '../core/model';
-import type { Id, MediaRef, Project } from '../core/model';
+import type { Clip, Id, MediaRef, Project } from '../core/model';
 import { MIN_CLIP, TimelineError, addClip, deleteClip, findClip, splitClip } from '../core/timeline';
 import { clipFromMedia } from '../media/clip';
 import { laneRejects } from './drag';
@@ -46,6 +46,15 @@ export function deleteClips(p: Project, ids: Id[]): Project {
   return ids.reduce((acc, id) => deleteClip(acc, id, { ripple: false }), p);
 }
 
+/**
+ * Deletes every clip in `ids` and closes each one's gap: later clips on its track move left by its duration.
+ * Deletions run right to left per track so the shifts compose. Returns `p` itself when there is nothing to delete.
+ */
+export function rippleDeleteClips(p: Project, ids: Id[]): Project {
+  const ordered = [...ids].sort((a, b) => findClip(p, b).clip.start - findClip(p, a).clip.start);
+  return ordered.reduce((acc, id) => deleteClip(acc, id, { ripple: true }), p);
+}
+
 /** Number of clips that use `mediaId`. */
 export function clipsUsingMedia(p: Project, mediaId: Id): number {
   return p.tracks.reduce((n, t) => n + t.clips.filter((c) => c.mediaId === mediaId).length, 0);
@@ -59,6 +68,33 @@ export function removeMediaFromProject(p: Project, mediaId: Id): Project {
   if (!p.media[mediaId]) throw new TimelineError(`Media not found: ${mediaId}`);
   const { [mediaId]: _removed, ...media } = p.media;
   return { ...p, media, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.filter((c) => c.mediaId !== mediaId) })) };
+}
+
+function updateClip(p: Project, clipId: Id, fn: (c: Clip) => Clip): Project {
+  const { clip } = findClip(p, clipId);
+  const next = fn(clip);
+  if (next === clip) return p;
+  return { ...p, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.map((c) => (c.id === clipId ? next : c)) })) };
+}
+
+/** Sets a clip's volume (1 = 100 %), clamped to 0..2. */
+export function setClipVolume(p: Project, clipId: Id, volume: number): Project {
+  if (!Number.isFinite(volume)) throw new TimelineError('Invalid volume');
+  const v = Math.min(2, Math.max(0, volume));
+  return updateClip(p, clipId, (c) => (c.volume === v ? c : { ...c, volume: v }));
+}
+
+/**
+ * Sets a video/image clip's fit mode and resets its transform to `fitTransform` for the project canvas (any
+ * position/scale change is replaced: the modes are defined by how the whole clip covers the canvas).
+ */
+export function setClipFit(p: Project, clipId: Id, fit: Clip['fit']): Project {
+  return updateClip(p, clipId, (c) => {
+    if (c.kind === 'audio') throw new TimelineError('Audio clips have no picture to fit');
+    const m = p.media[c.mediaId];
+    const transform = m?.width && m.height ? fitTransform({ width: m.width, height: m.height }, p.format, fit) : c.transform;
+    return { ...c, fit, transform };
+  });
 }
 
 /** Joins the clips ordered by their start time. */

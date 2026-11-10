@@ -5,6 +5,7 @@ import ConfirmDialog, { useConfirm } from './ui/Confirm';
 import MediaBin from './ui/MediaBin';
 import ExportDialog from './ui/ExportDialog';
 import { useExportUi } from './ui/exportJob';
+import Inspector from './ui/Inspector';
 import Preview from './ui/Preview';
 import { startSessionOnce } from './ui/session';
 import type { SessionState } from './ui/session';
@@ -53,6 +54,7 @@ export default function App() {
         <main className="workspace" inert={locked}>
           <MediaBin supported={canImport} ready={ready} />
           <Preview />
+          <Inspector editable={ready} />
         </main>
         <Toolbar editable={ready} inert={locked} />
         <Timeline inert={locked} />

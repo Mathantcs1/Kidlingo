@@ -1,6 +1,6 @@
 import { timelineDuration } from '../core/timeline';
 import { useEditor } from '../state/store';
-import { deleteSelected, mergeSelected, redo, splitAtPlayhead, togglePlay, undo } from './commands';
+import { deleteSelected, mergeSelected, redo, rippleDeleteSelected, splitAtPlayhead, togglePlay, undo } from './commands';
 import { videoClipCount } from './edits';
 import { openExport, startMerge } from './exportJob';
 import { formatTime } from './layout';
@@ -67,6 +67,15 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
           title="Delete selected clips (Delete)"
         >
           Delete
+        </button>
+        <button
+          type="button"
+          data-testid="btn-ripple-delete"
+          onClick={rippleDeleteSelected}
+          disabled={!editable || selected === 0}
+          title="Delete the selected clips and close the gaps (Shift+Delete)"
+        >
+          Ripple delete
         </button>
         <button
           type="button"

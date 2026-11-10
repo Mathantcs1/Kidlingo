@@ -205,6 +205,8 @@ describe('keys', () => {
     expect(shortcutFor(key({ key: 'S', code: 'KeyS', shiftKey: true }))).toBeNull();
     expect(shortcutFor(key({ key: 'Delete' }))).toBe('delete');
     expect(shortcutFor(key({ key: 'Backspace' }))).toBe('delete');
+    expect(shortcutFor(key({ key: 'Delete', shiftKey: true }))).toBe('rippleDelete');
+    expect(shortcutFor(key({ key: 'Backspace', shiftKey: true }))).toBe('rippleDelete');
     expect(shortcutFor(key({ key: 'z', ctrlKey: true }))).toBe('undo');
     expect(shortcutFor(key({ key: 'z', metaKey: true }))).toBe('undo');
     expect(shortcutFor(key({ key: 'Z', metaKey: true, shiftKey: true }))).toBe('redo');
