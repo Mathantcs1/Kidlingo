@@ -12,7 +12,8 @@ WebCodecs + canvas compositing (approach B). Hardware-accelerated decode and enc
 
 ## v1 scope
 
-- Import video, audio and images.
+- MP4 is the primary format: import `.mp4` (H.264/AVC with AAC audio) for editing, and export `.mp4`. Also accepted: `.mov`, `.m4v`, `.webm`, MP3/WAV/M4A audio, and JPG/PNG images. iPhone HEVC (H.265) MP4s import where the browser can decode them (Safari, and recent Chrome on Mac with hardware decode); otherwise the user gets a clear message.
+- Import by file picker or drag-and-drop, multiple files at once; files are processed locally and streamed, so multi-GB MP4s do not need to fit in memory.
 - Multi-track timeline: trim, split, move, delete, ripple-delete.
 - Merge: drop several videos/images into the timeline and join them back-to-back (gapless, magnetic snapping); optional auto-transition between joined clips; reorder by drag; merge clips of different sizes/frame rates (scaled to project canvas, fit/fill/blur-background); merged audio is crossfaded or level-matched; one-click "Merge selected" and "Merge all to one clip".
 - Project formats: YouTube 16:9, Reels/Shorts/TikTok 9:16, Square 1:1, Portrait 4:5; changing format re-fits clips (with blurred-background fill option).
