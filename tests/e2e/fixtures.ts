@@ -63,6 +63,12 @@ export function ensureFixtures(): string {
     // ffmpeg's -display_rotation is counter-clockwise.
     encode(at(name), ['-display_rotation', String(360 - Number(cw)), '-i', at('quad.mp4'), '-c', 'copy']);
   }
+  // Mirrored (horizontal flip after rotation) variants; ffmpeg's -display_hflip writes the display matrix.
+  encode(at('quad-hflip.mp4'), ['-display_hflip', '-i', at('quad.mp4'), '-c', 'copy']);
+  encode(at('quad-cw90-hflip.mp4'), ['-display_rotation', '270', '-display_hflip', '-i', at('quad.mp4'), '-c', 'copy']);
+  // Valid files in containers ClipForge cannot open.
+  encode(at('legacy.avi'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '0.5', '-c:v', 'mpeg4']);
+  encode(at('legacy.wmv'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '0.5', '-c:v', 'wmv2']);
   // The first 2 KB of a real MP4: a recognisable but damaged container (no moov box).
   generate(at('truncated.mp4'), (tmp) => writeFileSync(tmp, readFileSync(at('with-audio.mp4')).subarray(0, 2048)));
   return FIXTURE_DIR;

@@ -157,3 +157,19 @@ test('a failed putMedia over an existing id keeps the stored file', async ({ pag
   expect(r.stored).toBe('original contents');
   expect(r.freshExists).toBe(false);
 });
+
+test('valid files in containers ClipForge cannot open are named, not called damaged', async ({ page }) => {
+  await openHarness(page);
+  const bytes = (f: string): number[] => [...readFileSync(join(dir, f))];
+  const avi = await importBytes(page, 'holiday', 'video/x-msvideo', bytes('legacy.avi'));
+  const wmv = await importBytes(page, 'talk.wmv', 'video/x-ms-wmv', bytes('legacy.wmv'));
+  expect(avi).toBe(
+    "ImportError: holiday is an AVI file (Audio Video Interleave), which ClipForge can't open. Convert it to MP4 first.",
+  );
+  expect(wmv).toBe(
+    "ImportError: talk.wmv is a WMV file (Windows Media Video), which ClipForge can't open. Convert it to MP4 first.",
+  );
+  for (const m of [avi, wmv]) expect(m).not.toMatch(/damaged/);
+  // A real MP4 that is cut short is still reported as damaged.
+  expect(await importBytes(page, 'cut.mp4', 'video/mp4', bytes('truncated.mp4'))).toMatch(/damaged or incomplete/);
+});
