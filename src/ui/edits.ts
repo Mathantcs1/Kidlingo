@@ -2,7 +2,7 @@
 import { fitTransform, joinClips } from '../core/merge';
 import { clipEnd } from '../core/model';
 import type { Clip, Id, MediaRef, Project } from '../core/model';
-import { MIN_CLIP, TimelineError, addClip, deleteClip, findClip, splitClip } from '../core/timeline';
+import { MIN_CLIP, TimelineError, addClip, assertUnlocked, deleteClip, findClip, splitClip } from '../core/timeline';
 import { clipFromMedia } from '../media/clip';
 import { laneRejects } from './drag';
 
@@ -73,12 +73,14 @@ export function clipsUsingMedia(p: Project, mediaId: Id): number {
  */
 export function removeMediaFromProject(p: Project, mediaId: Id): Project {
   if (!p.media[mediaId]) throw new TimelineError(`Media not found: ${mediaId}`);
+  if (p.tracks.some((t) => t.locked && t.clips.some((c) => c.mediaId === mediaId))) throw new TimelineError('Track is locked');
   const { [mediaId]: _removed, ...media } = p.media;
   return { ...p, media, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.filter((c) => c.mediaId !== mediaId) })) };
 }
 
 function updateClip(p: Project, clipId: Id, fn: (c: Clip) => Clip): Project {
-  const { clip } = findClip(p, clipId);
+  const { track, clip } = findClip(p, clipId);
+  assertUnlocked(p, track.id);
   const next = fn(clip);
   if (next === clip) return p;
   return { ...p, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.map((c) => (c.id === clipId ? next : c)) })) };
@@ -138,6 +140,8 @@ export function dropMedia(p: Project, trackId: Id, mediaId: Id, start: number): 
 export function replaceWithMedia(p: Project, m: MediaRef): Project {
   const track = p.tracks.find((t) => t.kind === 'video');
   if (!track) throw new TimelineError('There is no video track to merge into');
+  // Clearing changes every track that holds clips, and the new clip lands on `track`.
+  if (track.locked || p.tracks.some((t) => t.locked && t.clips.length > 0)) throw new TimelineError('Track is locked');
   const cleared: Project = { ...addMedia(p, m), tracks: p.tracks.map((t) => ({ ...t, clips: [] })) };
   return addClip(cleared, track.id, clipFromMedia(m, track.id, 0, p.format));
 }

@@ -3,7 +3,20 @@ import { fitTransform } from '../src/core/merge';
 import { defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
-import { projectHasWork, clipsUsingMedia, removeMediaFromProject, rippleDeleteClips, setClipFit, setClipVolume } from '../src/ui/edits';
+import {
+  appendMedia,
+  clipsUsingMedia,
+  deleteClips,
+  dropMedia,
+  mergeClips,
+  projectHasWork,
+  removeMediaFromProject,
+  replaceWithMedia,
+  rippleDeleteClips,
+  setClipFit,
+  setClipVolume,
+  splitAt,
+} from '../src/ui/edits';
 
 const video: MediaRef = { id: 'v', name: 'v.mp4', kind: 'video', duration: 10, width: 1920, height: 1080, fps: 30, hasAudio: true };
 const other: MediaRef = { ...video, id: 'w', name: 'w.mp4' };
@@ -127,5 +140,59 @@ describe('projectHasWork', () => {
     expect(projectHasWork({ past: [project()], present: empty, future: [] })).toBe(true);
     expect(projectHasWork({ past: [], present: empty, future: [project()] })).toBe(true);
     expect(projectHasWork({ past: [], present: project(), future: [] })).toBe(true);
+  });
+});
+
+describe('lock guards in edits', () => {
+  const LOCKED = 'Track is locked';
+  const lock = (p: Project, i: number): Project => ({
+    ...p,
+    tracks: p.tracks.map((t, j) => (j === i ? { ...t, locked: true } : t)),
+  });
+  const unlock = (p: Project): Project => ({ ...p, tracks: p.tracks.map((t) => ({ ...t, locked: false })) });
+
+  it('setClipVolume and setClipFit refuse a locked track', () => {
+    const p = lock(project(), 0);
+    expect(() => setClipVolume(p, 'a', 0.5)).toThrow(LOCKED);
+    expect(() => setClipFit(p, 'a', 'fill')).toThrow(LOCKED);
+    expect(setClipVolume(unlock(p), 'a', 0.5).tracks[0].clips[0].volume).toBe(0.5);
+    expect(setClipFit(unlock(p), 'a', 'fill').tracks[0].clips[0].fit).toBe('fill');
+  });
+
+  it('deleteClips and rippleDeleteClips refuse a locked track', () => {
+    const p = lock(project(), 0);
+    expect(() => deleteClips(p, ['a'])).toThrow(LOCKED);
+    expect(() => rippleDeleteClips(p, ['a'])).toThrow(LOCKED);
+    expect(deleteClips(p, ['x']).tracks[1].clips).toHaveLength(1);
+    expect(deleteClips(unlock(p), ['a']).tracks[0].clips).toHaveLength(3);
+  });
+
+  it('splitAt and mergeClips refuse a locked track', () => {
+    const p = lock(project(), 0);
+    expect(() => splitAt(p, ['a'], 1)).toThrow(LOCKED);
+    expect(() => mergeClips(p, ['a', 'b'])).toThrow(LOCKED);
+    expect(splitAt(unlock(p), ['a'], 1).tracks[0].clips).toHaveLength(5);
+  });
+
+  it('appendMedia and dropMedia refuse a locked target track', () => {
+    const p = lock(project(), 0);
+    expect(() => appendMedia(p, 'v')).toThrow(LOCKED);
+    expect(() => dropMedia(p, p.tracks[0].id, 'v', 20)).toThrow(LOCKED);
+    expect(() => appendMedia(unlock(p), 'v')).not.toThrow();
+  });
+
+  it('replaceWithMedia refuses when a locked track would be changed', () => {
+    const p = lock(project(), 1);
+    expect(() => replaceWithMedia(p, other)).toThrow(LOCKED);
+    expect(() => replaceWithMedia(lock(project(), 0), other)).toThrow(LOCKED);
+    const emptyLocked = lock({ ...project(), tracks: project().tracks.map((t, i) => (i === 1 ? { ...t, clips: [] } : t)) }, 1);
+    expect(() => replaceWithMedia(emptyLocked, other)).not.toThrow();
+  });
+
+  it('removeMediaFromProject refuses when a locked track uses the media', () => {
+    const p = lock(project(), 0);
+    expect(() => removeMediaFromProject(p, 'v')).toThrow(LOCKED);
+    expect(removeMediaFromProject(p, 't').media.t).toBeUndefined();
+    expect(removeMediaFromProject(unlock(p), 'v').media.v).toBeUndefined();
   });
 });

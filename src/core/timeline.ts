@@ -36,6 +36,11 @@ function assertFinite(what: string, ...values: number[]): void {
   if (!values.every(Number.isFinite)) throw new TimelineError(`Invalid ${what}`);
 }
 
+/** Every operation that changes a track's clips calls this first; only setTrackFlags (and rename/move) skip it. */
+export function assertUnlocked(p: Project, trackId: Id): void {
+  if (p.tracks.find((t) => t.id === trackId)?.locked) throw new TimelineError('Track is locked');
+}
+
 function assertFree(track: Track, clip: Clip, ignoreId?: Id): void {
   if (track.clips.some((c) => c.id !== ignoreId && overlaps(c, clip))) {
     throw new TimelineError('Clip overlaps an existing clip');
@@ -46,6 +51,7 @@ function assertFree(track: Track, clip: Clip, ignoreId?: Id): void {
 export function addClip(p: Project, trackId: Id, clip: Clip): Project {
   const track = p.tracks.find((t) => t.id === trackId);
   if (!track) throw new TimelineError(`Track not found: ${trackId}`);
+  assertUnlocked(p, trackId);
   assertFinite('clip times', clip.start, clip.in, clip.out);
   if (trackKindFor(clip) !== track.kind) {
     throw new TimelineError(`A ${clip.kind} clip cannot go on a ${track.kind} track`);
@@ -63,6 +69,7 @@ export function addClip(p: Project, trackId: Id, clip: Clip): Project {
 export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: number): Project {
   assertFinite('trim time', time);
   const { track, clip } = findClip(p, clipId);
+  assertUnlocked(p, track.id);
   let next: Clip;
   if (edge === 'start') {
     const delta = time - clip.start;
@@ -78,7 +85,8 @@ export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: nu
 
 export function splitClip(p: Project, clipId: Id, time: number): Project {
   assertFinite('split time', time);
-  const { clip } = findClip(p, clipId);
+  const { track, clip } = findClip(p, clipId);
+  assertUnlocked(p, track.id);
   if (time < clip.start + MIN_CLIP - EPS || time > clipEnd(clip) - MIN_CLIP + EPS) {
     throw new TimelineError('Split point too close to clip edge');
   }
@@ -95,6 +103,8 @@ export function moveClip(p: Project, clipId: Id, newStart: number, trackId?: Id)
   const { track: from, clip } = findClip(p, clipId);
   const target = trackId === undefined ? from : p.tracks.find((t) => t.id === trackId);
   if (!target) throw new TimelineError(`Track not found: ${trackId}`);
+  assertUnlocked(p, from.id);
+  assertUnlocked(p, target.id);
   if (trackKindFor(clip) !== target.kind) {
     throw new TimelineError(`A ${clip.kind} clip cannot go on a ${target.kind} track`);
   }
@@ -113,6 +123,7 @@ export function moveClip(p: Project, clipId: Id, newStart: number, trackId?: Id)
 
 export function deleteClip(p: Project, clipId: Id, opts?: { ripple?: boolean }): Project {
   const { track, clip } = findClip(p, clipId);
+  assertUnlocked(p, track.id);
   const dur = clipDuration(clip);
   return {
     ...p,

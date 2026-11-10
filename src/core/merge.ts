@@ -2,7 +2,7 @@ import { FORMATS } from './formats';
 import type { FormatKey } from './formats';
 import { clipDuration, clipEnd } from './model';
 import type { Clip, Id, Project, Transform } from './model';
-import { TimelineError, findClip } from './timeline';
+import { TimelineError, assertUnlocked, findClip } from './timeline';
 
 const EPS = 1e-9;
 
@@ -14,6 +14,7 @@ export function joinClips(p: Project, clipIds: Id[]): Project {
   if (found.some((f) => f.track.id !== trackId)) {
     throw new TimelineError('Clips must be on the same track to join');
   }
+  assertUnlocked(p, trackId);
   const selected = found.map((f) => f.clip);
   const runStart = Math.min(...selected.map((c) => c.start));
   const originalEnd = Math.max(...selected.map(clipEnd));
