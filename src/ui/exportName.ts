@@ -7,7 +7,7 @@ const MAX_BASE = 100;
 const UNSAFE = /[\\/:*?"<>|\p{Cc}]+/gu;
 /** Windows device names, reserved with or without an extension. */
 const RESERVED = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
-const EDGES = /^[\s.-]+|[\s.]+$/gu;
+const EDGES = /^[\s.-]+|[\s.-]+$/gu;
 
 /** The first `max` grapheme clusters of `s` (falls back to code points without Intl.Segmenter). */
 function cut(s: string, max: number): string {
@@ -21,7 +21,7 @@ function cut(s: string, max: number): string {
 /**
  * A safe download name ending in a single `.mp4`. Keeps Unicode letters and emoji; replaces path separators,
  * `: * ? " < > |` and control characters with '-', collapses whitespace, drops leading dots and trailing
- * dots/spaces, avoids Windows device names (CON, NUL, COM1…), caps the length and falls back to the default
+ * dots, spaces and dashes, avoids Windows device names (CON, NUL, COM1…), caps the length and falls back to the default
  * name when nothing usable is left.
  */
 export function safeFilename(name: string): string {

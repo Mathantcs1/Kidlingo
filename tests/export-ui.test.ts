@@ -24,6 +24,7 @@ describe('safeFilename', () => {
     expect(safeFilename('a<b>c:d"e|f?g*h\\i')).toBe('a-b-c-d-e-f-g-h-i.mp4');
     expect(safeFilename('tab\there\nnewline')).toBe('tab-here-newline.mp4');
     expect(safeFilename('  .hidden  ')).toBe('hidden.mp4');
+    expect(safeFilename('my/clip?')).toBe('my-clip.mp4');
   });
 
   it('falls back to the default for empty or unusable names', () => {
