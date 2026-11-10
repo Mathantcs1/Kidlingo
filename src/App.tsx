@@ -14,6 +14,7 @@ import Toasts from './ui/Toast';
 import Toolbar from './ui/Toolbar';
 import TopBar from './ui/TopBar';
 import { usePlayback } from './ui/usePlayback';
+import { useFileDropGuard } from './ui/useFileDropGuard';
 import { useShortcuts } from './ui/useShortcuts';
 
 const capabilities = getCapabilities();
@@ -31,6 +32,7 @@ export default function App() {
   // that does not own the editor (another tab has it open), and while a modal is open (the editor is `inert`).
   useShortcuts(ready && !modal);
   usePlayback();
+  useFileDropGuard();
   useEffect(() => {
     void startSessionOnce();
   }, []);

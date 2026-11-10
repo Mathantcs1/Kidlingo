@@ -148,16 +148,17 @@ describe('track commands', () => {
   it('dropOnNewLayer refusals toast and change nothing (wrong kind, limit)', () => {
     s().apply((p) => ({ ...p, media: { m1: { id: 'm1', name: 'm.mp4', kind: 'video', duration: 3, hasAudio: false } } }));
     const before = present();
-    const active = s().activeTrackId;
+    const beforeDepth = depth();
     dropOnNewLayer('audio', 'm1', 0);
     expect(toasts().at(-1)).toBe('Video and images go on a video track');
+    expect(present()).toBe(before);
+    expect(depth()).toBe(beforeDepth);
+    expect(s().activeTrackId).toBeNull();
     for (let i = 0; i < 7; i++) addLayer('video');
     const full = present();
     dropOnNewLayer('video', 'm1', 0);
     expect(toasts().at(-1)).toMatch(/At most 8 video/);
     expect(present()).toBe(full);
-    expect(before.tracks).toHaveLength(2);
-    expect(active).toBeNull();
   });
 
   it('moveToNewLayer moves the clip in one undo step, activates the new track and selects the clip', () => {
@@ -179,8 +180,10 @@ describe('track commands', () => {
   it('moveToNewLayer refuses a locked source and a wrong kind with a toast', () => {
     const v1 = present().tracks[0].id;
     s().apply((p) => addClip(p, v1, clip('c1')));
+    const unlocked = present();
     moveToNewLayer('c1', 'audio', 0);
     expect(toasts().at(-1)).toBe('Video and images go on a video track');
+    expect(present()).toBe(unlocked);
     toggleTrackFlag(v1, 'locked');
     const before = present();
     moveToNewLayer('c1', 'video', 0);

@@ -19,8 +19,6 @@ interface NewLayerZoneProps {
   preview: DragPreview | null;
 }
 
-const NAMES: Record<TrackKind, string> = { video: 'video layer', audio: 'audio track' };
-
 /**
  * A slim drop target that creates a new track: above the top video lane (a new top layer) or below the bottom audio
  * lane. Media from the bin (HTML5 drag) and clips (pointer drag, see useClipDrag) can be dropped on it. Not focusable:
@@ -53,6 +51,7 @@ export default function NewLayerZone({ kind, project, pps, preview }: NewLayerZo
     dropOnNewLayer(kind, id, m ? dropStart(project, x, pps, m.duration) : 0);
   };
 
+  const label = full ? `At most ${MAX_TRACKS_PER_KIND} ${kind} tracks` : `Drop here for a new ${kind} layer`;
   const ghost = preview?.zone === kind ? preview : null;
   const state = drop ?? (ghost ? (ghost.rejected ? 'reject' : 'true') : null);
   const classes = ['new-layer-zone', `new-layer-zone-${kind}`];
@@ -66,14 +65,14 @@ export default function NewLayerZone({ kind, project, pps, preview }: NewLayerZo
       data-kind={kind}
       data-drop-target={state ?? undefined}
       role="group"
-      aria-label={`Drop here for a new ${NAMES[kind]}`}
+      aria-label={label}
       onDragEnter={onDragOver}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
       <span className="new-layer-zone-label" aria-hidden="true">
-        {full ? `At most ${MAX_TRACKS_PER_KIND} ${kind} tracks` : 'Drop here for a new layer'}
+        {full ? label : 'Drop here for a new layer'}
       </span>
       {ghost && (
         <div

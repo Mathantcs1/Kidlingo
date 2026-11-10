@@ -47,11 +47,13 @@ function zoneRejects(p: Project, zone: TrackKind, kind: TrackKind): boolean {
   return zone !== kind || p.tracks.filter((t) => t.kind === zone).length >= MAX_TRACKS_PER_KIND;
 }
 
-function previewFor(p: Project, g: Gesture, dx: number, x: number, y: number, pps: number): DragPreview {
+/** Where the drag would land, or null over the sticky ruler/header column (no ghost; releasing there does nothing). */
+function previewFor(p: Project, g: Gesture, dx: number, x: number, y: number, pps: number): DragPreview | null {
   const { track, clip } = findClip(p, g.clipId);
   if (g.kind === 'move') {
     const start = moveTarget(p, clip.id, dx, pps);
     const over = dropTargetAt(x, y, track.kind);
+    if (over === 'blocked') return null;
     const trackId = over?.lane ?? track.id;
     const zone = over?.zone ?? null;
     const rejected = track.locked || (zone ? zoneRejects(p, zone, track.kind) : isLocked(p, trackId));
