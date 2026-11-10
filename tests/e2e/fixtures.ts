@@ -22,5 +22,8 @@ export function ensureFixtures(): string {
     '-t', '3', ...VIDEO_ENC, '-c:a', 'aac', '-shortest',
   ]);
   generate(join(FIXTURE_DIR, 'no-audio.mp4'), [...VIDEO_SRC, '-t', '2', ...VIDEO_ENC, '-an']);
+  generate(join(FIXTURE_DIR, 'tone.wav'), [
+    '-f', 'lavfi', '-i', 'sine=frequency=330:sample_rate=48000', '-t', '2', '-c:a', 'pcm_s16le',
+  ]);
   return FIXTURE_DIR;
 }

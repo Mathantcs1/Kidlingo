@@ -1,9 +1,11 @@
 import { ALL_FORMATS, BlobSource, Input } from 'mediabunny';
 import type { InputAudioTrack, InputVideoTrack } from 'mediabunny';
-import { fitTransform } from '../core/merge';
-import { defaultTransform, newId } from '../core/model';
-import type { Clip, Id, MediaRef } from '../core/model';
+import { newId } from '../core/model';
+import type { MediaRef } from '../core/model';
 import { putMedia } from './storage';
+
+// Kept here for existing callers; lives in ./clip so the timeline can use it without loading Mediabunny.
+export { clipFromMedia } from './clip';
 
 /** Import failure; `message` is shown to the user. */
 export class ImportError extends Error {
@@ -108,28 +110,4 @@ export async function importFile(file: File): Promise<MediaRef> {
   const id = newId();
   await putMedia(id, file);
   return { id, name: file.name, ...probed };
-}
-
-/** A clip spanning the whole media, fitted to the canvas. Track placement is the caller's job. */
-export function clipFromMedia(
-  m: MediaRef,
-  _trackId: Id,
-  start: number,
-  canvas: { width: number; height: number },
-): Clip {
-  const transform =
-    m.kind !== 'audio' && m.width && m.height
-      ? fitTransform({ width: m.width, height: m.height }, canvas, 'fit')
-      : defaultTransform();
-  return {
-    id: newId(),
-    mediaId: m.id,
-    kind: m.kind,
-    start,
-    in: 0,
-    out: m.duration,
-    transform,
-    volume: 1,
-    fit: 'fit',
-  };
 }
