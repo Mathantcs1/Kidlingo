@@ -82,27 +82,41 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
 }));
 
 // Autosave: debounced 500 ms on history.present change only; no-op without IndexedDB.
-const hasIdb = typeof indexedDB !== 'undefined';
+const hasIdb = (): boolean => typeof indexedDB !== 'undefined';
 let timer: ReturnType<typeof setTimeout> | undefined;
 let dirty: Project | null = null;
+// Serialises writes; never rejects (failures are reported to the caller of enqueue()).
+let chain: Promise<void> = Promise.resolve();
 
-function write(): Promise<void> {
-  timer = undefined;
+function enqueue(): Promise<void> {
   const p = dirty;
   dirty = null;
-  return p && hasIdb ? saveProject(p) : Promise.resolve();
-}
-
-export function flushAutosave(): Promise<void> {
-  if (timer !== undefined) clearTimeout(timer);
-  return write();
-}
-
-if (hasIdb) {
-  useEditor.subscribe((s, prev) => {
-    if (s.history.present === prev.history.present) return;
-    dirty = s.history.present;
-    if (timer !== undefined) clearTimeout(timer);
-    timer = setTimeout(() => void write(), 500);
+  if (!p || !hasIdb()) return Promise.resolve();
+  const run = chain.then(() => saveProject(p));
+  chain = run.catch(() => undefined);
+  return run.catch((e: unknown) => {
+    // Keep the failed project for retry unless a newer change has arrived.
+    if (dirty === null) dirty = p;
+    throw e;
   });
 }
+
+/** Saves any pending change now and resolves once all writes are durable; rejects if a save fails. */
+export async function flushAutosave(): Promise<void> {
+  if (timer !== undefined) {
+    clearTimeout(timer);
+    timer = undefined;
+  }
+  await chain;
+  await enqueue();
+}
+
+useEditor.subscribe((s, prev) => {
+  if (s.history.present === prev.history.present || !hasIdb()) return;
+  dirty = s.history.present;
+  if (timer !== undefined) clearTimeout(timer);
+  timer = setTimeout(() => {
+    timer = undefined;
+    enqueue().catch((e: unknown) => console.error('clipforge: autosave failed', e));
+  }, 500);
+});

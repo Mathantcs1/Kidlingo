@@ -4,10 +4,12 @@ import type { Id, Project } from '../core/model';
 const KEY = 'clipforge:current';
 
 export async function saveProject(p: Project): Promise<void> {
+  if (typeof indexedDB === 'undefined') return;
   await set(KEY, p);
 }
 
 export async function loadProject(): Promise<Project | null> {
+  if (typeof indexedDB === 'undefined') return null;
   const v = (await get(KEY)) as Project | undefined;
   if (!v || v.version !== 1) return null;
   return v;
