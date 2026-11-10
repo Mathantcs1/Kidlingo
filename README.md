@@ -21,6 +21,8 @@ It is a static site built with React, TypeScript and Vite.
   to rename it (or focus it and press Enter or F2); the **M** button mutes, the **S** button solos (a "Solo on" badge shows while any track is soloed), the lock refuses every
   edit on the track, the eye hides a video layer from preview and export; the arrows reorder layers and `×` removes a
   track (asking first if it has clips). **+ Video layer** and **+ Audio track** add tracks. Each is one undo step.
+- **New-layer drop zones**: drop media from the bin, or drag a clip, onto the strip above the top video layer (or
+  below the bottom audio track) to put it on a brand-new layer/track of its kind in one undo step.
 - **Editing**: select clips (Shift-, Ctrl- or Cmd-click to select more than one), drag to move, drag the clip edges to trim, split at
   the playhead, delete, and **ripple delete** (delete and close the gap). Moves and trims snap to the edges of other clips and to 0. Timeline zoom in and out; during playback the timeline scrolls to keep the playhead in view.
 - **Clip inspector** (right of the preview, for one selected clip): **volume** from 0 to 200 % (0 mutes), and for

@@ -25,6 +25,8 @@ export default function TrackName({ trackId, label, name }: TrackNameProps) {
   const nameRef = useRef<HTMLSpanElement>(null);
   /** How editing was started (double-click or a key): focus returns to the name with the same modality. */
   const openedVia = useRef<Modality>('pointer');
+  /** The key that opened the editor (Enter, F2, Space) is still held: its auto-repeats must not reach the field. */
+  const openKeyHeld = useRef(false);
 
   useEffect(() => {
     if (editing || !refocus.current) return;
@@ -32,8 +34,9 @@ export default function TrackName({ trackId, label, name }: TrackNameProps) {
     if (nameRef.current) focusAs(nameRef.current, openedVia.current);
   }, [editing]);
 
-  const start = (): void => {
+  const start = (viaKey: boolean): void => {
     done.current = false;
+    openKeyHeld.current = viaKey;
     openedVia.current = currentModality();
     setEditing(true);
   };
@@ -48,11 +51,13 @@ export default function TrackName({ trackId, label, name }: TrackNameProps) {
   const onInputKey = (e: KeyboardEvent<HTMLInputElement>): void => {
     // Enter that confirms an IME composition belongs to the IME.
     if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-    // A held Enter/F2 that opened the editor auto-repeats into it: repeats neither commit nor cancel.
-    if (e.repeat && (e.key === 'Enter' || e.key === 'Escape')) {
+    // A held Enter/F2/Space that opened the editor auto-repeats into it: those repeats neither commit, cancel nor
+    // type (a held Space would replace the selected name with spaces). Repeated Enter/Escape are always ignored.
+    if (e.repeat && (openKeyHeld.current || e.key === 'Enter' || e.key === 'Escape')) {
       e.preventDefault();
       return;
     }
+    openKeyHeld.current = false;
     if (e.key === 'Enter') {
       e.preventDefault();
       finish(e.currentTarget.value, true);
@@ -67,7 +72,7 @@ export default function TrackName({ trackId, label, name }: TrackNameProps) {
     const space = e.key === ' ' && isKeyboardFocused(e.currentTarget);
     if (e.key === 'Enter' || e.key === 'F2' || space) {
       e.preventDefault();
-      if (!e.repeat) start();
+      if (!e.repeat) start(true);
     }
   };
 
@@ -82,6 +87,9 @@ export default function TrackName({ trackId, label, name }: TrackNameProps) {
         autoFocus
         onFocus={(e) => e.currentTarget.select()}
         onKeyDown={onInputKey}
+        onKeyUp={() => {
+          openKeyHeld.current = false;
+        }}
         onBlur={(e) => finish(e.currentTarget.value, false)}
       />
     );
@@ -95,7 +103,7 @@ export default function TrackName({ trackId, label, name }: TrackNameProps) {
       tabIndex={0}
       aria-label={`${label}, rename`}
       title={`${label} (double-click or Enter to rename)`}
-      onDoubleClick={start}
+      onDoubleClick={() => start(false)}
       onKeyDown={onNameKey}
     >
       {label}

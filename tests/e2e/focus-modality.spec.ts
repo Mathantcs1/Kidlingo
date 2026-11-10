@@ -77,6 +77,33 @@ test('holding Enter on the name opens the editor once; repeats neither commit no
   expect((await playerState(page)).undoDepth).toBe(depth);
 });
 
+test('holding Space on the keyboard-focused name opens the editor once; repeats do not type over the name', async ({ page }) => {
+  await withClip(page);
+  const [v] = await videoIds(page);
+  const h = header(page, v);
+  const depth = (await playerState(page)).undoDepth;
+  await page.getByTestId('btn-zoom-in').focus();
+  await page.keyboard.press('Tab');
+  await expect(h.getByTestId('track-name')).toBeFocused();
+  await page.keyboard.down('Space');
+  const input = h.getByTestId('track-name-input');
+  await expect(input).toBeFocused();
+  for (let i = 0; i < 4; i++) await page.keyboard.down('Space'); // auto-repeat
+  await page.keyboard.up('Space');
+  await expect(input).toHaveValue('Video 1');
+  expect((await playerState(page)).playing).toBe(false);
+  // Once released, Space types normally, and holding it later (not the opening key) repeats spaces as usual.
+  await input.press('End');
+  await page.keyboard.press('Space');
+  await page.keyboard.down('Space');
+  await page.keyboard.down('Space');
+  await page.keyboard.up('Space');
+  await expect(input).toHaveValue('Video 1   ');
+  await page.keyboard.press('Escape');
+  await expect(h.getByTestId('track-name')).toHaveText('Video 1');
+  expect((await playerState(page)).undoDepth).toBe(depth);
+});
+
 test('remove confirm opened with the mouse: after Escape, Space plays; opened with the keyboard, Space reopens it', async ({ page }) => {
   await open(page);
   await importFiles(page, [withAudio], 1);

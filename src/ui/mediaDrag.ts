@@ -14,3 +14,8 @@ export function draggedMedia(): Id | null {
 export function setDraggedMedia(id: Id | null): void {
   dragged = id;
 }
+
+/** True while media from the bin is being dragged (works during dragover, when the drag data cannot be read). */
+export function isMediaDrag(e: { dataTransfer: DataTransfer }): boolean {
+  return e.dataTransfer.types.includes(MEDIA_MIME) || dragged !== null;
+}

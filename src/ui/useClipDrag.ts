@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { clipEnd } from '../core/model';
-import type { Id, Project } from '../core/model';
+import type { Id, Project, TrackKind } from '../core/model';
 import { findClip, moveClip, trimClip } from '../core/timeline';
-import { isLocked } from '../core/tracks';
+import { MAX_TRACKS_PER_KIND, isLocked } from '../core/tracks';
 import { useEditor } from '../state/store';
 import { moveTarget, pastThreshold, trimTarget } from './drag';
+import { dropTargetAt } from './dragTargets';
 import { guard } from './Toast';
+import { moveToNewLayer } from './trackCommands';
 
 export type DragKind = 'move' | 'start' | 'end';
 
@@ -19,7 +21,9 @@ export interface DragPreview {
   duration: number;
   /** The new edge time (trims) or start (moves) to commit. */
   value: number;
-  /** The source or target track is locked: releasing here is refused (shown as a rejected ghost). */
+  /** Over a new-layer zone of this kind (moves only): releasing creates a track there. `trackId` stays the source. */
+  zone: TrackKind | null;
+  /** Releasing here is refused (shown as a rejected ghost): a locked source/target, or a zone that cannot take it. */
   rejected: boolean;
 }
 
@@ -38,27 +42,26 @@ const editor = () => useEditor.getState();
 
 const hasClip = (p: Project, id: Id): boolean => p.tracks.some((t) => t.clips.some((c) => c.id === id));
 
-/** The lane under a page point that holds clips of `kind`, if any. */
-function laneAt(x: number, y: number, kind: string): Id | null {
-  const el = document
-    .elementsFromPoint(x, y)
-    .find((e) => e instanceof HTMLElement && e.dataset.testid === 'timeline-lane') as HTMLElement | undefined;
-  return el && el.dataset.trackKind === kind ? (el.dataset.trackId ?? null) : null;
+/** A zone refuses a clip of the other kind, and any clip once its kind has the most tracks allowed. */
+function zoneRejects(p: Project, zone: TrackKind, kind: TrackKind): boolean {
+  return zone !== kind || p.tracks.filter((t) => t.kind === zone).length >= MAX_TRACKS_PER_KIND;
 }
 
 function previewFor(p: Project, g: Gesture, dx: number, x: number, y: number, pps: number): DragPreview {
   const { track, clip } = findClip(p, g.clipId);
   if (g.kind === 'move') {
     const start = moveTarget(p, clip.id, dx, pps);
-    const trackId = laneAt(x, y, track.kind) ?? track.id;
-    const rejected = track.locked || isLocked(p, trackId);
-    return { clipId: clip.id, kind: g.kind, trackId, start, duration: clip.out - clip.in, value: start, rejected };
+    const over = dropTargetAt(x, y, track.kind);
+    const trackId = over?.lane ?? track.id;
+    const zone = over?.zone ?? null;
+    const rejected = track.locked || (zone ? zoneRejects(p, zone, track.kind) : isLocked(p, trackId));
+    return { clipId: clip.id, kind: g.kind, trackId, zone, start, duration: clip.out - clip.in, value: start, rejected };
   }
   const t = trimTarget(p, clip.id, g.kind, dx, pps);
   const start = g.kind === 'start' ? t : clip.start;
   const end = g.kind === 'start' ? clipEnd(clip) : t;
   const duration = Math.max(0, end - start);
-  return { clipId: clip.id, kind: g.kind, trackId: track.id, start, duration, value: t, rejected: track.locked };
+  return { clipId: clip.id, kind: g.kind, trackId: track.id, zone: null, start, duration, value: t, rejected: track.locked };
 }
 
 /** Swallows the click that follows a drag, so it does not also select or deselect. */
@@ -72,10 +75,10 @@ function swallowNextClick(): void {
 }
 
 /**
- * Pointer dragging of clip bodies (move) and edges (trim). A press becomes a drag after 4 px; until then it
- * stays a click. The ghost follows the pointer through local state and the edit is committed with ONE apply
- * on release (a TimelineError reverts and shows a toast). Escape cancels. Only the pointer that started the
- * gesture counts; pointercancel / lostpointercapture end it without committing. If the clip disappears meanwhile
+ * Pointer dragging of clip bodies (move, also onto a new-layer zone) and edges (trim). A press becomes a drag after
+ * 4 px; until then it stays a click. The ghost follows the pointer through local state and the edit is committed
+ * with ONE apply on release (a TimelineError reverts and shows a toast). Escape cancels. Only the pointer that
+ * started the gesture counts; pointercancel / lostpointercapture end it without committing. If the clip disappears meanwhile
  * (undo, delete) the gesture ends quietly at once.
  */
 export function useClipDrag(pps: number) {
@@ -133,6 +136,11 @@ export function useClipDrag(pps: number) {
       const pv = !cancelled && g?.active ? g.preview : null;
       end();
       if (!pv || !hasClip(editor().history.present, pv.clipId)) return;
+      // A refused zone drop still goes through the command, which reports why (kind, lock, limit) as a toast.
+      if (pv.zone) {
+        moveToNewLayer(pv.clipId, pv.zone, pv.value);
+        return;
+      }
       guard(() =>
         editor().apply((p) =>
           pv.kind === 'move' ? moveClip(p, pv.clipId, pv.value, pv.trackId) : trimClip(p, pv.clipId, pv.kind, pv.value),

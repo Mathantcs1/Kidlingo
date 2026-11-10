@@ -6,7 +6,7 @@ import ClipView from './ClipView';
 import { dropStart, laneRejects } from './drag';
 import { dropMedia } from './edits';
 import { timeToPx } from './layout';
-import { MEDIA_MIME, draggedMedia, setDraggedMedia } from './mediaDrag';
+import { MEDIA_MIME, draggedMedia, isMediaDrag, setDraggedMedia } from './mediaDrag';
 import { guard } from './Toast';
 import { trackHeight } from './trackLayout';
 import type { DragKind, DragPreview } from './useClipDrag';
@@ -20,8 +20,6 @@ interface LaneProps {
   preview: DragPreview | null;
   onDragStart(e: PointerEvent<HTMLElement>, clipId: Id, kind: DragKind): void;
 }
-
-const isMediaDrag = (e: DragEvent): boolean => e.dataTransfer.types.includes(MEDIA_MIME) || draggedMedia() !== null;
 
 /** One timeline track: its clips, the live drag ghost, and the drop target for media from the bin. */
 export default function Lane({ project, track, label, pps, selected, preview, onDragStart }: LaneProps) {
@@ -90,7 +88,7 @@ export default function Lane({ project, track, label, pps, selected, preview, on
           onDragStart={onDragStart}
         />
       ))}
-      {preview?.trackId === track.id && (
+      {preview?.trackId === track.id && preview.zone === null && (
         <div
           className={`clip-ghost${preview.kind === 'move' ? '' : ' is-trim'}${preview.rejected ? ' is-reject' : ''}`}
           data-testid="drag-ghost"

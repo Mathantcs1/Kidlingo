@@ -4,6 +4,7 @@ import { timelineDuration } from '../core/timeline';
 import { trackLabel } from '../core/tracks';
 import { useEditor } from '../state/store';
 import Lane from './Lane';
+import NewLayerZone, { ZONE_HEIGHT } from './NewLayerZone';
 import TimelineBar from './TimelineBar';
 import TrackHeader from './TrackHeader';
 import { DEFAULT_PPS, contentSeconds, rulerTicks, timeToPx, zoom } from './layout';
@@ -44,6 +45,7 @@ export default function Timeline({ inert }: { inert: boolean }) {
         <div className="timeline-grid" style={{ width: HEADER_WIDTH + width }}>
           <div className="track-headers">
             <div className="headers-corner" />
+            <div className="zone-spacer" style={{ height: ZONE_HEIGHT }} aria-hidden="true" />
             {rows.map((track) => (
               <TrackHeader
                 key={track.id}
@@ -55,6 +57,7 @@ export default function Timeline({ inert }: { inert: boolean }) {
                 canRemove={count(track.kind) > 1}
               />
             ))}
+            <div className="zone-spacer" style={{ height: ZONE_HEIGHT }} aria-hidden="true" />
           </div>
           <div className="timeline-content" style={{ width }}>
             <div className="ruler" data-testid="timeline-ruler" ref={rulerRef} {...scrub}>
@@ -70,6 +73,7 @@ export default function Timeline({ inert }: { inert: boolean }) {
                 style={{ left: timeToPx(playhead, pps) }}
               />
             </div>
+            <NewLayerZone kind="video" project={project} pps={pps} preview={preview} />
             {rows.map((track) => (
               <Lane
                 key={track.id}
@@ -82,6 +86,7 @@ export default function Timeline({ inert }: { inert: boolean }) {
                 onDragStart={begin}
               />
             ))}
+            <NewLayerZone kind="audio" project={project} pps={pps} preview={preview} />
             <div className="playhead" data-testid="playhead" style={{ left: timeToPx(playhead, pps) }} />
           </div>
         </div>

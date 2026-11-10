@@ -1,9 +1,10 @@
 // Store-bound track commands for the timeline headers. Each change is ONE `apply` (one undo step), so playback
 // pauses on it and undo restores it; refusals (TimelineError) become toasts.
-import type { Id, Track, TrackKind } from '../core/model';
+import type { Id, Project, Track, TrackKind } from '../core/model';
 import { addTrack, moveTrack, removeTrack, renameTrack, setTrackFlags, trackLabel } from '../core/tracks';
 import { useEditor } from '../state/store';
 import { askConfirm } from './Confirm';
+import { addedTrackId, dropMediaOnNewLayer, moveClipToNewLayer } from './layerEdits';
 import { guard } from './Toast';
 import { moveTarget } from './trackLayout';
 
@@ -72,4 +73,28 @@ export function toggleTrackFlag(trackId: Id, flag: TrackFlag): void {
 /** An empty name falls back to the default label ("Video 2"). */
 export function renameLayer(trackId: Id, name: string): void {
   guard(() => editor().apply((p) => renameTrack(p, trackId, name)));
+}
+
+/** Runs `edit` as ONE apply; when it added a track, that track becomes active and its (first) clip is selected. */
+function applyOnNewLayer(edit: (p: Project) => Project): void {
+  guard(() => {
+    const before = editor().history.present;
+    editor().apply(edit);
+    const after = editor().history.present;
+    const id = after === before ? null : addedTrackId(before, after);
+    const track = after.tracks.find((t) => t.id === id);
+    if (!track) return;
+    editor().setActiveTrack(track.id);
+    if (track.clips[0]) editor().select([track.clips[0].id]);
+  });
+}
+
+/** Media dropped on a new-layer zone: a new track of `kind` with the full-length clip at `start` (one undo step). */
+export function dropOnNewLayer(kind: TrackKind, mediaId: Id, start: number): void {
+  applyOnNewLayer((p) => dropMediaOnNewLayer(p, kind, mediaId, start));
+}
+
+/** A clip dragged onto a new-layer zone: moved to a new track of `kind` at `newStart` (one undo step). */
+export function moveToNewLayer(clipId: Id, kind: TrackKind, newStart: number): void {
+  applyOnNewLayer((p) => moveClipToNewLayer(p, clipId, kind, newStart));
 }
