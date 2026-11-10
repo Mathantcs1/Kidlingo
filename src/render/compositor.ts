@@ -2,8 +2,9 @@ import { activeClipsAt } from '../core/timeline';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
-import { QuadRenderer, clipMatrix, createContext, createTexture, frameOrientation, letterbox, rotatedSize, uploadTexture, uvMatrix } from './gl';
+import { QuadRenderer, clipMatrix, createContext, createTexture, forceOpaque, frameOrientation, letterbox, rotatedSize, uploadTexture, uvMatrix } from './gl';
 import type { Mat3, Size, TextureSlot } from './gl';
+import { withAttempts } from './glErrors';
 import { ImageTextures } from './images';
 
 export interface Compositor {
@@ -33,7 +34,6 @@ export interface CompositorOptions {
   preserveDrawingBuffer?: boolean;
 }
 
-
 interface Draw {
   clip: Clip;
   slot: TextureSlot;
@@ -58,17 +58,22 @@ class GlCompositor implements Compositor {
   private queue: Promise<unknown> = Promise.resolve();
   private disposed = false;
   private lost = false;
+  /** A fallback context may have an alpha channel: its alpha is then forced back to opaque after each frame. */
+  private readonly hasAlpha: boolean;
   private readonly onLost = (): void => {
     this.lost = true;
   };
 
+  /** Throws GlUnavailableError (with the getContext outcomes) after releasing whatever it had created. */
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, opts: CompositorOptions) {
     this.canvas = canvas;
-    this.gl = createContext(canvas, opts);
+    const { gl, attempts } = createContext(canvas, opts);
+    this.gl = gl;
+    this.hasAlpha = gl.getContextAttributes()?.alpha === true;
+    this.quad = withAttempts(attempts, () => new QuadRenderer(gl));
+    this.blur = withAttempts(attempts, () => new BlurBackground(gl, this.quad), () => this.quad.dispose());
+    this.images = new ImageTextures(gl);
     (canvas as EventTarget).addEventListener('webglcontextlost', this.onLost);
-    this.quad = new QuadRenderer(this.gl);
-    this.blur = new BlurBackground(this.gl, this.quad);
-    this.images = new ImageTextures(this.gl);
   }
 
   renderFrame(p: Project, t: number, sources: Map<Id, VideoSource>): Promise<void> {
@@ -165,6 +170,7 @@ class GlCompositor implements Compositor {
       if (d.clip.fit === 'blur') this.blur.draw(d.slot, d.size, d.uv, d.clip.transform.opacity, format, viewport);
       this.quad.draw(d.slot.tex, clipMatrix(d.size, d.clip.transform, format), d.clip.transform.opacity, d.uv);
     }
+    if (this.hasAlpha) forceOpaque(gl);
   }
 
   private videoSlot(source: VideoSource, index: number): TextureSlot {
@@ -197,6 +203,7 @@ function visualClipsAt(p: Project, t: number): Clip[] {
   return activeClipsAt(p, t).filter((c) => onVideoTracks.has(c.id) && (c.kind === 'video' || c.kind === 'image'));
 }
 
+/** Throws GlUnavailableError when WebGL2 cannot be started on `canvas` (see GlFailureReason). */
 export function createCompositor(canvas: HTMLCanvasElement | OffscreenCanvas, opts: CompositorOptions = {}): Compositor {
   return new GlCompositor(canvas, opts);
 }

@@ -1,5 +1,6 @@
 // The 'blur' fit's background: the clip scaled to cover the frame, heavily downscaled and stretched back up.
 import { clipMatrix, createTexture, fullscreenMatrix, uvMatrix } from './gl';
+import { GlUnavailableError } from './glErrors';
 import type { Mat3, QuadRenderer, Rect, Size, TextureSlot } from './gl';
 
 /** The blurred background is rendered at about this fraction of the output size, then upscaled. */
@@ -14,8 +15,15 @@ class RenderTarget {
 
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
-    this.slot = { tex: createTexture(gl), width: 0, height: 0 };
-    this.fbo = gl.createFramebuffer();
+    const fbo = gl.createFramebuffer() as WebGLFramebuffer | null;
+    if (!fbo) throw new GlUnavailableError('resource', 'Could not create framebuffer');
+    this.fbo = fbo;
+    try {
+      this.slot = { tex: createTexture(gl), width: 0, height: 0 };
+    } catch (e) {
+      gl.deleteFramebuffer(fbo);
+      throw e;
+    }
   }
 
   /** Binds the framebuffer at `width` x `height` (reallocating on change) and sets the viewport to it. */

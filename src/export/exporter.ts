@@ -6,6 +6,7 @@ import type { Compositor } from '../render/compositor';
 import { getCapabilities } from '../media/support';
 import { ExportError } from './errors';
 import { loadChunk } from '../loadChunk';
+import { graphicsHint, isNoWebGl2, plainReason, toGlUnavailable } from '../render/glErrors';
 
 // Browser-only modules (Mediabunny, WebGL compositor, decoders, Web Audio mixer) are imported lazily inside
 // exportProject so this module stays importable in Node (unit tests) and they stay off the main bundle path.
@@ -116,18 +117,42 @@ async function ensureAacEncoder(mb: typeof import('mediabunny'), quality: Instan
   aacEncoderRegistered = true;
 }
 
-/** Creates the render canvas: an OffscreenCanvas if it supports WebGL2, else a detached HTMLCanvasElement. */
-function createExportCompositor(
-  create: typeof import('../render/compositor').createCompositor,
+type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
+
+/** OffscreenCanvas when the browser has it, then a detached HTMLCanvasElement. */
+function defaultCanvases(width: number, height: number): (() => RenderCanvas)[] {
+  const list: (() => RenderCanvas)[] = [];
+  if (typeof OffscreenCanvas !== 'undefined') list.push(() => new OffscreenCanvas(width, height));
+  list.push(() => document.createElement('canvas'));
+  return list;
+}
+
+/**
+ * Creates the render compositor on the first of `canvases` that supports WebGL2. If none does, throws an
+ * ExportError naming the (last) failure's plain-English reason, plus what to check when WebGL2 is missing.
+ */
+export function createExportCompositor(
+  create: (canvas: RenderCanvas, opts: { preserveDrawingBuffer: boolean }) => Compositor,
   width: number,
   height: number,
+  canvases: (() => RenderCanvas)[] = defaultCanvases(width, height),
 ): Compositor {
-  let compositor: Compositor;
-  try {
-    if (typeof OffscreenCanvas === 'undefined') throw new Error('no OffscreenCanvas');
-    compositor = create(new OffscreenCanvas(width, height), { preserveDrawingBuffer: true });
-  } catch {
-    compositor = create(document.createElement('canvas'), { preserveDrawingBuffer: true });
+  let compositor: Compositor | null = null;
+  let failure: unknown = null;
+  for (const make of canvases) {
+    try {
+      compositor = create(make(), { preserveDrawingBuffer: true });
+      break;
+    } catch (e) {
+      failure = e;
+    }
+  }
+  if (!compositor) {
+    console.error('clipforge: export renderer could not start', failure);
+    const err = toGlUnavailable(failure);
+    const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+    const hint = isNoWebGl2(err.reason) ? ` ${graphicsHint(ua)}` : '';
+    throw new ExportError(`The video renderer could not start: ${plainReason(err.reason)}.${hint}`);
   }
   try {
     compositor.resize(width, height);

@@ -85,6 +85,20 @@ try Safari, or set the iPhone to record H.264 before filming: **Settings → Cam
   assumed to use one tab, but since that cannot be proven ClipForge then never deletes unused media files at
   startup: they are freed only by **New project** (or by clearing the site's data).
 
+### Troubleshooting: "Preview says WebGL2 is not available"
+
+The preview panel names the reason the renderer could not start (WebGL2 missing, the browser refusing a WebGL2
+context, a shader that would not compile, or GPU resources that could not be created). The rest of the editor
+keeps working; export needs WebGL2 too and says so in the export dialog if it is missing.
+
+- In Chrome, open `chrome://gpu`: under "Graphics Feature Status", **WebGL2** should say "Hardware accelerated".
+  If it says "Unavailable" or "Software only", WebGL2 is turned off or blocked for your graphics card or driver.
+- Make sure graphics acceleration is on: Chrome Settings → System → "Use graphics acceleration when available",
+  then relaunch Chrome. In other browsers, look in the browser's graphics/performance settings.
+- Click **Try again** in the preview panel (it starts the renderer on a fresh canvas), or reload the page.
+- If it keeps failing, click **Copy details** and send us the text: it holds the technical error, the GPU
+  renderer/vendor strings, your browser's user agent and what each WebGL2 context request returned.
+
 ## Privacy
 
 Everything stays on your device; nothing is uploaded. Imported media files are copied into the browser's Origin
