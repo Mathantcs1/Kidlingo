@@ -11,18 +11,27 @@ It is a static site built with React, TypeScript and Vite.
 - **Import** video, audio and images with the Import button or by dropping files onto the media bin (several at
   once). Each item shows its kind, duration and whether it has sound. Videos without an audio track (for example
   screen recordings) import fine.
-- **Timeline** with one video track and one audio track. Add media with the `+` button (appends to the end of
+- **Media bin**: the `×` button removes an item from the project (if clips use it, ClipForge asks first and removes
+  them too, as one undo step). **New project** starts over with an empty YouTube project (it asks first if the
+  current project has anything in it); the imported files it no longer needs are then deleted from the browser.
+- **Timeline** with one video track and one audio track (more tracks are planned). Add media with the `+` button (appends to the end of
   the matching track) or by dragging it from the media bin onto a track.
 - **Editing**: select clips (Shift-, Ctrl- or Cmd-click to select more than one), drag to move, drag the clip edges to trim, split at
-  the playhead, delete. Moves and trims snap to the edges of other clips and to 0. Timeline zoom in and out.
+  the playhead, delete, and **ripple delete** (delete and close the gap). Moves and trims snap to the edges of other clips and to 0. Timeline zoom in and out; during playback the timeline scrolls to keep the playhead in view.
+- **Clip inspector** (right of the preview, for one selected clip): **volume** from 0 to 200 % (0 mutes), and for
+  video and image clips how they cover the frame: **Fit** (whole picture, black bars), **Fill** (fills the frame,
+  edges cropped) or **Blur** (whole picture over a blurred copy of itself). Choosing a mode resets the clip's
+  position and scale to that mode's framing. Changing the project format keeps each clip's mode.
 - **Merge** joins the selected clips back to back with no gaps. **Merge all into one clip** renders the whole
   timeline into a single new video in the media bin and replaces the timeline with it (one undo step; it can be
   cancelled).
 - **Formats**: YouTube 16:9 (1920x1080), Vertical 9:16 for Reels/Shorts/TikTok (1080x1920), Square 1:1
   (1080x1080) and Portrait 4:5 (1080x1350). Changing the format refits every clip to the new canvas.
 - **Preview** of the frame under the playhead, rendered with WebGL2, and **playback** with sound (Play/Pause).
-- **Undo/redo** for every edit, and **autosave**: the project is restored when you reopen the page. Clips whose
-  media is no longer in browser storage are marked "missing media" instead of breaking the project.
+- **Undo/redo** for every edit, and **autosave**: the project is restored when you reopen the page (a pending
+  change is also saved when the tab is hidden or closed). If saving fails (for example because browser storage is
+  full) a message says so once and the toolbar shows **Not saved** until saving works again. Clips whose media is
+  no longer in browser storage are marked "missing media" instead of breaking the project.
 - **Export** to MP4 (H.264 video + AAC audio) at 1080p or 4K, with a progress bar, cancel, and a file name you
   choose. 1080p fits the video in a 1920x1080 frame of the project's orientation (so 1080 px on the short side
   for every preset, e.g. 1080x1080 for Square); 4K doubles that (3840x2160 frame). A project with no audible clip
@@ -40,8 +49,7 @@ of [docs/superpowers/plans/2026-11-10-clipforge-foundation.md](docs/superpowers/
 - **Plan 4, animation and motion**: keyframes and easing, motion paths, text with animation presets,
   transitions, speed ramps, reverse, crop/rotate/flip.
 
-There is currently no per-clip volume control, no fit-mode picker (clips are fitted to the canvas), and no
-transition or text tool.
+There is currently no transition, text or effects tool, and only one video and one audio track.
 
 ## Supported files
 
@@ -57,18 +65,31 @@ try Safari, or set the iPhone to record H.264 before filming: **Settings → Cam
 
 ## Browser requirements
 
-- **Chrome** (desktop) or **Safari 17+ on Mac**.
-- Needs **WebCodecs** (decode and encode), **WebGL2** (preview and export rendering) and the **Origin Private
-  File System (OPFS)** (media storage and export temp files).
-- Without WebCodecs, ClipForge shows a banner at the top, "Your browser can't edit video. Use Chrome or Safari 17
-  or later.", and import is disabled. Without WebGL2 the preview panel says it cannot show the preview.
+- **Tested in desktop Chrome** (the automated tests run in headless Chromium on Linux).
+- **Safari: untested.** It is expected to work only on versions that provide WebCodecs audio decoding
+  (`AudioDecoder`) and `FileSystemFileHandle.createWritable()` (Safari 26 and later, to our knowledge).
+- ClipForge needs **WebCodecs** (video and audio decoding, video encoding), **WebGL2** (preview and export
+  rendering), **Web Audio** and the **Origin Private File System (OPFS)** with writable files (media storage and
+  export temp files).
+- If any of these is missing, a banner at the top names exactly what is missing, for example "Your browser is
+  missing: WebCodecs audio decoding, OPFS file writing. Use a recent desktop Chrome." Import is disabled when
+  decoding or OPFS file writing is missing. Without WebGL2 the preview panel says it cannot show the preview.
+  Without writable OPFS an export is built in memory (the export dialog says so), which limits very long or 4K
+  exports to what fits in RAM.
 - The page must be served over HTTPS or from `localhost`; these APIs are not available on plain HTTP.
+- **One tab at a time.** All tabs of the site share one saved project and one media store, so ClipForge takes a
+  browser lock ([Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API)) when it opens. A second
+  tab shows "ClipForge is already open in another tab" and stays inert (it never loads, saves or deletes
+  anything); reload it after closing the first tab. Browsers without Web Locks are assumed to use one tab.
 
 ## Privacy
 
 Everything stays on your device; nothing is uploaded. Imported media files are copied into the browser's Origin
 Private File System, and the project (the timeline as JSON, which references media by ID) is saved in IndexedDB.
-Clearing this site's data in the browser deletes your projects and imported media.
+Clearing this site's data in the browser deletes your projects and imported media. Imported files that no
+project state uses any more (removed media, undone imports, replaced merges) are deleted the next time ClipForge
+starts and after **New project**; while the page is open they are kept so undo still works. ClipForge asks the
+browser for persistent storage after the first import, so the browser is less likely to evict your media.
 
 ## Keyboard shortcuts
 
@@ -79,6 +100,7 @@ Shortcuts are ignored while you type in a text field or select, and while the ex
 | Space | Play / pause |
 | S | Split at the playhead (the selected clips, or every clip under the playhead if none is selected) |
 | Delete or Backspace | Delete the selected clips |
+| Shift+Delete or Shift+Backspace | Ripple delete: delete the selected clips and close the gaps |
 | Ctrl+Z / Cmd+Z | Undo |
 | Shift+Ctrl+Z / Shift+Cmd+Z, or Ctrl+Y | Redo |
 
@@ -86,16 +108,17 @@ In the export dialog, Escape closes it (unless an export is running) and Tab sta
 
 ## Limits and known trade-offs
 
-- **Audio memory**: for playback and export the audio of each clip is decoded in full into memory, and export
-  renders a full mixdown up front. Expect roughly 1 GB of memory for about 20 minutes of stereo audio, so very
-  long timelines may run out of memory.
+- **Audio memory**: playback decodes audio in windows of about 20 seconds just ahead of the playhead, so Play
+  starts quickly and memory does not grow with the timeline length; export renders the mix window by window,
+  interleaved with the video frames.
 - **Video files are not loaded into memory**: they are stored in OPFS and read on demand. Export streams the MP4
-  into a temp file in OPFS (in memory only if OPFS is missing).
+  into a temp file in OPFS (in memory only if writable OPFS is missing). Finished exports stay in OPFS until the
+  next export (or, if you downloaded them, until ClipForge next starts), so a running download is never cut off.
 - **Export encoders**: H.264 uses the browser's WebCodecs encoder. AAC uses the browser's native encoder when it
-  has one, and otherwise falls back to a WASM AAC encoder that is downloaded on first use. This repo's tests run
-  in headless Chromium on Linux, which has no native AAC encoder, so the WASM path is the one that is tested; the
-  native AAC path (Chrome or Safari on Mac) has not been tested here.
-- Not tested on a real Mac or with real phone footage; the tests use generated clips.
+  has one, and otherwise falls back to a WASM AAC encoder (FFmpeg, LGPL) that is downloaded on first use. This
+  repo's tests run in headless Chromium on Linux, which has no native AAC encoder, so the WASM path is the one
+  that is tested; the native AAC path has not been tested here.
+- Not tested on a real Mac, in Safari or with real phone footage; the tests use generated clips.
 - One video track and one audio track; no effects, transitions or text yet (see the roadmap).
 
 ## Development
@@ -115,6 +138,9 @@ To use a specific Chromium build, set `PW_CHROMIUM_PATH=/path/to/chromium`; othe
 `/opt/pw-browsers/chromium` is used if present, else Playwright's own browser (`npx playwright install chromium`).
 Chromium is launched with a software WebGL2 renderer (SwiftShader), which is slow but works headless.
 
+`npm run dev` and `npm run build` first run `scripts/copy-licenses.mjs`, which collects the licence texts of
+everything that ships in the bundle into `public/licenses/` (git-ignored; copied to `dist/licenses/`).
+
 Code layout: `src/core` (pure project model and timeline operations), `src/state` (store, undo history,
 persistence), `src/media` (support check, OPFS storage, import, decode), `src/render` (WebGL2 compositor),
 `src/audio` (mixer), `src/export` (MP4 exporter), `src/ui` (React components).
@@ -132,10 +158,14 @@ npm run preview # serve dist/ locally on http://localhost:4173
 It must be served over **HTTPS** (or from `localhost`), because WebCodecs and OPFS only work in secure contexts.
 No special headers (COOP/COEP) are required.
 
-- **Vercel:** `vercel.json` configures the Vite build (`npm run build` into `dist/`), rewrites every path to
-  `/index.html` (static files are served first, so assets still resolve), sets long-lived immutable caching for
-  `/assets/*`, and adds `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy` headers. Import the
-  repository in Vercel or run `vercel --prod`.
+- **Vercel:** `vercel.json` configures the Vite build (`npm run build` into `dist/`), rewrites every path except
+  `/assets/*` to `/index.html` (static files are served first, so existing files still resolve), sets long-lived
+  immutable caching for `/assets/*`, and adds `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`
+  headers. A missing `/assets/*` file therefore gets a real 404 instead of the app shell, so a tab left open across
+  a redeploy cannot cache an HTML page under an old chunk name; when such a tab needs a chunk that is gone, it
+  says "ClipForge was updated — reload the page." The `Permissions-Policy` header disables the microphone
+  (`microphone=()`); it must be relaxed when voiceover recording (Plan 2) lands. Import the repository in Vercel or
+  run `vercel --prod`.
 - **Netlify / Cloudflare Pages:** build command `npm run build`, publish directory `dist`. A single-page fallback
   is optional because the app has one route.
 - **GitHub Pages:** the site is served from a sub-path, so build with a base path:
@@ -144,4 +174,26 @@ No special headers (COOP/COEP) are required.
 
 To check the production bundle (including the lazily loaded AAC encoder chunk) end to end, run
 `npm run e2e:preview`. It builds the site, serves it with `vite preview` and exports a 1 s clip, verified with
-ffprobe. The Vercel rewrite and headers are applied by Vercel and cannot be tested locally.
+ffprobe, and checks that the third-party licence notices are served and linked. The Vercel rewrite and headers
+are applied by Vercel and cannot be tested locally.
+
+## Third-party licenses
+
+ClipForge ships the following third-party code in its bundle. The full licence texts are served with the site at
+`/licenses/THIRD-PARTY.txt` (linked as "Third-party licenses" at the top right of the app) and generated by
+`scripts/copy-licenses.mjs` from the installed packages.
+
+| Package | Version | Licence |
+| --- | --- | --- |
+| [mediabunny](https://github.com/Vanilagy/mediabunny) | 1.65.2 | MPL-2.0 |
+| [@mediabunny/aac-encoder](https://github.com/Vanilagy/mediabunny/tree/main/packages/aac-encoder) | 1.65.2 | MPL-2.0 |
+| FFmpeg (AAC encoder, compiled to WASM inside @mediabunny/aac-encoder) | commit [`60a2818f76dcd1fee3155b1791304af104a0fc1b`](https://github.com/FFmpeg/FFmpeg/commit/60a2818f76dcd1fee3155b1791304af104a0fc1b) (`n9.1-dev-2902-g60a2818f76d`), unmodified | LGPL-2.1-or-later |
+| [React](https://github.com/react/react) and react-dom | 19.3.1 | MIT |
+| scheduler (dependency of react-dom) | 0.28.0 | MIT |
+| [Zustand](https://github.com/pmndrs/zustand) | 5.1.0 | MIT |
+| [idb-keyval](https://github.com/jakearchibald/idb-keyval) | 6.3.0 | Apache-2.0 |
+| Vite 8.3.7 / Rolldown 1.2.18 runtime helpers | | MIT |
+
+The FFmpeg build details are quoted from the @mediabunny/aac-encoder README: it was built from the commit above with
+Emscripten 4.0.21, enables no GPL, version 3 or nonfree components, and its licence files are included. The
+Mediabunny packages are used unmodified; their source is in the linked repository.

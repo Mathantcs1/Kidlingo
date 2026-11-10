@@ -5,3 +5,4 @@ test-results
 playwright-report
 *.tsbuildinfo
 tests/e2e/.fixtures/
+public/licenses/
