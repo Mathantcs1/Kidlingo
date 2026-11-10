@@ -1,6 +1,8 @@
 import { MAX_PPS, MIN_PPS } from './layout';
 import { addLayer } from './trackCommands';
 
+const SOLO_TEXT = 'Solo on: only soloed tracks are heard';
+
 interface TimelineBarProps {
   pps: number;
   onZoom(dir: 'in' | 'out'): void;
@@ -21,15 +23,14 @@ export default function TimelineBar({ pps, onZoom, soloActive }: TimelineBarProp
           + Audio track
         </button>
         {soloActive && (
-          <span
-            className="solo-indicator"
-            data-testid="solo-indicator"
-            role="status"
-            title="Only soloed tracks are heard"
-          >
-            Solo on: only soloed tracks are heard
+          <span className="solo-indicator" data-testid="solo-indicator" aria-hidden="true" title={SOLO_TEXT}>
+            {SOLO_TEXT}
           </span>
         )}
+        {/* Always mounted, so screen readers announce the change when its text appears or goes. */}
+        <span className="visually-hidden" role="status" data-testid="solo-status">
+          {soloActive ? SOLO_TEXT : ''}
+        </span>
       </div>
       <div className="zoom">
         <button

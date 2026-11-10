@@ -100,3 +100,15 @@ export async function center(loc: Locator): Promise<{ x: number; y: number }> {
 export function toast(page: Page): Locator {
   return page.getByTestId('error-toast');
 }
+
+/** Dismisses every toast on screen. */
+export async function clearToasts(page: Page): Promise<void> {
+  for (const b of await page.locator('.toast-close').all()) await b.click();
+  await expect(toast(page)).toHaveCount(0);
+}
+
+/** Exactly one error toast is shown, with exactly this message. */
+export async function expectOnlyToast(page: Page, message: string): Promise<void> {
+  await expect(toast(page)).toHaveCount(1);
+  await expect(toast(page).locator('span')).toHaveText(message);
+}

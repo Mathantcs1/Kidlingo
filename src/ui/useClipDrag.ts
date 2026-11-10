@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import { clipEnd } from '../core/model';
 import type { Id, Project } from '../core/model';
 import { findClip, moveClip, trimClip } from '../core/timeline';
+import { isLocked } from '../core/tracks';
 import { useEditor } from '../state/store';
 import { moveTarget, pastThreshold, trimTarget } from './drag';
 import { guard } from './Toast';
@@ -18,6 +19,8 @@ export interface DragPreview {
   duration: number;
   /** The new edge time (trims) or start (moves) to commit. */
   value: number;
+  /** The source or target track is locked: releasing here is refused (shown as a rejected ghost). */
+  rejected: boolean;
 }
 
 interface Gesture {
@@ -48,12 +51,14 @@ function previewFor(p: Project, g: Gesture, dx: number, x: number, y: number, pp
   if (g.kind === 'move') {
     const start = moveTarget(p, clip.id, dx, pps);
     const trackId = laneAt(x, y, track.kind) ?? track.id;
-    return { clipId: clip.id, kind: g.kind, trackId, start, duration: clip.out - clip.in, value: start };
+    const rejected = track.locked || isLocked(p, trackId);
+    return { clipId: clip.id, kind: g.kind, trackId, start, duration: clip.out - clip.in, value: start, rejected };
   }
   const t = trimTarget(p, clip.id, g.kind, dx, pps);
   const start = g.kind === 'start' ? t : clip.start;
   const end = g.kind === 'start' ? clipEnd(clip) : t;
-  return { clipId: clip.id, kind: g.kind, trackId: track.id, start, duration: Math.max(0, end - start), value: t };
+  const duration = Math.max(0, end - start);
+  return { clipId: clip.id, kind: g.kind, trackId: track.id, start, duration, value: t, rejected: track.locked };
 }
 
 /** Swallows the click that follows a drag, so it does not also select or deselect. */

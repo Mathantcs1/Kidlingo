@@ -92,7 +92,7 @@ export default function Lane({ project, track, label, pps, selected, preview, on
       ))}
       {preview?.trackId === track.id && (
         <div
-          className={`clip-ghost${preview.kind === 'move' ? '' : ' is-trim'}`}
+          className={`clip-ghost${preview.kind === 'move' ? '' : ' is-trim'}${preview.rejected ? ' is-reject' : ''}`}
           data-testid="drag-ghost"
           style={{ left: timeToPx(preview.start, pps), width: timeToPx(preview.duration, pps) }}
         />

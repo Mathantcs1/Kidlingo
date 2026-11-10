@@ -3,7 +3,8 @@ import type { Id, Project, Track, TrackKind } from './model';
 import { TimelineError, assertUnlocked } from './timeline';
 
 export const MAX_TRACKS_PER_KIND = 8;
-const MAX_NAME = 40;
+/** Longest track name, in code points (longer names are cut). */
+export const MAX_TRACK_NAME = 40;
 
 function indexOfTrack(p: Project, trackId: Id): number {
   const i = p.tracks.findIndex((t) => t.id === trackId);
@@ -12,7 +13,7 @@ function indexOfTrack(p: Project, trackId: Id): number {
 }
 
 /** Trim, cut to 40 code points (never splitting an emoji), trim again. */
-const cleanName = (s: string): string => Array.from(s.trim()).slice(0, MAX_NAME).join('').trim();
+const cleanName = (s: string): string => Array.from(s.trim()).slice(0, MAX_TRACK_NAME).join('').trim();
 
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
 

@@ -30,6 +30,26 @@ export function isTextEntry(t: TargetLike): boolean {
   return tag === 'INPUT' && TEXT_INPUT_TYPES.has((t.type ?? '').toLowerCase());
 }
 
+/** The parts of an element that decide whether Space activates it natively. */
+export interface SpaceTargetLike {
+  tagName: string;
+  type?: string;
+  role?: string | null;
+  hasHref?: boolean;
+}
+
+const SPACE_INPUT_TYPES = new Set(['checkbox', 'radio', 'button', 'submit', 'reset']);
+const SPACE_ROLES = new Set(['button', 'switch', 'checkbox']);
+
+/** True for controls that Space presses natively: buttons, summary, links, checkable/button inputs, button roles. */
+export function nativeSpaceTarget(t: SpaceTargetLike): boolean {
+  const tag = t.tagName.toUpperCase();
+  if (tag === 'BUTTON' || tag === 'SUMMARY') return true;
+  if (tag === 'A' && t.hasHref) return true;
+  if (tag === 'INPUT' && SPACE_INPUT_TYPES.has((t.type ?? '').toLowerCase())) return true;
+  return SPACE_ROLES.has((t.role ?? '').toLowerCase());
+}
+
 /** Maps a key press to its shortcut; auto-repeat only repeats undo/redo. */
 export function shortcutFor(e: KeyLike): Shortcut | null {
   const key = e.key.toLowerCase();

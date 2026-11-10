@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { deleteSelected, redo, rippleDeleteSelected, splitAtPlayhead, togglePlay, undo } from './commands';
-import { isTextEntry } from './keys';
+import { isKeyboardFocused } from './inputModality';
+import { isTextEntry, nativeSpaceTarget } from './keys';
 import type { Shortcut } from './keys';
 import { shortcutFor } from './keys';
 
@@ -19,6 +20,21 @@ function isTyping(target: EventTarget | null): boolean {
 
 const isSpace = (e: KeyboardEvent): boolean => e.code === 'Space' || e.key === ' ';
 
+/**
+ * Space on a control the user reached with the keyboard (Tab) presses that control, as everywhere else on the web.
+ * A control focused by a mouse click keeps Space = play/pause (clicking Play and then pressing Space must pause).
+ */
+function spacePressesControl(e: KeyboardEvent): boolean {
+  const t = e.target;
+  if (!isSpace(e) || !(t instanceof HTMLElement) || !isKeyboardFocused(t)) return false;
+  return nativeSpaceTarget({
+    tagName: t.tagName,
+    type: t instanceof HTMLInputElement ? t.type : undefined,
+    role: t.getAttribute('role'),
+    hasHref: t.hasAttribute('href'),
+  });
+}
+
 /** Global editor shortcuts; ignored while typing in a form field and while `enabled` is false. */
 export function useShortcuts(enabled: boolean): void {
   const enabledRef = useRef(enabled);
@@ -26,7 +42,7 @@ export function useShortcuts(enabled: boolean): void {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent): void => {
-      if (!enabledRef.current || e.defaultPrevented || isTyping(e.target)) return;
+      if (!enabledRef.current || e.defaultPrevented || isTyping(e.target) || spacePressesControl(e)) return;
       const parts = keyParts(e);
       const shortcut = shortcutFor({ ...parts, repeat: false });
       if (!shortcut) return;
@@ -34,9 +50,9 @@ export function useShortcuts(enabled: boolean): void {
       // Held Space/S/Delete keys are swallowed rather than repeated (shortcutFor drops their repeats).
       if (shortcutFor(parts)) COMMANDS[shortcut]();
     };
-    // A focused button would also "click" on Space keyup; Space belongs to play/pause.
+    // A mouse-focused button would also "click" on Space keyup; there Space belongs to play/pause.
     const onKeyUp = (e: KeyboardEvent): void => {
-      if (enabledRef.current && isSpace(e) && !isTyping(e.target)) e.preventDefault();
+      if (enabledRef.current && isSpace(e) && !isTyping(e.target) && !spacePressesControl(e)) e.preventDefault();
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);

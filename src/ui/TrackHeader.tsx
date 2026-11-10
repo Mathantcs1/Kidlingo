@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import type { Track } from '../core/model';
 import { useEditor } from '../state/store';
+import { lastInputWasKeyboard } from './inputModality';
 import { ArrowIcon, CloseIcon, EyeIcon, LockIcon } from './TrackIcons';
 import TrackName from './TrackName';
 import { moveLayer, removeLayer, toggleTrackFlag } from './trackCommands';
@@ -47,9 +49,19 @@ function Btn({ id, label, pressed, disabled, className, onClick, children }: Btn
 export default function TrackHeader({ track, label, active, canMoveUp, canMoveDown, canRemove }: TrackHeaderProps) {
   const id = track.id;
   const flag = (f: TrackFlag) => () => toggleTrackFlag(id, f);
+  const ref = useRef<HTMLDivElement>(null);
+  // A track that becomes active (a new layer, a click, Tab) is scrolled into view if it is not.
+  useEffect(() => {
+    if (active) ref.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [active]);
+  // A click on the header body makes the track active; a click on one of its buttons does not.
   const onClick = (e: MouseEvent<HTMLDivElement>): void => {
     if ((e.target as HTMLElement).closest('button, input')) return;
     useEditor.getState().setActiveTrack(id);
+  };
+  // Tabbing into the header (any control in it) makes the track active, like a click on its body would.
+  const onFocus = (): void => {
+    if (lastInputWasKeyboard() && useEditor.getState().activeTrackId !== id) useEditor.getState().setActiveTrack(id);
   };
   const classes = ['track-header', `track-header-${track.kind}`];
   if (active) classes.push('is-active');
@@ -59,6 +71,7 @@ export default function TrackHeader({ track, label, active, canMoveUp, canMoveDo
 
   return (
     <div
+      ref={ref}
       className={classes.join(' ')}
       style={{ height: trackHeight(track.kind) }}
       data-testid="track-header"
@@ -68,6 +81,7 @@ export default function TrackHeader({ track, label, active, canMoveUp, canMoveDo
       role="group"
       aria-label={`${label}${active ? ' (active)' : ''}`}
       onClick={onClick}
+      onFocus={onFocus}
     >
       <div className="track-header-main">
         <TrackName trackId={id} label={label} name={track.name} />

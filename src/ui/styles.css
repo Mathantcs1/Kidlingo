@@ -520,8 +520,10 @@ button:disabled,
   text-overflow: ellipsis;
 }
 
-/* One scroller for every row: headers stick to its left edge, the ruler to its top. */
+/* One scroller for every row: headers stick to its left edge, the ruler to its top. `isolation` keeps the
+   z-indexes of the sticky parts inside the timeline, so dialogs and toasts stay above them. */
 .timeline-scroll {
+  isolation: isolate;
   flex: 1;
   min-height: 0;
   min-width: 0;
@@ -555,6 +557,7 @@ button:disabled,
 }
 
 .track-header {
+  scroll-margin-top: var(--ruler-h);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -668,15 +671,16 @@ button:disabled,
   background: var(--warn);
 }
 
+/* Pressed colours keep their text/icon at >= 4.5:1 contrast. */
 .track-btn.is-solo[aria-pressed='true'] {
-  color: #fff;
+  color: #1b1d23;
   background: var(--audio);
 }
 
 .track-btn.is-lock[aria-pressed='true'],
 .track-btn.is-hide[aria-pressed='true'] {
   color: #fff;
-  background: var(--danger);
+  background: #b4232a;
 }
 
 .track-header.is-hidden .track-name,
@@ -798,6 +802,15 @@ button:disabled,
 .lane.is-drop-target {
   background: rgb(91 140 255 / 0.15);
   box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.clip-ghost.is-reject {
+  border-color: var(--danger);
+  background: rgb(229 72 77 / 0.18);
+}
+
+.lane:has(.clip-ghost.is-reject) {
+  cursor: not-allowed;
 }
 
 .lane.is-drop-reject {

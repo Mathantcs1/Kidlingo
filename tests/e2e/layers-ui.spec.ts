@@ -8,9 +8,11 @@ import {
   PPS,
   addToTimeline,
   center,
+  clearToasts,
   clipEl,
   clipStates,
   drag,
+  expectOnlyToast,
   importFiles,
   mediaItem,
   noAudio,
@@ -174,16 +176,20 @@ test('a locked track refuses drops, drags, split and delete with a toast and lea
 
   // Media dropped on the locked lane.
   await mediaItem(page, 'no-audio.mp4').dragTo(laneOf(page, v.id), { targetPosition: { x: 6 * PPS, y: 20 } });
-  await expect(toast(page).filter({ hasText: 'Track is locked' })).toHaveCount(1);
+  await expectOnlyToast(page, 'Track is locked');
   // A clip dragged on the locked lane.
+  await clearToasts(page);
   await drag(page, await center(clipEl(page, c.id)), 2 * PPS);
-  await expect(toast(page).filter({ hasText: 'Track is locked' }).first()).toBeVisible();
+  await expectOnlyToast(page, 'Track is locked');
   // Split and delete of the selected locked clip.
+  await clearToasts(page);
   await clipEl(page, c.id).click();
   await page.getByTestId('timeline-ruler').click({ position: { x: 1.5 * PPS, y: 8 } });
   await page.getByTestId('btn-split').click();
+  await expectOnlyToast(page, 'Track is locked');
+  await clearToasts(page);
   await page.getByTestId('btn-delete').click();
-  await expect(toast(page).filter({ hasText: 'Track is locked' })).not.toHaveCount(0);
+  await expectOnlyToast(page, 'Track is locked');
   expect(await clipStates(page)).toEqual(before);
   expect((await playerState(page)).undoDepth).toBe(depth);
 

@@ -18,7 +18,7 @@ It is a static site built with React, TypeScript and Vite.
   top and shown higher). Add media with the `+` button (appends to the end of the active track of the matching kind)
   or by dragging it from the media bin onto a track.
 - **Track headers**: click a header (or an empty spot on its lane) to make it the active track; double-click the name
-  to rename it; **M** mutes, **S** solos (a "Solo on" badge shows while any track is soloed), the lock refuses every
+  to rename it (or focus it and press Enter or F2); the **M** button mutes, the **S** button solos (a "Solo on" badge shows while any track is soloed), the lock refuses every
   edit on the track, the eye hides a video layer from preview and export; the arrows reorder layers and `×` removes a
   track (asking first if it has clips). **+ Video layer** and **+ Audio track** add tracks. Each is one undo step.
 - **Editing**: select clips (Shift-, Ctrl- or Cmd-click to select more than one), drag to move, drag the clip edges to trim, split at
