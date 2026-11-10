@@ -45,19 +45,21 @@ test('frameAt returns frames at, before and beyond the source range', async ({ p
   expect(Math.abs(r.beforeTs ?? 1e9)).toBeLessThanOrEqual(1000);
 });
 
-test('sequential frameAt yields non-decreasing timestamps and plausible pixels', async ({ page }) => {
+test('sequential frameAt returns the exact frame for each n/fps, then seeks back', async ({ page }) => {
   await openHarness(page);
   const { a } = await importFixtures(page);
   const r = await page.evaluate(async (id) => {
+    const ts = (f: VideoFrame | ImageBitmap | null): number | null =>
+      f && 'timestamp' in f ? f.timestamp : null;
     const src = await window.cf.openVideoSource(id);
     try {
-      const timestamps: number[] = [];
+      const timestamps: (number | null)[] = [];
       let colourful = false;
-      for (let i = 0; i < 10; i++) {
+      // All 90 frames: with this fixture's 1/15360 timebase, float error in `start + duration` first bites at k = 32.
+      for (let i = 0; i < 90; i++) {
         const f = await src.frameAt(i / 30);
-        if (!f) return { timestamps, colourful, missing: i };
-        timestamps.push('timestamp' in f ? (f.timestamp ?? NaN) : NaN);
-        if (i === 0) {
+        timestamps.push(ts(f));
+        if (i === 0 && f) {
           const canvas = document.createElement('canvas');
           canvas.width = 640;
           canvas.height = 360;
@@ -70,19 +72,27 @@ test('sequential frameAt yields non-decreasing timestamps and plausible pixels',
           colourful = max > 64;
         }
       }
-      return { timestamps, colourful, missing: -1 };
+      const forward = ts(await src.frameAt(2.0));
+      const back = ts(await src.frameAt(0.5));
+      // Overlapping calls are serialised and each gets its own frame.
+      const both = await Promise.all([src.frameAt(0.1), src.frameAt(2.0)]);
+      const overlapFirst = ts(both[0]);
+      const overlapSecond = ts(both[1]);
+      return { timestamps, colourful, forward, back, overlapFirst, overlapSecond };
     } finally {
       src.close();
     }
   }, a);
-  expect(r.missing).toBe(-1);
-  expect(r.timestamps).toHaveLength(10);
-  expect(Math.abs(r.timestamps[0])).toBeLessThanOrEqual(1000);
-  for (let i = 1; i < r.timestamps.length; i++) {
-    expect(r.timestamps[i]).toBeGreaterThanOrEqual(r.timestamps[i - 1]);
-  }
-  expect(r.timestamps[9]).toBeGreaterThan(r.timestamps[0]);
+  expect(r.timestamps).toHaveLength(90);
+  r.timestamps.forEach((t, i) => {
+    expect(t, `frameAt(${i}/30)`).not.toBeNull();
+    expect(Math.abs((t ?? 0) - (i / 30) * 1e6), `frameAt(${i}/30) timestamp ${t}`).toBeLessThanOrEqual(1000);
+  });
   expect(r.colourful).toBe(true);
+  expect(Math.abs((r.forward ?? 0) - 2_000_000)).toBeLessThanOrEqual(1000);
+  expect(Math.abs((r.back ?? 0) - 500_000)).toBeLessThanOrEqual(1000);
+  expect(Math.abs((r.overlapFirst ?? 0) - 100_000)).toBeLessThanOrEqual(1000);
+  expect(Math.abs((r.overlapSecond ?? 0) - 2_000_000)).toBeLessThanOrEqual(1000);
 });
 
 test('two sources on the same media are independent; close is idempotent', async ({ page }) => {

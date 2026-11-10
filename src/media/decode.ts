@@ -22,6 +22,11 @@ export interface VideoSource {
 const MAX_CACHED_FRAMES = 4;
 /** Forward requests within this many seconds of the newest decoded frame advance the iterator instead of seeking. */
 const FORWARD_WINDOW = 2;
+/**
+ * Tolerance (s) for time comparisons: requests at n/fps must hit frame n even when the stored timestamp, or
+ * `timestamp + duration` of the previous frame, lands a few ulps on the wrong side. Far below any frame period.
+ */
+const EPS = 1e-4;
 
 interface CachedFrame {
   start: number;
@@ -70,28 +75,37 @@ class DecodedVideoSource implements VideoSource {
     if (this.closed) throw new Error('VideoSource is closed');
     if (!this.sink) return null;
     const t = Math.max(Number.isFinite(sourceTime) ? sourceTime : 0, this.firstTimestamp);
-    if (!this.iter) this.seek(t);
+    let seeked = false;
+    if (!this.iter) {
+      this.seek(t);
+      seeked = true;
+    }
     for (;;) {
       const cache = this.cache;
       let idx = -1;
       for (let i = cache.length - 1; i >= 0; i--) {
-        if (cache[i].start <= t) {
+        if (cache[i].start <= t + EPS) {
           idx = i;
           break;
         }
       }
       if (cache.length > 0 && idx === -1) {
+        // A fresh seek starts at the frame covering t; if it starts later (gap, odd first timestamp), that
+        // first frame is the answer. Never seek twice for one request.
+        if (seeked) return cache[0].frame;
         // Backward request before anything cached: seek via Mediabunny's timestamp lookup.
         this.seek(t);
+        seeked = true;
         continue;
       }
-      if (idx >= 0 && (idx < cache.length - 1 || this.iterDone || t < cache[idx].end)) {
+      if (idx >= 0 && (idx < cache.length - 1 || this.iterDone || t + EPS < cache[idx].end)) {
         return cache[idx].frame;
       }
       if (this.iterDone) return null; // Track has no frames at all.
       const newest = cache[cache.length - 1];
-      if (newest && t - Math.max(newest.start, this.iterStart) > FORWARD_WINDOW) {
+      if (!seeked && newest && t - Math.max(newest.start, this.iterStart) > FORWARD_WINDOW) {
         this.seek(t);
+        seeked = true;
         continue;
       }
       if (!(await this.pull())) return null;
