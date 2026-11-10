@@ -89,6 +89,6 @@ export function ffmpegFrame(file: string, index = 0): { width: number; height: n
   const [width, height] = rot === 90 ? [s.height, s.width] : [s.width, s.height];
   const rgb = execFileSync('ffmpeg', [
     '-v', 'error', '-i', file, '-vf', `select=eq(n\\,${index})`, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-',
-  ]);
+  ], { maxBuffer: 64 << 20 });
   return { width, height, rgb };
 }
