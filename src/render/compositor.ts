@@ -1,8 +1,9 @@
 import { activeClipsAt } from '../core/timeline';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
-import { QuadRenderer, RenderTarget, clipMatrix, createContext, createTexture, fullscreenMatrix, letterbox, rotatedSize, uploadTexture, uvMatrix } from './gl';
-import type { Mat3, Rect, Size, TextureSlot } from './gl';
+import { BlurBackground } from './blur';
+import { QuadRenderer, clipMatrix, createContext, createTexture, letterbox, rotatedSize, uploadTexture, uvMatrix } from './gl';
+import type { Mat3, Size, TextureSlot } from './gl';
 import { ImageTextures } from './images';
 
 export interface Compositor {
@@ -32,12 +33,10 @@ export interface CompositorOptions {
   preserveDrawingBuffer?: boolean;
 }
 
-/** The blurred background is rendered at about this fraction of the output size, then upscaled. */
-const BLUR_DOWNSCALE = 16;
 
 interface Draw {
   clip: Clip;
-  tex: WebGLTexture;
+  slot: TextureSlot;
   /** Displayed (rotated) size in source pixels. */
   size: Size;
   /** Quad → texture coordinates (applies the source's display rotation). */
@@ -52,7 +51,7 @@ class GlCompositor implements Compositor {
   readonly canvas: HTMLCanvasElement | OffscreenCanvas;
   private readonly gl: WebGL2RenderingContext;
   private readonly quad: QuadRenderer;
-  private readonly blurTarget: RenderTarget;
+  private readonly blur: BlurBackground;
   /** Textures per video source; a source used by several clips in one frame gets one texture per use. */
   private readonly videoSlots = new Map<VideoSource, TextureSlot[]>();
   private readonly images: ImageTextures;
@@ -68,7 +67,7 @@ class GlCompositor implements Compositor {
     this.gl = createContext(canvas, opts);
     (canvas as EventTarget).addEventListener('webglcontextlost', this.onLost);
     this.quad = new QuadRenderer(this.gl);
-    this.blurTarget = new RenderTarget(this.gl);
+    this.blur = new BlurBackground(this.gl, this.quad);
     this.images = new ImageTextures(this.gl);
   }
 
@@ -91,7 +90,7 @@ class GlCompositor implements Compositor {
     for (const slots of this.videoSlots.values()) for (const s of slots) gl.deleteTexture(s.tex);
     this.videoSlots.clear();
     this.images.dispose();
-    this.blurTarget.dispose();
+    this.blur.dispose();
     this.quad.dispose();
   }
 
@@ -126,7 +125,7 @@ class GlCompositor implements Compositor {
         shownImages.add(clip.mediaId);
         // Transforms are in the image's own pixels, whatever resolution its texture was decoded at.
         const size = media.width && media.height ? { width: media.width, height: media.height } : slot;
-        if (slot && size) draws.push({ clip, tex: slot.tex, size, uv: UPRIGHT });
+        if (slot && size) draws.push({ clip, slot, size, uv: UPRIGHT });
         continue;
       }
       const source = sources.get(clip.id) ?? sources.get(clip.mediaId);
@@ -143,7 +142,7 @@ class GlCompositor implements Compositor {
       uploadTexture(this.gl, slot, frame, width, height);
       // Frames arrive unrotated; draw them at their displayed size and turn the texture lookup instead.
       const size = rotatedSize({ width, height }, source.rotation);
-      draws.push({ clip, tex: slot.tex, size, uv: uvMatrix(source.rotation) });
+      draws.push({ clip, slot, size, uv: uvMatrix(source.rotation) });
     }
     this.pruneVideoSlots(sources);
     this.images.prune(shownImages, p);
@@ -162,25 +161,9 @@ class GlCompositor implements Compositor {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
     for (const d of draws) {
-      if (d.clip.fit === 'blur') this.drawBlurBackground(d, format, viewport);
-      this.quad.draw(d.tex, clipMatrix(d.size, d.clip.transform, format), d.clip.transform.opacity, d.uv);
+      if (d.clip.fit === 'blur') this.blur.draw(d.slot, d.size, d.uv, d.clip.transform.opacity, format, viewport);
+      this.quad.draw(d.slot.tex, clipMatrix(d.size, d.clip.transform, format), d.clip.transform.opacity, d.uv);
     }
-  }
-
-  /** Draws the clip scaled to cover the canvas into a tiny target, then stretches that over the viewport. */
-  private drawBlurBackground(d: Draw, format: Size, viewport: Rect): void {
-    const gl = this.gl;
-    const w = Math.max(1, Math.round(viewport.width / BLUR_DOWNSCALE));
-    const h = Math.max(1, Math.round(viewport.height / BLUR_DOWNSCALE));
-    this.blurTarget.bind(w, h);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    const cover = Math.max(format.width / d.size.width, format.height / d.size.height);
-    this.quad.draw(d.tex, clipMatrix(d.size, { x: 0, y: 0, scale: cover, rotation: 0, opacity: 1 }, format), 1, d.uv);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-    // Framebuffer textures are stored bottom row first.
-    this.quad.draw(this.blurTarget.slot.tex, fullscreenMatrix(), d.clip.transform.opacity, uvMatrix(0, true));
   }
 
   private videoSlot(source: VideoSource, index: number): TextureSlot {

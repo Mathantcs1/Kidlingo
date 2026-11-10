@@ -1,0 +1,85 @@
+// The 'blur' fit's background: the clip scaled to cover the frame, heavily downscaled and stretched back up.
+import { clipMatrix, createTexture, fullscreenMatrix, uvMatrix } from './gl';
+import type { Mat3, QuadRenderer, Rect, Size, TextureSlot } from './gl';
+
+/** The blurred background is rendered at about this fraction of the output size, then upscaled. */
+const BLUR_DOWNSCALE = 16;
+const FLIPPED = uvMatrix(0, true);
+
+/** A colour-only framebuffer backed by a linearly filtered texture (used for the cheap blur background). */
+class RenderTarget {
+  readonly slot: TextureSlot;
+  private readonly gl: WebGL2RenderingContext;
+  private readonly fbo: WebGLFramebuffer;
+
+  constructor(gl: WebGL2RenderingContext) {
+    this.gl = gl;
+    this.slot = { tex: createTexture(gl), width: 0, height: 0 };
+    this.fbo = gl.createFramebuffer();
+  }
+
+  /** Binds the framebuffer at `width` x `height` (reallocating on change) and sets the viewport to it. */
+  bind(width: number, height: number): void {
+    const gl = this.gl;
+    if (this.slot.width !== width || this.slot.height !== height) {
+      gl.bindTexture(gl.TEXTURE_2D, this.slot.tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.slot.tex, 0);
+      this.slot.width = width;
+      this.slot.height = height;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.viewport(0, 0, width, height);
+  }
+
+  dispose(): void {
+    this.gl.deleteFramebuffer(this.fbo);
+    this.gl.deleteTexture(this.slot.tex);
+  }
+}
+
+export class BlurBackground {
+  private readonly target: RenderTarget;
+
+  constructor(
+    private readonly gl: WebGL2RenderingContext,
+    private readonly quad: QuadRenderer,
+  ) {
+    this.target = new RenderTarget(gl);
+  }
+
+  /**
+   * Draws `slot` (shown at `size` through `uv`) scaled to cover `format` into a target 1/16 of the viewport, then
+   * stretches that over the viewport, leaving it bound. The downscale samples the source's mipmaps (a chain of 2x
+   * box filters), so each low-res pixel is the average of the whole area it covers: fine detail and moving video
+   * give a steady blur instead of aliasing/shimmer.
+   */
+  draw(slot: TextureSlot, size: Size, uv: Mat3, opacity: number, format: Size, viewport: Rect): void {
+    const gl = this.gl;
+    const w = Math.max(1, Math.round(viewport.width / BLUR_DOWNSCALE));
+    const h = Math.max(1, Math.round(viewport.height / BLUR_DOWNSCALE));
+    this.target.bind(w, h);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    const cover = Math.max(format.width / size.width, format.height / size.height);
+    gl.bindTexture(gl.TEXTURE_2D, slot.tex);
+    if (!slot.mipmapped) {
+      gl.generateMipmap(gl.TEXTURE_2D);
+      slot.mipmapped = true;
+    }
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    this.quad.draw(slot.tex, clipMatrix(size, { x: 0, y: 0, scale: cover, rotation: 0, opacity: 1 }, format), 1, uv);
+    // The normal draw samples level 0 only (its mip chain goes stale on the next upload).
+    gl.bindTexture(gl.TEXTURE_2D, slot.tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+    // Framebuffer textures are stored bottom row first.
+    this.quad.draw(this.target.slot.tex, fullscreenMatrix(), opacity, FLIPPED);
+  }
+
+  dispose(): void {
+    this.target.dispose();
+  }
+}

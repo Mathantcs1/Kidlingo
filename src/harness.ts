@@ -23,15 +23,29 @@ function peak(buffer: AudioBuffer, from: number, to: number): number {
   return m;
 }
 
-/** A solid-colour PNG of the given size. */
-async function makePng(width: number, height: number, rgb: [number, number, number]): Promise<Blob> {
+type Rgb = [number, number, number];
+
+/**
+ * A PNG of the given size: solid `rgb`; or, with `right`, `rgb` on the left half and `right` on the right half; or,
+ * with `stripes`, 1 px white columns every `stripes` px on black (a pattern that aliases badly when downscaled).
+ */
+async function makePng(width: number, height: number, rgb: Rgb, opts: { right?: Rgb; stripes?: number } = {}): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('no 2d context');
-  ctx.fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+  const css = (c: Rgb): string => `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+  ctx.fillStyle = css(opts.stripes ? [0, 0, 0] : rgb);
   ctx.fillRect(0, 0, width, height);
+  if (opts.right) {
+    ctx.fillStyle = css(opts.right);
+    ctx.fillRect(width / 2, 0, width / 2, height);
+  }
+  if (opts.stripes) {
+    ctx.fillStyle = css(rgb);
+    for (let x = 0; x < width; x += opts.stripes) ctx.fillRect(x, 0, 1, height);
+  }
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
   );
@@ -73,10 +87,10 @@ const cf = {
   fitTransform,
   makePng,
   readPixels,
-  /** Stores a solid-colour PNG as image media under a fresh id; returns its MediaRef (not part of any project). */
-  async putImageMedia(width: number, height: number, rgb: [number, number, number]): Promise<MediaRef> {
+  /** Stores a PNG (see makePng) as image media under a fresh id; returns its MediaRef (not part of any project). */
+  async putImageMedia(width: number, height: number, rgb: Rgb, opts?: { right?: Rgb; stripes?: number }): Promise<MediaRef> {
     const id = newId();
-    await putMedia(id, await makePng(width, height, rgb));
+    await putMedia(id, await makePng(width, height, rgb, opts));
     return { id, name: `${id}.png`, kind: 'image', duration: 5, width, height, hasAudio: false };
   },
   /**

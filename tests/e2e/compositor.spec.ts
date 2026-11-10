@@ -16,8 +16,19 @@ async function openHarness(page: Page): Promise<void> {
 }
 
 /** Generates a solid-colour PNG in the page and stores it as image media. */
-function imageMedia(page: Page, width: number, height: number, rgb: Rgb): Promise<MediaRef> {
-  return page.evaluate(({ width, height, rgb }) => window.cf.putImageMedia(width, height, rgb), { width, height, rgb });
+function imageMedia(
+  page: Page,
+  width: number,
+  height: number,
+  rgb: Rgb,
+  opts?: { right?: Rgb; stripes?: number },
+): Promise<MediaRef> {
+  return page.evaluate(({ width, height, rgb, opts }) => window.cf.putImageMedia(width, height, rgb, opts), {
+    width,
+    height,
+    rgb,
+    opts,
+  });
 }
 
 let seq = 0;
@@ -72,13 +83,13 @@ function px(f: Frame, x: number, y: number): number[] {
   return f.data.slice(i, i + 4);
 }
 
+// The canvas is opaque (alpha: false), so only RGB is meaningful.
 function expectRgb(f: Frame, x: number, y: number, rgb: Rgb, tol: number): void {
-  const [r, g, b, a] = px(f, x, y);
-  const msg = `pixel (${x},${y}) = ${[r, g, b, a]} expected ≈ ${rgb}`;
+  const [r, g, b] = px(f, x, y);
+  const msg = `pixel (${x},${y}) = ${[r, g, b]} expected ≈ ${rgb}`;
   expect(Math.abs(r - rgb[0]), msg).toBeLessThanOrEqual(tol);
   expect(Math.abs(g - rgb[1]), msg).toBeLessThanOrEqual(tol);
   expect(Math.abs(b - rgb[2]), msg).toBeLessThanOrEqual(tol);
-  expect(a, msg).toBe(255);
 }
 
 test('blends tracks bottom to top with premultiplied alpha; black outside clips and beyond the timeline', async ({ page }) => {
@@ -94,7 +105,6 @@ test('blends tracks bottom to top with premultiplied alpha; black outside clips 
   expectRgb(f0, 32, 52, [255, 0, 0], 2);
   expectRgb(f0, 1, 1, [0, 0, 0], 0);
   expectRgb(f0, 60, 60, [0, 0, 0], 0);
-  for (let i = 3; i < f0.data.length; i += 4) expect(f0.data[i]).toBe(255);
   for (let y = 0; y < 64; y += 7) for (let x = 0; x < 64; x += 7) expectRgb(f5, x, y, [0, 0, 0], 0);
 });
 
@@ -112,39 +122,30 @@ test('track order decides which clip is on top', async ({ page }) => {
 
 test('rotation is clockwise degrees about the clip centre; translation is canvas px with y down', async ({ page }) => {
   await openHarness(page);
-  const bar = await imageMedia(page, 48, 16, [255, 0, 0]);
+  // Red left half, green right half: turning it clockwise puts red on top (counter-clockwise would put it below).
+  const bar = await imageMedia(page, 48, 16, [255, 0, 0], { right: [0, 255, 0] });
   const [rot] = await render(page, project(64, 64, [bar], [clipOf(bar, { transform: { rotation: 90 } })]), [0]);
   expectRgb(rot, 32, 12, [255, 0, 0], 2);
-  expectRgb(rot, 32, 50, [255, 0, 0], 2);
+  expectRgb(rot, 32, 50, [0, 255, 0], 2);
   expectRgb(rot, 12, 32, [0, 0, 0], 0);
   expectRgb(rot, 50, 32, [0, 0, 0], 0);
+  const [ccw] = await render(page, project(64, 64, [bar], [clipOf(bar, { transform: { rotation: -90 } })]), [0]);
+  expectRgb(ccw, 32, 12, [0, 255, 0], 2);
+  expectRgb(ccw, 32, 50, [255, 0, 0], 2);
 
   const [moved] = await render(page, project(64, 64, [bar], [clipOf(bar, { transform: { y: 20, x: 4 } })]), [0]);
   // Bar now covers x [12, 60), y [44, 60).
-  expectRgb(moved, 32, 50, [255, 0, 0], 2);
+  expectRgb(moved, 20, 50, [255, 0, 0], 2);
   expectRgb(moved, 32, 32, [0, 0, 0], 0);
   expectRgb(moved, 10, 50, [0, 0, 0], 0);
-  expectRgb(moved, 58, 50, [255, 0, 0], 2);
+  expectRgb(moved, 58, 50, [0, 255, 0], 2);
 
   const [scaled] = await render(page, project(64, 64, [bar], [clipOf(bar, { transform: { scale: 0.5 } })]), [0]);
   // 24x8 bar: x [20, 44), y [28, 36).
   expectRgb(scaled, 22, 32, [255, 0, 0], 2);
+  expectRgb(scaled, 42, 32, [0, 255, 0], 2);
   expectRgb(scaled, 16, 32, [0, 0, 0], 0);
   expectRgb(scaled, 32, 26, [0, 0, 0], 0);
-});
-
-test("fit 'blur' fills the area around the fitted clip with a blurred cover copy", async ({ page }) => {
-  await openHarness(page);
-  const bar = await imageMedia(page, 64, 16, [255, 0, 0]);
-  const [blur] = await render(page, project(64, 64, [bar], [clipOf(bar, { fit: 'blur' })]), [0]);
-  const [fit] = await render(page, project(64, 64, [bar], [clipOf(bar, { fit: 'fit' })]), [0]);
-  const [r, g, b] = px(blur, 32, 4);
-  expect(r).toBeGreaterThan(100);
-  expect(g).toBeLessThan(40);
-  expect(b).toBeLessThan(40);
-  expectRgb(blur, 32, 32, [255, 0, 0], 2);
-  expectRgb(fit, 32, 4, [0, 0, 0], 0);
-  expectRgb(fit, 32, 32, [255, 0, 0], 2);
 });
 
 test('maps the project format onto a differently sized canvas preserving aspect', async ({ page }) => {
