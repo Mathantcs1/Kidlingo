@@ -14,12 +14,14 @@ WebCodecs + canvas compositing (approach B). Hardware-accelerated decode and enc
 
 - Import video, audio and images.
 - Multi-track timeline: trim, split, move, delete, ripple-delete.
+- Merge: drop several videos/images into the timeline and join them back-to-back (gapless, magnetic snapping); optional auto-transition between joined clips; reorder by drag; merge clips of different sizes/frame rates (scaled to project canvas, fit/fill/blur-background); merged audio is crossfaded or level-matched; one-click "Merge selected" and "Merge all to one clip".
+- Project formats: YouTube 16:9, Reels/Shorts/TikTok 9:16, Square 1:1, Portrait 4:5; changing format re-fits clips (with blurred-background fill option).
 - Text titles with animated presets (fade, slide, typewriter, pop).
 - Transitions: fade, crossfade, wipe, slide, zoom, glitch.
 - Per-clip effects (see Effects).
 - Speed change (0.25x to 4x) and reverse.
 - Crop, rotate, flip, scale and position; picture-in-picture via layered tracks.
-- Keyframes for position, scale, rotation and opacity (Ken Burns zoom/pan, animated overlays).
+- Animation controls: keyframes for position, scale, rotation, opacity and any effect parameter; easing presets (ease in/out, back, elastic, bounce) and a custom bezier curve editor; motion paths; in/out animation presets for clips, text and overlays (pop, slide, spin, drop, whip); speed ramping with a curve (smooth slow-mo to fast); Ken Burns zoom/pan; copy/paste keyframes across clips.
 - Per-clip volume, audio fade in/out; background music track.
 - Export 1080p or 4K MP4 (H.264 + AAC), with progress and cancel.
 - Undo/redo; autosave projects locally.
@@ -34,6 +36,10 @@ Effects are stackable per clip, reorderable, with live-adjustable parameters and
 - Blur and sharpen: gaussian blur, sharpen, glow/bloom, pixelate.
 - Stylize: RGB split, glitch, VHS, mirror, invert.
 - Chroma key (green screen): key color, tolerance, edge softness, spill suppression.
+- Premium looks for Instagram/YouTube: one-click look presets (Cinematic, Moody, Golden Hour, Teal-Orange, Fashion, Clean Vlog, Film 35mm, Cyberpunk, Dreamy) built from LUT-style color grading with an intensity slider; film emulation (grain, halation, gate weave); light leaks and lens flares; anamorphic streaks; soft glow/dreamy bloom; bokeh and background blur; letterbox cinematic bars; camera shake and zoom punch; whip-pan and flash transitions; beauty-lite skin smoothing is out of v1.
+- Animated overlays: lower thirds, subscribe/like buttons, progress bar, and animated stickers/shapes, all keyframable.
+
+Look presets are saved effect stacks plus a LUT, so users can also save their own and import `.cube` LUT files.
 
 Each effect is a registry entry (`id`, parameter schema, WebGL2 fragment shader), so adding more later means adding one entry, with no changes to the compositor or UI.
 
@@ -47,13 +53,13 @@ Vite, TypeScript, React, WebGL2 (effects and compositing), Zustand (editor state
 
 ## Units
 
-- `core/timeline`: pure functions over the project model (tracks, clips, in/out points, transitions): trim, split, move, ripple-delete, active-clips-at-time. No browser APIs.
+- `core/timeline`: pure functions over the project model (tracks, clips, in/out points, transitions): trim, split, move, ripple-delete, merge/join (gapless concatenation, snapping), reframe to a canvas format, active-clips-at-time. No browser APIs.
 - `media/`: import, metadata, thumbnails, waveforms, decoded frames/audio for a time range.
-- `effects/`: effect registry (parameter schema + fragment shader per effect), keyframe interpolation.
+- `effects/`: effect registry (parameter schema + fragment shader per effect), keyframe interpolation with easing and bezier curves, LUT loading.
 - `render/compositor`: `(timeline, t) -> canvas frame`, WebGL2; layering, transforms, effects, text, transitions. Used by preview and export.
 - `audio/mixer`: clip and music mixing, volume; live (Web Audio) and offline (export).
 - `export/`: steps the timeline frame by frame, encodes H.264/AAC, muxes MP4; progress and cancel.
-- `ui/`: media bin, preview player, timeline (drag/trim/split), inspector, export dialog.
+- `ui/`: media bin, preview player, timeline (drag/trim/split), inspector, keyframe/curve editor, export dialog.
 
 ## Data flow
 
@@ -69,7 +75,7 @@ UI actions mutate a plain-JSON project model; the compositor and mixer re-render
 ## Testing
 
 - Vitest unit tests for `core/timeline` (primary correctness risk).
-- Vitest for keyframe interpolation and speed/time-mapping math.
+- Vitest for keyframe interpolation, easing curves, speed-ramp time mapping, and merge/join logic (gapless, correct durations with transitions, mixed frame rates and sizes).
 - Playwright: render each effect on a known test frame and assert pixel readback differs from the source in the expected way (e.g. B&W has equal RGB channels).
 - Playwright smoke test: import a generated clip, split, export, verify output MP4 duration and streams.
 - Cannot be verified on a real Mac or the user's footage in the build environment; expect tuning on the user's machine.
