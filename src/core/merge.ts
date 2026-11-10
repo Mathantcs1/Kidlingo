@@ -77,6 +77,7 @@ export function fitTransform(
   return { x: 0, y: 0, scale, rotation: 0, opacity: 1 };
 }
 
+/** Intentionally ignores track locks: a format change rescales every clip, locked or not. */
 export function reframeProject(p: Project, key: FormatKey): Project {
   const { width, height } = FORMATS[key];
   const canvas = { width, height };

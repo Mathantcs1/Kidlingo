@@ -174,6 +174,33 @@ describe('lock guards in edits', () => {
     expect(splitAt(unlock(p), ['a'], 1).tracks[0].clips).toHaveLength(5);
   });
 
+  it('deleteClips with a mixed selection refuses as a whole and changes nothing', () => {
+    const p = lock(project(), 1);
+    const before = JSON.stringify(p);
+    expect(() => deleteClips(p, ['a', 'x'])).toThrow(LOCKED);
+    expect(JSON.stringify(p)).toBe(before);
+  });
+
+  it('splitAt with no selection splits only unlocked clips under the playhead', () => {
+    const p = lock(project(), 1); // a [0,2) video unlocked, x [0,3) audio locked
+    const q = splitAt(p, [], 1);
+    expect(q.tracks[0].clips.map((c) => c.id)).toContain('a');
+    expect(q.tracks[0].clips).toHaveLength(5);
+    expect(q.tracks[1].clips).toEqual(p.tracks[1].clips);
+  });
+
+  it('splitAt with no selection throws when every candidate is locked', () => {
+    const p = { ...lock(lock(project(), 0), 1) };
+    expect(() => splitAt(p, [], 1)).toThrow(LOCKED);
+  });
+
+  it('splitAt with an explicit selection holding a locked clip refuses as a whole', () => {
+    const p = lock(project(), 1);
+    const before = JSON.stringify(p);
+    expect(() => splitAt(p, ['a', 'x'], 1)).toThrow(LOCKED);
+    expect(JSON.stringify(p)).toBe(before);
+  });
+
   it('appendMedia and dropMedia refuse a locked target track', () => {
     const p = lock(project(), 0);
     expect(() => appendMedia(p, 'v')).toThrow(LOCKED);

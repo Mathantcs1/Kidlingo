@@ -11,6 +11,9 @@ function indexOfTrack(p: Project, trackId: Id): number {
   return i;
 }
 
+/** Trim, cut to 40 code points (never splitting an emoji), trim again. */
+const cleanName = (s: string): string => Array.from(s.trim()).slice(0, MAX_NAME).join('').trim();
+
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
 
 export function isLocked(p: Project, trackId: Id): boolean {
@@ -24,9 +27,10 @@ export function addTrack(p: Project, kind: TrackKind, opts?: { index?: number; n
   }
   const lastVideo = p.tracks.map((t) => t.kind).lastIndexOf('video');
   const dflt = kind === 'video' ? lastVideo + 1 : p.tracks.length;
-  const at = clamp(Math.trunc(opts?.index ?? dflt), 0, p.tracks.length);
+  const want = opts?.index !== undefined && Number.isFinite(opts.index) ? Math.trunc(opts.index) : dflt;
+  const at = clamp(want, 0, p.tracks.length);
   const tracks = [...p.tracks];
-  tracks.splice(at, 0, newTrack(kind, (opts?.name ?? '').trim().slice(0, MAX_NAME)));
+  tracks.splice(at, 0, newTrack(kind, cleanName(opts?.name ?? '')));
   return { ...p, tracks };
 }
 
@@ -53,7 +57,7 @@ export function moveTrack(p: Project, trackId: Id, toIndex: number): Project {
 
 export function renameTrack(p: Project, trackId: Id, name: string): Project {
   const i = indexOfTrack(p, trackId);
-  const next = name.trim().slice(0, MAX_NAME).trim();
+  const next = cleanName(name);
   if (p.tracks[i].name === next) return p;
   return { ...p, tracks: p.tracks.map((t, j) => (j === i ? { ...t, name: next } : t)) };
 }
@@ -77,7 +81,7 @@ export function setTrackFlags(
 
 export function trackLabel(p: Project, trackId: Id): string {
   const track = p.tracks[indexOfTrack(p, trackId)];
-  if (track.name) return track.name;
+  if (track.name.trim()) return track.name.trim();
   const n = p.tracks.filter((t) => t.kind === track.kind).findIndex((t) => t.id === trackId) + 1;
   return `${track.kind === 'video' ? 'Video' : 'Audio'} ${n}`;
 }

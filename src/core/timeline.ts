@@ -36,7 +36,10 @@ function assertFinite(what: string, ...values: number[]): void {
   if (!values.every(Number.isFinite)) throw new TimelineError(`Invalid ${what}`);
 }
 
-/** Every operation that changes a track's clips calls this first; only setTrackFlags (and rename/move) skip it. */
+/**
+ * Every operation that changes a track's clips calls this first. Deliberately exempt: setTrackFlags (so a track can be
+ * unlocked), renameTrack, moveTrack (metadata / layer order) and reframeProject (project-wide format change).
+ */
 export function assertUnlocked(p: Project, trackId: Id): void {
   if (p.tracks.find((t) => t.id === trackId)?.locked) throw new TimelineError('Track is locked');
 }

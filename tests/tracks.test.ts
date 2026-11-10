@@ -48,6 +48,23 @@ describe('addTrack', () => {
     expect(addTrack(p, 'audio', { index: -4 }).tracks[0].kind).toBe('audio');
   });
 
+  it('falls back to the default index for a non-finite index', () => {
+    for (const bad of [NaN, Infinity, -Infinity]) {
+      expect(addTrack(emptyProject(), 'video', { index: bad }).tracks.map((t) => t.kind)).toEqual(['video', 'video', 'audio']);
+    }
+  });
+
+  it('cleans the name like renameTrack', () => {
+    expect(addTrack(emptyProject(), 'video', { name: '  Hi  ' }).tracks[1].name).toBe('Hi');
+  });
+
+  it('enforces the audio limit independently of video', () => {
+    let p = emptyProject();
+    for (let i = 1; i < MAX_TRACKS_PER_KIND; i++) p = addTrack(p, 'audio');
+    expect(() => addTrack(p, 'audio')).toThrow(TimelineError);
+    expect(() => addTrack(p, 'video')).not.toThrow();
+  });
+
   it('throws at the per-kind limit and does not mutate the input', () => {
     let p = emptyProject();
     for (let i = 1; i < MAX_TRACKS_PER_KIND; i++) p = addTrack(p, 'video');
@@ -123,6 +140,14 @@ describe('renameTrack', () => {
     expect(renameTrack(renameTrack(p, id, 'A'), id, '   ').tracks[0].name).toBe('');
   });
 
+  it('cuts by code points and re-trims', () => {
+    const p = emptyProject();
+    const id = p.tracks[0].id;
+    expect(Array.from(renameTrack(p, id, '😀'.repeat(41)).tracks[0].name)).toHaveLength(40);
+    expect(renameTrack(p, id, '😀'.repeat(41)).tracks[0].name).toBe('😀'.repeat(40));
+    expect(renameTrack(p, id, `${'a'.repeat(39)} x`).tracks[0].name).toBe('a'.repeat(39));
+  });
+
   it('works on a locked track', () => {
     const p0 = emptyProject();
     const p = setTrackFlags(p0, p0.tracks[0].id, { locked: true });
@@ -147,6 +172,11 @@ describe('setTrackFlags', () => {
     expect(() => setTrackFlags(p, 'nope', { muted: true })).toThrow(TimelineError);
   });
 
+  it('pins current behaviour: any hidden flag on an audio track throws', () => {
+    const p = emptyProject();
+    expect(() => setTrackFlags(p, p.tracks[1].id, { hidden: false })).toThrow(TimelineError);
+  });
+
   it('can unlock a locked track', () => {
     const p = emptyProject();
     const id = p.tracks[0].id;
@@ -165,6 +195,12 @@ describe('trackLabel', () => {
     const named = renameTrack(p, p.tracks[1].id, 'Titles');
     expect(trackLabel(named, p.tracks[1].id)).toBe('Titles');
     expect(trackLabel(named, p.tracks[0].id)).toBe('Video 1');
+  });
+
+  it('falls back to the default label for a whitespace-only name', () => {
+    const p = emptyProject();
+    const q = { ...p, tracks: p.tracks.map((t, i) => (i === 0 ? { ...t, name: '   ' } : t)) };
+    expect(trackLabel(q, q.tracks[0].id)).toBe('Video 1');
   });
 
   it('throws for an unknown track', () => {

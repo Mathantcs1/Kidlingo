@@ -36,8 +36,14 @@ export function splitTargets(p: Project, selection: Id[], t: number): Id[] {
 }
 
 export function splitAt(p: Project, selection: Id[], t: number): Project {
-  const ids = splitTargets(p, selection, t);
+  let ids = splitTargets(p, selection, t);
   if (ids.length === 0) throw new TimelineError(SPLIT_HINT);
+  if (selection.length === 0) {
+    // Without a selection, locked clips are skipped; refuse only when nothing editable is left.
+    const free = ids.filter((id) => !findClip(p, id).track.locked);
+    if (free.length === 0) throw new TimelineError('Track is locked');
+    ids = free;
+  }
   return ids.reduce((acc, id) => splitClip(acc, id, t), p);
 }
 

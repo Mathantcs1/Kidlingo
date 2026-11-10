@@ -100,11 +100,11 @@ describe('lock guards', () => {
     expect(deleteClip(unlock(p), 'c1', { ripple: true }).tracks[0].clips).toHaveLength(0);
   });
 
-  it('moveClip refuses a locked source track', () => {
-    const base = withClips(mk('c1'));
+  it('moveClip refuses a locked source track when moving to another (unlocked) track', () => {
+    const base = addTrack(withClips(mk('c1')), 'video');
     const p = lockTrack(base, 0);
-    expect(() => moveClip(p, 'c1', 3)).toThrow(LOCKED);
-    expect(moveClip(unlock(p), 'c1', 3).tracks[0].clips[0].start).toBe(3);
+    expect(() => moveClip(p, 'c1', 0, base.tracks[1].id)).toThrow(LOCKED);
+    expect(moveClip(unlock(p), 'c1', 0, base.tracks[1].id).tracks[1].clips).toHaveLength(1);
   });
 
   it('moveClip refuses a locked target track', () => {
@@ -113,6 +113,11 @@ describe('lock guards', () => {
     const p = lockTrack(base, 1);
     expect(() => moveClip(p, 'c1', 0, target)).toThrow(LOCKED);
     expect(moveClip(unlock(p), 'c1', 0, target).tracks[1].clips).toHaveLength(1);
+  });
+
+  it('moveClip within one locked track is refused too', () => {
+    const p = lockTrack(withClips(mk('c1')), 0);
+    expect(() => moveClip(p, 'c1', 3)).toThrow(LOCKED);
   });
 
   it('joinClips refuses a locked track', () => {
