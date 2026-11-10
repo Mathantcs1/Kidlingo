@@ -1,3 +1,4 @@
+import { adoptFirstClipFps } from './fps';
 import { clipDuration, clipEnd, newId } from './model';
 import type { Clip, Id, Project, Track } from './model';
 
@@ -41,6 +42,7 @@ function assertFree(track: Track, clip: Clip, ignoreId?: Id): void {
   }
 }
 
+/** Adds `clip` to the track; the first video clip on an empty timeline also sets the project fps (see fps.ts). */
 export function addClip(p: Project, trackId: Id, clip: Clip): Project {
   const track = p.tracks.find((t) => t.id === trackId);
   if (!track) throw new TimelineError(`Track not found: ${trackId}`);
@@ -49,9 +51,10 @@ export function addClip(p: Project, trackId: Id, clip: Clip): Project {
     throw new TimelineError(`A ${clip.kind} clip cannot go on a ${track.kind} track`);
   }
   assertFree(track, clip);
+  const adopted = adoptFirstClipFps(p, clip);
   return {
-    ...p,
-    tracks: p.tracks.map((t) =>
+    ...adopted,
+    tracks: adopted.tracks.map((t) =>
       t.id === trackId ? { ...t, clips: [...t.clips, clip].sort(byStart) } : t,
     ),
   };
