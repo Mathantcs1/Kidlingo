@@ -1,12 +1,14 @@
 // Export and merge-all jobs behind the export dialog: state, cancellation, discard protection, object URLs and
 // temp-file cleanup.
 import { create } from 'zustand';
-import { cleanupExportTemp, exportProject, exportTempName } from '../export/exporter';
+import { exportProject, exportTempName } from '../export/exporter';
 import type { ExportQuality } from '../export/exporter';
 import { removeMedia } from '../media/storage';
+import { describeStorageError } from '../media/storageErrors';
 import { useEditor } from '../state/store';
 import { replaceWithMedia } from './edits';
 import { safeFilename } from './exportName';
+import { cleanTemp, keepDownloaded } from './exportTemp';
 
 export type JobMode = 'export' | 'merge';
 export type JobPhase = 'idle' | 'running' | 'done' | 'cancelled' | 'error';
@@ -43,27 +45,12 @@ const set = (s: Partial<ExportUiState>): void => useExportUi.setState(s);
 const editor = () => useEditor.getState();
 
 let controller: AbortController | null = null;
-/** Pending temp-file cleanup; a new job waits for it so it never deletes the new job's file. */
-let cleaning: Promise<void> = Promise.resolve();
 /**
  * The latest finished export. Its object URL outlives the dialog (a download of it may still be running after
  * Close); it is revoked when the next job starts or when the page goes away.
  */
 let last: { url: string; temp?: string } | null = null;
-/**
- * Temp files whose download was started during this page session. They are never deleted while the page lives (the
- * browser may still be streaming a multi-GB download from one); the app-start cleanup of the next session removes
- * them. Only never-downloaded, discarded, cancelled or failed temps are deleted by the cleanups below.
- */
-const downloaded = new Set<string>();
 let againArgs: [ExportQuality, string] | null = null;
-
-/** Deletes the export temp files except downloaded ones, after any cleanup already queued. */
-function cleanTemp(): Promise<void> {
-  const keep = [...downloaded];
-  cleaning = cleaning.then(() => cleanupExportTemp(keep)).catch((e: unknown) => console.error('clipforge: cleanup failed', e));
-  return cleaning;
-}
 
 /** Revokes the previous result's URL and deletes old temp files (never a downloaded one). */
 function releasePrevious(): Promise<void> {
@@ -73,7 +60,7 @@ function releasePrevious(): Promise<void> {
 }
 
 const isAbort = (e: unknown): boolean => e instanceof DOMException && e.name === 'AbortError';
-const messageOf = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+const messageOf = describeStorageError;
 const unsaved = (): boolean => ui().phase === 'done' && !!ui().url && !ui().downloaded;
 
 /** True while closing the page would lose work: an export is running or a finished one was not downloaded. */
@@ -115,7 +102,7 @@ export function closeDialog(): void {
 /** The download link was used: closing no longer asks, and the file is kept while it may be downloading. */
 export function markDownloaded(): void {
   set({ downloaded: true });
-  if (last?.temp) downloaded.add(last.temp);
+  if (last?.temp) keepDownloaded(last.temp);
 }
 
 /** Answers "Discard the finished export?" with yes: closes the dialog or starts the next export. */

@@ -6,7 +6,8 @@ import { DEFAULT_PPS, MAX_PPS, MIN_PPS, contentSeconds, rulerTicks, timeToPx, tr
 import { useClipDrag } from './useClipDrag';
 import { useScrub } from './useScrub';
 
-export default function Timeline() {
+/** The timeline; `inert` while another tab owns the editor. */
+export default function Timeline({ inert }: { inert: boolean }) {
   const project = useEditor((s) => s.history.present);
   const selection = useEditor((s) => s.selection);
   const playhead = useEditor((s) => s.playhead);
@@ -22,7 +23,7 @@ export default function Timeline() {
   const { preview, begin } = useClipDrag(pps);
 
   return (
-    <section className="timeline" aria-label="Timeline">
+    <section className="timeline" aria-label="Timeline" inert={inert}>
       <div className="timeline-bar">
         <h2>Timeline</h2>
         <div className="zoom">

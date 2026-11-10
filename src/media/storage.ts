@@ -7,6 +7,22 @@ async function mediaDir(): Promise<FileSystemDirectoryHandle> {
   return root.getDirectoryHandle(DIR, { create: true });
 }
 
+/**
+ * Ids written by putMedia that no project state has referenced yet (an import between storing its file and adding
+ * it to the project). GC must spare them; the session settles ids once the store references them.
+ */
+const unsettled = new Set<Id>();
+
+export function unsettledMedia(): ReadonlySet<Id> {
+  return unsettled;
+}
+
+/** Marks ids as referenced by the project (GC may collect them once nothing references them any more). */
+export function settleMedia(ids: Iterable<Id>): void {
+  if (unsettled.size === 0) return;
+  for (const id of ids) unsettled.delete(id);
+}
+
 function isNotFound(e: unknown): boolean {
   return e instanceof DOMException && e.name === 'NotFoundError';
 }
@@ -16,6 +32,7 @@ function isNotFound(e: unknown): boolean {
  * contents (the write is only committed on success) and an entry this call created is removed.
  */
 export async function putMedia(id: Id, file: Blob): Promise<void> {
+  unsettled.add(id);
   const dir = await mediaDir();
   const existed = await dir.getFileHandle(id).then(
     () => true,
@@ -30,6 +47,7 @@ export async function putMedia(id: Id, file: Blob): Promise<void> {
     await file.stream().pipeTo(writable);
   } catch (e) {
     if (!existed) await dir.removeEntry(id).catch(() => undefined);
+    unsettled.delete(id);
     throw e;
   }
 }

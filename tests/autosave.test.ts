@@ -6,7 +6,7 @@ vi.mock('../src/state/persist', () => ({ saveProject: save }));
 import { emptyProject, defaultTransform } from '../src/core/model';
 import type { Clip } from '../src/core/model';
 import { addClip } from '../src/core/timeline';
-import { useEditor, flushAutosave } from '../src/state/store';
+import { useEditor, flushAutosave, flushOnHide, setAutosaveEnabled } from '../src/state/store';
 
 const clip = (id: string, start = 0): Clip => ({
   id,
@@ -30,8 +30,10 @@ beforeEach(async () => {
   save.mockReset();
   save.mockResolvedValue(undefined);
   errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  setAutosaveEnabled(true);
   useEditor.getState().loadProject(emptyProject());
-  await flushAutosave(); // drain anything pending from the previous test
+  await flushAutosave().catch(() => undefined); // drain anything pending from the previous test
+  useEditor.setState({ saveError: null });
   save.mockClear();
   errSpy.mockClear();
 });
@@ -66,7 +68,7 @@ describe('autosave', () => {
     add('c1');
     await vi.advanceTimersByTimeAsync(500);
     expect(save).toHaveBeenCalledTimes(1);
-    expect(errSpy).toHaveBeenCalledTimes(1);
+    expect(useEditor.getState().saveError).toBe('quota');
     await flushAutosave();
     expect(save).toHaveBeenCalledTimes(2);
     expect(save).toHaveBeenLastCalledWith(useEditor.getState().history.present);
@@ -111,5 +113,53 @@ describe('autosave', () => {
     await vi.advanceTimersByTimeAsync(1000);
     await flushAutosave();
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it('exposes the first failure as saveError and clears it when a later save succeeds', async () => {
+    save.mockRejectedValueOnce(new DOMException('full', 'QuotaExceededError'));
+    add('c1');
+    await vi.advanceTimersByTimeAsync(500);
+    expect(useEditor.getState().saveError).toBe(
+      "Your browser's storage is full. Remove media you no longer need or free disk space.",
+    );
+    save.mockRejectedValueOnce(new Error('still broken'));
+    add('c2', 5);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(useEditor.getState().saveError).toBe('still broken');
+    add('c3', 10);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(save).toHaveBeenCalledTimes(3);
+    expect(useEditor.getState().saveError).toBeNull();
+  });
+
+  it('saves nothing while disabled (a tab that does not own the editor)', async () => {
+    setAutosaveEnabled(false);
+    add('c1');
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushAutosave();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('flushes a pending change when the page is hidden or unloaded', async () => {
+    const win = new EventTarget();
+    const doc = Object.assign(new EventTarget(), { visibilityState: 'visible' as DocumentVisibilityState });
+    const off = flushOnHide(win, doc);
+    add('c1');
+    doc.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(save).not.toHaveBeenCalled();
+    doc.visibilityState = 'hidden';
+    doc.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(save).toHaveBeenCalledTimes(1);
+    add('c2', 5);
+    win.dispatchEvent(new Event('pagehide'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(save).toHaveBeenCalledTimes(2);
+    off();
+    add('c3', 10);
+    win.dispatchEvent(new Event('pagehide'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(save).toHaveBeenCalledTimes(2);
   });
 });

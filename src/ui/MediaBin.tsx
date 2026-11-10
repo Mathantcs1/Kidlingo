@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import type { DragEvent } from 'react';
 import type { MediaRef } from '../core/model';
+import { describeStorageError, isQuotaError } from '../media/storageErrors';
 import { useEditor } from '../state/store';
 import { addToTimeline } from './commands';
 import { addMedia } from './edits';
 import { formatTime } from './layout';
 import { MEDIA_MIME, setDraggedMedia } from './mediaDrag';
+import { removeMediaItem } from './projectCommands';
 import { showError } from './Toast';
 
 interface Pending {
@@ -17,6 +19,20 @@ const KIND_LABEL: Record<MediaRef['kind'], string> = { video: 'Video', audio: 'A
 const KIND_ICON: Record<MediaRef['kind'], string> = { video: '🎬', audio: '🎵', image: '🖼' };
 
 let pendingSeq = 0;
+let persistAsked = false;
+
+/** Asks once per page for persistent storage (fewer evictions of imported media); failures do not matter. */
+function askPersist(): void {
+  if (persistAsked) return;
+  persistAsked = true;
+  void navigator.storage?.persist?.().catch(() => false);
+}
+
+function importMessage(file: File, e: unknown): string {
+  if (e instanceof Error && e.name === 'ImportError') return e.message;
+  if (isQuotaError(e)) return `Could not import ${file.name}: ${describeStorageError(e)}`;
+  return `Could not import ${file.name}: ${String(e)}`;
+}
 
 function MediaItem({ m, editable }: { m: MediaRef; editable: boolean }) {
   return (
@@ -59,6 +75,17 @@ function MediaItem({ m, editable }: { m: MediaRef; editable: boolean }) {
       >
         +
       </button>
+      <button
+        type="button"
+        className="btn-icon btn-remove"
+        data-testid="btn-remove-media"
+        aria-label={`Remove ${m.name} from the project`}
+        title="Remove from the project"
+        disabled={!editable}
+        onClick={() => void removeMediaItem(m.id)}
+      >
+        ×
+      </button>
     </li>
   );
 }
@@ -78,10 +105,10 @@ export default function MediaBin({ supported, ready }: { supported: boolean; rea
         const { importFile } = await import('../media/import');
         const m = await importFile(file);
         useEditor.getState().apply((p) => addMedia(p, m));
+        askPersist();
       } catch (e) {
-        const known = e instanceof Error && e.name === 'ImportError';
-        if (!known) console.error('clipforge: import failed', e);
-        showError(known ? e.message : `Could not import ${file.name}: ${String(e)}`);
+        if (!(e instanceof Error && e.name === 'ImportError')) console.error('clipforge: import failed', e);
+        showError(importMessage(file, e));
       } finally {
         setPending((p) => p.filter((x) => x.key !== items[i].key));
       }

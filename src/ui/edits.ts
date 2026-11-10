@@ -46,6 +46,21 @@ export function deleteClips(p: Project, ids: Id[]): Project {
   return ids.reduce((acc, id) => deleteClip(acc, id, { ripple: false }), p);
 }
 
+/** Number of clips that use `mediaId`. */
+export function clipsUsingMedia(p: Project, mediaId: Id): number {
+  return p.tracks.reduce((n, t) => n + t.clips.filter((c) => c.mediaId === mediaId).length, 0);
+}
+
+/**
+ * Removes `mediaId` from the project together with every clip that uses it (one edit, so one undo step). The
+ * stored file is not touched here: undo must be able to bring it back; startup/New project GC deletes it later.
+ */
+export function removeMediaFromProject(p: Project, mediaId: Id): Project {
+  if (!p.media[mediaId]) throw new TimelineError(`Media not found: ${mediaId}`);
+  const { [mediaId]: _removed, ...media } = p.media;
+  return { ...p, media, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.filter((c) => c.mediaId !== mediaId) })) };
+}
+
 /** Joins the clips ordered by their start time. */
 export function mergeClips(p: Project, ids: Id[]): Project {
   const ordered = [...ids].sort((a, b) => findClip(p, a).clip.start - findClip(p, b).clip.start);
