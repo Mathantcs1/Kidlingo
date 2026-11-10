@@ -48,6 +48,8 @@ class GlCompositor implements Compositor {
   /** Textures per video source; a source used by several clips in one frame gets one texture per use. */
   private readonly videoSlots = new Map<VideoSource, TextureSlot[]>();
   private readonly images = new Map<Id, ImageEntry>();
+  /** Images that could not be read or decoded; never retried for the life of this compositor. */
+  private readonly failedImages = new Set<Id>();
   private queue: Promise<unknown> = Promise.resolve();
   private disposed = false;
   private lost = false;
@@ -86,6 +88,7 @@ class GlCompositor implements Compositor {
       e.bitmap.close();
     }
     this.images.clear();
+    this.failedImages.clear();
     this.blurTarget.dispose();
     this.quad.dispose();
   }
@@ -105,7 +108,9 @@ class GlCompositor implements Compositor {
     const draws: Draw[] = [];
     const uses = new Map<VideoSource, number>();
     for (const clip of visualClipsAt(p, t)) {
-      if (p.media[clip.mediaId]?.missing) continue;
+      const media = p.media[clip.mediaId];
+      // Unknown media is skipped too: pruneImages would otherwise delete its texture before it is drawn.
+      if (!media || media.missing) continue;
       if (clip.kind === 'image') {
         const entry = await this.image(clip.mediaId);
         this.assertUsable();
@@ -194,14 +199,16 @@ class GlCompositor implements Compositor {
     }
   }
 
-  /** Loads, uploads and caches an image's bitmap; null if it cannot be read (not cached, so it can reappear). */
+  /** Loads, uploads and caches an image's bitmap; null if it cannot be read (remembered, so never retried per frame). */
   private async image(mediaId: Id): Promise<ImageEntry | null> {
     const cached = this.images.get(mediaId);
     if (cached) return cached;
+    if (this.failedImages.has(mediaId)) return null;
     let bitmap: ImageBitmap;
     try {
       bitmap = await createImageBitmap(await getMediaFile(mediaId));
     } catch {
+      if (!this.disposed) this.failedImages.add(mediaId);
       return null;
     }
     if (this.disposed || this.lost) {

@@ -73,7 +73,7 @@ const cf = {
     p: Project,
     times: number[],
     opts: { canvas?: { width: number; height: number }; sources?: boolean } = {},
-  ): Promise<{ width: number; height: number; data: number[] }[]> {
+  ): Promise<{ width: number; height: number; data: number[]; glError: number }[]> {
     const canvas = document.createElement('canvas');
     const compositor = createCompositor(canvas, { preserveDrawingBuffer: true });
     const sources = new Map<Id, VideoSource>();
@@ -87,7 +87,8 @@ const cf = {
       const out = [];
       for (const t of times) {
         await compositor.renderFrame(p, t, sources);
-        out.push(readPixels(canvas));
+        const glError = canvas.getContext('webgl2')?.getError() ?? -1;
+        out.push({ ...readPixels(canvas), glError });
       }
       return out;
     } finally {

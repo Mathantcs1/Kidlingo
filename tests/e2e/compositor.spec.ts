@@ -53,6 +53,8 @@ interface Frame {
   width: number;
   height: number;
   data: number[];
+  /** gl.getError() right after the render (0 = NO_ERROR). */
+  glError: number;
 }
 
 /** Renders `p` at each time into a fresh canvas and returns the RGBA pixels (top-left origin). */
@@ -189,6 +191,46 @@ test('renders decoded video frames at clip.in + (t - clip.start)', async ({ page
   const [s] = await render(page, project(64, 36, [video], [shifted]), [1.0]);
   const [d] = await render(page, project(64, 36, [video], [direct]), [1.2]);
   expect(s.data).toEqual(d.data);
+});
+
+test('an image that fails to decode is tried once per compositor and skipped; other clips still draw', async ({ page }) => {
+  await openHarness(page);
+  const red = await imageMedia(page, 48, 48, [255, 0, 0]);
+  const corrupt = await page.evaluate(async () => {
+    const bytes = new Uint8Array(100);
+    crypto.getRandomValues(bytes);
+    const id = crypto.randomUUID();
+    await window.cf.putMedia(id, new Blob([bytes]));
+    // Count decode attempts of the corrupt file (the only 100-byte blob).
+    const original = window.createImageBitmap.bind(window);
+    const w = window as unknown as { corruptDecodes: number; createImageBitmap: typeof createImageBitmap };
+    w.corruptDecodes = 0;
+    w.createImageBitmap = ((src: ImageBitmapSource, ...rest: unknown[]) => {
+      if (src instanceof Blob && src.size === 100) w.corruptDecodes++;
+      return (original as (...a: unknown[]) => Promise<ImageBitmap>)(src, ...rest);
+    }) as typeof createImageBitmap;
+    return { id, name: 'corrupt.png', kind: 'image', duration: 5, width: 32, height: 32, hasAudio: false } as const;
+  });
+  const p = project(64, 64, [red, corrupt], [clipOf(red), clipOf(corrupt)]);
+  const frames = await render(page, p, [0, 0, 0, 0.1, 0.5]);
+  for (const f of frames) {
+    expectRgb(f, 32, 32, [255, 0, 0], 2);
+    expect(f.glError).toBe(0);
+  }
+  expect(await page.evaluate(() => (window as unknown as { corruptDecodes: number }).corruptDecodes)).toBe(1);
+});
+
+test('a clip whose media is not in the project is skipped without GL errors', async ({ page }) => {
+  await openHarness(page);
+  const red = await imageMedia(page, 48, 48, [255, 0, 0]);
+  const stray = await imageMedia(page, 32, 32, [0, 255, 0]);
+  // `stray` is stored in OPFS but absent from p.media.
+  const p = project(64, 64, [red], [clipOf(red), clipOf(stray)]);
+  const frames = await render(page, p, [0, 0.5]);
+  for (const f of frames) {
+    expect(f.glError).toBe(0);
+    expectRgb(f, 32, 32, [255, 0, 0], 2);
+  }
 });
 
 test('one source used by two clips in the same frame shows each clip its own source time', async ({ page }) => {
