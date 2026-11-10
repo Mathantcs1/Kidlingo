@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { audioStats, resetAudioStats } from './audio/stats';
+import type { AudioStats } from './audio/stats';
 import type { Id } from './core/model';
 import { listMediaIds, removeMedia } from './media/storage';
 import { flushAutosave, useEditor } from './state/store';
@@ -15,6 +17,9 @@ interface DevHook {
   getState(): EditorState & EditorActions;
   /** Open/peak counts of video decoders (see media/decode). */
   videoSourceStats(): Promise<{ open: number; peak: number; opened: number }>;
+  /** Audio buffer sizes and live playback nodes (see audio/stats). */
+  audioStats(): AudioStats;
+  resetAudioStats(): void;
 }
 
 declare global {
@@ -30,6 +35,8 @@ if (import.meta.env.DEV) {
     flushAutosave,
     getState: () => useEditor.getState(),
     videoSourceStats: async () => (await import('./media/decode')).videoSourceStats(),
+    audioStats,
+    resetAudioStats,
   };
 }
 

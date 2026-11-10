@@ -1,19 +1,20 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
+import { sharedAudioContext } from '../audio/context';
 import type { Mixer } from '../audio/mixer';
 import { timelineDuration } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { playStart, playbackTick } from './playbackTime';
 import { showError } from './Toast';
 
-/** True while Play waits for the mixer to decode and schedule the audio (shown as aria-busy on Play). */
+/** True while Play waits for the mixer to decode and schedule the first audio window (aria-busy on Play). */
 export const usePlaybackStatus = create<{ buffering: boolean }>()(() => ({ buffering: false }));
 
 const editor = () => useEditor.getState();
 
 /**
  * Connects the store's `playing` flag to audio playback. Starting plays the project's audio through the mixer
- * from the playhead (restarting from 0 at the end) and, once the mixer has scheduled it, moves the playhead
+ * from the playhead (restarting from 0 at the end) and, once the mixer has scheduled its first window, moves the playhead
  * every animation frame from the mixer's AudioContext clock, stopping by itself at the end of the timeline.
  *
  * Any edit (a history.present change, which includes format changes, undo and redo) while playing pauses
@@ -35,6 +36,13 @@ export function usePlayback(): void {
       usePlaybackStatus.setState({ buffering: false });
     };
 
+    /** A later audio window failed to decode: say so and stop. */
+    const fail = (e: unknown): void => {
+      console.error('clipforge: playback failed', e);
+      showError(`Could not play: ${e instanceof Error ? e.message : String(e)}`);
+      editor().setPlaying(false);
+    };
+
     const start = async (): Promise<void> => {
       const gen = ++generation;
       const { history, playhead, setPlaying, setPlayhead } = editor();
@@ -50,10 +58,11 @@ export function usePlayback(): void {
       usePlaybackStatus.setState({ buffering: true });
       try {
         if (!mixer) {
-          // Loaded on first use so the media toolkit stays out of the startup bundle.
+          // Loaded on first use so the media toolkit stays out of the startup bundle. The context is the one
+          // the Play gesture created and resumed (see togglePlay).
           const { createMixer } = await import('../audio/mixer');
           if (disposed || gen !== generation) return;
-          mixer = createMixer();
+          mixer = createMixer({ context: sharedAudioContext, onError: fail });
         }
         await mixer.play(p, from);
       } catch (e) {

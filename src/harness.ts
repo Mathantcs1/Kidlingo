@@ -11,6 +11,8 @@ import type { VideoSource } from './media/decode';
 import { cleanupExportTemp, exportProject } from './export/exporter';
 import { exportHarness } from './harnessExport';
 import { createMixer, renderMixdown } from './audio/mixer';
+import type { ScheduledPiece } from './audio/mixer';
+import { audioStats, resetAudioStats } from './audio/stats';
 
 function peak(buffer: AudioBuffer, from: number, to: number): number {
   const a = Math.max(0, Math.floor(from * buffer.sampleRate));
@@ -158,6 +160,31 @@ const cf = {
       stoppedTwice = false;
     }
     return { before, played: true, during, stoppedTwice };
+  },
+  /**
+   * Plays `p` from `from` with a live mixer of the given window length, samples its clock every 100 ms for `ms`,
+   * then stops. Returns the clock samples, every scheduled piece and the audio stats during and after.
+   */
+  async liveMixerRun(p: Project, from: number, opts: { windowSeconds: number; ms: number }) {
+    const schedule: ScheduledPiece[] = [];
+    const ctx = new AudioContext();
+    void ctx.resume();
+    const mixer = createMixer({ context: ctx, windowSeconds: opts.windowSeconds, onSchedule: (s) => schedule.push(s) });
+    resetAudioStats();
+    await mixer.play(p, from);
+    const samples: number[] = [];
+    const t0 = performance.now();
+    while (performance.now() - t0 < opts.ms) {
+      samples.push(mixer.currentTime());
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    const during = audioStats();
+    const state = ctx.state;
+    const ctxStart = mixer.debugClockStart();
+    mixer.stop();
+    const after = audioStats();
+    await ctx.close();
+    return { samples, schedule, during, after, state, ctxStart };
   },
   /** Imports the Nth file currently selected in `#harness-file`. */
   importInputFile(index: number): Promise<MediaRef> {

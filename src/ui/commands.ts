@@ -1,5 +1,6 @@
 // Store-bound editor commands shared by the toolbar, media bin and keyboard shortcuts.
 import type { Id } from '../core/model';
+import { unlockAudio } from '../audio/context';
 import { useEditor } from '../state/store';
 import { appendMedia, deleteClips, liveSelection, mergeClips, splitAt } from './edits';
 import { guard } from './Toast';
@@ -38,8 +39,10 @@ export function addToTimeline(mediaId: Id): void {
   guard(() => editor().apply((p) => appendMedia(p, mediaId)));
 }
 
+/** Starts or pauses playback. Call from the user gesture itself: starting unlocks the shared AudioContext. */
 export function togglePlay(): void {
   const { playing, setPlaying } = editor();
+  if (!playing) unlockAudio();
   setPlaying(!playing);
 }
 
