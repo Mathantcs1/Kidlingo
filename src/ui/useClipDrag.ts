@@ -21,6 +21,8 @@ export interface DragPreview {
 }
 
 interface Gesture {
+  /** Only this pointer drives the gesture; other pointers (a second touch, a pen) are ignored. */
+  pointerId: number;
   clipId: Id;
   kind: DragKind;
   x: number;
@@ -30,6 +32,8 @@ interface Gesture {
 }
 
 const editor = () => useEditor.getState();
+
+const hasClip = (p: Project, id: Id): boolean => p.tracks.some((t) => t.clips.some((c) => c.id === id));
 
 /** The lane under a page point that holds clips of `kind`, if any. */
 function laneAt(x: number, y: number, kind: string): Id | null {
@@ -65,7 +69,9 @@ function swallowNextClick(): void {
 /**
  * Pointer dragging of clip bodies (move) and edges (trim). A press becomes a drag after 4 px; until then it
  * stays a click. The ghost follows the pointer through local state and the edit is committed with ONE apply
- * on release (a TimelineError reverts and shows a toast). Escape cancels.
+ * on release (a TimelineError reverts and shows a toast). Escape cancels. Only the pointer that started the
+ * gesture counts; pointercancel / lostpointercapture end it without committing. If the clip disappears meanwhile
+ * (undo, delete) the gesture ends quietly at once.
  */
 export function useClipDrag(pps: number) {
   const [preview, setPreview] = useState<DragPreview | null>(null);
@@ -79,7 +85,8 @@ export function useClipDrag(pps: number) {
   const begin = (e: ReactPointerEvent<HTMLElement>, clipId: Id, kind: DragKind): void => {
     if (e.button !== 0 || gesture.current) return;
     e.stopPropagation();
-    gesture.current = { clipId, kind, x: e.clientX, y: e.clientY, active: false, preview: null };
+    const pointerId = e.pointerId;
+    gesture.current = { pointerId, clipId, kind, x: e.clientX, y: e.clientY, active: false, preview: null };
     let cancelled = false;
 
     const end = (): void => {
@@ -87,9 +94,10 @@ export function useClipDrag(pps: number) {
       setPreview(null);
       detach.current();
     };
+    const mine = (ev: PointerEvent): boolean => ev.pointerId === pointerId;
     const onMove = (ev: PointerEvent): void => {
       const g = gesture.current;
-      if (!g || cancelled) return;
+      if (!g || cancelled || !mine(ev)) return;
       const dx = ev.clientX - g.x;
       if (!g.active) {
         if (!pastThreshold(dx, ev.clientY - g.y)) return;
@@ -97,22 +105,37 @@ export function useClipDrag(pps: number) {
         if (!editor().selection.includes(g.clipId)) editor().select([g.clipId]);
         if (editor().playing) editor().setPlaying(false);
       }
-      guard(() => {
-        g.preview = previewFor(editor().history.present, g, dx, ev.clientX, ev.clientY, ppsRef.current);
+      const p = editor().history.present;
+      if (!hasClip(p, g.clipId)) {
+        end();
+        return;
+      }
+      try {
+        g.preview = previewFor(p, g, dx, ev.clientX, ev.clientY, ppsRef.current);
         setPreview(g.preview);
-      });
+      } catch (err) {
+        // One report, then the gesture is over (never a toast per pointer move).
+        end();
+        guard(() => {
+          throw err;
+        });
+      }
     };
-    const onUp = (): void => {
+    const onUp = (ev: PointerEvent): void => {
+      if (!mine(ev)) return;
       const g = gesture.current;
       if (g?.active) swallowNextClick();
       const pv = !cancelled && g?.active ? g.preview : null;
       end();
-      if (!pv) return;
+      if (!pv || !hasClip(editor().history.present, pv.clipId)) return;
       guard(() =>
         editor().apply((p) =>
           pv.kind === 'move' ? moveClip(p, pv.clipId, pv.value, pv.trackId) : trimClip(p, pv.clipId, pv.kind, pv.value),
         ),
       );
+    };
+    const onCancel = (ev: PointerEvent): void => {
+      if (mine(ev)) end();
     };
     const onKey = (ev: KeyboardEvent): void => {
       if (ev.key !== 'Escape' || !gesture.current) return;
@@ -120,14 +143,21 @@ export function useClipDrag(pps: number) {
       cancelled = true;
       setPreview(null);
     };
+    // Undo/delete during the drag can remove the clip: drop the ghost right away.
+    const unsubscribe = useEditor.subscribe((s, prev) => {
+      if (s.history.present !== prev.history.present && !hasClip(s.history.present, clipId)) end();
+    });
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', end);
+    window.addEventListener('pointercancel', onCancel);
+    window.addEventListener('lostpointercapture', onCancel);
     window.addEventListener('keydown', onKey);
     detach.current = () => {
+      unsubscribe();
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', end);
+      window.removeEventListener('pointercancel', onCancel);
+      window.removeEventListener('lostpointercapture', onCancel);
       window.removeEventListener('keydown', onKey);
       detach.current = () => undefined;
     };

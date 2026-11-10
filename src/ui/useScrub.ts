@@ -7,7 +7,8 @@ import { scrubTime } from './playbackTime';
 /**
  * Pointer handlers that scrub the playhead: pressing sets it under the pointer and dragging (with pointer
  * capture) keeps it there, clamped to [0, timeline duration]. `originRef` is the element whose left edge is
- * time 0 (the ruler). Scrubbing pauses playback.
+ * time 0 (the ruler). Scrubbing pauses playback. A scrub ends on release, cancel, lost capture, or a move with
+ * the primary button no longer down (if capture failed and the release happened elsewhere, it cannot stick).
  */
 export function useScrub(originRef: RefObject<HTMLElement | null>, pps: number) {
   const active = useRef<number | null>(null);
@@ -33,7 +34,12 @@ export function useScrub(originRef: RefObject<HTMLElement | null>, pps: number) 
       seek(e.clientX);
     },
     onPointerMove(e: ReactPointerEvent<HTMLElement>): void {
-      if (active.current === e.pointerId) seek(e.clientX);
+      if (active.current !== e.pointerId) return;
+      if ((e.buttons & 1) === 0) {
+        active.current = null;
+        return;
+      }
+      seek(e.clientX);
     },
     onPointerUp(e: ReactPointerEvent<HTMLElement>): void {
       if (active.current !== e.pointerId) return;
@@ -42,6 +48,9 @@ export function useScrub(originRef: RefObject<HTMLElement | null>, pps: number) 
     },
     onPointerCancel(): void {
       active.current = null;
+    },
+    onLostPointerCapture(e: ReactPointerEvent<HTMLElement>): void {
+      if (active.current === e.pointerId) active.current = null;
     },
   };
 }
