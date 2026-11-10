@@ -1,15 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { ExportQuality } from '../export/exporter';
-import { cancelJob, closeDialog, startExport, useExportUi } from './exportJob';
+import {
+  cancelDiscard,
+  cancelJob,
+  closeDialog,
+  confirmDiscard,
+  markDownloaded,
+  startExport,
+  useExportUi,
+} from './exportJob';
 import { DEFAULT_EXPORT_NAME, percent } from './exportName';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled])';
 
-/** Keeps Tab inside `root` and closes on Escape (unless a job is running). */
-function useDialogKeys(rootRef: RefObject<HTMLDivElement | null>, running: boolean): void {
-  const runningRef = useRef(running);
-  runningRef.current = running;
+/**
+ * Keeps Tab inside `root`; Escape answers a pending discard question with "keep", else closes (unless a job is
+ * running). Focus returns to the element that opened the dialog when it closes.
+ */
+function useDialogKeys(rootRef: RefObject<HTMLDivElement | null>, running: boolean, confirming: boolean): void {
+  const state = useRef({ running, confirming });
+  state.current = { running, confirming };
+  // Read during the first render, before the dialog takes focus (stable across StrictMode's effect replay).
+  const [opener] = useState(() => document.activeElement);
   useEffect(() => {
     const root = rootRef.current;
     root?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
@@ -17,7 +30,8 @@ function useDialogKeys(rootRef: RefObject<HTMLDivElement | null>, running: boole
       if (!root) return;
       if (e.key === 'Escape') {
         e.preventDefault();
-        if (!runningRef.current) closeDialog();
+        if (state.current.confirming) cancelDiscard();
+        else if (!state.current.running) closeDialog();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -35,24 +49,55 @@ function useDialogKeys(rootRef: RefObject<HTMLDivElement | null>, running: boole
       }
     };
     window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [rootRef]);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
+  }, [rootRef, opener]);
+}
+
+/** Cancel while a job runs; otherwise Close and (export only) Export / Export again. */
+function JobActions(props: { running: boolean; merge: boolean; idle: boolean; onStart(): void }) {
+  if (props.running) {
+    return (
+      <div className="modal-actions">
+        <button type="button" data-testid="btn-export-cancel" onClick={cancelJob}>
+          Cancel
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="modal-actions">
+      <button type="button" data-testid="btn-export-close" onClick={closeDialog}>
+        Close
+      </button>
+      {!props.merge && (
+        <button type="button" className="btn-primary" data-testid="btn-export-start" onClick={props.onStart}>
+          {props.idle ? 'Export' : 'Export again'}
+        </button>
+      )}
+    </div>
+  );
 }
 
 /** Modal for exporting the timeline to MP4 and for showing merge-all progress. */
 export default function ExportDialog() {
-  const { open, phase, progress, error, url, filename } = useExportUi();
+  const { open, phase, progress, error, url, filename, confirm } = useExportUi();
   const [quality, setQuality] = useState<ExportQuality>('1080p');
   const [name, setName] = useState(DEFAULT_EXPORT_NAME);
   const rootRef = useRef<HTMLDivElement>(null);
   const running = phase === 'running';
-  useDialogKeys(rootRef, running);
+  useDialogKeys(rootRef, running, confirm !== null);
 
-  // Keep focus inside the dialog when the focused control disappears (e.g. Start → Cancel).
+  // Keep focus inside the dialog when the focused control disappears (e.g. Start → Cancel); a discard question
+  // takes focus on its safe answer.
   useEffect(() => {
     const root = rootRef.current;
-    if (root && !root.contains(document.activeElement)) root.querySelector<HTMLElement>(FOCUSABLE)?.focus();
-  }, [phase]);
+    if (!root) return;
+    if (confirm) root.querySelector<HTMLElement>('[data-testid="btn-discard-keep"]')?.focus();
+    else if (!root.contains(document.activeElement)) root.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+  }, [phase, confirm]);
 
   const merge = open === 'merge';
   const title = merge ? 'Merge all into one clip' : 'Export video';
@@ -96,33 +141,25 @@ export default function ExportDialog() {
           </p>
         )}
         {phase === 'done' && url && filename && (
-          <a className="btn btn-primary" data-testid="export-download" href={url} download={filename}>
+          <a className="btn btn-primary" data-testid="export-download" href={url} download={filename} onClick={markDownloaded}>
             Download {filename}
           </a>
         )}
-        <div className="modal-actions">
-          {running ? (
-            <button type="button" data-testid="btn-export-cancel" onClick={cancelJob}>
-              Cancel
-            </button>
-          ) : (
-            <>
-              <button type="button" data-testid="btn-export-close" onClick={closeDialog}>
-                Close
+        {confirm ? (
+          <div className="modal-confirm" role="group" aria-labelledby="discard-question" data-testid="export-discard-confirm">
+            <p id="discard-question">Discard the finished export? It has not been downloaded.</p>
+            <div className="modal-actions">
+              <button type="button" data-testid="btn-discard-keep" onClick={cancelDiscard}>
+                Keep it
               </button>
-              {!merge && (
-                <button
-                  type="button"
-                  className="btn-primary"
-                  data-testid="btn-export-start"
-                  onClick={() => void startExport(quality, name)}
-                >
-                  {phase === 'idle' ? 'Export' : 'Export again'}
-                </button>
-              )}
-            </>
-          )}
-        </div>
+              <button type="button" data-testid="btn-discard-confirm" onClick={confirmDiscard}>
+                Discard
+              </button>
+            </div>
+          </div>
+        ) : (
+          <JobActions running={running} merge={merge} idle={phase === 'idle'} onStart={() => void startExport(quality, name)} />
+        )}
       </div>
     </div>
   );

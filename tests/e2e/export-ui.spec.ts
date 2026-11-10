@@ -117,10 +117,11 @@ test('exports a trimmed clip to a downloadable 1080p H.264/AAC MP4', async ({ pa
   expect(audio?.codec_name).toBe('aac');
   expect(Math.abs(Number(info.format.duration) - 0.6)).toBeLessThanOrEqual(0.25);
 
-  // Closing the dialog removes the temp file; Escape closes when idle.
+  // Once downloaded, Escape closes without asking; the temp file stays until the next export (or app start)
+  // because the browser may still be reading it.
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
-  await expect.poll(() => exportTempEntries(page)).toEqual([]);
+  expect(await exportTempEntries(page)).toHaveLength(1);
   expect(errors).toEqual([]);
 });
 

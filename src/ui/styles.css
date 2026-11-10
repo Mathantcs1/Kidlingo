@@ -643,6 +643,19 @@ button:disabled,
   color: var(--danger);
 }
 
+.modal-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+}
+
+.modal-confirm p {
+  margin: 0;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
