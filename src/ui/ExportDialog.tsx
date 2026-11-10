@@ -12,6 +12,8 @@ import {
   useExportUi,
 } from './exportJob';
 import { DEFAULT_EXPORT_NAME, percent } from './exportName';
+import { currentModality, focusAs } from './inputModality';
+import type { Modality } from './inputModality';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled])';
 
@@ -19,12 +21,12 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
  * Returns focus to the dialog's opener, or to Export when the opener is gone or disabled (e.g. Merge all after a
  * successful merge), so focus is never lost to <body>.
  */
-function restoreFocus(opener: Element | null): void {
+function restoreFocus(opener: Element | null, modality: Modality): void {
   const usable = (el: Element | null): el is HTMLElement =>
     el instanceof HTMLElement && el.isConnected && !el.matches(':disabled');
   const fallback = document.querySelector('[data-testid="btn-export"]');
-  if (usable(opener)) opener.focus();
-  else if (usable(fallback)) fallback.focus();
+  if (usable(opener)) focusAs(opener, modality);
+  else if (usable(fallback)) focusAs(fallback, modality);
 }
 
 /**
@@ -35,7 +37,8 @@ function useDialogKeys(rootRef: RefObject<HTMLDivElement | null>, running: boole
   const state = useRef({ running, confirming });
   state.current = { running, confirming };
   // Read during the first render, before the dialog takes focus (stable across StrictMode's effect replay).
-  const [opener] = useState(() => document.activeElement);
+  // How it was opened (mouse or keyboard) decides how focus returns: the closing Escape is not keyboard use.
+  const [{ opener, modality }] = useState(() => ({ opener: document.activeElement, modality: currentModality() }));
   useEffect(() => {
     const root = rootRef.current;
     root?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
@@ -64,9 +67,9 @@ function useDialogKeys(rootRef: RefObject<HTMLDivElement | null>, running: boole
     window.addEventListener('keydown', onKey, true);
     return () => {
       window.removeEventListener('keydown', onKey, true);
-      restoreFocus(opener);
+      restoreFocus(opener, modality);
     };
-  }, [rootRef, opener]);
+  }, [rootRef, opener, modality]);
 }
 
 /** Cancel while a job runs; otherwise Close and (export only) Export / Export again. */

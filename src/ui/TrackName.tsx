@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { Id } from '../core/model';
 import { MAX_TRACK_NAME } from '../core/tracks';
-import { isKeyboardFocused } from './inputModality';
+import { currentModality, focusAs, isKeyboardFocused } from './inputModality';
+import type { Modality } from './inputModality';
 import { renameLayer } from './trackCommands';
 
 interface TrackNameProps {
@@ -22,15 +23,18 @@ export default function TrackName({ trackId, label, name }: TrackNameProps) {
   const done = useRef(false);
   const refocus = useRef(false);
   const nameRef = useRef<HTMLSpanElement>(null);
+  /** How editing was started (double-click or a key): focus returns to the name with the same modality. */
+  const openedVia = useRef<Modality>('pointer');
 
   useEffect(() => {
     if (editing || !refocus.current) return;
     refocus.current = false;
-    nameRef.current?.focus();
+    if (nameRef.current) focusAs(nameRef.current, openedVia.current);
   }, [editing]);
 
   const start = (): void => {
     done.current = false;
+    openedVia.current = currentModality();
     setEditing(true);
   };
   const finish = (value: string | null, viaKey: boolean): void => {
@@ -44,6 +48,11 @@ export default function TrackName({ trackId, label, name }: TrackNameProps) {
   const onInputKey = (e: KeyboardEvent<HTMLInputElement>): void => {
     // Enter that confirms an IME composition belongs to the IME.
     if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+    // A held Enter/F2 that opened the editor auto-repeats into it: repeats neither commit nor cancel.
+    if (e.repeat && (e.key === 'Enter' || e.key === 'Escape')) {
+      e.preventDefault();
+      return;
+    }
     if (e.key === 'Enter') {
       e.preventDefault();
       finish(e.currentTarget.value, true);

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
+import { currentModality, focusAs } from './inputModality';
 
 export interface ConfirmRequest {
   title: string;
@@ -34,7 +35,8 @@ export function askConfirm(req: ConfirmRequest): Promise<boolean> {
 export default function ConfirmDialog() {
   const request = useConfirm((s) => s.request);
   const rootRef = useRef<HTMLDivElement>(null);
-  const [opener] = useState(() => document.activeElement);
+  // The opener and how the dialog was opened (mouse or keyboard): focus goes back to it the same way.
+  const [{ opener, modality }] = useState(() => ({ opener: document.activeElement, modality: currentModality() }));
 
   useEffect(() => {
     const root = rootRef.current;
@@ -54,9 +56,9 @@ export default function ConfirmDialog() {
     window.addEventListener('keydown', onKey, true);
     return () => {
       window.removeEventListener('keydown', onKey, true);
-      if (opener instanceof HTMLElement && opener.isConnected && !opener.matches(':disabled')) opener.focus();
+      if (opener instanceof HTMLElement && opener.isConnected && !opener.matches(':disabled')) focusAs(opener, modality);
     };
-  }, [opener]);
+  }, [opener, modality]);
 
   if (!request) return null;
   return (
