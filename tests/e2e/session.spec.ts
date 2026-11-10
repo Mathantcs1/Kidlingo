@@ -98,6 +98,17 @@ test('New project asks, clears the project and history, and frees the stored fil
   await expect.poll(() => storedIds(page)).toHaveLength(1);
 });
 
+test('New project still asks when only the undo history holds work', async ({ page }) => {
+  await open(page);
+  await importFiles(page, [withAudio], 1);
+  await page.getByTestId('btn-undo').click();
+  await expect(page.getByTestId('media-item')).toHaveCount(0);
+  await page.getByTestId('btn-new-project').click();
+  await expect(page.getByTestId('confirm-dialog')).toContainText('Start a new project?');
+  await page.getByTestId('btn-confirm-cancel').click();
+  await expect(page.getByTestId('btn-redo')).toBeEnabled();
+});
+
 test('an empty project starts over without asking', async ({ page }) => {
   await open(page);
   await page.getByTestId('btn-new-project').click();
@@ -118,7 +129,7 @@ test('a failing autosave is reported once with a persistent indicator, and its r
   await page.evaluate(() => ((window as unknown as { failSaves?: boolean }).failSaves = true));
   await addToTimeline(page, 'with-audio.mp4', 1);
   await expect(toast(page)).toHaveText(
-    "Couldn't save your project automatically: Your browser's storage is full. Remove media you no longer need or free disk space. Export or keep this tab open.×",
+    "Couldn't save your project automatically: Your browser's storage is full. Remove media you no longer need, then reload the page (or start a New project) to free the space. Export or keep this tab open.×",
   );
   await expect(page.getByTestId('save-status')).toHaveText('Not saved');
   await addToTimeline(page, 'with-audio.mp4', 2);
@@ -158,7 +169,7 @@ test('a second tab is locked: inert, never overwrites the first, and takes over 
   await second.goto('/');
   await expect(second.getByTestId('app')).toHaveAttribute('data-session', 'locked');
   await expect(second.getByTestId('session-locked')).toHaveText(
-    'ClipForge is already open in another tab. Close this tab or use that one.',
+    'ClipForge is already open in another tab. Use that tab, or close it and this one takes over.',
   );
   await expect(second.getByTestId('file-input')).toBeDisabled();
   await expect(second.getByTestId('btn-new-project')).toBeDisabled();
@@ -173,9 +184,9 @@ test('a second tab is locked: inert, never overwrites the first, and takes over 
   await expect(second.getByTestId('app')).toHaveAttribute('data-session', 'locked');
   expect(await page.evaluate(() => window.__clipforge!.listMediaIds())).toHaveLength(1);
 
+  // Closing the first tab hands the editor to the second without a manual reload.
   await page.close();
-  await second.reload();
-  await expect(second.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await expect(second.getByTestId('app')).toHaveAttribute('data-session', 'ready', { timeout: 15_000 });
   await expect(second.getByTestId('timeline-clip')).toHaveCount(2);
   await expect(second.getByTestId('session-locked')).toHaveCount(0);
 });

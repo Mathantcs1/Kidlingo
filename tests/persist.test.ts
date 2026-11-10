@@ -20,27 +20,40 @@ describe('persist', () => {
     expect(kv.set).toHaveBeenCalledWith('clipforge:current', p);
   });
 
-  it('loadProject returns null when absent', async () => {
+  it('loadProject reports a verified-absent key as none', async () => {
     kv.get.mockResolvedValue(undefined);
-    expect(await loadProject()).toBeNull();
+    expect(await loadProject()).toEqual({ status: 'none' });
     expect(kv.get).toHaveBeenCalledWith('clipforge:current');
   });
 
-  it('loadProject returns null when version !== 1', async () => {
+  it('loadProject reports a newer version as unsupported, never as absent', async () => {
     kv.get.mockResolvedValue({ ...emptyProject(), version: 2 });
-    expect(await loadProject()).toBeNull();
+    expect(await loadProject()).toEqual({ status: 'unsupported', reason: expect.stringContaining('newer version') });
   });
+
+  it.each([null, 42, 'x', { version: 1 }, { version: 1, format: {}, tracks: 'no', media: {} }])(
+    'loadProject reports a malformed value (%j) as unsupported',
+    async (v) => {
+      kv.get.mockResolvedValue(v);
+      expect((await loadProject()).status).toBe('unsupported');
+    },
+  );
 
   it('loadProject returns the stored project', async () => {
     const p = emptyProject();
     kv.get.mockResolvedValue(p);
-    expect(await loadProject()).toBe(p);
+    expect(await loadProject()).toEqual({ status: 'ok', project: p });
+  });
+
+  it('loadProject lets read failures reject (the caller must not treat them as "no project")', async () => {
+    kv.get.mockRejectedValue(new DOMException('backing store', 'UnknownError'));
+    await expect(loadProject()).rejects.toThrow('backing store');
   });
 
   it('is a no-op without indexedDB', async () => {
     vi.unstubAllGlobals();
     await saveProject(emptyProject());
-    expect(await loadProject()).toBeNull();
+    expect(await loadProject()).toEqual({ status: 'unavailable' });
     expect(kv.set).not.toHaveBeenCalled();
     expect(kv.get).not.toHaveBeenCalled();
   });

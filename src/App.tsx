@@ -7,6 +7,7 @@ import ExportDialog from './ui/ExportDialog';
 import { useExportUi } from './ui/exportJob';
 import Inspector from './ui/Inspector';
 import Preview from './ui/Preview';
+import RestoreNotice from './ui/RestoreNotice';
 import { startSessionOnce } from './ui/session';
 import type { SessionState } from './ui/session';
 import Timeline from './ui/Timeline';
@@ -47,9 +48,10 @@ export default function App() {
         <Banner missing={missing} />
         {locked && (
           <div className="banner banner-locked" role="alert" data-testid="session-locked">
-            ClipForge is already open in another tab. Close this tab or use that one.
+            ClipForge is already open in another tab. Use that tab, or close it and this one takes over.
           </div>
         )}
+        {ready && <RestoreNotice />}
         <TopBar editable={ready} inert={locked} />
         <main className="workspace" inert={locked}>
           <MediaBin supported={canImport} ready={ready} />

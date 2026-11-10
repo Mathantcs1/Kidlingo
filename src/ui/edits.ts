@@ -55,6 +55,13 @@ export function rippleDeleteClips(p: Project, ids: Id[]): Project {
   return ordered.reduce((acc, id) => deleteClip(acc, id, { ripple: true }), p);
 }
 
+/** True when any undo/redo state of the history holds media or clips (so starting over discards work). */
+export function projectHasWork(h: { past: Project[]; present: Project; future: Project[] }): boolean {
+  return [...h.past, h.present, ...h.future].some(
+    (p) => Object.keys(p.media).length > 0 || p.tracks.some((t) => t.clips.length > 0),
+  );
+}
+
 /** Number of clips that use `mediaId`. */
 export function clipsUsingMedia(p: Project, mediaId: Id): number {
   return p.tracks.reduce((n, t) => n + t.clips.filter((c) => c.mediaId === mediaId).length, 0);

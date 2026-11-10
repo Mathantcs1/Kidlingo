@@ -3,7 +3,7 @@ import { fitTransform } from '../src/core/merge';
 import { defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
-import { clipsUsingMedia, removeMediaFromProject, rippleDeleteClips, setClipFit, setClipVolume } from '../src/ui/edits';
+import { projectHasWork, clipsUsingMedia, removeMediaFromProject, rippleDeleteClips, setClipFit, setClipVolume } from '../src/ui/edits';
 
 const video: MediaRef = { id: 'v', name: 'v.mp4', kind: 'video', duration: 10, width: 1920, height: 1080, fps: 30, hasAudio: true };
 const other: MediaRef = { ...video, id: 'w', name: 'w.mp4' };
@@ -117,5 +117,15 @@ describe('setClipFit', () => {
 
   it('refuses audio clips', () => {
     expect(() => setClipFit(project(), 'x', 'fill')).toThrow(TimelineError);
+  });
+});
+
+describe('projectHasWork', () => {
+  it('is true when the present state or any undo/redo state holds media or clips', () => {
+    const empty = emptyProject();
+    expect(projectHasWork({ past: [], present: empty, future: [] })).toBe(false);
+    expect(projectHasWork({ past: [project()], present: empty, future: [] })).toBe(true);
+    expect(projectHasWork({ past: [], present: empty, future: [project()] })).toBe(true);
+    expect(projectHasWork({ past: [], present: project(), future: [] })).toBe(true);
   });
 });

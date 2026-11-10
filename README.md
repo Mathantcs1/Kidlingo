@@ -80,7 +80,9 @@ try Safari, or set the iPhone to record H.264 before filming: **Settings → Cam
 - **One tab at a time.** All tabs of the site share one saved project and one media store, so ClipForge takes a
   browser lock ([Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API)) when it opens. A second
   tab shows "ClipForge is already open in another tab" and stays inert (it never loads, saves or deletes
-  anything); reload it after closing the first tab. Browsers without Web Locks are assumed to use one tab.
+  anything); when the first tab is closed, it reloads by itself and takes over. Browsers without Web Locks are
+  assumed to use one tab, but since that cannot be proven ClipForge then never deletes unused media files at
+  startup: they are freed only by **New project** (or by clearing the site's data).
 
 ## Privacy
 
@@ -88,7 +90,10 @@ Everything stays on your device; nothing is uploaded. Imported media files are c
 Private File System, and the project (the timeline as JSON, which references media by ID) is saved in IndexedDB.
 Clearing this site's data in the browser deletes your projects and imported media. Imported files that no
 project state uses any more (removed media, undone imports, replaced merges) are deleted the next time ClipForge
-starts and after **New project**; while the page is open they are kept so undo still works. ClipForge asks the
+starts and after **New project**; while the page is open they are kept so undo still works. Nothing is deleted at
+startup unless the saved project was loaded successfully (or there was none). If the saved project cannot be
+loaded (a storage error, or a project saved by a newer version), a notice says so, the saved project and all
+media are left untouched and nothing is saved until you choose **Retry loading** or **Start a new project**. ClipForge asks the
 browser for persistent storage after the first import, so the browser is less likely to evict your media.
 
 ## Keyboard shortcuts
@@ -169,7 +174,8 @@ No special headers (COOP/COEP) are required.
 - **Netlify / Cloudflare Pages:** build command `npm run build`, publish directory `dist`. A single-page fallback
   is optional because the app has one route.
 - **GitHub Pages:** the site is served from a sub-path, so build with a base path:
-  `npx vite build --base=/<repo>/` (`vite.config.ts` sets no `base`, so the CLI flag is honoured), then publish `dist/`.
+  `npm run build -- --base=/<repo>/` (this also runs the licence-collecting prebuild step; `vite.config.ts` sets no
+  `base`, so the flag is honoured), then publish `dist/`.
   Pages is HTTPS by default.
 
 To check the production bundle (including the lazily loaded AAC encoder chunk) end to end, run

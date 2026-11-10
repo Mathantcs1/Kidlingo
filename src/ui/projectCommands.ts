@@ -3,8 +3,8 @@ import { emptyProject } from '../core/model';
 import type { Id } from '../core/model';
 import { flushAutosave, useEditor } from '../state/store';
 import { askConfirm } from './Confirm';
-import { clipsUsingMedia, removeMediaFromProject } from './edits';
-import { collectUnusedMedia } from './session';
+import { clipsUsingMedia, projectHasWork, removeMediaFromProject } from './edits';
+import { collectUnusedMedia, gcPermitForNewProject, resolveRestoreFailure, useRestoreFailure } from './session';
 import { guard } from './Toast';
 
 const editor = () => useEditor.getState();
@@ -29,26 +29,29 @@ export async function removeMediaItem(mediaId: Id): Promise<void> {
 }
 
 /**
- * Starts an empty YouTube project (undo history cleared), asking first unless the project is empty, then deletes
- * the media files nothing references any more. The new project is saved before any file is deleted, so a reload
- * never brings back a project whose media is gone; if that save fails nothing is deleted.
+ * Starts an empty YouTube project (undo history cleared), asking first unless nothing would be lost (no media or
+ * clips in any undo/redo state, no unloadable saved project), then deletes the media files nothing references any
+ * more. The new project is saved before any file is deleted, so a reload never brings back a project whose media is
+ * gone; if that save fails nothing is deleted.
  */
 export async function newProject(): Promise<void> {
-  const p = editor().history.present;
-  const hasWork = Object.keys(p.media).length > 0 || p.tracks.some((t) => t.clips.length > 0);
-  if (hasWork) {
+  const failed = useRestoreFailure.getState().message !== null;
+  if (failed || projectHasWork(editor().history)) {
     const ok = await askConfirm({
       title: 'Start a new project?',
-      message: 'The timeline and the media bin are cleared and the imported files are deleted from this browser. This cannot be undone.',
+      message: failed
+        ? 'The saved project could not be loaded. Starting over replaces the saved project and deletes its imported files from this browser. This cannot be undone.'
+        : 'The timeline and the media bin are cleared and the imported files are deleted from this browser. This cannot be undone.',
       confirmLabel: 'New project',
     });
     if (!ok) return;
   }
+  if (failed) resolveRestoreFailure();
   editor().loadProject(emptyProject('youtube'));
   try {
     await flushAutosave();
   } catch {
     return; // The failure is reported by the autosave notice; keep the files the saved project still references.
   }
-  await collectUnusedMedia();
+  await collectUnusedMedia(gcPermitForNewProject());
 }
