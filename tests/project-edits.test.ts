@@ -362,3 +362,32 @@ describe('resetClipTransform with a tiny image', () => {
     expect(resetClipTransform(p, 'img').tracks[0].clips[0].transform.scale).toBe(1080 / 16);
   });
 });
+
+describe('setClipTransform scale bounds and -0', () => {
+  const withDot = (): Project => {
+    const base = project();
+    const dot: MediaRef = { id: 'i', name: 'dot.png', kind: 'image', duration: 5, width: 16, height: 16, hasAudio: false };
+    return {
+      ...base,
+      media: { ...base.media, i: dot },
+      tracks: base.tracks.map((tr, i) => (i === 0 ? { ...tr, clips: [{ ...clip('img', 0, 1, 'i', 'image'), transform: { ...defaultTransform(), scale: 67.5 } }] } : tr)),
+    };
+  };
+  const scaleOf = (p: Project, id: string) => p.tracks.flatMap((tr) => tr.clips).find((c) => c.id === id)!.transform.scale;
+
+  it('keeps a clip above 20× where it is when nudged down', () => {
+    expect(scaleOf(setClipTransform(withDot(), 'img', { scale: 67.49 }), 'img')).toBe(67.49);
+    expect(scaleOf(setClipTransform(withDot(), 'img', { scale: 500 }), 'img')).toBe(67.5);
+  });
+
+  it('still clamps a normal clip to 0.02..20', () => {
+    expect(scaleOf(setClipTransform(project(), 'a', { scale: 0.001 }), 'a')).toBe(0.02);
+    expect(scaleOf(setClipTransform(project(), 'a', { scale: 500 }), 'a')).toBe(20);
+  });
+
+  it('never stores -0', () => {
+    const moved = setClipTransform(project(), 'a', { x: 5, y: 5, rotation: 10 });
+    const tr = setClipTransform(moved, 'a', { x: -0, y: -0, rotation: -0 }).tracks[0].clips[0].transform;
+    expect(Object.is(tr.x, 0) && Object.is(tr.y, 0) && Object.is(tr.rotation, 0)).toBe(true);
+  });
+});

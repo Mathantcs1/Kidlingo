@@ -1,5 +1,6 @@
-// Pure geometry for on-canvas transform editing (no DOM). Everything is in FORMAT pixels with the origin at the
-// canvas top-left and y pointing down; `Transform.x/y` stay offsets from the canvas centre, as in `clipMatrix`,
+// Pure geometry for on-canvas transform editing (no DOM). Everything — points, tolerances, offsets, thresholds —
+// is in FORMAT pixels with the origin at the canvas top-left and y pointing down (the overlay must convert CSS
+// pixels to format pixels with the displayed canvas box, both ways); `Transform.x/y` stay offsets from the canvas centre, as in `clipMatrix`,
 // whose quad `clipCorners` reproduces exactly (see tests/overlay-geometry.test.ts).
 import type { Transform } from '../core/model';
 import type { Size } from './geometry';
@@ -11,13 +12,25 @@ export type Handle = 'move' | 'scale-tl' | 'scale-tr' | 'scale-br' | 'scale-bl' 
 
 export const MIN_SCALE = 0.02;
 export const MAX_SCALE = 20;
-/** Distance of the rotate handle beyond the top edge when the caller gives none. */
+/**
+ * Distance of the rotate handle beyond the top edge when the caller gives none, in FORMAT pixels (not CSS px: the
+ * overlay should pass its own CSS offset converted to format px).
+ */
 export const ROTATE_HANDLE_OFFSET = 24;
 
 const CORNER_HANDLES: Handle[] = ['scale-tl', 'scale-tr', 'scale-br', 'scale-bl'];
 const fin = (...v: number[]): boolean => v.every(Number.isFinite);
 const dist = (a: Point, b: Point): number => Math.hypot(a.x - b.x, a.y - b.y);
-const clampScale = (s: number): number => Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
+
+/**
+ * The scale range an edit may move a clip within: 0.02..20, widened to include `cur` so a clip already outside it
+ * (a 16 px image fitted to 1080p sits at 67.5×) is never pulled to the limit by a small nudge. A non-finite or
+ * non-positive `cur` gives the plain range.
+ */
+export function scaleBounds(cur: number): [number, number] {
+  if (!Number.isFinite(cur) || cur <= 0) return [MIN_SCALE, MAX_SCALE];
+  return [Math.min(MIN_SCALE, cur), Math.max(MAX_SCALE, cur)];
+}
 
 /** Degrees normalised to (−180, 180] (never −0). */
 export function normaliseDegrees(deg: number): number {
@@ -61,7 +74,7 @@ function outwardNormal(corners: Corners): Point {
   return up > 1e-12 ? { x: ux / up, y: uy / up } : { x: 0, y: -1 };
 }
 
-/** A point `offsetPx` beyond the middle of the top edge (TL→TR), along its outward normal. */
+/** A point `offsetPx` (format px) beyond the middle of the top edge (TL→TR), along its outward normal. */
 export function rotateHandlePoint(corners: Corners, offsetPx: number): Point {
   const [tl, tr] = corners;
   const n = outwardNormal(corners);
@@ -69,36 +82,51 @@ export function rotateHandlePoint(corners: Corners, offsetPx: number): Point {
   return { x: (tl.x + tr.x) / 2 + n.x * off, y: (tl.y + tr.y) / 2 + n.y * off };
 }
 
-/** True when `p` is strictly inside the convex quad (either winding); a degenerate quad contains nothing. */
+/**
+ * True when `p` is inside the convex quad (either winding) or exactly on its boundary (within 1e-9 px); a
+ * degenerate quad (no area) contains nothing.
+ */
 function insideQuad(q: Corners, p: Point): boolean {
-  let sign = 0;
+  let area = 0;
+  for (let i = 0; i < 4; i++) area += q[i].x * q[(i + 1) % 4].y - q[(i + 1) % 4].x * q[i].y;
+  if (Math.abs(area) < 1e-9) return false;
+  const orient = Math.sign(area);
   for (let i = 0; i < 4; i++) {
     const a = q[i];
     const b = q[(i + 1) % 4];
-    const cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
-    if (Math.abs(cross) < 1e-12) return false;
-    const s = Math.sign(cross);
-    if (sign !== 0 && s !== sign) return false;
-    sign = s;
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len < 1e-12) continue;
+    // Signed distance of p from edge a→b, positive on the inner side.
+    const d = (orient * ((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x))) / len;
+    if (d < -1e-9) return false;
   }
   return true;
 }
 
-/** Which handle `p` grabs: the rotate handle, then the nearest corner, then the inside ('move'), else null. */
+/**
+ * Which handle `p` grabs; `p`, `tolerancePx` and `rotateOffsetPx` are in FORMAT pixels. Priority: the rotate
+ * handle (within the tolerance), then the nearest corner (within the tolerance), then the inside or boundary
+ * ('move'), else null. On a quad whose shorter side is under 2× the tolerance, corners are only tested for a
+ * pointer OUTSIDE the quad, so the inside of a tiny clip still moves it.
+ */
 export function hitTest(corners: Corners, p: Point, tolerancePx: number, rotateOffsetPx = ROTATE_HANDLE_OFFSET): Handle | null {
   if (!fin(p.x, p.y, tolerancePx) || !corners.every((c) => fin(c.x, c.y))) return null;
   if (dist(rotateHandlePoint(corners, rotateOffsetPx), p) <= tolerancePx) return 'rotate';
-  let best = -1;
-  let bestDist = Infinity;
-  corners.forEach((c, i) => {
-    const d = dist(c, p);
-    if (d <= tolerancePx && d < bestDist) {
-      best = i;
-      bestDist = d;
-    }
-  });
-  if (best >= 0) return CORNER_HANDLES[best];
-  return insideQuad(corners, p) ? 'move' : null;
+  const inside = insideQuad(corners, p);
+  const shorterSide = Math.min(dist(corners[0], corners[1]), dist(corners[0], corners[3]));
+  if (!inside || shorterSide >= 2 * tolerancePx) {
+    let best = -1;
+    let bestDist = Infinity;
+    corners.forEach((c, i) => {
+      const d = dist(c, p);
+      if (d <= tolerancePx && d < bestDist) {
+        best = i;
+        bestDist = d;
+      }
+    });
+    if (best >= 0) return CORNER_HANDLES[best];
+  }
+  return inside ? 'move' : null;
 }
 
 /** Translates by (dx, dy) format px; the start itself for non-finite or zero deltas. */
@@ -109,7 +137,7 @@ export function dragMove(start: Transform, dx: number, dy: number): Transform {
 
 /**
  * Uniform scale about the CLIP CENTRE (Ruling D): scale × |pointer − centre| / |startPointer − centre|, clamped
- * to 0.02..20. Only scale-* handles scale; anything else, or non-finite input, returns `start`. (`_size` is kept
+ * to `scaleBounds(start.scale)` (0.02..20, widened to include the start scale). Only scale-* handles scale; anything else, or non-finite input, returns `start`. (`_size` is kept
  * for the planned signature: the ratio of distances does not depend on it.)
  */
 export function dragScale(start: Transform, _size: Size, handle: Handle, startPointer: Point, pointer: Point, format: Size): Transform {
@@ -120,7 +148,8 @@ export function dragScale(start: Transform, _size: Size, handle: Handle, startPo
   const c = clipCentre(start, format);
   const d0 = dist(startPointer, c);
   if (d0 < 1e-9) return start;
-  const scale = clampScale(start.scale * (dist(pointer, c) / d0));
+  const [lo, hi] = scaleBounds(start.scale);
+  const scale = Math.min(hi, Math.max(lo, start.scale * (dist(pointer, c) / d0)));
   return scale === start.scale ? start : { ...start, scale };
 }
 

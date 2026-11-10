@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { applyMat3, clipMatrix } from '../src/render/geometry';
 import {
-  clipCentre, clipCorners, dragMove, dragRotate, dragScale, hitTest, rotateHandlePoint, snapToCanvas,
+  MAX_SCALE, MIN_SCALE, clipCentre, clipCorners, dragMove, dragRotate, dragScale, hitTest, rotateHandlePoint, scaleBounds,
+  snapToCanvas,
 } from '../src/render/overlayGeometry';
 import type { Corners, Point } from '../src/render/overlayGeometry';
 import { defaultTransform } from '../src/core/model';
@@ -292,5 +293,47 @@ describe('snapToCanvas', () => {
     const bad = t({ x: NaN });
     expect(snapToCanvas(bad, sq, FMT, 3)).toBe(bad);
     expect(snapToCanvas(far, sq, FMT, NaN)).toBe(far);
+  });
+});
+
+describe('scaleBounds', () => {
+  it('is 0.02..20, widened to include a current scale outside it', () => {
+    expect(scaleBounds(1)).toEqual([MIN_SCALE, MAX_SCALE]);
+    expect(scaleBounds(67.5)).toEqual([0.02, 67.5]);
+    expect(scaleBounds(0.01)).toEqual([0.01, 20]);
+    for (const bad of [NaN, Infinity, 0, -3]) expect(scaleBounds(bad)).toEqual([0.02, 20]);
+  });
+});
+
+describe('dragScale above the usual maximum', () => {
+  const centre = { x: 100, y: 50 };
+  const from = { x: 200, y: 50 }; // 100 px from the centre of a centred clip
+  const at = (ratio: number): Point => ({ x: centre.x + 100 * ratio, y: 50 });
+
+  it('never pulls a clip already above 20× down to 20', () => {
+    const big = t({ scale: 25 });
+    expect(dragScale(big, SIZE, 'scale-br', from, at(1.01), FMT).scale).toBe(25);
+    expect(dragScale(big, SIZE, 'scale-br', from, at(0.9), FMT).scale).toBeCloseTo(22.5, 9);
+    expect(dragScale(t(), SIZE, 'scale-br', from, at(100), FMT).scale).toBe(20);
+  });
+});
+
+describe('hitTest edge cases', () => {
+  it('the centre of a tiny clip still moves it; just outside a corner grabs that corner', () => {
+    const tiny = clipCorners({ width: 10, height: 10 }, t(), FMT); // TL (95,45) .. BR (105,55)
+    expect(hitTest(tiny, { x: 100, y: 50 }, 8)).toBe('move');
+    expect(hitTest(tiny, { x: 96, y: 46 }, 8)).toBe('move');
+    expect(hitTest(tiny, { x: 93, y: 43 }, 8)).toBe('scale-tl');
+    expect(hitTest(tiny, { x: 107, y: 57 }, 8)).toBe('scale-br');
+  });
+
+  it('a point exactly on an edge counts as inside', () => {
+    const corners = clipCorners(SIZE, t(), FMT);
+    expect(hitTest(corners, { x: 50, y: 50 }, 6)).toBe('move');
+    expect(hitTest(corners, { x: 100, y: 75 }, 6)).toBe('move');
+    expect(hitTest(corners, { x: 49.9, y: 50 }, 0)).toBeNull();
+    // A degenerate quad still contains nothing.
+    const flat = clipCorners({ width: 100, height: 0 }, t(), FMT);
+    expect(hitTest(flat, { x: 80, y: 50 }, 1, 50)).toBeNull();
   });
 });

@@ -273,3 +273,14 @@ describe('NumberField helpers', () => {
     for (const bad of ['', '   ', 'abc', '12px', '1e999', 'Infinity', 'NaN']) expect(parseEntry(bad)).toBeNull();
   });
 });
+
+describe('parseEntry locale forms', () => {
+  it('accepts a Unicode minus and a comma decimal separator; rejects comma plus dot', async () => {
+    const { parseEntry } = await import('../src/ui/NumberField');
+    expect(parseEntry('\u221212')).toBe(-12);
+    expect(parseEntry('12,5')).toBe(12.5);
+    expect(parseEntry('\u22120,25')).toBe(-0.25);
+    expect(parseEntry('1,234.5')).toBeNull();
+    expect(parseEntry('1,2,3')).toBeNull();
+  });
+});

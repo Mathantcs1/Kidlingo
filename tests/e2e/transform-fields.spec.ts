@@ -10,16 +10,18 @@ import type { Transform } from '../../src/core/model';
 
 test.setTimeout(60_000);
 
-/** A 360×360 lime PNG: fitted into the default 1920×1080 frame at scale 3, covering x 420..1500, y 0..1080. */
-function greenSquare(): string {
+/** A solid PNG of `size` px square in the test's output dir. */
+function squarePng(name: string, size: number, colour = 'lime'): string {
   const dir = test.info().outputPath('img');
   mkdirSync(dir, { recursive: true });
-  const out = join(dir, 'green.png');
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=lime:s=360x360', '-frames:v', '1', out], {
-    stdio: 'pipe',
-  });
+  const out = join(dir, name);
+  const args = ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', `color=c=${colour}:s=${size}x${size}`, '-frames:v', '1', out];
+  execFileSync('ffmpeg', args, { stdio: 'pipe' });
   return out;
 }
+
+/** A 360×360 lime PNG: fitted into the default 1920×1080 frame at scale 3, covering x 420..1500, y 0..1080. */
+const greenSquare = (): string => squarePng('green.png', 360);
 
 const field = (page: Page, name: string): Locator => page.getByTestId(`inspector-${name}`);
 
@@ -189,4 +191,80 @@ test('the fields are disabled on a locked track and absent for an audio clip', a
   await clipEl(page, audioId).click();
   await expect(page.getByTestId('inspector-volume')).toBeVisible();
   for (const name of ['x', 'y', 'scale', 'rotation', 'opacity', 'transform-reset']) await expect(field(page, name)).toHaveCount(0);
+});
+
+test('a fitted tiny image above 20× is nudged by one percent, not pulled down to 2000 %', async ({ page }) => {
+  await open(page);
+  await importFiles(page, [squarePng('dot.png', 16, 'red')], 1);
+  await addToTimeline(page, 'dot.png', 1);
+  const [dot] = await clipStates(page);
+  await clipEl(page, dot.id).click();
+  const scale = field(page, 'scale');
+  await expect(scale).toHaveValue('6750'); // 1080 / 16 = 67.5×
+  await scale.focus();
+  await scale.press('ArrowDown');
+  await scale.press('Enter');
+  await expect(scale).toHaveValue('6749');
+  expect((await transformOf(page, dot.id)).scale).toBeCloseTo(67.49, 9);
+});
+
+test('switching the selected clip shows that clip and drops the other one\'s draft', async ({ page }) => {
+  const { id } = await setup(page);
+  await addToTimeline(page, 'green.png', 3);
+  const other = (await clipStates(page)).find((c) => c.trackKind === 'video' && c.id !== id)!;
+  await enter(page, 'x', '120');
+  // A draft left in a field is committed to ITS clip when focus leaves (blur), never carried to the next clip.
+  await field(page, 'rotation').fill('33');
+  await clipEl(page, other.id).click();
+  await expect(field(page, 'x')).toHaveValue('0');
+  await expect(field(page, 'rotation')).toHaveValue('0');
+  expect(await transformOf(page, other.id)).toMatchObject({ x: 0, rotation: 0 });
+  expect(await transformOf(page, id)).toMatchObject({ x: 120, rotation: 33 });
+  await clipEl(page, id).click();
+  await expect(field(page, 'x')).toHaveValue('120');
+});
+
+test('typing the shown value commits when the stored value differs by less than the display rounding', async ({ page }) => {
+  const { id } = await setup(page);
+  await enter(page, 'x', '0.004');
+  expect((await transformOf(page, id)).x).toBe(0.004);
+  await expect(field(page, 'x')).toHaveValue('0');
+  const depth = await undoDepth(page);
+  // Retype the shown "0" (delete it, type 0): equal to what is SHOWN, but not to what is stored.
+  await field(page, 'x').focus();
+  await field(page, 'x').press('End');
+  await field(page, 'x').press('Backspace');
+  await field(page, 'x').pressSequentially('0');
+  await field(page, 'x').press('Enter');
+  expect((await transformOf(page, id)).x).toBe(0);
+  expect(await undoDepth(page)).toBe(depth + 1);
+});
+
+test('Enter during IME composition does not commit', async ({ page }) => {
+  const { id } = await setup(page);
+  await field(page, 'x').fill('42');
+  await field(page, 'x').evaluate((el) =>
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true, cancelable: true })),
+  );
+  expect((await transformOf(page, id)).x).toBe(0);
+  await expect(field(page, 'x')).toHaveValue('42');
+  await field(page, 'x').press('Enter');
+  expect((await transformOf(page, id)).x).toBe(42);
+});
+
+test('the fields are spinbuttons with their current value and range', async ({ page }) => {
+  await setup(page);
+  const expectSpin = async (name: string, now: string, min: string, max: string): Promise<void> => {
+    const f = field(page, name);
+    await expect(f).toHaveAttribute('role', 'spinbutton');
+    await expect(f).toHaveAttribute('aria-valuenow', now);
+    await expect(f).toHaveAttribute('aria-valuemin', min);
+    await expect(f).toHaveAttribute('aria-valuemax', max);
+  };
+  await expectSpin('x', '0', '-7680', '7680');
+  await expectSpin('y', '0', '-4320', '4320');
+  await expectSpin('scale', '300', '2', '2000');
+  await expectSpin('rotation', '0', '-180', '180');
+  await expectSpin('opacity', '100', '0', '100');
+  await expect(page.getByRole('spinbutton', { name: 'Opacity in percent' })).toHaveCount(1);
 });

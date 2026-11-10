@@ -3,7 +3,7 @@
 import { fitTransform } from '../core/merge';
 import type { Clip, Id, Project, Transform } from '../core/model';
 import { TimelineError, assertUnlocked, findClip } from '../core/timeline';
-import { MAX_SCALE, MIN_SCALE, normaliseDegrees } from '../render/overlayGeometry';
+import { normaliseDegrees, scaleBounds } from '../render/overlayGeometry';
 
 const KEYS = ['x', 'y', 'scale', 'rotation', 'opacity'] as const;
 /** x/y may go at most this many format widths/heights from the centre, so a typo cannot lose the clip forever. */
@@ -12,8 +12,9 @@ const REACH = 4;
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
 /**
- * Patches a video/image clip's transform: scale clamped to 0.02..20, opacity to 0..1, rotation normalised to
- * (−180, 180], x/y to ±4× the format size. A non-finite value throws; audio clips and locked tracks are refused.
+ * Patches a video/image clip's transform: scale clamped to `scaleBounds(current scale)` (0.02..20, widened to
+ * include the current scale so a fitted tiny image above 20× is not pulled down by a nudge), opacity to 0..1,
+ * rotation normalised to (−180, 180], x/y to ±4× the format size; −0 is stored as 0. A non-finite value throws; audio clips and locked tracks are refused.
  * Returns `p` itself when nothing changes (so no undo step).
  */
 export function setClipTransform(p: Project, clipId: Id, patch: Partial<Transform>): Project {
@@ -23,9 +24,9 @@ export function setClipTransform(p: Project, clipId: Id, patch: Partial<Transfor
   }
   const { width, height } = p.format;
   return writeTransform(p, clipId, (cur) => ({
-    x: patch.x === undefined ? cur.x : clamp(patch.x, -width * REACH, width * REACH),
-    y: patch.y === undefined ? cur.y : clamp(patch.y, -height * REACH, height * REACH),
-    scale: patch.scale === undefined ? cur.scale : clamp(patch.scale, MIN_SCALE, MAX_SCALE),
+    x: patch.x === undefined ? cur.x : clamp(patch.x, -width * REACH, width * REACH) + 0,
+    y: patch.y === undefined ? cur.y : clamp(patch.y, -height * REACH, height * REACH) + 0,
+    scale: patch.scale === undefined ? cur.scale : clamp(patch.scale, ...scaleBounds(cur.scale)),
     rotation: patch.rotation === undefined ? cur.rotation : normaliseDegrees(patch.rotation),
     opacity: patch.opacity === undefined ? cur.opacity : clamp(patch.opacity, 0, 1),
   }));
