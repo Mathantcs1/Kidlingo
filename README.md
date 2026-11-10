@@ -44,14 +44,16 @@ It is a static site built with React, TypeScript and Vite.
   timeline into a single new video in the media bin and replaces the timeline with it (one undo step; it can be
   cancelled). With layers, the new video is the composite of the visible layers (hidden layers are left out) with
   the sound of the audible tracks (muted ones, or those silenced by a solo elsewhere, are left out); it lands on the
-  lowest video layer, which is unhidden and unlocked if needed, and every track keeps its name and flags. A locked
-  track that holds clips blocks it up front ("Track is locked") before anything is rendered; an empty locked
-  track does not.
+  lowest video layer, which is unhidden, unmuted and unlocked so the result is seen and heard. Every solo is
+  cleared (the merged video already holds the mix); otherwise tracks keep their names, and the other (now empty)
+  tracks their mute and hide flags. Undo brings back every clip and flag. A locked track that holds clips blocks
+  it up front ("Track is locked") before anything is rendered; an empty locked track does not.
 - **Formats**: YouTube 16:9 (1920x1080), Vertical 9:16 for Reels/Shorts/TikTok (1080x1920), Square 1:1
   (1080x1080) and Portrait 4:5 (1080x1350). Changing the format refits every clip still at its fit framing to the
-  new canvas; a clip you moved, scaled, rotated or faded keeps its place relative to the frame (position scaled
-  per axis, size by the smaller of the two ratios), so a picture-in-picture in the top-right corner stays there.
-  Switching back and forth between aspect ratios can leave such a clip smaller; undo restores it exactly.
+  new canvas (faded or rotated full-frame clips still refit, keeping their opacity and rotation); a clip you moved
+  or scaled keeps its place relative to the frame (position scaled per axis, size by the smaller of the two
+  ratios), so a picture-in-picture in the top-right corner stays there. Switching back and forth between aspect
+  ratios can leave such a clip smaller; undo restores it exactly.
 - **Preview** of the frame under the playhead, rendered with WebGL2, and **playback** with sound (Play/Pause).
 - **Undo/redo** for every edit, and **autosave**: the project is restored when you reopen the page (a pending
   change is also saved when the tab is hidden or closed). If saving fails (for example because browser storage is

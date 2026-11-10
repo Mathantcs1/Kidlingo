@@ -80,15 +80,17 @@ export function fitTransform(
 
 const SAME = 1e-6;
 
-function sameTransform(a: Transform, b: Transform): boolean {
-  return (['x', 'y', 'scale', 'rotation', 'opacity'] as const).every((k) => Math.abs(a[k] - b[k]) <= SAME);
+/** Whether `t` sits where `fit` puts the clip: x, y and scale within 1e-6 (rotation and opacity do not count). */
+function atFit(t: Transform, fit: Transform): boolean {
+  return (['x', 'y', 'scale'] as const).every((k) => Math.abs(t[k] - fit[k]) <= SAME);
 }
 
 /**
- * Switches the canvas to `key`. A visual clip whose transform still equals its fit for the old canvas (within 1e-6)
- * is refit to the new one; a customised clip (moved, scaled, rotated or faded) keeps its relative placement:
- * x·w′/w, y·h′/h, scale·min(w′/w, h′/h) kept within `scaleBounds` of its scale, rotation and opacity unchanged.
- * That is lossy: a round trip through another aspect can leave a customised clip smaller (the min ratio). Audio
+ * Switches the canvas to `key`. A visual clip whose x, y and scale still equal its fit for the old canvas (within
+ * 1e-6) is refit to the new one; a customised clip (moved or scaled) keeps its relative placement: x·w′/w, y·h′/h,
+ * scale·min(w′/w, h′/h) kept within `scaleBounds` of its scale. Rotation and opacity are always kept, so a faded or
+ * rotated full-frame clip still refits. That is lossy: a round trip through another aspect can leave a customised
+ * clip smaller (the min ratio). An unusable old canvas size (non-positive or non-finite) refits every clip. Audio
  * clips and media without a known size are left alone. Intentionally ignores track locks: the format is a
  * sequence-level setting and every clip, locked or not, must follow it. Returns `p` itself when the canvas size
  * does not change (no undo step).
@@ -98,6 +100,7 @@ export function reframeProject(p: Project, key: FormatKey): Project {
   const old = p.format;
   if (old.width === width && old.height === height) return p;
   const canvas = { width, height };
+  const oldUsable = old.width > 0 && old.height > 0 && Number.isFinite(old.width) && Number.isFinite(old.height);
   const rx = width / old.width;
   const ry = height / old.height;
   const reframe = (c: Clip): Clip => {
@@ -105,7 +108,10 @@ export function reframeProject(p: Project, key: FormatKey): Project {
     if (c.kind === 'audio' || !m || !m.width || !m.height) return { ...c };
     const dims = { width: m.width, height: m.height };
     const t = c.transform;
-    if (sameTransform(t, fitTransform(dims, old, c.fit))) return { ...c, transform: fitTransform(dims, canvas, c.fit) };
+    if (!oldUsable || atFit(t, fitTransform(dims, old, c.fit))) {
+      const { x, y, scale } = fitTransform(dims, canvas, c.fit);
+      return { ...c, transform: { ...t, x, y, scale } };
+    }
     const [lo, hi] = scaleBounds(t.scale);
     const scale = Math.min(hi, Math.max(lo, t.scale * Math.min(rx, ry)));
     return { ...c, transform: { ...t, x: t.x * rx, y: t.y * ry, scale } };

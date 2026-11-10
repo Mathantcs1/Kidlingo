@@ -14,7 +14,8 @@ test.setTimeout(300_000);
 
 /**
  * Red full-frame background on v1, a green 200² square on v2 (HIDDEN) at x = −500, a blue 200² square on v3 at
- * x = +500, all 0..1 s; audio: a1 tone at volume 1 (muted, named 'Music'), a2 tone at volume 0.5.
+ * x = +500, all 0..1 s; v1 is MUTED (a silent picture, but the flag must not silence the merged clip); audio: a1
+ * tone at volume 1 (muted, named 'Music'), a2 tone at volume 0.5 and SOLOED.
  */
 async function setup(page: Page): Promise<void> {
   await open(page);
@@ -35,11 +36,11 @@ async function setup(page: Page): Promise<void> {
       return {
         ...p,
         tracks: [
-          { ...flags, id: 'v1', kind: 'video' as const, name: 'Background', clips: [clip('red', 'red.png', 10, 0)] },
+          { ...flags, id: 'v1', kind: 'video' as const, name: 'Background', muted: true, clips: [clip('red', 'red.png', 10, 0)] },
           { ...flags, id: 'v2', kind: 'video' as const, hidden: true, clips: [clip('green', 'green.png', 1, -500)] },
           { ...flags, id: 'v3', kind: 'video' as const, clips: [clip('blue', 'blue.png', 1, 500)] },
           { ...flags, id: 'a1', kind: 'audio' as const, name: 'Music', muted: true, clips: [clip('t1', 'tone.wav', 1, 0, 1)] },
-          { ...flags, id: 'a2', kind: 'audio' as const, clips: [clip('t2', 'tone.wav', 1, 0, 0.5)] },
+          { ...flags, id: 'a2', kind: 'audio' as const, solo: true, clips: [clip('t2', 'tone.wav', 1, 0, 0.5)] },
         ],
       };
     });
@@ -103,8 +104,11 @@ test('merge all on three layers (middle hidden) and two audio tracks (one muted)
   const id = await mergeAll(page);
   expect((await playerState(page)).undoDepth).toBe(depth + 1);
   const after = await tracksOf(page);
-  // Names and flags stay (the target v1 was already visible and unlocked).
-  expect(after.map(({ clips: _c, ...t }) => t)).toEqual(before.map(({ clips: _c, ...t }) => t));
+  // Ruling H: names, hide and the other tracks' mute stay; the target is unmuted and every solo is cleared, so
+  // the merged clip on v1 is audible (trackAudible: not muted, no solo anywhere).
+  const flags = (ts: Track[]) => ts.map(({ clips: _c, ...t }) => t);
+  expect(flags(after)).toEqual(flags(before).map((t) => ({ ...t, solo: false, muted: t.id === 'v1' ? false : t.muted })));
+  expect(after[0].muted || after.some((t) => t.solo)).toBe(false);
   const file = await mediaFile(page, id, 'merged.mp4');
   expect(Math.abs(duration(file) - 1)).toBeLessThanOrEqual(0.3);
   const f = ffmpegFrame(file, 5);
@@ -114,7 +118,11 @@ test('merge all on three layers (middle hidden) and two audio tracks (one muted)
   expect(isRed(rgbAt(f, 960, 540)), 'centre: background').toBe(true);
   expect(isRed(rgbAt(f, 460, 540)), 'hidden green layer is not in the merge').toBe(true);
   expect(isBlue(rgbAt(f, 1460, 540)), 'visible blue layer').toBe(true);
-  expect(audioPeak(file) ?? 0, 'the audible track is heard').toBeGreaterThan(1000);
+  // Only a2 (volume 0.5) is heard: the muted a1 at volume 1 would push the peak to about 1.5× the tone's.
+  const reference = audioPeak(tone) ?? 0;
+  expect(reference).toBeGreaterThan(1000);
+  const peak = audioPeak(file) ?? 0;
+  expect(Math.abs(peak / (reference * 0.5) - 1), `peak ${peak} vs tone ${reference}`).toBeLessThanOrEqual(0.15);
 
   await page.getByTestId('btn-undo').click();
   expect(await tracksOf(page)).toEqual(before);

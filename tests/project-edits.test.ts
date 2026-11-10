@@ -4,6 +4,8 @@ import { defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
 import { addTrack } from '../src/core/tracks';
+import { trackAudible } from '../src/audio/plan';
+import { commit, createHistory, undo } from '../src/state/history';
 import {
   appendMedia,
   clipsUsingMedia,
@@ -432,14 +434,35 @@ describe('replaceWithMedia with layers (merge all)', () => {
     tracks: p.tracks.map((t) => (t.id === id ? { ...t, ...patch } : t)),
   });
 
-  it('puts the one merged clip at 0 on the lowest video track and empties every other track, keeping names and flags', () => {
+  it('puts the one merged clip at 0 on the lowest video track and empties every other track, keeping names, mute and hide', () => {
     const p = layered();
     const r = replaceWithMedia(p, other);
     expect(r.tracks.map((t) => t.clips.map((c) => c.mediaId))).toEqual([['w'], [], [], [], []]);
     expect(r.tracks[0].clips[0]).toMatchObject({ start: 0, in: 0, out: other.duration, kind: 'video' });
     expect(r.media.w).toEqual(other);
     const flags = (q: Project) => q.tracks.map(({ clips: _c, ...rest }) => rest);
-    expect(flags(r)).toEqual(flags(p));
+    // Ruling H: solo is cleared everywhere (the merged file already holds the audible mix); the rest stays.
+    expect(flags(r)).toEqual(flags(p).map((t) => ({ ...t, solo: false })));
+  });
+
+  it('the merged clip is audible: the target is unmuted and no solo is left (Ruling H)', () => {
+    for (const p of [layered(), setTrack(layered(), 'L1', { muted: true }), setTrack(setTrack(layered(), 'L3', { solo: false }), 'A1', { solo: true, muted: false })]) {
+      const r = replaceWithMedia(p, other);
+      const target = r.tracks.findIndex((t) => t.kind === 'video');
+      expect(trackAudible(r, r.tracks[target])).toBe(true);
+      expect(r.tracks.some((t) => t.solo)).toBe(false);
+      expect(r.tracks[target].muted).toBe(false);
+      // Mute and hide on the other (now empty) tracks are kept.
+      expect(r.tracks.slice(1).map((t) => [t.id, t.muted, t.hidden])).toEqual(p.tracks.slice(1).map((t) => [t.id, t.muted, t.hidden]));
+    }
+  });
+
+  it('undo (history) restores every flag and clip exactly', () => {
+    const p = setTrack(layered(), 'L1', { muted: true });
+    const snap = JSON.parse(JSON.stringify(p));
+    const h = undo(commit(createHistory(p), replaceWithMedia(p, other)));
+    expect(h.present).toBe(p);
+    expect(h.present).toEqual(snap);
   });
 
   it('unlocks and unhides an EMPTY locked/hidden target track so the result is visible and editable', () => {

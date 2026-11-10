@@ -255,6 +255,30 @@ describe('reframeProject keeps customised placement (Ruling G)', () => {
     expect(byId(reframeProject(custom(3), 'youtube'), 'PIP').transform.scale).toBe(6);
   });
 
+  it('Ruling I: untouched means x, y and scale at the old fit; a faded full-frame fill clip refits and stays faded', () => {
+    const p = build();
+    const faded = { ...p, tracks: p.tracks.map((t) => (t.id === 'L3' ? { ...t, clips: [t.clips[0], { ...t.clips[1], transform: { ...fit(sq, 1920, 1080, 'fill'), opacity: 0.5 } }] } : t)) };
+    expect(byId(reframeProject(faded, 'vertical'), 'FILL').transform).toEqual({ ...fit(sq, 1080, 1920, 'fill'), opacity: 0.5 });
+  });
+
+  it('Ruling I: a rotated clip still at its fit position and scale refits and keeps its rotation', () => {
+    const p = build();
+    // (A 'fit' clip cannot tell: its fit scale changes by exactly the min ratio. A 'fill' clip can.)
+    const rotated = { ...p, tracks: p.tracks.map((t) => (t.id === 'L3' ? { ...t, clips: [t.clips[0], { ...t.clips[1], transform: { ...fit(sq, 1920, 1080, 'fill'), rotation: 10 } }] } : t)) };
+    expect(byId(reframeProject(rotated, 'vertical'), 'FILL').transform).toEqual({ ...fit(sq, 1080, 1920, 'fill'), rotation: 10 });
+  });
+
+  it('a non-positive or non-finite old canvas refits every visual clip to the new format (no division)', () => {
+    for (const bad of [{ width: 0, height: 1080 }, { width: 1920, height: -1 }, { width: NaN, height: 1080 }, { width: Infinity, height: 1080 }]) {
+      const p = build();
+      const r = reframeProject({ ...p, format: { ...p.format, ...bad } }, 'vertical');
+      expect(r.format).toMatchObject({ width: 1080, height: 1920 });
+      expect(byId(r, 'BG').transform).toEqual(fit(v, 1080, 1920));
+      expect(byId(r, 'PIP').transform).toEqual({ ...fit(v, 1080, 1920), rotation: 30, opacity: 0.5 });
+      for (const c of r.tracks.flatMap((t) => t.clips)) for (const x of Object.values(c.transform)) expect(Number.isFinite(x)).toBe(true);
+    }
+  });
+
   it('returns the same project when the format does not change', () => {
     const p = build();
     expect(reframeProject(p, 'youtube')).toBe(p);

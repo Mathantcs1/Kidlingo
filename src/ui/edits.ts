@@ -163,14 +163,18 @@ export function mergeRefusal(p: Project): string | null {
 
 /**
  * Registers `m` and replaces every clip on every track with one full-length clip of it at 0 on the lowest (first)
- * video track. Tracks keep their names and flags, except that the target is unlocked (only possible when it was
- * empty) and unhidden so the result is visible. Throws `mergeRefusal`'s reason.
+ * video track. Tracks keep their names, and the other (now empty) tracks keep their mute/hide flags. The target is
+ * unlocked (only possible when it was empty), unhidden and unmuted so the result is seen and heard, and solo is
+ * cleared on every track: the merged file already holds the audible mix, and a solo left on an empty track would
+ * silence it. Throws `mergeRefusal`'s reason.
  */
 export function replaceWithMedia(p: Project, m: MediaRef): Project {
   const refusal = mergeRefusal(p);
   if (refusal) throw new TimelineError(refusal);
   const target = p.tracks.find((t) => t.kind === 'video') as Track;
-  const tracks = p.tracks.map((t) => (t === target ? { ...t, locked: false, hidden: false, clips: [] } : { ...t, clips: [] }));
+  const tracks = p.tracks.map((t) =>
+    t === target ? { ...t, locked: false, hidden: false, muted: false, solo: false, clips: [] } : { ...t, solo: false, clips: [] },
+  );
   return addClip({ ...addMedia(p, m), tracks }, target.id, clipFromMedia(m, target.id, 0, p.format));
 }
 
