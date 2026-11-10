@@ -56,13 +56,35 @@ describe('acquireWebGl2', () => {
     expect(r.attempts[0]).toMatch(/ok$/);
   });
 
-  it('retries with preserveDrawingBuffer only, then with no attributes', () => {
+  it('retries with preserveDrawingBuffer only, which every attempt keeps', () => {
+    expect(contextAttempts(true)).toEqual([expect.objectContaining({ alpha: false, preserveDrawingBuffer: true }), { preserveDrawingBuffer: true }]);
     const gl = {};
-    const c = fakeCanvas((_t, attrs) => (attrs === undefined ? gl : null));
-    const r = acquireWebGl2(c, { preserveDrawingBuffer: false }, true);
+    const c = fakeCanvas((_t, attrs) => (attrs && Object.keys(attrs).length === 1 ? gl : null));
+    const r = acquireWebGl2(c, { preserveDrawingBuffer: true }, true);
     expect(r.gl).toBe(gl);
-    expect(c.calls.map((x) => x.attrs)).toEqual([contextAttempts(false)[0], { preserveDrawingBuffer: false }, undefined]);
-    expect(r.attempts.map((a) => a.split(': ').pop())).toEqual(['null', 'null', 'ok']);
+    expect(c.calls.map((x) => x.attrs)).toEqual([contextAttempts(true)[0], { preserveDrawingBuffer: true }]);
+    for (const call of c.calls) expect(call.attrs).toMatchObject({ preserveDrawingBuffer: true });
+    expect(r.attempts.map((a) => a.split(': ').pop())).toEqual(['null', 'ok']);
+  });
+
+  it('reports a context that is already lost as context-lost, without retrying', () => {
+    const lost = { isContextLost: () => true };
+    const c = fakeCanvas(() => lost);
+    let err: unknown;
+    try {
+      acquireWebGl2(c, { preserveDrawingBuffer: true }, true);
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(GlUnavailableError);
+    expect((err as GlUnavailableError).reason).toBe('context-lost');
+    expect((err as GlUnavailableError).attempts).toEqual([expect.stringMatching(/: lost$/)]);
+    expect(c.calls).toHaveLength(1);
+  });
+
+  it('accepts a context that is not lost', () => {
+    const gl = { isContextLost: () => false };
+    expect(acquireWebGl2(fakeCanvas(() => gl), {}, true).gl).toBe(gl);
   });
 
   it('stops at the second attempt when it works', () => {
@@ -82,7 +104,7 @@ describe('acquireWebGl2', () => {
     }
     expect(err).toBeInstanceOf(GlUnavailableError);
     expect((err as GlUnavailableError).reason).toBe('context-null');
-    expect((err as GlUnavailableError).attempts).toHaveLength(3);
+    expect((err as GlUnavailableError).attempts).toHaveLength(2);
   });
 
   it('does not retry on a canvas that already returned a context', () => {
@@ -108,7 +130,7 @@ describe('acquireWebGl2', () => {
       throw new Error('blocked');
     });
     expect(() => acquireWebGl2(c, {}, true)).toThrow(expect.objectContaining({ reason: 'context-null' }));
-    expect(c.calls).toHaveLength(3);
+    expect(c.calls).toHaveLength(2);
   });
 });
 
@@ -118,6 +140,13 @@ describe('preview failure text', () => {
     expect(f.headline).toBe(`The preview could not start: ${LEGACY_UNAVAILABLE}`);
     expect(f.hint).toContain('chrome://gpu');
     expect(f.hint).toContain('Chrome Settings → System');
+  });
+
+  it('names a lost context in plain English, without the legacy sentence', () => {
+    expect(plainReason('context-lost')).toBe('the browser lost the graphics context right away — try again or restart the browser');
+    const f = describeGlFailure(new GlUnavailableError('context-lost', 'lost'), CHROME_UA);
+    expect(f.headline).toBe(`The preview could not start: ${plainReason('context-lost')}.`);
+    expect(f.headline).not.toContain(LEGACY_UNAVAILABLE);
   });
 
   it('uses a generic hint outside Chrome', () => {
@@ -149,22 +178,32 @@ describe('preview failure text', () => {
 describe('createExportCompositor', () => {
   afterEach(() => vi.restoreAllMocks());
   const fake = { resize() {}, dispose() {} } as unknown as Compositor;
+  const CANVASES = [
+    { label: 'OffscreenCanvas', make: () => ({}) as OffscreenCanvas },
+    { label: 'canvas', make: () => ({}) as HTMLCanvasElement },
+  ];
 
-  it('turns a GL failure into an ExportError with the plain-English reason', () => {
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  it('turns a GL failure into an ExportError with the plain-English reason and both failures in the detail', () => {
+    const warned = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    let n = 0;
     const create = () => {
-      throw new GlUnavailableError('context-null', 'getContext returned null');
+      throw n++ === 0 ? new Error('offscreen exploded') : new GlUnavailableError('context-null', 'getContext returned null');
     };
     let err: unknown;
     try {
-      createExportCompositor(create, 10, 10, [() => ({}) as OffscreenCanvas, () => ({}) as HTMLCanvasElement]);
+      createExportCompositor(create, 10, 10, CANVASES);
     } catch (e) {
       err = e;
     }
     expect(err).toBeInstanceOf(ExportError);
     expect((err as Error).message).toContain(plainReason('context-null'));
     expect((err as Error).message).toMatch(/^The video renderer could not start/);
-    expect(logged).toHaveBeenCalledWith('clipforge: export renderer could not start', expect.any(GlUnavailableError));
+    expect((err as Error).message).not.toContain('offscreen exploded');
+    expect((err as ExportError).detail).toContain('OffscreenCanvas: offscreen exploded');
+    expect((err as ExportError).detail).toContain('canvas: context-null: getContext returned null');
+    expect(warned).toHaveBeenCalledTimes(2);
+    expect(warned).toHaveBeenCalledWith('clipforge: export renderer could not start on OffscreenCanvas', expect.any(Error));
+    expect(warned).toHaveBeenCalledWith('clipforge: export renderer could not start on canvas', expect.any(GlUnavailableError));
   });
 
   it('falls back to the next canvas', () => {
@@ -173,6 +212,6 @@ describe('createExportCompositor', () => {
       if (n++ === 0) throw new Error('offscreen failed');
       return fake;
     };
-    expect(createExportCompositor(create, 10, 10, [() => ({}) as OffscreenCanvas, () => ({}) as HTMLCanvasElement])).toBe(fake);
+    expect(createExportCompositor(create, 10, 10, CANVASES)).toBe(fake);
   });
 });

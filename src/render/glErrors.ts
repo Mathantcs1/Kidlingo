@@ -1,7 +1,7 @@
 // Typed WebGL2 start-up failures, so the preview and the exporter can tell the user why the renderer could not
 // start. Pure: no DOM or GL access, importable in Node.
 
-export type GlFailureReason = 'no-webgl2-api' | 'context-null' | 'shader' | 'resource' | 'unknown';
+export type GlFailureReason = 'no-webgl2-api' | 'context-null' | 'context-lost' | 'shader' | 'resource' | 'unknown';
 
 /** The preview's historical message; kept verbatim for the "no WebGL2" reasons. */
 export const LEGACY_UNAVAILABLE = 'WebGL2 is not available, so the preview cannot be shown.';
@@ -24,6 +24,7 @@ export class GlUnavailableError extends Error {
 const REASONS: Record<GlFailureReason, string> = {
   'no-webgl2-api': 'WebGL2 is not available (this browser does not support it)',
   'context-null': 'WebGL2 is not available (the browser refused to create a WebGL2 context; graphics acceleration may be off or blocked)',
+  'context-lost': 'the browser lost the graphics context right away — try again or restart the browser',
   shader: "the graphics driver could not compile the renderer's shaders",
   resource: 'the graphics driver could not create the GPU resources the renderer needs',
   unknown: 'an unexpected graphics error occurred',

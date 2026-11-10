@@ -50,7 +50,7 @@ test('without WebGL2 the preview says why, editing works, and Try again brings i
   const details = page.getByTestId('preview-details');
   await expect(details).not.toHaveAttribute('open');
   await expect(details).toContainText('Reason: context-null');
-  await expect(details).toContainText('webgl2 (no attributes): null');
+  await expect(details).toContainText('webgl2 {preserveDrawingBuffer:true}: null');
   await expect(details).toContainText('User agent: ');
   await expect(details).toContainText('WebGL renderer: ');
   expect(logged.some((t) => t.startsWith('clipforge: preview could not start'))).toBe(true);
