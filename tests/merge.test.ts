@@ -181,3 +181,101 @@ describe('reframeProject', () => {
     expect(p).toEqual(snap);
   });
 });
+
+describe('reframeProject keeps customised placement (Ruling G)', () => {
+  const v = { id: 'v', name: 'v', kind: 'video' as const, duration: 10, width: 1920, height: 1080, hasAudio: true };
+  const sq = { id: 'sq', name: 'sq', kind: 'image' as const, duration: 5, width: 200, height: 200, hasAudio: false };
+  const a = { id: 'a', name: 'a', kind: 'audio' as const, duration: 10, hasAudio: true };
+  const nodim = { id: 'nodim', name: 'n', kind: 'video' as const, duration: 10, hasAudio: false };
+  const fit = (m: { width: number; height: number }, w: number, h: number, mode: Clip['fit'] = 'fit') =>
+    fitTransform(m, { width: w, height: h }, mode);
+  const pipT = { x: 300, y: -200, scale: 0.25, rotation: 30, opacity: 0.5 };
+
+  /** Three video layers (background fit, PiP, customised blur) + audio, in a 1920×1080 project. */
+  const build = (): Project => {
+    const p = emptyProject('youtube');
+    return {
+      ...p,
+      media: { v, sq, a, nodim },
+      tracks: [
+        { ...p.tracks[0], id: 'L1', clips: [mk('BG', 0, 5, { mediaId: 'v', transform: fit(v, 1920, 1080) }), mk('ND', 5, 2, { mediaId: 'nodim', transform: { ...pipT } })] },
+        { ...p.tracks[0], id: 'L2', locked: true, clips: [mk('PIP', 0, 5, { mediaId: 'v', transform: { ...pipT } })] },
+        { ...p.tracks[0], id: 'L3', clips: [mk('BL', 0, 5, { mediaId: 'sq', fit: 'blur', transform: { x: -100, y: 50, scale: 2, rotation: 0, opacity: 1 } }), mk('FILL', 5, 2, { mediaId: 'sq', fit: 'fill', transform: fit(sq, 1920, 1080, 'fill') })] },
+        { ...p.tracks[1], id: 'A1', clips: [mk('AU', 0, 3, { mediaId: 'a', kind: 'audio', transform: { ...pipT } })] },
+      ],
+    };
+  };
+
+  it('refits untouched clips exactly as before (fit and fill)', () => {
+    const r = reframeProject(build(), 'vertical');
+    expect(byId(r, 'BG').transform).toEqual(fit(v, 1080, 1920));
+    expect(byId(r, 'FILL').transform).toEqual(fit(sq, 1080, 1920, 'fill'));
+  });
+
+  it('keeps a customised PiP clip in proportion: x·w′/w, y·h′/h, scale·min ratio; rotation/opacity kept', () => {
+    const r = reframeProject(build(), 'vertical');
+    const t = byId(r, 'PIP').transform;
+    expect(t.x).toBeCloseTo(300 * (1080 / 1920), 9);
+    expect(t.y).toBeCloseTo(-200 * (1920 / 1080), 9);
+    expect(t.scale).toBeCloseTo(0.25 * (1080 / 1920), 9);
+    expect(t.rotation).toBe(30);
+    expect(t.opacity).toBe(0.5);
+  });
+
+  it('treats a customised blur clip the same way and keeps its fit mode', () => {
+    const r = reframeProject(build(), 'square');
+    expect(byId(r, 'BL').transform).toEqual({ x: -100 * (1080 / 1920), y: 50, scale: 2 * (1080 / 1920), rotation: 0, opacity: 1 });
+    expect(byId(r, 'BL').fit).toBe('blur');
+  });
+
+  it('reframes every layer, locked ones included; leaves audio clips and media without size alone', () => {
+    const p = build();
+    const r = reframeProject(p, 'vertical');
+    expect(byId(r, 'PIP').transform).not.toEqual(byId(p, 'PIP').transform);
+    expect(byId(r, 'AU').transform).toEqual(pipT);
+    expect(byId(r, 'ND').transform).toEqual(pipT);
+    expect(r.tracks.map((t) => [t.id, t.locked])).toEqual(p.tracks.map((t) => [t.id, t.locked]));
+  });
+
+  it('a transform within 1e-6 of the old fit counts as untouched', () => {
+    const p = build();
+    const near = { ...fit(v, 1920, 1080), x: 5e-7, scale: 1 + 5e-7 };
+    const q = { ...p, tracks: p.tracks.map((t) => (t.id === 'L1' ? { ...t, clips: [{ ...t.clips[0], transform: near }] } : t)) };
+    expect(byId(reframeProject(q, 'vertical'), 'BG').transform).toEqual(fit(v, 1080, 1920));
+  });
+
+  it('keeps the scale within scaleBounds of the old scale', () => {
+    const p = build();
+    const tiny = { ...p, tracks: p.tracks.map((t) => (t.id === 'L2' ? { ...t, clips: [{ ...t.clips[0], transform: { ...pipT, scale: 0.02 } }] } : t)) };
+    expect(byId(reframeProject(tiny, 'vertical'), 'PIP').transform.scale).toBe(0.02);
+    // A custom 960×540 canvas to 1920×1080 doubles: a 15× clip stops at 20×, a 30× clip (already above) stays.
+    const custom = (s: number): Project => ({ ...tiny, format: { ...tiny.format, width: 960, height: 540 }, tracks: tiny.tracks.map((t) => (t.id === 'L2' ? { ...t, clips: [{ ...t.clips[0], transform: { ...pipT, scale: s } }] } : t)) });
+    expect(byId(reframeProject(custom(15), 'youtube'), 'PIP').transform.scale).toBe(20);
+    expect(byId(reframeProject(custom(30), 'youtube'), 'PIP').transform.scale).toBe(30);
+    expect(byId(reframeProject(custom(3), 'youtube'), 'PIP').transform.scale).toBe(6);
+  });
+
+  it('returns the same project when the format does not change', () => {
+    const p = build();
+    expect(reframeProject(p, 'youtube')).toBe(p);
+  });
+
+  it('A→B→A refits untouched clips to the same fit; customised clips follow the formulas both ways', () => {
+    const p = build();
+    const back = reframeProject(reframeProject(p, 'square'), 'youtube');
+    expect(byId(back, 'BG').transform).toEqual(byId(p, 'BG').transform);
+    // Lossy by design: 1920×1080 → 1080×1080 scales by min(0.5625, 1) = 0.5625, the way back by min(1.78, 1) = 1,
+    // so the scale does not return (x and y do, as each axis uses its own ratio).
+    const t = byId(back, 'PIP').transform;
+    expect(t.x).toBeCloseTo(300, 9);
+    expect(t.y).toBeCloseTo(-200, 9);
+    expect(t.scale).toBeCloseTo(0.25 * 0.5625, 9);
+  });
+
+  it('does not mutate the input', () => {
+    const p = build();
+    const snap = JSON.parse(JSON.stringify(p));
+    reframeProject(p, 'vertical');
+    expect(p).toEqual(snap);
+  });
+});

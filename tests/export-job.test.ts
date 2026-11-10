@@ -98,6 +98,38 @@ describe('merge all', () => {
     expect(useExportUi.getState().error).toContain(error.message);
   });
 
+  it('refuses before exporting when a track holding clips is locked: a toast, no dialog, nothing changed', async () => {
+    const p = twoClips();
+    const locked = { ...p, tracks: p.tracks.map((t) => (t.kind === 'video' ? { ...t, locked: true } : t)) };
+    useEditor.getState().loadProject(locked);
+    const history = useEditor.getState().history;
+    let toast: string | null = null;
+    const unsub = useEditor.subscribe((s) => {
+      if (s.lastError) toast = s.lastError;
+    });
+    await startMerge();
+    unsub();
+    expect(toast).toBe('Track is locked');
+    expect(exportProject).not.toHaveBeenCalled();
+    expect(importFile).not.toHaveBeenCalled();
+    expect(useExportUi.getState().open).toBeNull();
+    expect(useEditor.getState().history).toBe(history);
+  });
+
+  it('an empty locked first video track does not block it and ends unlocked with the merged clip', async () => {
+    const p = twoClips();
+    const [video, audio] = p.tracks;
+    const layered = { ...p, tracks: [{ ...video, id: 'empty', locked: true, hidden: true, clips: [] }, { ...video, id: 'top' }, audio] };
+    useEditor.getState().loadProject(layered);
+    await startMerge();
+    expect(exportProject).toHaveBeenCalledTimes(1);
+    const out = useEditor.getState().history.present;
+    expect(out.tracks[0]).toMatchObject({ id: 'empty', locked: false, hidden: false });
+    expect(out.tracks.map((t) => t.clips.map((c) => c.mediaId))).toEqual([['merged'], [], []]);
+    useEditor.getState().undo();
+    expect(useEditor.getState().history.present).toBe(layered);
+  });
+
   it('replaces the timeline in one step and keeps the media on success', async () => {
     const depth = useEditor.getState().history.past.length;
     await startMerge();

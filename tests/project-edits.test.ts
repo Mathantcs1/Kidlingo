@@ -12,6 +12,7 @@ import {
   mergeClips,
   projectHasWork,
   removeMediaFromProject,
+  mergeRefusal,
   replaceWithMedia,
   rippleDeleteClips,
   setClipFit,
@@ -407,5 +408,73 @@ describe('withClipTransform (live drag preview)', () => {
   it('is the same project when the clip is gone', () => {
     const p = project();
     expect(withClipTransform(p, 'nope', t)).toBe(p);
+  });
+});
+
+describe('replaceWithMedia with layers (merge all)', () => {
+  /** Video layers L1 (a, b), L2 (empty, hidden, muted, named), L3 (c, solo); audio A1 (x, muted) and A2 (empty, locked). */
+  function layered(): Project {
+    const p = project();
+    const [v, a] = p.tracks;
+    return {
+      ...p,
+      tracks: [
+        { ...v, id: 'L1', name: 'Base', clips: [clip('a', 0, 2), clip('b', 2, 1, 'w')] },
+        { ...v, id: 'L2', name: 'Empty', hidden: true, muted: true, clips: [] },
+        { ...v, id: 'L3', name: 'Top', solo: true, clips: [clip('c', 0, 2)] },
+        { ...a, id: 'A1', muted: true, clips: [clip('x', 0, 3, 't', 'audio')] },
+        { ...a, id: 'A2', locked: true, clips: [] },
+      ],
+    };
+  }
+  const setTrack = (p: Project, id: string, patch: Partial<Project['tracks'][number]>): Project => ({
+    ...p,
+    tracks: p.tracks.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+  });
+
+  it('puts the one merged clip at 0 on the lowest video track and empties every other track, keeping names and flags', () => {
+    const p = layered();
+    const r = replaceWithMedia(p, other);
+    expect(r.tracks.map((t) => t.clips.map((c) => c.mediaId))).toEqual([['w'], [], [], [], []]);
+    expect(r.tracks[0].clips[0]).toMatchObject({ start: 0, in: 0, out: other.duration, kind: 'video' });
+    expect(r.media.w).toEqual(other);
+    const flags = (q: Project) => q.tracks.map(({ clips: _c, ...rest }) => rest);
+    expect(flags(r)).toEqual(flags(p));
+  });
+
+  it('unlocks and unhides an EMPTY locked/hidden target track so the result is visible and editable', () => {
+    const p = setTrack(setTrack(layered(), 'L1', { clips: [] }), 'L1', { locked: true, hidden: true });
+    const r = replaceWithMedia(p, other);
+    expect(r.tracks[0]).toMatchObject({ id: 'L1', locked: false, hidden: false, name: 'Base' });
+    expect(r.tracks[0].clips).toHaveLength(1);
+  });
+
+  it('resets hidden on the target even when it holds clips (unlocked)', () => {
+    const r = replaceWithMedia(setTrack(layered(), 'L1', { hidden: true }), other);
+    expect(r.tracks[0].hidden).toBe(false);
+  });
+
+  it('refuses when any track holding clips is locked (target or not) and leaves the input alone', () => {
+    for (const id of ['L1', 'L3', 'A1']) {
+      const p = setTrack(layered(), id, { locked: true });
+      const snap = JSON.stringify(p);
+      expect(() => replaceWithMedia(p, other)).toThrow('Track is locked');
+      expect(mergeRefusal(p)).toBe('Track is locked');
+      expect(JSON.stringify(p)).toBe(snap);
+    }
+    expect(mergeRefusal(layered())).toBeNull();
+  });
+
+  it('mergeRefusal reports a project without a video track', () => {
+    const p = { ...layered(), tracks: layered().tracks.filter((t) => t.kind === 'audio') };
+    expect(mergeRefusal(p)).toMatch(/no video track/);
+    expect(() => replaceWithMedia(p, other)).toThrow(/no video track/);
+  });
+
+  it('does not mutate the input', () => {
+    const p = layered();
+    const snap = JSON.parse(JSON.stringify(p));
+    replaceWithMedia(p, other);
+    expect(p).toEqual(snap);
   });
 });

@@ -1,7 +1,7 @@
 // Pure project edits behind the editor's buttons and shortcuts (composed from core/ operations).
 import { fitTransform, joinClips } from '../core/merge';
 import { clipEnd } from '../core/model';
-import type { Clip, Id, MediaRef, Project } from '../core/model';
+import type { Clip, Id, MediaRef, Project, Track } from '../core/model';
 import { MIN_CLIP, TimelineError, addClip, assertUnlocked, deleteClip, findClip, splitClip } from '../core/timeline';
 import { clipFromMedia } from '../media/clip';
 import { laneRejects } from './drag';
@@ -148,14 +148,30 @@ export function dropMedia(p: Project, trackId: Id, mediaId: Id, start: number): 
   return addClip(p, track.id, clipFromMedia(m, track.id, start, p.format));
 }
 
-/** Registers `m` and replaces every clip on every track with one full-length clip of it at 0 (first video track). */
+export const NO_VIDEO_TRACK = 'There is no video track to merge into';
+
+/**
+ * Why merge-all cannot replace the timeline of `p`, or null: there is no video track, or a track that holds clips
+ * is locked (an empty locked track does not block it). Checked before exporting so nobody waits for a merge that
+ * cannot be applied.
+ */
+export function mergeRefusal(p: Project): string | null {
+  if (!p.tracks.some((t) => t.kind === 'video')) return NO_VIDEO_TRACK;
+  if (p.tracks.some((t) => t.locked && t.clips.length > 0)) return 'Track is locked';
+  return null;
+}
+
+/**
+ * Registers `m` and replaces every clip on every track with one full-length clip of it at 0 on the lowest (first)
+ * video track. Tracks keep their names and flags, except that the target is unlocked (only possible when it was
+ * empty) and unhidden so the result is visible. Throws `mergeRefusal`'s reason.
+ */
 export function replaceWithMedia(p: Project, m: MediaRef): Project {
-  const track = p.tracks.find((t) => t.kind === 'video');
-  if (!track) throw new TimelineError('There is no video track to merge into');
-  // Clearing changes every track that holds clips, and the new clip lands on `track`.
-  if (track.locked || p.tracks.some((t) => t.locked && t.clips.length > 0)) throw new TimelineError('Track is locked');
-  const cleared: Project = { ...addMedia(p, m), tracks: p.tracks.map((t) => ({ ...t, clips: [] })) };
-  return addClip(cleared, track.id, clipFromMedia(m, track.id, 0, p.format));
+  const refusal = mergeRefusal(p);
+  if (refusal) throw new TimelineError(refusal);
+  const target = p.tracks.find((t) => t.kind === 'video') as Track;
+  const tracks = p.tracks.map((t) => (t === target ? { ...t, locked: false, hidden: false, clips: [] } : { ...t, clips: [] }));
+  return addClip({ ...addMedia(p, m), tracks }, target.id, clipFromMedia(m, target.id, 0, p.format));
 }
 
 /** Number of clips on video tracks. */

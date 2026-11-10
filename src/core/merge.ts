@@ -2,6 +2,7 @@ import { FORMATS } from './formats';
 import type { FormatKey } from './formats';
 import { clipDuration, clipEnd } from './model';
 import type { Clip, Id, Project, Transform } from './model';
+import { scaleBounds } from './scale';
 import { TimelineError, assertUnlocked, findClip } from './timeline';
 
 const EPS = 1e-9;
@@ -77,24 +78,41 @@ export function fitTransform(
   return { x: 0, y: 0, scale, rotation: 0, opacity: 1 };
 }
 
-/** Intentionally ignores track locks: a format change rescales every clip, locked or not. */
+const SAME = 1e-6;
+
+function sameTransform(a: Transform, b: Transform): boolean {
+  return (['x', 'y', 'scale', 'rotation', 'opacity'] as const).every((k) => Math.abs(a[k] - b[k]) <= SAME);
+}
+
+/**
+ * Switches the canvas to `key`. A visual clip whose transform still equals its fit for the old canvas (within 1e-6)
+ * is refit to the new one; a customised clip (moved, scaled, rotated or faded) keeps its relative placement:
+ * x·w′/w, y·h′/h, scale·min(w′/w, h′/h) kept within `scaleBounds` of its scale, rotation and opacity unchanged.
+ * That is lossy: a round trip through another aspect can leave a customised clip smaller (the min ratio). Audio
+ * clips and media without a known size are left alone. Intentionally ignores track locks: the format is a
+ * sequence-level setting and every clip, locked or not, must follow it. Returns `p` itself when the canvas size
+ * does not change (no undo step).
+ */
 export function reframeProject(p: Project, key: FormatKey): Project {
   const { width, height } = FORMATS[key];
+  const old = p.format;
+  if (old.width === width && old.height === height) return p;
   const canvas = { width, height };
+  const rx = width / old.width;
+  const ry = height / old.height;
+  const reframe = (c: Clip): Clip => {
+    const m = p.media[c.mediaId];
+    if (c.kind === 'audio' || !m || !m.width || !m.height) return { ...c };
+    const dims = { width: m.width, height: m.height };
+    const t = c.transform;
+    if (sameTransform(t, fitTransform(dims, old, c.fit))) return { ...c, transform: fitTransform(dims, canvas, c.fit) };
+    const [lo, hi] = scaleBounds(t.scale);
+    const scale = Math.min(hi, Math.max(lo, t.scale * Math.min(rx, ry)));
+    return { ...c, transform: { ...t, x: t.x * rx, y: t.y * ry, scale } };
+  };
   return {
     ...p,
     format: { ...p.format, width, height },
-    tracks: p.tracks.map((t) =>
-      t.kind === 'audio'
-        ? { ...t, clips: t.clips.map((c) => ({ ...c })) }
-        : {
-            ...t,
-            clips: t.clips.map((c) => {
-              const m = p.media[c.mediaId];
-              if (c.kind === 'audio' || !m || !m.width || !m.height) return { ...c };
-              return { ...c, transform: fitTransform({ width: m.width, height: m.height }, canvas, c.fit) };
-            }),
-          },
-    ),
+    tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.map(t.kind === 'audio' ? (c) => ({ ...c }) : reframe) })),
   };
 }

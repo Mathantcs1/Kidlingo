@@ -6,7 +6,7 @@ import type { ExportQuality } from '../export/exporter';
 import { removeMedia } from '../media/storage';
 import { describeStorageError } from '../media/storageErrors';
 import { useEditor } from '../state/store';
-import { replaceWithMedia } from './edits';
+import { NO_VIDEO_TRACK, mergeRefusal, replaceWithMedia } from './edits';
 import { safeFilename } from './exportName';
 import { cleanTemp, keepDownloaded } from './exportTemp';
 import { loadChunk } from '../loadChunk';
@@ -172,14 +172,21 @@ async function runExport(quality: ExportQuality, name: string): Promise<void> {
 /**
  * Renders the whole timeline at 1080p, imports the result as new media and replaces every clip with one clip
  * of it: ONE undoable apply. On failure or cancel the project is left untouched and the imported media removed.
+ * A locked track holding clips refuses up front with a toast (no dialog, no export).
  */
 export async function startMerge(): Promise<void> {
   if (ui().open) return;
   editor().setPlaying(false);
-  set({ ...closed, open: 'merge' });
   const p = editor().history.present;
-  if (!p.tracks.some((t) => t.kind === 'video')) {
-    set({ phase: 'error', error: 'There is no video track to merge into' });
+  const refusal = mergeRefusal(p);
+  if (refusal && refusal !== NO_VIDEO_TRACK) {
+    // A locked track holding clips: say so the way every other locked edit does, before any export work.
+    useEditor.setState({ lastError: refusal });
+    return;
+  }
+  set({ ...closed, open: 'merge' });
+  if (refusal) {
+    set({ phase: 'error', error: refusal });
     return;
   }
   try {

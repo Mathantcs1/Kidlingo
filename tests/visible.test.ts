@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { visualClipsAt } from '../src/render/visible';
+import { shownClipIds, visualClipsAt } from '../src/render/visible';
 import { emptyProject, newTrack } from '../src/core/model';
 import type { Clip, Project, Track } from '../src/core/model';
 
@@ -67,5 +67,28 @@ describe('visualClipsAt', () => {
     expect(visualClipsAt(p, 2)).toHaveLength(1);
     expect(visualClipsAt(p, 3)).toHaveLength(0);
     expect(visualClipsAt(p, 1.999)).toHaveLength(0);
+  });
+});
+
+describe('shownClipIds', () => {
+  it('holds every clip of every non-hidden video track, at any time, and nothing else', () => {
+    const a = clip('video', 0, 1);
+    const b = clip('image', 10, 1);
+    const hiddenClip = clip('video', 0, 1);
+    const music = clip('audio', 0, 1);
+    const p = projectOf([track('video', [a, b]), track('video', [hiddenClip], { hidden: true }), track('audio', [music])]);
+    expect([...shownClipIds(p)].sort()).toEqual([a.id, b.id].sort());
+  });
+
+  it('agrees with visualClipsAt for six stacked layers, two hidden', () => {
+    const tracks = Array.from({ length: 6 }, (_, i) => track('video', [clip('video', 0, 2), clip('video', 2, 2)], { hidden: i % 3 === 1 }));
+    const p = projectOf(tracks);
+    const shown = shownClipIds(p);
+    expect(shown.size).toBe(8);
+    for (const t of [0.5, 2.5]) {
+      const visible = visualClipsAt(p, t);
+      expect(visible).toHaveLength(4);
+      expect(visible.every((c) => shown.has(c.id))).toBe(true);
+    }
   });
 });

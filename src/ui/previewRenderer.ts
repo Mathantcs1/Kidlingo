@@ -2,7 +2,7 @@
 import type { Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
-import { visualClipsAt } from '../render/visible';
+import { shownClipIds, visualClipsAt } from '../render/visible';
 import { ChunkLoadError, loadChunk } from '../loadChunk';
 
 export interface PreviewCallbacks {
@@ -117,7 +117,7 @@ export class PreviewRenderer {
     for (const id of this.failedClips) if (!live.has(id)) this.failedClips.delete(id);
     for (const id of this.reportedMedia) if (!p.media[id]) this.reportedMedia.delete(id);
     // Hidden layers are not drawn, so their clips get no decoder (and lose a recent one).
-    const shown = new Set(p.tracks.filter((tr) => tr.kind === 'video' && !tr.hidden).flatMap((tr) => tr.clips.map((c) => c.id)));
+    const shown = shownClipIds(p);
     const active = visualClipsAt(p, t).filter((c) => c.kind === 'video');
     const activeIds = new Set(active.map((c) => c.id));
     // Map order is least recently shown first: move the active ones to the end.

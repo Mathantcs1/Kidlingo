@@ -3,6 +3,7 @@
 // pixels to format pixels with the displayed canvas box, both ways); `Transform.x/y` stay offsets from the canvas centre, as in `clipMatrix`,
 // whose quad `clipCorners` reproduces exactly (see tests/overlay-geometry.test.ts).
 import type { Transform } from '../core/model';
+import { scaleBounds } from '../core/scale';
 import type { Size } from './geometry';
 
 export type Point = { x: number; y: number };
@@ -10,8 +11,7 @@ export type Point = { x: number; y: number };
 export type Corners = [Point, Point, Point, Point];
 export type Handle = 'move' | 'scale-tl' | 'scale-tr' | 'scale-br' | 'scale-bl' | 'rotate';
 
-export const MIN_SCALE = 0.02;
-export const MAX_SCALE = 20;
+export { MAX_SCALE, MIN_SCALE, scaleBounds } from '../core/scale';
 /**
  * Distance of the rotate handle beyond the top edge when the caller gives none, in FORMAT pixels (not CSS px: the
  * overlay should pass its own CSS offset converted to format px).
@@ -21,16 +21,6 @@ export const ROTATE_HANDLE_OFFSET = 24;
 const CORNER_HANDLES: Handle[] = ['scale-tl', 'scale-tr', 'scale-br', 'scale-bl'];
 const fin = (...v: number[]): boolean => v.every(Number.isFinite);
 const dist = (a: Point, b: Point): number => Math.hypot(a.x - b.x, a.y - b.y);
-
-/**
- * The scale range an edit may move a clip within: 0.02..20, widened to include `cur` so a clip already outside it
- * (a 16 px image fitted to 1080p sits at 67.5×) is never pulled to the limit by a small nudge. A non-finite or
- * non-positive `cur` gives the plain range.
- */
-export function scaleBounds(cur: number): [number, number] {
-  if (!Number.isFinite(cur) || cur <= 0) return [MIN_SCALE, MAX_SCALE];
-  return [Math.min(MIN_SCALE, cur), Math.max(MAX_SCALE, cur)];
-}
 
 /** Degrees normalised to (−180, 180] (never −0). */
 export function normaliseDegrees(deg: number): number {
