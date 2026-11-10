@@ -9,7 +9,12 @@ test.setTimeout(120_000);
 
 const dir = ensureFixtures();
 const quad = join(dir, 'quad.mp4');
-const files: [number, string][] = [[0, quad], ...Object.entries(ROTATED).map(([r, f]) => [Number(r), join(dir, f)] as [number, string])];
+const files: [string | number, string][] = [
+  [0, quad],
+  ...Object.entries(ROTATED).map(([r, f]) => [Number(r), join(dir, f)] as [number, string]),
+  ['mirrored', join(dir, 'quad-hflip.mp4')],
+  ['90° + mirrored', join(dir, 'quad-cw90-hflip.mp4')],
+];
 
 type Img = { width: number; height: number; data: ArrayLike<number> };
 
@@ -26,12 +31,12 @@ function corners(img: Img, channels: number): number[][] {
 }
 
 const truth = new Map(files.map(([r, f]) => [r, ffmpegFrame(f)]));
-const truthCorners = (r: number): number[][] => {
+const truthCorners = (r: string | number): number[][] => {
   const t = truth.get(r)!;
   return corners({ width: t.width, height: t.height, data: t.rgb }, 3);
 };
 
-test('imports rotated video with its display size and draws it upright (0/90/180/270)', async ({ page }) => {
+test('imports rotated/mirrored video with its display size and draws it as displayed (0/90/180/270, flips)', async ({ page }) => {
   await openHarness(page);
   const media = await importPaths(page, files.map(([, f]) => f));
   for (const [i, [rot]] of files.entries()) {

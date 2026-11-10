@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyMat3, clipMatrix, fullscreenMatrix, letterbox, rotatedSize, uvMatrix } from '../src/render/gl';
+import { applyMat3, clipMatrix, frameOrientation, fullscreenMatrix, letterbox, rotatedSize, uvMatrix } from '../src/render/gl';
 import { defaultTransform } from '../src/core/model';
 import type { Transform } from '../src/core/model';
 
@@ -138,5 +138,43 @@ describe('uvMatrix / rotatedSize', () => {
     expect(rotatedSize(raw, 180)).toEqual(raw);
     expect(rotatedSize(raw, 90)).toEqual({ width: 360, height: 640 });
     expect(rotatedSize(raw, 270)).toEqual({ width: 360, height: 640 });
+  });
+});
+
+describe('mirrored sources', () => {
+  it('mirror swaps left and right of the displayed image', () => {
+    const m = uvMatrix(0, false, true);
+    expectPoint(applyMat3(m, 0, 0), [1, 0]);
+    expectPoint(applyMat3(m, 1, 1), [0, 1]);
+  });
+
+  it('mirroring applies after rotation: 90° + mirror shows raw TL at the displayed TL', () => {
+    // 90° clockwise puts raw TL at the displayed top-right; mirroring then moves it to the top-left.
+    const m = uvMatrix(90, false, true);
+    expectPoint(applyMat3(m, 0, 0), [0, 0]);
+    expectPoint(applyMat3(m, 1, 0), [0, 1]);
+    expectPoint(applyMat3(m, 0, 1), [1, 0]);
+  });
+
+  it('mirror composes with flipV', () => {
+    expectPoint(applyMat3(uvMatrix(0, true, true), 0, 0), [1, 1]);
+  });
+});
+
+describe('frameOrientation', () => {
+  it('uses the track orientation for frames that carry none', () => {
+    expect(frameOrientation({ rotation: 90, flip: true }, {})).toEqual({ rotation: 90, mirror: true });
+    expect(frameOrientation({ rotation: 270, flip: false }, { rotation: 0 })).toEqual({ rotation: 270, mirror: false });
+  });
+
+  it('subtracts what a frame says is already applied, so nothing is turned twice', () => {
+    expect(frameOrientation({ rotation: 90, flip: false }, { rotation: 90 })).toEqual({ rotation: 0, mirror: false });
+    expect(frameOrientation({ rotation: 90, flip: false }, { rotation: 180 })).toEqual({ rotation: 270, mirror: false });
+    expect(frameOrientation({ rotation: 0, flip: true }, { flip: true })).toEqual({ rotation: 0, mirror: false });
+  });
+
+  it('ignores non-quarter or non-numeric frame rotations', () => {
+    expect(frameOrientation({ rotation: 90, flip: false }, { rotation: 45 })).toEqual({ rotation: 90, mirror: false });
+    expect(frameOrientation({ rotation: 90, flip: false }, { rotation: undefined })).toEqual({ rotation: 90, mirror: false });
   });
 });

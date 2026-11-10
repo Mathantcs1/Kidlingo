@@ -2,7 +2,7 @@ import { activeClipsAt } from '../core/timeline';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
-import { QuadRenderer, clipMatrix, createContext, createTexture, letterbox, rotatedSize, uploadTexture, uvMatrix } from './gl';
+import { QuadRenderer, clipMatrix, createContext, createTexture, frameOrientation, letterbox, rotatedSize, uploadTexture, uvMatrix } from './gl';
 import type { Mat3, Size, TextureSlot } from './gl';
 import { ImageTextures } from './images';
 
@@ -141,8 +141,9 @@ class GlCompositor implements Compositor {
       const slot = this.videoSlot(source, n);
       uploadTexture(this.gl, slot, frame, width, height);
       // Frames arrive unrotated; draw them at their displayed size and turn the texture lookup instead.
-      const size = rotatedSize({ width, height }, source.rotation);
-      draws.push({ clip, slot, size, uv: uvMatrix(source.rotation) });
+      const { rotation, mirror } = frameOrientation(source, frame as { rotation?: unknown; flip?: unknown });
+      const size = rotatedSize({ width, height }, rotation);
+      draws.push({ clip, slot, size, uv: uvMatrix(rotation, false, mirror) });
     }
     this.pruneVideoSlots(sources);
     this.images.prune(shownImages, p);

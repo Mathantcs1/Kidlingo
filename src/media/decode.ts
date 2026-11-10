@@ -19,6 +19,8 @@ export interface VideoSource {
    * turned by this much (portrait phone videos are usually stored landscape with 90 or 270).
    */
   readonly rotation: Rotation;
+  /** Whether the metadata asks for the frames to be mirrored horizontally (after `rotation`); not applied either. */
+  readonly flip: boolean;
   /** Releases the decoders, cached frames and the underlying Input. Safe to call more than once. */
   close(): void;
 }
@@ -76,6 +78,7 @@ class DecodedVideoSource implements VideoSource {
     sink: VideoSampleSink | null,
     firstTimestamp: number,
     readonly rotation: Rotation,
+    readonly flip: boolean,
   ) {
     this.input = input;
     this.sink = sink;
@@ -195,9 +198,10 @@ export async function openVideoSource(mediaId: Id): Promise<VideoSource> {
   const input = openInput(await getMediaFile(mediaId));
   try {
     const track = await input.getPrimaryVideoTrack();
-    if (!track) return new DecodedVideoSource(input, null, 0, 0);
+    if (!track) return new DecodedVideoSource(input, null, 0, 0, false);
     const first = await track.getFirstTimestamp();
-    return new DecodedVideoSource(input, new VideoSampleSink(track), first, await track.getRotation());
+    const [rotation, flip] = await Promise.all([track.getRotation(), track.getFlip()]);
+    return new DecodedVideoSource(input, new VideoSampleSink(track), first, rotation, flip);
   } catch (e) {
     input.dispose();
     throw e;

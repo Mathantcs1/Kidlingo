@@ -75,19 +75,36 @@ export function rotatedSize(raw: Size, rotation: Rotation): Size {
 }
 
 /**
- * Maps the unit quad's (u, v), v = 0 at the top of the DISPLAYED (rotated) image, to coordinates in the raw,
- * unrotated texture: the frame shows up rotated `rotation` degrees clockwise. `flipV` additionally turns the
- * texture upside down (for framebuffer textures, which are stored bottom row first).
+ * Maps the unit quad's (u, v), v = 0 at the top of the DISPLAYED image, to coordinates in the raw, unrotated
+ * texture: the frame shows up rotated `rotation` degrees clockwise and then, with `mirror`, flipped horizontally
+ * (Mediabunny's order). `flipV` additionally turns the texture upside down (for framebuffer textures, which are
+ * stored bottom row first).
  */
-export function uvMatrix(rotation: Rotation, flipV = false): Mat3 {
+export function uvMatrix(rotation: Rotation, flipV = false, mirror = false): Mat3 {
   const base: Record<Rotation, Mat3> = {
     0: [1, 0, 0, 0, 1, 0, 0, 0, 1],
     90: [0, -1, 0, 1, 0, 0, 0, 1, 1],
     180: [-1, 0, 0, 0, -1, 0, 1, 1, 1],
     270: [0, 1, 0, -1, 0, 0, 1, 0, 1],
   };
-  const m = base[rotation];
-  if (!flipV) return m;
-  // (s, t) -> (s, 1 - t) applied after the rotation.
-  return [m[0], -m[1], 0, m[3], -m[4], 0, m[6], 1 - m[7], 1];
+  let m = base[rotation];
+  // Mirror: the displayed (u, v) shows the rotated image's (1 - u, v).
+  if (mirror) m = [-m[0], -m[1], 0, m[3], m[4], 0, m[0] + m[6], m[1] + m[7], 1];
+  // flipV: (s, t) -> (s, 1 - t) applied after the rotation.
+  if (flipV) m = [m[0], -m[1], 0, m[3], -m[4], 0, m[6], 1 - m[7], 1];
+  return m;
+}
+
+/**
+ * How to orient a decoded frame: the track's rotation/flip minus whatever the frame object says is already applied
+ * (VideoFrame.rotation/flip, where a browser or library sets them), so a frame is never turned twice. Frame values
+ * that are not quarter turns or booleans are ignored.
+ */
+export function frameOrientation(
+  track: { rotation: Rotation; flip: boolean },
+  frame: { rotation?: unknown; flip?: unknown },
+): { rotation: Rotation; mirror: boolean } {
+  const applied = typeof frame.rotation === 'number' && frame.rotation % 90 === 0 ? frame.rotation : 0;
+  const rotation = ((((track.rotation - applied) % 360) + 360) % 360) as Rotation;
+  return { rotation, mirror: track.flip !== (frame.flip === true) };
 }
