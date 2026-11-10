@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { audibleClips, planWindow, windowBounds } from '../src/audio/plan';
+import { audibleClips, planWindow, trackAudible, windowBounds } from '../src/audio/plan';
 import type { Segment } from '../src/audio/plan';
 import { emptyProject, newTrack } from '../src/core/model';
-import type { Clip, MediaRef, Project } from '../src/core/model';
+import type { Clip, MediaRef, Project, Track } from '../src/core/model';
 
 const media = (id: string, over: Partial<MediaRef> = {}): MediaRef => ({
   id,
@@ -65,6 +65,63 @@ describe('audibleClips', () => {
   it('skips clips with a NaN volume or no duration', () => {
     const p = projectOf([clip('m1', 0, 0, 2, { volume: Number.NaN }), clip('m1', 3, 1, 1)]);
     expect(audibleClips(p)).toEqual([]);
+  });
+});
+
+describe('mute and solo', () => {
+  /** Video track 'v' (clip with embedded audio), audio tracks 'a1' and 'a2' (one clip each). */
+  function mixProject(flags: Partial<Record<'v' | 'a1' | 'a2', Partial<Track>>> = {}) {
+    const video = clip('m1', 0, 0, 2);
+    const one = clip('m2', 0, 0, 2, { kind: 'audio' });
+    const two = clip('m3', 0, 0, 2, { kind: 'audio' });
+    const base = projectOf([video], [one], [media('m3')]);
+    const p: Project = {
+      ...base,
+      tracks: [
+        { ...base.tracks[0], ...flags.v },
+        { ...base.tracks[1], id: 'a1', ...flags.a1 },
+        { ...newTrack('audio'), id: 'a2', clips: [two], ...flags.a2 },
+      ],
+    };
+    return { p, ids: { v: video.id, a1: one.id, a2: two.id } };
+  }
+  const ids = (p: Project): string[] => audibleClips(p).map((c) => c.id);
+
+  it('without mute or solo every track is audible (unchanged behaviour)', () => {
+    const { p, ids: i } = mixProject();
+    expect(ids(p)).toEqual([i.v, i.a1, i.a2]);
+    for (const t of p.tracks) expect(trackAudible(p, t)).toBe(true);
+  });
+
+  it('a muted track is silent, whatever its kind', () => {
+    const { p, ids: i } = mixProject({ a1: { muted: true } });
+    expect(ids(p)).toEqual([i.v, i.a2]);
+    const { p: q, ids: j } = mixProject({ v: { muted: true } });
+    expect(ids(q)).toEqual([j.a1, j.a2]);
+  });
+
+  it('solo on one audio track silences every other track, video-track audio included', () => {
+    const { p, ids: i } = mixProject({ a2: { solo: true } });
+    expect(ids(p)).toEqual([i.a2]);
+    expect(trackAudible(p, p.tracks[0])).toBe(false);
+  });
+
+  it('a soloed video track keeps its embedded audio and silences the others', () => {
+    const { p, ids: i } = mixProject({ v: { solo: true } });
+    expect(ids(p)).toEqual([i.v]);
+    const { p: q, ids: j } = mixProject({ v: { solo: true }, a1: { solo: true } });
+    expect(ids(q)).toEqual([j.v, j.a1]);
+  });
+
+  it('mute wins over solo', () => {
+    const { p } = mixProject({ a1: { solo: true, muted: true } });
+    expect(ids(p)).toEqual([]);
+    expect(trackAudible(p, p.tracks[1])).toBe(false);
+  });
+
+  it('hidden does not affect audio', () => {
+    const { p, ids: i } = mixProject({ v: { hidden: true } });
+    expect(ids(p)).toEqual([i.v, i.a1, i.a2]);
   });
 });
 

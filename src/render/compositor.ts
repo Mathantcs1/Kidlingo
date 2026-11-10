@@ -1,4 +1,3 @@
-import { activeClipsAt } from '../core/timeline';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
@@ -6,6 +5,7 @@ import { QuadRenderer, clipMatrix, createContext, createTexture, forceOpaque, fr
 import type { Mat3, Size, TextureSlot } from './gl';
 import { withAttempts } from './glErrors';
 import { ImageTextures } from './images';
+import { visualClipsAt } from './visible';
 
 export interface Compositor {
   /**
@@ -192,15 +192,6 @@ class GlCompositor implements Compositor {
       this.videoSlots.delete(source);
     }
   }
-}
-
-/** Active video/image clips on video tracks, bottom track first. */
-function visualClipsAt(p: Project, t: number): Clip[] {
-  const onVideoTracks = new Set<Id>();
-  for (const track of p.tracks) {
-    if (track.kind === 'video') for (const c of track.clips) onVideoTracks.add(c.id);
-  }
-  return activeClipsAt(p, t).filter((c) => onVideoTracks.has(c.id) && (c.kind === 'video' || c.kind === 'image'));
 }
 
 /** Throws GlUnavailableError when WebGL2 cannot be started on `canvas` (see GlFailureReason). */

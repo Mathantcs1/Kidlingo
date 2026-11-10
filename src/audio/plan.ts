@@ -1,6 +1,6 @@
 // DOM-free planning of windowed audio: which part of which clip sounds in a timeline window.
 import { clipDuration, clipEnd } from '../core/model';
-import type { Clip, Id, Project } from '../core/model';
+import type { Clip, Id, Project, Track } from '../core/model';
 
 /** One clip's contribution to a window: source range [srcFrom, srcTo) plays from timeline time `when`. */
 export interface Segment {
@@ -13,12 +13,23 @@ export interface Segment {
 }
 
 /**
- * Clips that can make sound: non-missing audio clips (any track) and video clips whose media has audio.
- * Images are silent; a volume of 0 (or NaN) contributes nothing and is never decoded.
+ * Whether a track may sound: never when muted; when any track (of any kind) is soloed, only soloed tracks do.
+ * A video track's embedded audio follows its own track's flags; `hidden` affects the picture only.
+ */
+export function trackAudible(p: Project, track: Track): boolean {
+  if (track.muted) return false;
+  return track.solo || !p.tracks.some((t) => t.solo);
+}
+
+/**
+ * Clips that can make sound: non-missing audio clips (any track) and video clips whose media has audio, on
+ * tracks that are audible (see trackAudible). Images are silent; a volume of 0 (or NaN) contributes nothing and
+ * is never decoded.
  */
 export function audibleClips(p: Project): Clip[] {
   const out: Clip[] = [];
   for (const track of p.tracks) {
+    if (!trackAudible(p, track)) continue;
     for (const clip of track.clips) {
       const media = p.media[clip.mediaId];
       if (!media || media.missing) continue;

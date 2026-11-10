@@ -1,8 +1,9 @@
-import { clipEnd, newId } from '../core/model';
-import type { Clip, Id, Project } from '../core/model';
+import { newId } from '../core/model';
+import type { Id, Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
+import { visualClipsAt } from '../render/visible';
 import { getCapabilities } from '../media/support';
 import { ExportError } from './errors';
 import { loadChunk } from '../loadChunk';
@@ -243,22 +244,19 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
 
     compositor = createExportCompositor(createCompositor, width, height);
     // Decoders are opened when their clip comes under the playhead and closed as soon as it has passed, so only
-    // the clips visible in the current frame hold a decoder, cached frames and a texture.
-    const videoClips: Clip[] = p.tracks
-      .filter((track) => track.kind === 'video')
-      .flatMap((track) => track.clips)
-      .filter((clip) => clip.kind === 'video' && p.media[clip.mediaId] && !p.media[clip.mediaId].missing);
+    // the clips visible in the current frame (never those on hidden layers) hold a decoder, frames and a texture.
     const syncSources = async (t: number): Promise<void> => {
-      for (const clip of videoClips) {
-        const active = clip.start <= t && t < clipEnd(clip);
-        const open = sources.get(clip.id);
-        if (open && !active) {
-          open.close();
-          sources.delete(clip.id);
-        }
+      const visible = visualClipsAt(p, t).filter(
+        (clip) => clip.kind === 'video' && p.media[clip.mediaId] && !p.media[clip.mediaId].missing,
+      );
+      const ids = new Set(visible.map((clip) => clip.id));
+      for (const [id, open] of sources) {
+        if (ids.has(id)) continue;
+        open.close();
+        sources.delete(id);
       }
-      for (const clip of videoClips) {
-        if (sources.has(clip.id) || !(clip.start <= t && t < clipEnd(clip))) continue;
+      for (const clip of visible) {
+        if (sources.has(clip.id)) continue;
         sources.set(clip.id, await openVideoSource(clip.mediaId));
         checkAbort();
       }

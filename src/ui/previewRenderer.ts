@@ -1,8 +1,8 @@
 // Drives the preview compositor: latest-wins render scheduling and one VideoSource per active video clip.
 import type { Id, Project } from '../core/model';
-import { activeClipsAt } from '../core/timeline';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
+import { visualClipsAt } from '../render/visible';
 import { ChunkLoadError, loadChunk } from '../loadChunk';
 
 export interface PreviewCallbacks {
@@ -116,8 +116,9 @@ export class PreviewRenderer {
     const live = new Set(p.tracks.flatMap((tr) => tr.clips.map((c) => c.id)));
     for (const id of this.failedClips) if (!live.has(id)) this.failedClips.delete(id);
     for (const id of this.reportedMedia) if (!p.media[id]) this.reportedMedia.delete(id);
-    const videoTracks = new Set(p.tracks.filter((tr) => tr.kind === 'video').flatMap((tr) => tr.clips.map((c) => c.id)));
-    const active = activeClipsAt(p, t).filter((c) => c.kind === 'video' && videoTracks.has(c.id));
+    // Hidden layers are not drawn, so their clips get no decoder (and lose a recent one).
+    const shown = new Set(p.tracks.filter((tr) => tr.kind === 'video' && !tr.hidden).flatMap((tr) => tr.clips.map((c) => c.id)));
+    const active = visualClipsAt(p, t).filter((c) => c.kind === 'video');
     const activeIds = new Set(active.map((c) => c.id));
     // Map order is least recently shown first: move the active ones to the end.
     for (const id of activeIds) {
@@ -126,7 +127,7 @@ export class PreviewRenderer {
       this.sources.delete(id);
       this.sources.set(id, s);
     }
-    const recent = [...this.sources.keys()].filter((id) => !activeIds.has(id) && live.has(id)).slice(-KEEP_RECENT);
+    const recent = [...this.sources.keys()].filter((id) => !activeIds.has(id) && shown.has(id)).slice(-KEEP_RECENT);
     const keep = new Set([...activeIds, ...recent]);
     for (const [id, s] of this.sources) {
       if (keep.has(id)) continue;
