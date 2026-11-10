@@ -5,6 +5,7 @@ import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
 import { getCapabilities } from '../media/support';
 import { ExportError } from './errors';
+import { loadChunk } from '../loadChunk';
 
 // Browser-only modules (Mediabunny, WebGL compositor, decoders, Web Audio mixer) are imported lazily inside
 // exportProject so this module stays importable in Node (unit tests) and they stay off the main bundle path.
@@ -110,7 +111,7 @@ async function ensureAacEncoder(mb: typeof import('mediabunny'), quality: Instan
   if (aacEncoderRegistered) return;
   const native = await mb.canEncodeAudio('aac', { numberOfChannels: 2, sampleRate: AUDIO_SAMPLE_RATE, quality });
   if (native) return;
-  const { registerAacEncoder } = await import('@mediabunny/aac-encoder');
+  const { registerAacEncoder } = await loadChunk(() => import('@mediabunny/aac-encoder'));
   registerAacEncoder();
   aacEncoderRegistered = true;
 }
@@ -175,10 +176,10 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
   };
 
   const [mb, { createCompositor }, { openVideoSource }, { MixdownFeeder, MixdownStream }] = await Promise.all([
-    import('mediabunny'),
-    import('../render/compositor'),
-    import('../media/decode'),
-    import('../audio/mixdown'),
+    loadChunk(() => import('mediabunny')),
+    loadChunk(() => import('../render/compositor')),
+    loadChunk(() => import('../media/decode')),
+    loadChunk(() => import('../audio/mixdown')),
   ]);
 
   const { width, height } = exportSize(p, quality, opts.maxLongSide);

@@ -4,6 +4,7 @@ import { useEditor } from '../state/store';
 import { fitBox, previewSize } from './layout';
 import { PreviewRenderer } from './previewRenderer';
 import { showError } from './Toast';
+import { ChunkLoadError } from '../loadChunk';
 
 /** Tracks the content-box size of an element. */
 function useElementSize<T extends HTMLElement>(): [RefObject<T | null>, { width: number; height: number }] {
@@ -59,8 +60,13 @@ export default function Preview() {
         setGeneration((g) => g + 1);
       },
       // The panel shows the reason; the rest of the editor keeps working without a preview.
-      () => {
-        if (!cancelled) setFailure('WebGL2 is not available, so the preview cannot be shown.');
+      (e: unknown) => {
+        if (cancelled) return;
+        if (e instanceof ChunkLoadError) setFailure(e.message);
+        else {
+          console.error('clipforge: could not start the preview', e);
+          setFailure('WebGL2 is not available, so the preview cannot be shown.');
+        }
       },
     );
     return () => {

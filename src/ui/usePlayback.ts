@@ -6,6 +6,7 @@ import { timelineDuration } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { playStart, playbackTick } from './playbackTime';
 import { showError } from './Toast';
+import { loadChunk } from '../loadChunk';
 
 /** True while Play waits for the mixer to decode and schedule the first audio window (aria-busy on Play). */
 export const usePlaybackStatus = create<{ buffering: boolean }>()(() => ({ buffering: false }));
@@ -60,7 +61,7 @@ export function usePlayback(): void {
         if (!mixer) {
           // Loaded on first use so the media toolkit stays out of the startup bundle. The context is the one
           // the Play gesture created and resumed (see togglePlay).
-          const { createMixer } = await import('../audio/mixer');
+          const { createMixer } = await loadChunk(() => import('../audio/mixer'));
           if (disposed || gen !== generation) return;
           mixer = createMixer({ context: sharedAudioContext, onError: fail });
         }

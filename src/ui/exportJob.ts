@@ -9,6 +9,7 @@ import { useEditor } from '../state/store';
 import { replaceWithMedia } from './edits';
 import { safeFilename } from './exportName';
 import { cleanTemp, keepDownloaded } from './exportTemp';
+import { loadChunk } from '../loadChunk';
 
 export type JobMode = 'export' | 'merge';
 export type JobPhase = 'idle' | 'running' | 'done' | 'cancelled' | 'error';
@@ -184,7 +185,7 @@ export async function startMerge(): Promise<void> {
   try {
     const signal = await begin();
     const blob = await exportProject(p, { quality: '1080p', signal, onProgress: (f) => set({ progress: f * 0.9 }) });
-    const { importFile } = await import('../media/import');
+    const { importFile } = await loadChunk(() => import('../media/import'));
     const media = await importFile(new File([blob], 'merged.mp4', { type: 'video/mp4' }));
     const stale = editor().history.present !== p;
     if (signal.aborted || stale) {

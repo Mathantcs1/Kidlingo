@@ -9,6 +9,7 @@ import { formatTime } from './layout';
 import { MEDIA_MIME, setDraggedMedia } from './mediaDrag';
 import { removeMediaItem } from './projectCommands';
 import { showError } from './Toast';
+import { loadChunk } from '../loadChunk';
 
 interface Pending {
   key: number;
@@ -102,7 +103,7 @@ export default function MediaBin({ supported, ready }: { supported: boolean; rea
     for (const [i, file] of files.entries()) {
       try {
         // Loaded on first use so the media toolkit stays out of the startup bundle.
-        const { importFile } = await import('../media/import');
+        const { importFile } = await loadChunk(() => import('../media/import'));
         const m = await importFile(file);
         useEditor.getState().apply((p) => addMedia(p, m));
         askPersist();

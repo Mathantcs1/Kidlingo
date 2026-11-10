@@ -43,3 +43,12 @@ test('a fully capable browser shows no banner', async ({ page }) => {
   await expect(page.getByTestId('banner-no-webcodecs')).toHaveCount(0);
   await expect(page.getByTestId('file-input')).toBeEnabled();
 });
+
+test('a lazily loaded chunk that is gone after a redeploy asks for a reload instead of blaming WebGL2', async ({ page }) => {
+  // What a host returns for a missing hashed chunk when it falls back to the app shell: HTML, not JavaScript.
+  await page.route('**/src/render/compositor.ts*', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>ClipForge</title>' }),
+  );
+  await page.goto('/');
+  await expect(page.getByTestId('preview-unavailable')).toHaveText('ClipForge was updated — reload the page.');
+});

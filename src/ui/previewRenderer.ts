@@ -3,6 +3,7 @@ import type { Id, Project } from '../core/model';
 import { activeClipsAt } from '../core/timeline';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
+import { loadChunk } from '../loadChunk';
 
 export interface PreviewCallbacks {
   /** A clip's media could not be opened; called once per media file. */
@@ -43,7 +44,7 @@ export class PreviewRenderer {
   /** Loads the compositor and binds it to `canvas`; rejects if WebGL2 is unavailable. */
   static async create(canvas: HTMLCanvasElement, callbacks: PreviewCallbacks): Promise<PreviewRenderer> {
     // Shares the lazily loaded chunk the exporter uses for the compositor.
-    const { createCompositor } = await import('../render/compositor');
+    const { createCompositor } = await loadChunk(() => import('../render/compositor'));
     return new PreviewRenderer(canvas, createCompositor(canvas, { preserveDrawingBuffer: true }), callbacks);
   }
 
@@ -123,7 +124,7 @@ export class PreviewRenderer {
     const wanted = active.filter((c) => !this.sources.has(c.id) && !this.failedClips.has(c.id));
     if (wanted.length === 0) return;
     // Loaded on first use so the media toolkit stays out of the startup bundle.
-    const { openVideoSource } = await import('../media/decode');
+    const { openVideoSource } = await loadChunk(() => import('../media/decode'));
     for (const clip of wanted) {
       const media = p.media[clip.mediaId];
       if (!media || media.missing) continue;
