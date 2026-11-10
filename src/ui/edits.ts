@@ -4,6 +4,7 @@ import { clipEnd } from '../core/model';
 import type { Id, MediaRef, Project } from '../core/model';
 import { MIN_CLIP, TimelineError, addClip, deleteClip, findClip, splitClip } from '../core/timeline';
 import { clipFromMedia } from '../media/clip';
+import { laneRejects } from './drag';
 
 const EPS = 1e-9;
 export const SPLIT_HINT = 'Move the playhead inside a clip to split it';
@@ -62,4 +63,28 @@ export function liveSelection(p: Project, selection: Id[]): Id[] {
 export function toggleSelection(selection: Id[], id: Id, additive: boolean): Id[] {
   if (!additive) return [id];
   return selection.includes(id) ? selection.filter((x) => x !== id) : [...selection, id];
+}
+
+/** Adds `mediaId` as a full-length clip at `start` on `trackId`; wrong lane kinds and overlaps throw TimelineError. */
+export function dropMedia(p: Project, trackId: Id, mediaId: Id, start: number): Project {
+  const m = p.media[mediaId];
+  if (!m) throw new TimelineError(`Media not found: ${mediaId}`);
+  const track = p.tracks.find((t) => t.id === trackId);
+  if (!track) throw new TimelineError(`Track not found: ${trackId}`);
+  const rejected = laneRejects(track.kind, m.kind);
+  if (rejected) throw new TimelineError(rejected);
+  return addClip(p, track.id, clipFromMedia(m, track.id, start, p.format));
+}
+
+/** Registers `m` and replaces every clip on every track with one full-length clip of it at 0 (first video track). */
+export function replaceWithMedia(p: Project, m: MediaRef): Project {
+  const track = p.tracks.find((t) => t.kind === 'video');
+  if (!track) throw new TimelineError('There is no video track to merge into');
+  const cleared: Project = { ...addMedia(p, m), tracks: p.tracks.map((t) => ({ ...t, clips: [] })) };
+  return addClip(cleared, track.id, clipFromMedia(m, track.id, 0, p.format));
+}
+
+/** Number of clips on video tracks. */
+export function videoClipCount(p: Project): number {
+  return p.tracks.reduce((n, t) => n + (t.kind === 'video' ? t.clips.length : 0), 0);
 }

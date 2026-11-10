@@ -5,6 +5,7 @@ import { useEditor } from '../state/store';
 import { addToTimeline } from './commands';
 import { addMedia } from './edits';
 import { formatTime } from './layout';
+import { MEDIA_MIME, setDraggedMedia } from './mediaDrag';
 import { showError } from './Toast';
 
 interface Pending {
@@ -25,6 +26,13 @@ function MediaItem({ m, editable }: { m: MediaRef; editable: boolean }) {
       data-media-id={m.id}
       data-kind={m.kind}
       data-has-audio={String(m.hasAudio)}
+      draggable={editable}
+      onDragStart={(e) => {
+        e.dataTransfer.setData(MEDIA_MIME, m.id);
+        e.dataTransfer.effectAllowed = 'copy';
+        setDraggedMedia(m.id);
+      }}
+      onDragEnd={() => setDraggedMedia(null)}
     >
       <span className="media-icon" aria-hidden="true">
         {KIND_ICON[m.kind]}
@@ -92,7 +100,8 @@ export default function MediaBin({ supported, ready }: { supported: boolean; rea
       className={`media-bin${dragOver ? ' is-drag-over' : ''}`}
       aria-label="Media bin"
       onDragOver={(e) => {
-        if (!canImport) return;
+        // Only files import here; media dragged out of the bin itself is not a drop for the bin.
+        if (!canImport || !e.dataTransfer.types.includes('Files')) return;
         e.preventDefault();
         setDragOver(true);
       }}

@@ -1,45 +1,10 @@
-import { useState } from 'react';
-import type { MouseEvent } from 'react';
-import { clipDuration } from '../core/model';
-import type { Clip, MediaRef } from '../core/model';
+import { useRef, useState } from 'react';
 import { timelineDuration } from '../core/timeline';
 import { useEditor } from '../state/store';
-import { toggleSelection } from './edits';
-import { DEFAULT_PPS, MAX_PPS, MIN_PPS, contentSeconds, pxToTime, rulerTicks, timeToPx, trackLabels, zoom } from './layout';
-
-interface ClipViewProps {
-  clip: Clip;
-  media: MediaRef | undefined;
-  pps: number;
-  selected: boolean;
-}
-
-function ClipView({ clip, media, pps, selected }: ClipViewProps) {
-  const missing = media?.missing === true;
-  const name = media?.name ?? 'Unknown media';
-  const onClick = (e: MouseEvent): void => {
-    e.stopPropagation();
-    const { selection, select } = useEditor.getState();
-    select(toggleSelection(selection, clip.id, e.shiftKey || e.metaKey || e.ctrlKey));
-  };
-  return (
-    <button
-      type="button"
-      className={`clip clip-${clip.kind}${selected ? ' is-selected' : ''}${missing ? ' is-missing' : ''}`}
-      style={{ left: timeToPx(clip.start, pps), width: timeToPx(clipDuration(clip), pps) }}
-      data-testid="timeline-clip"
-      data-clip-id={clip.id}
-      data-selected={String(selected)}
-      data-missing={missing ? 'true' : undefined}
-      aria-pressed={selected}
-      title={missing ? `${name} (missing media)` : name}
-      onClick={onClick}
-    >
-      <span className="clip-name">{name}</span>
-      {missing && <span className="clip-missing">missing media</span>}
-    </button>
-  );
-}
+import Lane from './Lane';
+import { DEFAULT_PPS, MAX_PPS, MIN_PPS, contentSeconds, rulerTicks, timeToPx, trackLabels, zoom } from './layout';
+import { useClipDrag } from './useClipDrag';
+import { useScrub } from './useScrub';
 
 export default function Timeline() {
   const project = useEditor((s) => s.history.present);
@@ -52,13 +17,9 @@ export default function Timeline() {
   const labels = trackLabels(project.tracks.map((t) => t.kind));
   const selected = new Set(selection);
 
-  const onRulerClick = (e: MouseEvent<HTMLDivElement>): void => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    useEditor.getState().setPlayhead(pxToTime(e.clientX - rect.left, pps));
-  };
-  const clearSelection = (): void => {
-    if (useEditor.getState().selection.length > 0) useEditor.getState().select([]);
-  };
+  const rulerRef = useRef<HTMLDivElement>(null);
+  const scrub = useScrub(rulerRef, pps);
+  const { preview, begin } = useClipDrag(pps);
 
   return (
     <section className="timeline" aria-label="Timeline">
@@ -97,7 +58,7 @@ export default function Timeline() {
         </div>
         <div className="timeline-scroll">
           <div className="timeline-content" style={{ width }}>
-            <div className="ruler" data-testid="timeline-ruler" onClick={onRulerClick}>
+            <div className="ruler" data-testid="timeline-ruler" ref={rulerRef} {...scrub}>
               {rulerTicks(seconds, pps).map((t) => (
                 <span key={t.time} className="tick" style={{ left: timeToPx(t.time, pps) }}>
                   {t.label}
@@ -105,19 +66,20 @@ export default function Timeline() {
               ))}
             </div>
             {project.tracks.map((track, i) => (
-              <div
+              <Lane
                 key={track.id}
-                className={`lane lane-${track.kind}`}
-                data-testid="timeline-track"
-                aria-label={labels[i]}
-                onClick={clearSelection}
-              >
-                {track.clips.map((c) => (
-                  <ClipView key={c.id} clip={c} media={project.media[c.mediaId]} pps={pps} selected={selected.has(c.id)} />
-                ))}
-              </div>
+                project={project}
+                track={track}
+                label={labels[i]}
+                pps={pps}
+                selected={selected}
+                preview={preview}
+                onDragStart={begin}
+              />
             ))}
-            <div className="playhead" data-testid="playhead" style={{ left: timeToPx(playhead, pps) }} />
+            <div className="playhead" data-testid="playhead" style={{ left: timeToPx(playhead, pps) }}>
+              <div className="playhead-handle" data-testid="playhead-handle" aria-hidden="true" {...scrub} />
+            </div>
           </div>
         </div>
       </div>

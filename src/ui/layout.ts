@@ -85,3 +85,15 @@ export function aspectLabel(width: number, height: number): string {
   const d = gcd(Math.round(width), Math.round(height)) || 1;
   return `${Math.round(width) / d}:${Math.round(height) / d}`;
 }
+
+/** Longest side of the preview canvas in pixels. */
+export const PREVIEW_MAX_LONG = 960;
+
+/** Pixel size of the preview canvas: the format scaled down to `maxLong`, even sides, at least 2. */
+export function previewSize(format: Size, maxLong = PREVIEW_MAX_LONG): Size {
+  const { width, height } = format;
+  if (!(width > 0 && height > 0)) return { width: 2, height: 2 };
+  const scale = Math.min(1, maxLong / Math.max(width, height));
+  const even = (v: number): number => Math.max(2, Math.floor(v / 2) * 2);
+  return { width: even(Math.round(width * scale)), height: even(Math.round(height * scale)) };
+}

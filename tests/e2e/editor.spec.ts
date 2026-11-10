@@ -104,7 +104,7 @@ function editorState(page: Page): Promise<StateSummary> {
 }
 
 async function clearSelection(page: Page): Promise<void> {
-  await page.getByTestId('timeline-track').last().click({ position: { x: 5, y: 5 } });
+  await page.getByTestId('timeline-lane').last().click({ position: { x: 5, y: 5 } });
 }
 
 test('imports media into the bin and reports import errors per file', async ({ page }) => {
@@ -248,9 +248,10 @@ test('format picker reframes the project and the preview box', async ({ page }) 
     'Portrait 4:5',
   ]);
   await select.selectOption('vertical');
-  await expect(page.getByTestId('preview-placeholder')).toContainText('1080×1920');
-  const box = await page.getByTestId('preview-placeholder').boundingBox();
-  if (!box) throw new Error('no preview placeholder');
+  const canvas = page.getByTestId('preview-canvas');
+  await expect(canvas).toHaveAttribute('height', '960');
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error('no preview canvas');
   expect(Math.abs(box.width / box.height - 9 / 16)).toBeLessThanOrEqual(0.02);
   expect((await editorState(page)).format).toMatchObject({ width: 1080, height: 1920 });
 });
