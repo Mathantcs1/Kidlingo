@@ -6,8 +6,9 @@ import type { Handle, Point } from '../render/overlayGeometry';
 import { useEditor } from '../state/store';
 import { formatToCss, overlayTarget, toleranceInFormatPx } from './overlayMath';
 import type { Box } from './overlayMath';
-import { HANDLE_PX, ROTATE_PX, handleAt, useTransformDrag } from './useTransformDrag';
-import type { DragTarget, LiveTransform } from './useTransformDrag';
+import { HANDLE_PX, ROTATE_PX, handleAt } from './overlayHit';
+import type { DragTarget, LiveTransform } from './overlayHit';
+import { useTransformDrag } from './useTransformDrag';
 
 const CORNERS = ['tl', 'tr', 'br', 'bl'] as const;
 
@@ -64,7 +65,7 @@ function OverlayQuad({ project, box, canvasRef, onLive, target }: Props & { targ
   const onPointerMove = (e: ReactPointerEvent<SVGSVGElement>): void => {
     const canvas = canvasRef.current;
     if (!canvas || dragging()) return;
-    const next = handleAt(canvas, target, e.clientX, e.clientY);
+    const next = handleAt(canvas, format, target, e.clientX, e.clientY);
     if (next !== hover) setHover(next);
   };
 

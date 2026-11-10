@@ -3,8 +3,8 @@
 import { test, expect } from '@playwright/test';
 import { trackErrors } from './helpers';
 import {
-  canvasBox, dragTo, expectOverlayFollows, expectPixel, holding, isBlue, isGreen, isRed, isYellow, setupPip, toPage,
-  transformOf, undoDepth,
+  canvasBox, dragTo, expectOverlayFollows, expectPixel, holding, isBlue, isGreen, isRed, isYellow, pixelAt, setupPip,
+  toPage, transformOf, undoDepth,
 } from './pip-helpers';
 
 test.setTimeout(60_000);
@@ -119,9 +119,12 @@ test('Escape mid-drag restores the clip with no undo step', async ({ page }) => 
   expect(await undoDepth(page)).toBe(depth);
   await expectOverlayFollows(page, 'pip');
   await expectPixel(page, C.x, C.y, isGreen, 'square still centred');
-  // A plain release afterwards commits nothing either.
-  await page.mouse.move(from.x + 5, from.y + 5);
+  // A press and release without moving (a click on the body) commits nothing either.
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.up();
   expect(await undoDepth(page)).toBe(depth);
+  expect(await transformOf(page, 'pip')).toEqual(before);
   expect(errors).toEqual([]);
 });
 
@@ -161,5 +164,45 @@ test('moving near the canvas centre snaps the clip centre exactly; Alt turns sna
   expect(Math.abs(t.x - 3 / b.s)).toBeLessThanOrEqual(1);
   expect(Math.abs(t.y - 2 / b.s)).toBeLessThanOrEqual(1);
   expect(t.x).not.toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('the preview shows the drag live, before anything is committed, and Escape puts it back', async ({ page }) => {
+  const errors = trackErrors(page);
+  await setupPip(page);
+  const before = await transformOf(page, 'pip');
+  const depth = await undoDepth(page);
+  const b = await canvasBox(page);
+  const from = toPage(b, C);
+  const [dx, dy] = [150, 90];
+  const moved = { x: C.x + dx / b.s, y: C.y + dy / b.s };
+  for (const escape of [false, true]) {
+    await page.keyboard.down('Alt');
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x + dx, from.y + dy, { steps: 8 });
+    // Mid-drag: the canvas already shows the new place, the store does not.
+    await expectPixel(page, moved.x, moved.y, isGreen, 'live square at the new place');
+    await expectPixel(page, C.x, C.y, isBlue, 'live background at the old centre');
+    expect(await transformOf(page, 'pip')).toEqual(before);
+    expect(await undoDepth(page)).toBe(depth);
+    if (escape) {
+      await page.keyboard.press('Escape');
+      await expectPixel(page, C.x, C.y, isGreen, 'square back after Escape');
+      await expectPixel(page, moved.x, moved.y, isBlue, 'background after Escape');
+    }
+    await page.mouse.up();
+    await page.keyboard.up('Alt');
+    if (escape) {
+      expect(await undoDepth(page)).toBe(depth);
+      expect(await transformOf(page, 'pip')).toEqual(before);
+    } else {
+      expect(await undoDepth(page)).toBe(depth + 1);
+      // Never flickers back: the new place stays green right after the release.
+      for (let i = 0; i < 5; i++) expect(isGreen(await pixelAt(page, moved.x, moved.y))).toBe(true);
+      await page.getByTestId('btn-undo').click();
+      await expectPixel(page, C.x, C.y, isGreen, 'undone');
+    }
+  }
   expect(errors).toEqual([]);
 });

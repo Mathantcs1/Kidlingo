@@ -483,6 +483,7 @@ button:disabled,
 }
 
 .transform-overlay * {
+  /* The svg root takes every press and hit-tests it; its cursor follows the handle under the pointer. */
   pointer-events: none;
 }
 
@@ -512,21 +513,7 @@ button:disabled,
   filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.8));
 }
 
-.tov-tl,
-.tov-br {
-  cursor: nwse-resize;
-}
-
-.tov-tr,
-.tov-bl {
-  cursor: nesw-resize;
-}
-
-.tov-rotate {
-  cursor: grab;
-}
-
-/* While a clip is dragged on the canvas: no text selection anywhere. */
+/* While a clip is dragged on the canvas (TRANSFORMING_CLASS): no text selection anywhere. */
 html.is-transforming,
 html.is-transforming * {
   user-select: none !important;

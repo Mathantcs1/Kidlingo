@@ -11,7 +11,7 @@ import type { GlFailureView } from './PreviewFailure';
 import TransformOverlay from './TransformOverlay';
 import { withClipTransform } from './transformEdits';
 import { useElementSize } from './useElementSize';
-import type { LiveTransform } from './useTransformDrag';
+import type { LiveTransform } from './overlayHit';
 
 /** CSS px kept free around the canvas inside the stage, so overlay handles beyond its edges stay on screen. */
 const HANDLE_ROOM = 36;

@@ -38,6 +38,8 @@ It is a static site built with React, TypeScript and Vite.
   rotation, Alt to disable snapping. Select one video or image clip under the playhead (on a visible, unlocked
   layer) and drag inside its outline to move it (it snaps to the frame centre and edges), a corner to scale it
   about its centre, or the round handle above it to rotate it. Each drag is one undo step; Escape cancels it.
+  Alt (Option on a Mac) disables snapping while you drag. A very large clip whose corners fall outside the preview
+  panel can still be scaled and rotated with the inspector's numeric fields.
 - **Merge** joins the selected clips back to back with no gaps. **Merge all into one clip** renders the whole
   timeline into a single new video in the media bin and replaces the timeline with it (one undo step; it can be
   cancelled).

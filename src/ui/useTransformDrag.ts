@@ -1,84 +1,41 @@
 import { useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
-import type { Id, Transform } from '../core/model';
-import type { Size } from '../render/geometry';
-import { clipCentre, clipCorners, dragMove, dragRotate, dragScale, hitTest, snapToCanvas } from '../render/overlayGeometry';
-import type { Handle, Point } from '../render/overlayGeometry';
+import type { Clip, Project, Transform } from '../core/model';
+import type { Handle } from '../render/overlayGeometry';
 import { useEditor } from '../state/store';
-import { cssToFormat, toleranceInFormatPx } from './overlayMath';
-import type { Box } from './overlayMath';
+import { pastThreshold } from './drag';
+import { canvasBoxOf, handleAt, transformFor } from './overlayHit';
+import type { DragInput, DragTarget, LiveTransform } from './overlayHit';
+import { cssToFormat } from './overlayMath';
 import { guard } from './Toast';
 import { setClipTransform } from './transformEdits';
 
-/** On-screen sizes, in CSS px (converted to format px for the geometry). */
-export const HANDLE_PX = 10;
-export const HIT_PX = 10;
-export const ROTATE_PX = 28;
-const SNAP_PX = 8;
-const ROTATE_SNAP_DEG = 15;
+/** Class on <html> while a transform drag runs: no text selection, and Space does not toggle playback. */
+export const TRANSFORMING_CLASS = 'is-transforming';
 
-/** A clip being edited live: drawn by the overlay and the preview at `transform` until the drag ends. */
-export interface LiveTransform {
-  clipId: Id;
-  transform: Transform;
-}
-
-export interface DragTarget {
-  clipId: Id;
-  size: Size;
-  transform: Transform;
-}
-
-interface Gesture extends DragTarget {
+interface Gesture extends DragInput {
   pointerId: number;
-  handle: Handle;
-  format: Size;
-  /** Pointer at the press, format px. */
-  startPointer: Point;
+  clipId: string;
+  /** The store's transform object at the press: if anything else replaces it, the drag's start is stale. */
+  storeTransform: Transform;
+  /** Press position (viewport CSS px); the gesture stays a click until the pointer is past the drag threshold. */
+  down: { x: number; y: number };
+  active: boolean;
   current: Transform;
-  last: { x: number; y: number; alt: boolean; shift: boolean };
 }
 
 const editor = () => useEditor.getState();
-
-/** The displayed canvas's content box in viewport CSS px, read fresh (layout may have changed since the last drag). */
-export function canvasBoxOf(canvas: HTMLCanvasElement): Box {
-  const r = canvas.getBoundingClientRect();
-  return { left: r.left + canvas.clientLeft, top: r.top + canvas.clientTop, width: canvas.clientWidth, height: canvas.clientHeight };
-}
-
-/** Which handle the viewport point grabs on `target`, or null (empty canvas). */
-export function handleAt(canvas: HTMLCanvasElement, target: DragTarget, clientX: number, clientY: number): Handle | null {
-  const format = editor().history.present.format;
-  const box = canvasBoxOf(canvas);
-  const p = cssToFormat({ x: clientX, y: clientY }, box, format);
-  const corners = clipCorners(target.size, target.transform, format);
-  return hitTest(corners, p, toleranceInFormatPx(HIT_PX, box, format), toleranceInFormatPx(ROTATE_PX, box, format));
-}
-
-/** The transform for the pointer at viewport (x, y): move (snapped unless Alt), uniform scale, or rotate (Shift: 15°). */
-function transformFor(g: Gesture, canvas: HTMLCanvasElement): Transform {
-  const box = canvasBoxOf(canvas);
-  const p = cssToFormat({ x: g.last.x, y: g.last.y }, box, g.format);
-  if (g.handle === 'move') {
-    const moved = dragMove(g.transform, p.x - g.startPointer.x, p.y - g.startPointer.y);
-    return g.last.alt ? moved : snapToCanvas(moved, g.size, g.format, toleranceInFormatPx(SNAP_PX, box, g.format));
-  }
-  if (g.handle === 'rotate') {
-    const snap = g.last.shift ? ROTATE_SNAP_DEG : undefined;
-    return dragRotate(g.transform, clipCentre(g.transform, g.format), g.startPointer, p, snap);
-  }
-  return dragScale(g.transform, g.size, g.handle, g.startPointer, p, g.format);
-}
-
+const clipIn = (p: Project, id: string): Clip | undefined => p.tracks.flatMap((t) => t.clips).find((c) => c.id === id);
 const changed = (a: Transform, b: Transform): boolean => a.x !== b.x || a.y !== b.y || a.scale !== b.scale || a.rotation !== b.rotation;
 
 /**
  * Pointer dragging on the transform overlay. A press on a handle or the body starts a gesture with the clip's
- * transform and the pointer (format px); moves update `onLive` (the overlay and the preview follow at once, the
- * store is untouched); release commits ONE `setClipTransform` when the transform changed. Escape cancels; only the
- * pointer that started counts; pointercancel / lost capture end it without committing; any project change meanwhile
- * (undo, delete, a layer hidden or locked) ends it quietly. A press on empty canvas does nothing.
+ * transform and the pointer (format px); it stays a click until the pointer moves past the drag threshold (4 CSS px),
+ * then moves update `onLive` (the overlay and the preview follow at once, the store is untouched) and release
+ * commits ONE `setClipTransform` when the transform changed. Escape cancels. Only the pointer that started counts;
+ * pointercancel, lost capture, a mouse move with the button no longer down, and the window losing focus end it
+ * without committing; so does any edit that removes the clip, replaces its transform or changes the format (a
+ * hidden, locked or deselected clip unmounts the overlay, which ends it too). Unrelated edits leave it running.
  */
 export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>, onLive: (l: LiveTransform | null) => void) {
   const active = useRef<Gesture | null>(null);
@@ -90,8 +47,11 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
 
   const begin = (e: ReactPointerEvent<Element>, target: DragTarget): Handle | null => {
     const canvas = canvasRef.current;
-    if (e.button !== 0 || active.current || !canvas) return null;
-    const handle = handleAt(canvas, target, e.clientX, e.clientY);
+    const present = editor().history.present;
+    const clip = clipIn(present, target.clipId);
+    if (e.button !== 0 || active.current || !canvas || !clip) return null;
+    const format = { width: present.format.width, height: present.format.height };
+    const handle = handleAt(canvas, format, target, e.clientX, e.clientY);
     if (!handle) return null;
     e.preventDefault();
     e.stopPropagation();
@@ -103,36 +63,47 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
       // Capture can fail for a pointer that is already up; the window listeners still see the gesture.
     }
     if (editor().playing) editor().setPlaying(false);
-    const format = { width: editor().history.present.format.width, height: editor().history.present.format.height };
     const g: Gesture = {
-      ...target,
-      pointerId,
+      clipId: target.clipId,
+      size: target.size,
       handle,
       format,
+      start: clip.transform,
+      storeTransform: clip.transform,
       startPointer: cssToFormat({ x: e.clientX, y: e.clientY }, canvasBoxOf(canvas), format),
-      current: target.transform,
       last: { x: e.clientX, y: e.clientY, alt: e.altKey, shift: e.shiftKey },
+      pointerId,
+      down: { x: e.clientX, y: e.clientY },
+      active: false,
+      current: clip.transform,
     };
     active.current = g;
-    document.documentElement.classList.add('is-transforming');
+    document.documentElement.classList.add(TRANSFORMING_CLASS);
 
     const update = (): void => {
       const c = canvasRef.current;
-      if (!c || active.current !== g) return;
+      if (!c || active.current !== g || !g.active) return;
       g.current = transformFor(g, c);
       onLiveRef.current({ clipId: g.clipId, transform: g.current });
     };
     const mine = (ev: PointerEvent): boolean => ev.pointerId === pointerId;
     const onMove = (ev: PointerEvent): void => {
       if (!mine(ev)) return;
+      // The release happened where we could not see it (a context menu, another window): cancel, never stick.
+      if (ev.pointerType === 'mouse' && (ev.buttons & 1) === 0) {
+        end();
+        return;
+      }
       g.last = { x: ev.clientX, y: ev.clientY, alt: ev.altKey, shift: ev.shiftKey };
+      if (!g.active && !pastThreshold(ev.clientX - g.down.x, ev.clientY - g.down.y)) return;
+      g.active = true;
       update();
     };
     const onUp = (ev: PointerEvent): void => {
       if (!mine(ev)) return;
       unsubscribe();
       const final = g.current;
-      if (changed(final, g.transform)) {
+      if (g.active && changed(final, g.start)) {
         const patch = { x: final.x, y: final.y, scale: final.scale, rotation: final.rotation };
         guard(() => editor().apply((p) => setClipTransform(p, g.clipId, patch)));
       }
@@ -141,6 +112,7 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
     const onCancel = (ev: PointerEvent): void => {
       if (mine(ev)) end();
     };
+    const onBlur = (): void => end();
     const onKey = (ev: KeyboardEvent): void => {
       if (ev.key === 'Escape') {
         ev.preventDefault();
@@ -154,20 +126,27 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
       }
     };
     const unsubscribe = useEditor.subscribe((s, prev) => {
-      if (s.history.present !== prev.history.present) end();
+      const p = s.history.present;
+      if (p === prev.history.present) return;
+      const now = clipIn(p, g.clipId);
+      if (!now || now.transform !== g.storeTransform || p.format.width !== g.format.width || p.format.height !== g.format.height) end();
     });
+    const listeners: [string, EventListener, boolean][] = [
+      ['pointermove', onMove as EventListener, false],
+      ['pointerup', onUp as EventListener, false],
+      ['pointercancel', onCancel as EventListener, false],
+      ['lostpointercapture', onCancel as EventListener, false],
+      ['blur', onBlur, false],
+      ['keydown', onKey as EventListener, true],
+      ['keyup', onKey as EventListener, true],
+    ];
     const end = (): void => {
       if (active.current !== g) return;
       active.current = null;
       stop.current = () => undefined;
       unsubscribe();
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onCancel);
-      window.removeEventListener('lostpointercapture', onCancel);
-      window.removeEventListener('keydown', onKey, true);
-      window.removeEventListener('keyup', onKey, true);
-      document.documentElement.classList.remove('is-transforming');
+      for (const [type, fn, capture] of listeners) window.removeEventListener(type, fn, capture);
+      document.documentElement.classList.remove(TRANSFORMING_CLASS);
       try {
         if (el.hasPointerCapture(pointerId)) el.releasePointerCapture(pointerId);
       } catch {
@@ -176,14 +155,9 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
       onLiveRef.current(null);
     };
     stop.current = end;
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onCancel);
-    window.addEventListener('lostpointercapture', onCancel);
-    window.addEventListener('keydown', onKey, true);
-    window.addEventListener('keyup', onKey, true);
+    for (const [type, fn, capture] of listeners) window.addEventListener(type, fn, capture);
     return handle;
   };
 
-  return { begin, dragging: (): boolean => active.current !== null };
+  return { begin, dragging: (): boolean => active.current?.active === true };
 }

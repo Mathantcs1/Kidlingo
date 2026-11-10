@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { deleteSelected, redo, rippleDeleteSelected, splitAtPlayhead, togglePlay, undo } from './commands';
 import { isKeyboardFocused } from './inputModality';
+import { TRANSFORMING_CLASS } from './useTransformDrag';
 import { isTextEntry, nativeSpaceTarget } from './keys';
 import type { Shortcut } from './keys';
 import { shortcutFor } from './keys';
@@ -43,6 +44,11 @@ export function useShortcuts(enabled: boolean): void {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent): void => {
       if (!enabledRef.current || e.defaultPrevented || isTyping(e.target) || spacePressesControl(e)) return;
+      // Space mid-drag on the preview would start playback under the gesture: swallow it until the drag ends.
+      if (isSpace(e) && document.documentElement.classList.contains(TRANSFORMING_CLASS)) {
+        e.preventDefault();
+        return;
+      }
       const parts = keyParts(e);
       const shortcut = shortcutFor({ ...parts, repeat: false });
       if (!shortcut) return;
