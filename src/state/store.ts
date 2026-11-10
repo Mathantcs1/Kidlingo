@@ -28,6 +28,13 @@ function clipIds(p: Project): Set<Id> {
   return new Set(p.tracks.flatMap((t) => t.clips.map((c) => c.id)));
 }
 
+/** The selection without ids missing from `p`; the same array when nothing was dropped. */
+function pruneSelection(selection: Id[], p: Project): Id[] {
+  const ids = clipIds(p);
+  const pruned = selection.filter((id) => ids.has(id));
+  return pruned.length === selection.length ? selection : pruned;
+}
+
 export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
   history: createHistory(emptyProject()),
   selection: [],
@@ -47,19 +54,23 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
       }
       throw e;
     }
-    const ids = clipIds(next);
-    const pruned = selection.filter((id) => ids.has(id));
     set({
       history: commit(history, next),
-      selection: pruned.length === selection.length ? selection : pruned,
+      selection: pruneSelection(selection, next),
       lastError: null,
     });
   },
   undo() {
-    set((s) => ({ history: undo(s.history), lastError: null }));
+    set((s) => {
+      const history = undo(s.history);
+      return { history, selection: pruneSelection(s.selection, history.present), lastError: null };
+    });
   },
   redo() {
-    set((s) => ({ history: redo(s.history), lastError: null }));
+    set((s) => {
+      const history = redo(s.history);
+      return { history, selection: pruneSelection(s.selection, history.present), lastError: null };
+    });
   },
   select(ids) {
     set({ selection: ids });

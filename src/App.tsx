@@ -14,7 +14,8 @@ const webCodecs = hasWebCodecs();
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  useShortcuts();
+  // Editing stays inert until the saved session is restored, so a restore never discards new edits.
+  useShortcuts(ready);
   useEffect(() => {
     let live = true;
     void restoreSessionOnce().then(() => {
@@ -30,13 +31,13 @@ export default function App() {
       <Banner supported={webCodecs} />
       <header className="topbar">
         <h1 className="logo">ClipForge</h1>
-        <FormatPicker />
+        <FormatPicker disabled={!ready} />
       </header>
       <main className="workspace">
-        <MediaBin canImport={webCodecs} />
+        <MediaBin supported={webCodecs} ready={ready} />
         <PreviewSlot />
       </main>
-      <Toolbar />
+      <Toolbar editable={ready} />
       <Timeline />
       <Toasts />
     </div>

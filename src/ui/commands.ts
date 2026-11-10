@@ -1,29 +1,36 @@
 // Store-bound editor commands shared by the toolbar, media bin and keyboard shortcuts.
 import type { Id } from '../core/model';
 import { useEditor } from '../state/store';
-import { appendMedia, deleteClips, mergeClips, splitAt } from './edits';
+import { appendMedia, deleteClips, liveSelection, mergeClips, splitAt } from './edits';
 import { guard } from './Toast';
 
 const editor = () => useEditor.getState();
 
+/** The current selection, minus any ids whose clips no longer exist. */
+function selected(): Id[] {
+  const { history, selection } = editor();
+  return liveSelection(history.present, selection);
+}
+
 export function splitAtPlayhead(): void {
   guard(() => {
-    const { apply, selection, playhead } = editor();
-    apply((p) => splitAt(p, selection, playhead));
+    const ids = selected();
+    const { apply, playhead } = editor();
+    apply((p) => splitAt(p, ids, playhead));
   });
 }
 
 export function deleteSelected(): void {
   guard(() => {
-    const { apply, selection } = editor();
-    if (selection.length > 0) apply((p) => deleteClips(p, selection));
+    const ids = selected();
+    if (ids.length > 0) editor().apply((p) => deleteClips(p, ids));
   });
 }
 
 export function mergeSelected(): void {
   guard(() => {
-    const { apply, selection } = editor();
-    apply((p) => mergeClips(p, selection));
+    const ids = selected();
+    editor().apply((p) => mergeClips(p, ids));
   });
 }
 

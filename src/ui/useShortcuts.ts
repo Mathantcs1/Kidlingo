@@ -1,40 +1,41 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { deleteSelected, redo, splitAtPlayhead, togglePlay, undo } from './commands';
+import { isTextEntry } from './keys';
+import type { Shortcut } from './keys';
+import { shortcutFor } from './keys';
+
+const COMMANDS: Record<Shortcut, () => void> = {
+  play: togglePlay,
+  split: splitAtPlayhead,
+  delete: deleteSelected,
+  undo,
+  redo,
+};
 
 function isTyping(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  return target.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName);
+  return target instanceof HTMLElement && isTextEntry(target as HTMLElement & { type?: string });
 }
 
-/** Maps a key event to its editor command, or null when the key is not a shortcut. */
-function commandFor(e: KeyboardEvent): (() => void) | null {
-  const mod = e.metaKey || e.ctrlKey;
-  const key = e.key.toLowerCase();
-  if (mod && !e.altKey) {
-    if (key === 'z') return e.shiftKey ? redo : undo;
-    if (key === 'y' && e.ctrlKey && !e.shiftKey) return redo;
-    return null;
-  }
-  if (e.altKey || e.ctrlKey || e.metaKey) return null;
-  if (e.code === 'Space' || e.key === ' ') return togglePlay;
-  if (key === 's' && !e.shiftKey) return splitAtPlayhead;
-  if (e.key === 'Delete' || e.key === 'Backspace') return deleteSelected;
-  return null;
-}
+const isSpace = (e: KeyboardEvent): boolean => e.code === 'Space' || e.key === ' ';
 
-/** Global editor shortcuts; ignored while typing in a form field. */
-export function useShortcuts(): void {
+/** Global editor shortcuts; ignored while typing in a form field and while `enabled` is false. */
+export function useShortcuts(enabled: boolean): void {
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.defaultPrevented || isTyping(e.target)) return;
-      const cmd = commandFor(e);
-      if (!cmd) return;
+      if (!enabledRef.current || e.defaultPrevented || isTyping(e.target)) return;
+      const parts = keyParts(e);
+      const shortcut = shortcutFor({ ...parts, repeat: false });
+      if (!shortcut) return;
       e.preventDefault();
-      if (!e.repeat || cmd !== togglePlay) cmd();
+      // Held Space/S/Delete keys are swallowed rather than repeated (shortcutFor drops their repeats).
+      if (shortcutFor(parts)) COMMANDS[shortcut]();
     };
     // A focused button would also "click" on Space keyup; Space belongs to play/pause.
     const onKeyUp = (e: KeyboardEvent): void => {
-      if ((e.code === 'Space' || e.key === ' ') && !isTyping(e.target)) e.preventDefault();
+      if (enabledRef.current && isSpace(e) && !isTyping(e.target)) e.preventDefault();
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
@@ -43,4 +44,16 @@ export function useShortcuts(): void {
       window.removeEventListener('keyup', onKeyUp);
     };
   }, []);
+}
+
+function keyParts(e: KeyboardEvent) {
+  return {
+    key: e.key,
+    code: e.code,
+    ctrlKey: e.ctrlKey,
+    metaKey: e.metaKey,
+    shiftKey: e.shiftKey,
+    altKey: e.altKey,
+    repeat: e.repeat,
+  };
 }

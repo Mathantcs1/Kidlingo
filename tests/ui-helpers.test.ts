@@ -18,11 +18,13 @@ import {
   addMedia,
   appendMedia,
   deleteClips,
+  liveSelection,
   mergeClips,
   splitAt,
   splitTargets,
   toggleSelection,
 } from '../src/ui/edits';
+import { isTextEntry, shortcutFor } from '../src/ui/keys';
 import { emptyProject } from '../src/core/model';
 import type { MediaRef, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
@@ -162,5 +164,60 @@ describe('edits', () => {
     expect(toggleSelection(['a', 'b'], 'c', false)).toEqual(['c']);
     expect(toggleSelection(['a', 'b'], 'c', true)).toEqual(['a', 'b', 'c']);
     expect(toggleSelection(['a', 'b'], 'a', true)).toEqual(['b']);
+  });
+});
+
+describe('liveSelection', () => {
+  it('drops ids of clips that no longer exist, keeping the array when nothing is stale', () => {
+    const p = appendMedia(withMedia(video), 'v');
+    const [v] = clipsOf(p, 'video');
+    expect(liveSelection(p, [v.id, 'ghost'])).toEqual([v.id]);
+    const sel = [v.id];
+    expect(liveSelection(p, sel)).toBe(sel);
+    expect(liveSelection(p, ['ghost'])).toEqual([]);
+  });
+});
+
+describe('keys', () => {
+  it('treats only text-entry fields as typing targets', () => {
+    expect(isTextEntry({ tagName: 'INPUT', type: 'text' })).toBe(true);
+    for (const type of ['', 'search', 'number', 'email', 'url', 'password', 'tel']) {
+      expect(isTextEntry({ tagName: 'INPUT', type })).toBe(true);
+    }
+    expect(isTextEntry({ tagName: 'INPUT' })).toBe(true);
+    for (const type of ['file', 'checkbox', 'radio', 'range', 'button', 'color']) {
+      expect(isTextEntry({ tagName: 'INPUT', type })).toBe(false);
+    }
+    expect(isTextEntry({ tagName: 'SELECT' })).toBe(true);
+    expect(isTextEntry({ tagName: 'TEXTAREA' })).toBe(true);
+    expect(isTextEntry({ tagName: 'DIV', isContentEditable: true })).toBe(true);
+    expect(isTextEntry({ tagName: 'BUTTON' })).toBe(false);
+    expect(isTextEntry({ tagName: 'BODY' })).toBe(false);
+  });
+
+  const key = (k: Partial<{ key: string; code: string; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; altKey: boolean; repeat: boolean }>) => ({
+    key: '', code: '', ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, repeat: false, ...k,
+  });
+
+  it('maps keys to shortcuts', () => {
+    expect(shortcutFor(key({ key: ' ', code: 'Space' }))).toBe('play');
+    expect(shortcutFor(key({ key: 's', code: 'KeyS' }))).toBe('split');
+    expect(shortcutFor(key({ key: 'S', code: 'KeyS', shiftKey: true }))).toBeNull();
+    expect(shortcutFor(key({ key: 'Delete' }))).toBe('delete');
+    expect(shortcutFor(key({ key: 'Backspace' }))).toBe('delete');
+    expect(shortcutFor(key({ key: 'z', ctrlKey: true }))).toBe('undo');
+    expect(shortcutFor(key({ key: 'z', metaKey: true }))).toBe('undo');
+    expect(shortcutFor(key({ key: 'Z', metaKey: true, shiftKey: true }))).toBe('redo');
+    expect(shortcutFor(key({ key: 'y', ctrlKey: true }))).toBe('redo');
+    expect(shortcutFor(key({ key: 's', ctrlKey: true }))).toBeNull();
+    expect(shortcutFor(key({ key: 'x' }))).toBeNull();
+  });
+
+  it('ignores auto-repeat for play, split and delete but not for undo/redo', () => {
+    expect(shortcutFor(key({ key: ' ', code: 'Space', repeat: true }))).toBeNull();
+    expect(shortcutFor(key({ key: 's', repeat: true }))).toBeNull();
+    expect(shortcutFor(key({ key: 'Delete', repeat: true }))).toBeNull();
+    expect(shortcutFor(key({ key: 'Backspace', repeat: true }))).toBeNull();
+    expect(shortcutFor(key({ key: 'z', ctrlKey: true, repeat: true }))).toBe('undo');
   });
 });

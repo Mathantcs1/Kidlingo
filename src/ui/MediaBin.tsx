@@ -17,7 +17,7 @@ const KIND_ICON: Record<MediaRef['kind'], string> = { video: 'ðŸŽ¬', audio: 'ðŸŽ
 
 let pendingSeq = 0;
 
-function MediaItem({ m }: { m: MediaRef }) {
+function MediaItem({ m, editable }: { m: MediaRef; editable: boolean }) {
   return (
     <li
       className={`media-item${m.missing ? ' is-missing' : ''}`}
@@ -46,6 +46,7 @@ function MediaItem({ m }: { m: MediaRef }) {
         data-testid="btn-add-to-timeline"
         aria-label={`Add ${m.name} to the timeline`}
         title="Add to the end of the timeline"
+        disabled={!editable}
         onClick={() => addToTimeline(m.id)}
       >
         +
@@ -54,7 +55,8 @@ function MediaItem({ m }: { m: MediaRef }) {
   );
 }
 
-export default function MediaBin({ canImport }: { canImport: boolean }) {
+export default function MediaBin({ supported, ready }: { supported: boolean; ready: boolean }) {
+  const canImport = supported && ready;
   const media = useEditor((s) => s.history.present.media);
   const [pending, setPending] = useState<Pending[]>([]);
   const [dragOver, setDragOver] = useState(false);
@@ -118,7 +120,7 @@ export default function MediaBin({ canImport }: { canImport: boolean }) {
       </div>
       <ul className="media-list">
         {list.map((m) => (
-          <MediaItem key={m.id} m={m} />
+          <MediaItem key={m.id} m={m} editable={ready} />
         ))}
         {pending.map((p) => (
           <li key={p.key} className="media-item is-importing" data-testid="media-importing">
@@ -129,7 +131,7 @@ export default function MediaBin({ canImport }: { canImport: boolean }) {
         ))}
       </ul>
       {list.length === 0 && pending.length === 0 && (
-        <p className="empty-hint">{canImport ? 'Import or drop video, audio and images here.' : 'Import is unavailable.'}</p>
+        <p className="empty-hint">{supported ? 'Import or drop video, audio and images here.' : 'Import is unavailable.'}</p>
       )}
     </aside>
   );

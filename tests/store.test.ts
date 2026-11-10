@@ -78,6 +78,25 @@ describe('store', () => {
     expect(useEditor.getState().selection).toEqual([]);
   });
 
+  it('undo and redo prune selection ids that no longer exist', () => {
+    const s = useEditor.getState();
+    s.apply((p) => addClip(p, p.tracks[0].id, clip('c1')));
+    s.apply((p) => addClip(p, p.tracks[0].id, clip('c2', { start: 5 })));
+    s.select(['c1', 'c2']);
+    useEditor.getState().undo();
+    expect(useEditor.getState().selection).toEqual(['c1']);
+    useEditor.getState().undo();
+    expect(useEditor.getState().selection).toEqual([]);
+    useEditor.getState().redo();
+    useEditor.getState().select(['c1', 'ghost']);
+    useEditor.getState().redo();
+    expect(useEditor.getState().selection).toEqual(['c1']);
+    // Nothing to prune: the selection array is kept as is.
+    const kept = useEditor.getState().selection;
+    useEditor.getState().undo();
+    expect(useEditor.getState().selection).toBe(kept);
+  });
+
   it('loadProject resets history, selection, playhead, playing', () => {
     const s = useEditor.getState();
     s.apply((p) => addClip(p, p.tracks[0].id, clip('c1')));

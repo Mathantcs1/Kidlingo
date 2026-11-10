@@ -51,6 +51,13 @@ export function mergeClips(p: Project, ids: Id[]): Project {
   return joinClips(p, ordered);
 }
 
+/** The selection restricted to clips that exist in `p`; the same array when nothing is stale. */
+export function liveSelection(p: Project, selection: Id[]): Id[] {
+  const ids = new Set(p.tracks.flatMap((t) => t.clips.map((c) => c.id)));
+  const live = selection.filter((id) => ids.has(id));
+  return live.length === selection.length ? selection : live;
+}
+
 /** Additive clicks toggle `id`; plain clicks select only `id`. */
 export function toggleSelection(selection: Id[], id: Id, additive: boolean): Id[] {
   if (!additive) return [id];

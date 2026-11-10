@@ -22,6 +22,10 @@ interface ClipBox {
 async function open(page: Page): Promise<void> {
   await page.goto('/');
   await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  // Editing controls are inert only while the saved session loads.
+  await expect(page.getByTestId('file-input')).toBeEnabled();
+  await expect(page.getByTestId('format-select')).toBeEnabled();
+  await expect(page.getByTestId('btn-split')).toBeEnabled();
 }
 
 function mediaItem(page: Page, name: string): Locator {
@@ -80,10 +84,22 @@ async function playheadX(page: Page): Promise<number> {
   return ph.x + ph.width / 2 - ruler.x;
 }
 
-function editorState(page: Page): Promise<{ playing: boolean; format: { width: number; height: number } }> {
+interface StateSummary {
+  playing: boolean;
+  format: { width: number; height: number };
+  selection: string[];
+  undoDepth: number;
+}
+
+function editorState(page: Page): Promise<StateSummary> {
   return page.evaluate(() => {
     const s = window.__clipforge!.getState();
-    return { playing: s.playing, format: s.history.present.format };
+    return {
+      playing: s.playing,
+      format: s.history.present.format,
+      selection: s.selection,
+      undoDepth: s.history.past.length,
+    };
   });
 }
 
@@ -294,19 +310,67 @@ test('keyboard shortcuts drive play, split and undo; ignored inside the format s
   await page.keyboard.press('ControlOrMeta+z');
   await expect(page.getByTestId('timeline-clip')).toHaveCount(2);
 
+  // With a clip selected and the playhead inside it, every shortcut below would change the project.
+  const [first] = await clips(page);
+  await clipEl(page, first.id).click();
+  const before = await editorState(page);
+  expect(before.selection).toEqual([first.id]);
   await page.getByTestId('format-select').focus();
-  await page.keyboard.press('s');
   await page.keyboard.press('Delete');
+  await page.keyboard.press('Backspace');
   await page.keyboard.press('ControlOrMeta+z');
   await expect(page.getByTestId('timeline-clip')).toHaveCount(2);
-  expect((await editorState(page)).playing).toBe(false);
+  const after = await editorState(page);
+  expect(after.format).toEqual(before.format);
+  expect(after.undoDepth).toBe(before.undoDepth);
+  expect(after.selection).toEqual(before.selection);
+  expect(after.playing).toBe(false);
+
+  // Focus left on the (hidden) file input does not swallow shortcuts.
+  await page.getByTestId('file-input').focus();
+  await page.keyboard.press('s');
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(3);
+});
+
+test('undo drops selected clips it removes; split, delete and redo stay usable', async ({ page }) => {
+  await setup(page);
+  await clearSelection(page);
+  await setPlayhead(page, 1);
+  await page.getByTestId('btn-split').click();
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(3);
+  const right = (await clips(page))[1];
+  expect(Math.abs(right.left - PPS)).toBeLessThanOrEqual(2);
+  await clipEl(page, right.id).click();
+  await expect(page.getByTestId('btn-delete')).toBeEnabled();
+
+  await page.getByTestId('btn-undo').click();
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(2);
+  expect((await editorState(page)).selection).toEqual([]);
+  await expect(page.getByTestId('btn-delete')).toBeDisabled();
+  await page.keyboard.press('Delete');
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(2);
+
+  await page.getByTestId('btn-redo').click();
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(3);
+  expect((await editorState(page)).selection).toEqual([]);
+  await page.getByTestId('btn-undo').click();
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(2);
+
+  // With the stale id gone, S falls back to splitting the clip under the playhead.
+  await page.keyboard.press('s');
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(3);
+  await page.getByTestId('btn-merge').click();
+  await expect(page.getByTestId('error-toast')).toHaveCount(1);
+  await expect(page.getByTestId('error-toast')).toContainText('Select at least two clips to join');
+  await expect(page.getByTestId('error-toast').filter({ hasText: /Clip not found|Move the playhead/ })).toHaveCount(0);
 });
 
 test('without WebCodecs a banner shows and import is disabled', async ({ page }) => {
   await page.addInitScript(() => {
     delete (window as unknown as Record<string, unknown>).VideoDecoder;
   });
-  await open(page);
+  await page.goto('/');
+  await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
   await expect(page.getByTestId('banner-no-webcodecs')).toHaveText(
     "Your browser can't edit video. Use Chrome or Safari 17 or later.",
   );

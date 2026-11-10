@@ -6,7 +6,7 @@ import { guard } from './Toast';
 
 const KEYS = Object.keys(FORMAT_LABELS) as FormatKey[];
 
-export default function FormatPicker() {
+export default function FormatPicker({ disabled }: { disabled: boolean }) {
   const format = useEditor((s) => s.history.present.format);
   const apply = useEditor((s) => s.apply);
   const current = formatKeyOf(format);
@@ -20,6 +20,7 @@ export default function FormatPicker() {
       <span>Format</span>
       <select
         data-testid="format-select"
+        disabled={disabled}
         value={current ?? ''}
         onChange={(e) => onChange(e.target.value as FormatKey)}
       >
