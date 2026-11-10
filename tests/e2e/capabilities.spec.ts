@@ -1,0 +1,45 @@
+// The capability banner names exactly what the browser lacks and import is disabled when it cannot work.
+import { test, expect } from '@playwright/test';
+
+test('without WebCodecs audio decoding the banner names it and import is disabled', async ({ page }) => {
+  await page.addInitScript(() => {
+    delete (window as unknown as Record<string, unknown>).AudioDecoder;
+  });
+  await page.goto('/');
+  await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await expect(page.getByTestId('banner-no-webcodecs')).toHaveText(
+    'Your browser is missing: WebCodecs audio decoding. Use a recent desktop Chrome.',
+  );
+  await expect(page.getByTestId('file-input')).toBeDisabled();
+});
+
+test('without FileSystemFileHandle.createWritable the banner names OPFS file writing and import is disabled', async ({ page }) => {
+  await page.addInitScript(() => {
+    delete (FileSystemFileHandle.prototype as unknown as Record<string, unknown>).createWritable;
+  });
+  await page.goto('/');
+  await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await expect(page.getByTestId('banner-no-webcodecs')).toHaveText(
+    'Your browser is missing: OPFS file writing. Use a recent desktop Chrome.',
+  );
+  await expect(page.getByTestId('file-input')).toBeDisabled();
+});
+
+test('several missing capabilities are listed together', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown>;
+    delete w.AudioDecoder;
+    delete (FileSystemFileHandle.prototype as unknown as Record<string, unknown>).createWritable;
+  });
+  await page.goto('/');
+  await expect(page.getByTestId('banner-no-webcodecs')).toHaveText(
+    'Your browser is missing: WebCodecs audio decoding, OPFS file writing. Use a recent desktop Chrome.',
+  );
+});
+
+test('a fully capable browser shows no banner', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await expect(page.getByTestId('banner-no-webcodecs')).toHaveCount(0);
+  await expect(page.getByTestId('file-input')).toBeEnabled();
+});

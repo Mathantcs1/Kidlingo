@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
+import { exportUsesMemory } from '../export/exporter';
 import type { ExportQuality } from '../export/exporter';
 import {
   cancelDiscard,
@@ -138,6 +139,12 @@ export default function ExportDialog() {
               <input type="text" value={name} disabled={running} onChange={(e) => setName(e.target.value)} />
             </label>
           </div>
+        )}
+        {!merge && exportUsesMemory() && (
+          <p className="modal-note" data-testid="export-memory-note">
+            This browser cannot write the export to disk storage, so it is built in memory: very long or 4K exports may
+            run out of memory.
+          </p>
         )}
         {showProgress && (
           <div className="modal-progress">

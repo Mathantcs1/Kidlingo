@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { hasWebCodecs } from './media/support';
+import { getCapabilities, importBlockers, missingCapabilities } from './media/support';
 import Banner from './ui/Banner';
 import FormatPicker from './ui/FormatPicker';
 import MediaBin from './ui/MediaBin';
@@ -13,7 +13,9 @@ import { restoreSessionOnce } from './ui/session';
 import { usePlayback } from './ui/usePlayback';
 import { useShortcuts } from './ui/useShortcuts';
 
-const webCodecs = hasWebCodecs();
+const capabilities = getCapabilities();
+const missing = missingCapabilities(capabilities);
+const canImport = importBlockers(capabilities).length === 0;
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -35,13 +37,13 @@ export default function App() {
   return (
     <>
       <div className="app" data-testid="app" data-session={ready ? 'ready' : 'loading'} inert={dialogOpen}>
-        <Banner supported={webCodecs} />
+        <Banner missing={missing} />
         <header className="topbar">
           <h1 className="logo">ClipForge</h1>
           <FormatPicker disabled={!ready} />
         </header>
         <main className="workspace">
-          <MediaBin supported={webCodecs} ready={ready} />
+          <MediaBin supported={canImport} ready={ready} />
           <Preview />
         </main>
         <Toolbar editable={ready} />

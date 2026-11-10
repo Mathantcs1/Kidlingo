@@ -381,7 +381,7 @@ test('without WebCodecs a banner shows and import is disabled', async ({ page })
   await page.goto('/');
   await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
   await expect(page.getByTestId('banner-no-webcodecs')).toHaveText(
-    "Your browser can't edit video. Use Chrome or Safari 17 or later.",
+    'Your browser is missing: WebCodecs video decoding. Use a recent desktop Chrome.',
   );
   await expect(page.getByTestId('file-input')).toBeDisabled();
 });

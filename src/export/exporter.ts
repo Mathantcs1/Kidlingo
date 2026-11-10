@@ -3,6 +3,7 @@ import type { Clip, Id, Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
+import { getCapabilities } from '../media/support';
 import { ExportError } from './errors';
 
 // Browser-only modules (Mediabunny, WebGL compositor, decoders, Web Audio mixer) are imported lazily inside
@@ -66,8 +67,15 @@ function abortError(): DOMException {
   return new DOMException('Aborted', 'AbortError');
 }
 
+/** OPFS with writable file streams (Safari before 26 has OPFS but no createWritable on the main thread). */
 function hasOpfs(): boolean {
-  return typeof navigator !== 'undefined' && typeof navigator.storage?.getDirectory === 'function';
+  const caps = getCapabilities();
+  return caps.opfs && caps.opfsWritable;
+}
+
+/** True when exports are built in memory (no writable OPFS): very long or 4K exports may run out of memory. */
+export function exportUsesMemory(): boolean {
+  return !hasOpfs();
 }
 
 async function tempDir(): Promise<FileSystemDirectoryHandle> {

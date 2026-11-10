@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ExportError, evenDims, exportProject, exportSize } from '../src/export/exporter';
+import { ExportError, evenDims, exportProject, exportSize, exportUsesMemory } from '../src/export/exporter';
 import { emptyProject } from '../src/core/model';
 import type { Project } from '../src/core/model';
 
@@ -82,5 +82,11 @@ describe('exportProject', () => {
     const run = exportProject(p, { quality: '1080p', onProgress: () => undefined, signal: new AbortController().signal });
     await expect(run).rejects.toBeInstanceOf(ExportError);
     await expect(run).rejects.toThrow('Invalid frame rate');
+  });
+});
+
+describe('exportUsesMemory', () => {
+  it('is true without a writable OPFS (here: Node has no navigator.storage)', () => {
+    expect(exportUsesMemory()).toBe(true);
   });
 });
