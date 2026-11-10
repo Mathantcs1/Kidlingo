@@ -4,6 +4,7 @@ import { findClip } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { liveSelection, setClipFit, setClipVolume } from './edits';
 import { guard } from './Toast';
+import TransformFields from './TransformFields';
 
 const FIT_MODES: { mode: Clip['fit']; label: string; hint: string }[] = [
   { mode: 'fit', label: 'Fit', hint: 'Show the whole picture (black bars if the shape differs)' },
@@ -81,7 +82,14 @@ function FitControl({ clip, disabled }: { clip: Clip; disabled: boolean }) {
   );
 }
 
-function ClipControls({ clip, media, editable }: { clip: Clip; media: MediaRef | undefined; editable: boolean }) {
+interface ControlsProps {
+  clip: Clip;
+  media: MediaRef | undefined;
+  editable: boolean;
+  locked: boolean;
+}
+
+function ClipControls({ clip, media, editable, locked }: ControlsProps) {
   const audible = clip.kind === 'audio' || (clip.kind === 'video' && media?.hasAudio !== false);
   return (
     <>
@@ -94,16 +102,21 @@ function ClipControls({ clip, media, editable }: { clip: Clip; media: MediaRef |
         <p className="inspector-hint">{clip.kind === 'image' ? 'Images have no sound.' : 'This clip has no sound.'}</p>
       )}
       {clip.kind !== 'audio' && <FitControl clip={clip} disabled={!editable} />}
+      {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} />}
     </>
   );
 }
 
-/** Settings of the selected clip (exactly one): volume and, for pictures, how it fills the frame. */
+/**
+ * Settings of the selected clip (exactly one): volume and, for pictures, how it fills the frame plus its position,
+ * scale, rotation and opacity.
+ */
 export default function Inspector({ editable }: { editable: boolean }) {
   const project = useEditor((s) => s.history.present);
   const selection = useEditor((s) => s.selection);
   const live = liveSelection(project, selection);
-  const clip = live.length === 1 ? findClip(project, live[0]).clip : null;
+  const found = live.length === 1 ? findClip(project, live[0]) : null;
+  const clip = found?.clip ?? null;
   return (
     <aside className="inspector" aria-label="Clip settings" data-testid="inspector">
       <div className="panel-head">
@@ -111,7 +124,13 @@ export default function Inspector({ editable }: { editable: boolean }) {
       </div>
       <div className="inspector-body">
         {clip ? (
-          <ClipControls key={clip.id} clip={clip} media={project.media[clip.mediaId]} editable={editable} />
+          <ClipControls
+            key={clip.id}
+            clip={clip}
+            media={project.media[clip.mediaId]}
+            editable={editable}
+            locked={found?.track.locked ?? false}
+          />
         ) : (
           <p className="inspector-hint">{live.length > 1 ? 'Select a single clip to change its settings.' : 'Select a clip'}</p>
         )}

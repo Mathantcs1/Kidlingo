@@ -255,3 +255,21 @@ describe('keys', () => {
     expect(shortcutFor(key({ key: 'z', ctrlKey: true, repeat: true }))).toBe('undo');
   });
 });
+
+describe('NumberField helpers', () => {
+  it('formatNumber shows at most 2 decimals and never -0', async () => {
+    const { formatNumber } = await import('../src/ui/NumberField');
+    expect(formatNumber(168.75)).toBe('168.75');
+    expect(formatNumber(30.000000000000004)).toBe('30');
+    expect(formatNumber(1 / 3)).toBe('0.33');
+    expect(formatNumber(-0.001)).toBe('0');
+    expect(formatNumber(-12.5)).toBe('-12.5');
+  });
+
+  it('parseEntry accepts finite numbers only', async () => {
+    const { parseEntry } = await import('../src/ui/NumberField');
+    expect(parseEntry(' 42 ')).toBe(42);
+    expect(parseEntry('-1.5')).toBe(-1.5);
+    for (const bad of ['', '   ', 'abc', '12px', '1e999', 'Infinity', 'NaN']) expect(parseEntry(bad)).toBeNull();
+  });
+});

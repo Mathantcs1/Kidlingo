@@ -29,6 +29,11 @@ It is a static site built with React, TypeScript and Vite.
   video and image clips how they cover the frame: **Fit** (whole picture, black bars), **Fill** (fills the frame,
   edges cropped) or **Blur** (whole picture over a blurred copy of itself). Choosing a mode resets the clip's
   position and scale to that mode's framing. Changing the project format keeps each clip's mode.
+- **Numeric position/scale/rotation/opacity fields** in the inspector for a video or image clip: X and Y in
+  pixels from the frame centre (0 = centred), scale and opacity in percent, rotation in degrees clockwise. Type a
+  value and press Enter (or leave the field) to apply it as one undo step; Up/Down step the value (Shift ×10) and
+  Escape reverts what you typed. **Reset** puts the clip back where its Fit/Fill/Blur mode places it. The fields
+  are disabled on a locked track.
 - **Merge** joins the selected clips back to back with no gaps. **Merge all into one clip** renders the whole
   timeline into a single new video in the media bin and replaces the timeline with it (one undo step; it can be
   cancelled).

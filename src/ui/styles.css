@@ -356,6 +356,65 @@ button:disabled,
   accent-color: var(--accent);
 }
 
+/* Transform fields: a compact two-column grid of numeric inputs with a unit suffix. */
+.tf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+}
+
+.tf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tf-input {
+  position: relative;
+  display: flex;
+}
+
+.tf-input input {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 22px 4px 6px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.tf-input input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.tf-input input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.tf-input input:disabled {
+  opacity: 0.5;
+}
+
+.tf-unit {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.tf-reset {
+  align-self: end;
+  padding: 4px 6px;
+}
+
 .segmented {
   display: flex;
 }
