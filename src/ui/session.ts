@@ -6,23 +6,43 @@ import { loadProject, reconcileMedia } from '../state/persist';
 import { flushOnHide, setAutosaveEnabled, useEditor } from '../state/store';
 import { acquireEditorLock, lockState } from '../state/tabLock';
 import { cleanTemp } from './exportTemp';
-import { shouldCollect } from './restoreOutcome';
+import { askConfirm } from './Confirm';
+import { projectHasWork } from './edits';
+import { autosaveAfter, shouldCollect } from './restoreOutcome';
 import type { RestoreOutcome } from './restoreOutcome';
 
 export type SessionState = 'loading' | 'ready' | 'locked';
 
+/** The page's session state, shown as data-session on the app (a locked tab turns 'ready' when it takes over). */
+export const useSessionState = create<{ state: SessionState }>()(() => ({ state: 'loading' }));
+
 /**
- * Why the saved project could not be loaded, or null. While set, autosave is off (the saved project is kept as it
- * is) and no media is collected, until Retry succeeds or the user starts a new project.
+ * Why the saved project was not loaded, or null: it could not be read ('failed'), or the user started editing first
+ * ('skipped'). While set, autosave is off (the saved project is kept as it is) and no media is collected, until the
+ * saved project is loaded or the user starts a new project.
  */
-export const useRestoreFailure = create<{ message: string | null }>()(() => ({ message: null }));
+export const useRestoreFailure = create<{ message: string | null; kind: 'failed' | 'skipped' | null }>()(() => ({
+  message: null,
+  kind: null,
+}));
 
 function fail(reason: string): RestoreOutcome {
   setAutosaveEnabled(false);
   useRestoreFailure.setState({
+    kind: 'failed',
     message: `Could not load your saved project: ${reason.replace(/\.$/, '')}. It is kept as it was, and nothing is saved until you retry or start a new project.`,
   });
   return 'failed';
+}
+
+function skipped(): RestoreOutcome {
+  setAutosaveEnabled(false);
+  useRestoreFailure.setState({
+    kind: 'skipped',
+    message:
+      'Your saved project was not loaded because you started editing first. Load it (discarding what you did) or start a new project; nothing is saved until then.',
+  });
+  return 'skipped';
 }
 
 /**
@@ -36,7 +56,7 @@ export async function restoreSession(opts: { force?: boolean } = {}): Promise<Re
     if (saved.status === 'unavailable' || saved.status === 'none') return saved.status;
     if (saved.status === 'unsupported') return fail(saved.reason);
     const reconciled = await reconcileMedia(saved.project, hasMedia);
-    if (!opts.force && useEditor.getState().history.present !== initial) return 'skipped';
+    if (!opts.force && useEditor.getState().history.present !== initial) return skipped();
     useEditor.getState().loadProject(reconciled);
     return 'restored';
   } catch (e) {
@@ -69,41 +89,68 @@ export async function collectUnusedMedia(permit: GcPermit | null): Promise<void>
   await gcMedia(() => referencedMedia(useEditor.getState().history), { emptyIsVerified: true });
 }
 
-/** Re-runs the restore after a failure (replacing any unsaved edits made since); on success saving resumes. */
+/**
+ * Loads the saved project after a failed or skipped restore. If the editor holds work done since (media or clips in
+ * any undo/redo state), asks first: loading replaces it. On success saving resumes and unused media is collected.
+ */
 export async function retryRestore(): Promise<void> {
+  if (projectHasWork(useEditor.getState().history)) {
+    const ok = await askConfirm({
+      title: 'Load the saved project?',
+      message: 'Loading the saved project discards what you did since. Continue?',
+      confirmLabel: 'Load saved project',
+    });
+    if (!ok) return;
+  }
   const outcome = await restoreSession({ force: true });
   if (outcome !== 'restored' && outcome !== 'none') return;
-  useRestoreFailure.setState({ message: null });
+  useRestoreFailure.setState({ message: null, kind: null });
   setAutosaveEnabled(true);
   await collectUnusedMedia(gcPermitAfterRestore(outcome));
 }
 
 /** Clears a failed-restore state: saving resumes (the caller then replaces the saved project). */
 export function resolveRestoreFailure(): void {
-  useRestoreFailure.setState({ message: null });
+  useRestoreFailure.setState({ message: null, kind: null });
   setAutosaveEnabled(true);
 }
 
 /**
- * Takes the editor lock; another tab already editing leaves this one 'locked' (inert: no restore, autosave, GC or
- * temp cleanup ever runs here; it reloads by itself once the other tab closes). Otherwise restores the saved
- * project, then — only if the restore succeeded or there was verifiably nothing to restore, and only in the
- * lock-holding tab — frees unreferenced media files and the previous session's export temp files.
+ * The editing session of the tab that owns the editor: restores the saved project (autosave is off until that is
+ * settled, so an edit racing the restore cannot overwrite the saved project), then — only if the restore succeeded
+ * or there was verifiably nothing to restore, and only in the lock-holding tab — frees unreferenced media files and
+ * the previous session's export temp files.
  */
-export async function startSession(): Promise<SessionState> {
-  const lock = await acquireEditorLock();
-  if (lock === 'locked') {
-    setAutosaveEnabled(false);
-    return 'locked';
-  }
+async function beginEditing(): Promise<void> {
+  setAutosaveEnabled(false);
   // Imported files become collectable once the project references them (see media/storage unsettled ids).
   useEditor.subscribe((s, prev) => {
     if (s.history.present.media !== prev.history.present.media) settleMedia(Object.keys(s.history.present.media));
   });
   const outcome = await restoreSession();
+  if (autosaveAfter(outcome)) setAutosaveEnabled(true);
   flushOnHide(window, document);
   void collectUnusedMedia(gcPermitAfterRestore(outcome));
-  if (lock === 'held') void cleanTemp();
+  if (lockState() === 'held') void cleanTemp();
+}
+
+/**
+ * Takes the editor lock. Another tab already editing leaves this one 'locked' (inert: no restore, autosave, GC or
+ * temp cleanup runs here) until that tab closes or reloads; then this tab takes the lock and starts editing in
+ * place (no reload) and its state turns 'ready'.
+ */
+export async function startSession(): Promise<SessionState> {
+  const takeOver = (): void => {
+    void beginEditing().then(() => useSessionState.setState({ state: 'ready' }));
+  };
+  const lock = await acquireEditorLock(typeof navigator !== 'undefined' ? navigator.locks : undefined, takeOver);
+  if (lock === 'locked') {
+    setAutosaveEnabled(false);
+    useSessionState.setState({ state: 'locked' });
+    return 'locked';
+  }
+  await beginEditing();
+  useSessionState.setState({ state: 'ready' });
   return 'ready';
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { acquireEditorLock, mayTouchSharedStorage } from '../src/state/tabLock';
+import { acquireEditorLock, lockState, mayTouchSharedStorage } from '../src/state/tabLock';
 
 type Callback = (lock: { name: string } | null) => unknown;
 
@@ -41,16 +41,20 @@ describe('acquireEditorLock', () => {
     expect(locks.held.has('clipforge-editor')).toBe(true);
   });
 
-  it('reports locked when another tab holds it, and takes over (reloads) once that tab lets go', async () => {
+  it('reports locked when another tab holds it, and takes over in place once that tab lets go', async () => {
     const locks = fakeLocks();
     await acquireEditorLock(locks as unknown as LockManager);
     const freed = vi.fn();
     expect(await acquireEditorLock(locks as unknown as LockManager, freed)).toBe('locked');
     expect(freed).not.toHaveBeenCalled();
     expect(locks.waiting).toHaveLength(1);
+    expect(lockState()).toBe('locked');
     locks.release('clipforge-editor');
     await Promise.resolve();
     expect(freed).toHaveBeenCalledTimes(1);
+    // Taken over in place: this tab now holds the lock for good (no reload that would hand it around).
+    expect(lockState()).toBe('held');
+    expect(locks.held.has('clipforge-editor')).toBe(true);
   });
 
   it('is unsupported without navigator.locks, and error (not unsupported) when the request fails', async () => {

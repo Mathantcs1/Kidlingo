@@ -73,8 +73,8 @@ test('a failed restore (IndexedDB read error) keeps every media file; the next h
   expect(await storedIds(page)).toEqual(ids);
 });
 
-test('Retry loading restores the project after a transient failure', async ({ page }) => {
-  await savedClip(page);
+/** One failing IndexedDB read on the next load only (later reads, including Retry, work). */
+async function failNextRead(page: Page): Promise<void> {
   await page.addInitScript(() => {
     if (sessionStorage.getItem('cf-failed-once')) return;
     sessionStorage.setItem('cf-failed-once', '1');
@@ -85,12 +85,81 @@ test('Retry loading restores the project after a transient failure', async ({ pa
       return get.apply(this, args);
     };
   });
+}
+
+test('Retry loading restores the project after a transient failure, keeps the media and resumes autosave', async ({ page }) => {
+  const ids = await savedClip(page);
+  await failNextRead(page);
   await page.reload();
   await expect(page.getByTestId('restore-failed')).toBeVisible();
   await expect(page.getByTestId('timeline-clip')).toHaveCount(0);
   await page.getByTestId('btn-restore-retry').click();
+  await expect(page.getByTestId('confirm-dialog')).toHaveCount(0); // nothing to lose: no question
   await expect(page.getByTestId('restore-failed')).toHaveCount(0);
   await expect(page.getByTestId('timeline-clip')).toHaveCount(1);
+  await page.waitForTimeout(500);
+  expect(await storedIds(page)).toEqual(ids);
+
+  // Autosave works again: an edit after Retry survives a reload.
+  await addToTimeline(page, 'with-audio.mp4', 2);
+  await page.evaluate(() => window.__clipforge!.flushAutosave());
+  await page.reload();
+  await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(2);
+  expect(await storedIds(page)).toEqual(ids);
+});
+
+test('Retry asks before discarding work done after the failure; declining keeps it', async ({ page }) => {
+  const ids = await savedClip(page);
+  await failNextRead(page);
+  await page.reload();
+  await expect(page.getByTestId('restore-failed')).toBeVisible();
+  await importFiles(page, [withAudio], 1); // work done in the failed state
+
+  await page.getByTestId('btn-restore-retry').click();
+  await expect(page.getByTestId('confirm-dialog')).toContainText('discards what you did');
+  await page.getByTestId('btn-confirm-cancel').click();
+  await expect(page.getByTestId('media-item')).toHaveCount(1);
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(0);
+  await expect(page.getByTestId('restore-failed')).toBeVisible();
+  expect((await storedIds(page)).length).toBe(2);
+
+  await page.getByTestId('btn-restore-retry').click();
+  await page.getByTestId('btn-confirm-ok').click();
+  await expect(page.getByTestId('restore-failed')).toHaveCount(0);
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(1);
+  // The file imported in the failed state was the discarded work; the saved project's media is intact.
+  await expect.poll(() => storedIds(page)).toEqual(ids);
+});
+
+test('an edit made before the restore finished never autosaves over the saved project', async ({ page }) => {
+  const ids = await savedClip(page);
+  const saved = await savedProject(page);
+  // Slow down the restore (reconcile checks each media file) so an edit can land first.
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('cf-slow-once')) return;
+    sessionStorage.setItem('cf-slow-once', '1');
+    const real = FileSystemDirectoryHandle.prototype.getFileHandle;
+    FileSystemDirectoryHandle.prototype.getFileHandle = async function (this: FileSystemDirectoryHandle, name: string, opts?: FileSystemGetFileOptions) {
+      if (this.name === 'clipforge-media' && !opts?.create) await new Promise((r) => setTimeout(r, 1500));
+      return real.call(this, name, opts);
+    };
+  });
+  await page.reload();
+  await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'loading');
+  await page.waitForFunction(() => window.__clipforge !== undefined);
+  await page.evaluate(() =>
+    window.__clipforge!.getState().apply((p) => ({ ...p, format: { ...p.format, width: 1080, height: 1080 } })),
+  );
+  await expect(page.getByTestId('restore-failed')).toContainText('you started editing first');
+  await page.waitForTimeout(1200);
+  expect(await savedProject(page)).toEqual(saved);
+  expect(await storedIds(page)).toEqual(ids);
+  // Only the format changed (no media or clips), so loading asks nothing.
+  await expect(page.getByTestId('btn-restore-retry')).toHaveText('Load saved project');
+  await page.getByTestId('btn-restore-retry').click();
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(1);
+  await expect(page.getByTestId('restore-failed')).toHaveCount(0);
 });
 
 test('a project saved by a newer version is never overwritten or garbage-collected; Start new replaces it on request', async ({ page }) => {

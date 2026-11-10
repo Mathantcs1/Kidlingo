@@ -80,7 +80,8 @@ try Safari, or set the iPhone to record H.264 before filming: **Settings → Cam
 - **One tab at a time.** All tabs of the site share one saved project and one media store, so ClipForge takes a
   browser lock ([Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API)) when it opens. A second
   tab shows "ClipForge is already open in another tab" and stays inert (it never loads, saves or deletes
-  anything); when the first tab is closed, it reloads by itself and takes over. Browsers without Web Locks are
+  anything); when the first tab is closed or reloaded, exactly one waiting tab takes over in place (no
+  reload) and loads the saved project. Browsers without Web Locks are
   assumed to use one tab, but since that cannot be proven ClipForge then never deletes unused media files at
   startup: they are freed only by **New project** (or by clearing the site's data).
 
@@ -93,7 +94,9 @@ project state uses any more (removed media, undone imports, replaced merges) are
 starts and after **New project**; while the page is open they are kept so undo still works. Nothing is deleted at
 startup unless the saved project was loaded successfully (or there was none). If the saved project cannot be
 loaded (a storage error, or a project saved by a newer version), a notice says so, the saved project and all
-media are left untouched and nothing is saved until you choose **Retry loading** or **Start a new project**. ClipForge asks the
+media are left untouched and nothing is saved until you choose **Retry loading** or **Start a new project**. The
+same happens if you start editing before the saved project has loaded. Loading the saved project asks first if you
+have imported or edited anything since, because that work is then discarded. ClipForge asks the
 browser for persistent storage after the first import, so the browser is less likely to evict your media.
 
 ## Keyboard shortcuts

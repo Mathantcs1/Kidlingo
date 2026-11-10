@@ -114,9 +114,19 @@ let dirty: Project | null = null;
 // Serialises writes; never rejects (failures are reported to the caller of enqueue()).
 let chain: Promise<void> = Promise.resolve();
 
+/**
+ * Turns autosave off (pending changes are dropped) or on. Switching it on saves the current project soon, so an
+ * edit made while it was off is not lost.
+ */
 export function setAutosaveEnabled(on: boolean): void {
-  enabled = on;
-  if (on) return;
+  if (on) {
+    if (!enabled) {
+      enabled = true;
+      schedule(useEditor.getState().history.present);
+    }
+    return;
+  }
+  enabled = false;
   if (timer !== undefined) clearTimeout(timer);
   timer = undefined;
   dirty = null;
@@ -175,12 +185,16 @@ export function flushOnHide(win: EventTarget, doc: EventTarget & { visibilitySta
   };
 }
 
-useEditor.subscribe((s, prev) => {
-  if (s.history.present === prev.history.present || !hasIdb() || !enabled) return;
-  dirty = s.history.present;
+function schedule(p: Project): void {
+  if (!hasIdb() || !enabled) return;
+  dirty = p;
   if (timer !== undefined) clearTimeout(timer);
   timer = setTimeout(() => {
     timer = undefined;
     enqueue().catch(() => undefined); // reported through saveError (the UI shows it)
   }, 500);
+}
+
+useEditor.subscribe((s, prev) => {
+  if (s.history.present !== prev.history.present) schedule(s.history.present);
 });

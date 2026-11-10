@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { getCapabilities, importBlockers, missingCapabilities } from './media/support';
 import Banner from './ui/Banner';
 import ConfirmDialog, { useConfirm } from './ui/Confirm';
@@ -8,8 +8,7 @@ import { useExportUi } from './ui/exportJob';
 import Inspector from './ui/Inspector';
 import Preview from './ui/Preview';
 import RestoreNotice from './ui/RestoreNotice';
-import { startSessionOnce } from './ui/session';
-import type { SessionState } from './ui/session';
+import { startSessionOnce, useSessionState } from './ui/session';
 import Timeline from './ui/Timeline';
 import Toasts from './ui/Toast';
 import Toolbar from './ui/Toolbar';
@@ -22,7 +21,7 @@ const missing = missingCapabilities(capabilities);
 const canImport = importBlockers(capabilities).length === 0;
 
 export default function App() {
-  const [session, setSession] = useState<SessionState>('loading');
+  const session = useSessionState((s) => s.state);
   const ready = session === 'ready';
   const dialogOpen = useExportUi((s) => s.open !== null);
   const confirmOpen = useConfirm((s) => s.request !== null);
@@ -33,13 +32,7 @@ export default function App() {
   useShortcuts(ready && !modal);
   usePlayback();
   useEffect(() => {
-    let live = true;
-    void startSessionOnce().then((s) => {
-      if (live) setSession(s);
-    });
-    return () => {
-      live = false;
-    };
+    void startSessionOnce();
   }, []);
 
   return (

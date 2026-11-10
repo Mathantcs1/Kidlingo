@@ -24,13 +24,14 @@ export function mayTouchSharedStorage(): boolean {
 
 /**
  * Takes the editor lock for the life of the page if no other tab holds it (never waits for the answer). When
- * another tab holds it, also queues a blocking request whose grant (the other tab closed) calls `onFreed` — by
- * default a reload, so this tab takes over by itself. Without `navigator.locks` the editor proceeds as
- * 'unsupported'; a failing request gives 'error'.
+ * another tab holds it, also queues a blocking request: when that is granted (the owner closed or reloaded) this
+ * tab keeps the lock for good, becomes 'held' and calls `onFreed` to start editing IN PLACE. No reload: a reloading
+ * document would hold the lock while it navigates and bounce it between waiting tabs. Without `navigator.locks` the
+ * editor proceeds as 'unsupported'; a failing request gives 'error'.
  */
 export function acquireEditorLock(
   locks: LockManager | undefined = typeof navigator !== 'undefined' ? navigator.locks : undefined,
-  onFreed: () => void = () => location.reload(),
+  onFreed: () => void = () => undefined,
 ): Promise<LockState> {
   if (!locks) return Promise.resolve((state = 'unsupported'));
   return new Promise((resolve) => {
@@ -50,10 +51,11 @@ export function acquireEditorLock(
   });
 }
 
-/** Waits (blocking request) until the owning tab lets go, then hands over; holds the lock until the page unloads. */
+/** Waits (blocking request) until the owning tab lets go, then takes over; holds the lock until the page unloads. */
 function waitForRelease(locks: LockManager, onFreed: () => void): void {
   locks
     .request(NAME, () => {
+      state = 'held';
       onFreed();
       return new Promise<void>(() => undefined);
     })
