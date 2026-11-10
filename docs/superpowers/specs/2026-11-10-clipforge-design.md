@@ -14,22 +14,43 @@ WebCodecs + canvas compositing (approach B). Hardware-accelerated decode and enc
 
 - Import video, audio and images.
 - Multi-track timeline: trim, split, move, delete, ripple-delete.
-- Text titles; fade and crossfade transitions.
-- Per-clip volume; background music track.
+- Text titles with animated presets (fade, slide, typewriter, pop).
+- Transitions: fade, crossfade, wipe, slide, zoom, glitch.
+- Per-clip effects (see Effects).
+- Speed change (0.25x to 4x) and reverse.
+- Crop, rotate, flip, scale and position; picture-in-picture via layered tracks.
+- Keyframes for position, scale, rotation and opacity (Ken Burns zoom/pan, animated overlays).
+- Per-clip volume, audio fade in/out; background music track.
 - Export 1080p or 4K MP4 (H.264 + AAC), with progress and cancel.
 - Undo/redo; autosave projects locally.
 
-Out of v1: auto-captions, keyframe animation, color grading, chroma key, ffmpeg fallback import.
+Out of v1: auto-captions, video stabilization, ffmpeg fallback import.
+
+## Effects
+
+Effects are stackable per clip, reorderable, with live-adjustable parameters and a real-time preview.
+- Color: brightness, contrast, saturation, exposure, temperature/tint, hue shift, curves-lite (shadows/highlights).
+- Looks: black and white, sepia, vintage film (grain), cinematic teal-orange, vignette.
+- Blur and sharpen: gaussian blur, sharpen, glow/bloom, pixelate.
+- Stylize: RGB split, glitch, VHS, mirror, invert.
+- Chroma key (green screen): key color, tolerance, edge softness, spill suppression.
+
+Each effect is a registry entry (`id`, parameter schema, WebGL2 fragment shader), so adding more later means adding one entry, with no changes to the compositor or UI.
+
+## Delivery as a web app
+
+The app is a static site (no server) that can be hosted anywhere (e.g. Vercel, Netlify, GitHub Pages) and used from any modern browser; all processing stays on the user's machine. A `npm run build` output in `dist/` is the deployable artifact.
 
 ## Stack
 
-Vite, TypeScript, React, Zustand (editor state), Mediabunny (WebCodecs decode and MP4 mux), Web Audio API, IndexedDB (project JSON), OPFS (imported media), Vitest, Playwright.
+Vite, TypeScript, React, WebGL2 (effects and compositing), Zustand (editor state), Mediabunny (WebCodecs decode and MP4 mux), Web Audio API, IndexedDB (project JSON), OPFS (imported media), Vitest, Playwright.
 
 ## Units
 
 - `core/timeline`: pure functions over the project model (tracks, clips, in/out points, transitions): trim, split, move, ripple-delete, active-clips-at-time. No browser APIs.
 - `media/`: import, metadata, thumbnails, waveforms, decoded frames/audio for a time range.
-- `render/compositor`: `(timeline, t) -> canvas frame`; layering, text, fades, crossfades. Used by preview and export.
+- `effects/`: effect registry (parameter schema + fragment shader per effect), keyframe interpolation.
+- `render/compositor`: `(timeline, t) -> canvas frame`, WebGL2; layering, transforms, effects, text, transitions. Used by preview and export.
 - `audio/mixer`: clip and music mixing, volume; live (Web Audio) and offline (export).
 - `export/`: steps the timeline frame by frame, encodes H.264/AAC, muxes MP4; progress and cancel.
 - `ui/`: media bin, preview player, timeline (drag/trim/split), inspector, export dialog.
@@ -48,6 +69,8 @@ UI actions mutate a plain-JSON project model; the compositor and mixer re-render
 ## Testing
 
 - Vitest unit tests for `core/timeline` (primary correctness risk).
+- Vitest for keyframe interpolation and speed/time-mapping math.
+- Playwright: render each effect on a known test frame and assert pixel readback differs from the source in the expected way (e.g. B&W has equal RGB channels).
 - Playwright smoke test: import a generated clip, split, export, verify output MP4 duration and streams.
 - Cannot be verified on a real Mac or the user's footage in the build environment; expect tuning on the user's machine.
 
