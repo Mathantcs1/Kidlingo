@@ -334,6 +334,22 @@ export function exportProject(p: Project, opts: { quality: ExportQuality; onProg
 - [ ] **Step 4: README:** how to run, supported formats, HEVC note (set iPhone Camera → Formats → Most Compatible), browser requirements, and how to deploy `dist/` to a static host.
 - [ ] **Step 5: Commit** `test: end-to-end smoke; docs`
 
+### Task 12: Host online (Vercel)
+
+**Files:**
+- Create: `vercel.json`
+- Modify: `README.md`
+
+**Interfaces:**
+- Consumes: the `dist/` output of `npm run build` (Task 1) and the passing suite (Task 11).
+- Produces: a public HTTPS URL serving the editor. HTTPS is required for WebCodecs and OPFS to work.
+
+- [ ] **Step 1: Write `vercel.json`:** build command `npm run build`, output directory `dist`, and a single-page-app rewrite of all paths to `/index.html`. No server functions.
+- [ ] **Step 2: Verify locally:** `npm run build && npx vite preview`, load the preview URL in Playwright and assert the page shows `ClipForge` and no `banner-no-webcodecs`.
+- [ ] **Step 3: Ask the user to confirm** before deploying, since a deploy is public. Then deploy the `dist/` build with the Vercel tools (project name `clipforge`), and open the returned URL.
+- [ ] **Step 4: Verify the live URL:** the page loads over HTTPS, `hasWebCodecs()` is true in Chromium, and importing the fixture MP4 and exporting a 1 s clip works on the hosted copy.
+- [ ] **Step 5: Document** the live URL and redeploy steps in `README.md`. **Commit** `chore: Vercel hosting config`
+
 ---
 
 ## Self-Review
