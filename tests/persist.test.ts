@@ -27,7 +27,7 @@ describe('persist', () => {
   });
 
   it('loadProject reports a newer version as unsupported, never as absent', async () => {
-    kv.get.mockResolvedValue({ ...emptyProject(), version: 2 });
+    kv.get.mockResolvedValue({ ...emptyProject(), version: 3 });
     expect(await loadProject()).toEqual({ status: 'unsupported', reason: expect.stringContaining('newer version') });
   });
 
@@ -38,6 +38,17 @@ describe('persist', () => {
       expect((await loadProject()).status).toBe('unsupported');
     },
   );
+
+  it('loadProject migrates a stored v1 project to v2', async () => {
+    const v1 = { version: 1, format: { width: 1, height: 1, fps: 30 }, tracks: [{ id: 't', kind: 'video', clips: [] }], media: {} };
+    kv.get.mockResolvedValue(v1);
+    const r = await loadProject();
+    expect(r.status).toBe('ok');
+    if (r.status === 'ok') {
+      expect(r.project.version).toBe(2);
+      expect(r.project.tracks[0]).toMatchObject({ id: 't', name: '', hidden: false, muted: false, solo: false, locked: false });
+    }
+  });
 
   it('loadProject returns the stored project', async () => {
     const p = emptyProject();

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emptyProject, defaultTransform } from '../src/core/model';
+import { emptyProject, defaultTransform, newTrack } from '../src/core/model';
 import type { Clip, Project } from '../src/core/model';
 import {
   MIN_CLIP,
@@ -109,7 +109,7 @@ describe('timeline', () => {
   it('moveClip across tracks checks kind', () => {
     const p = withClip();
     expect(() => moveClip(p, 'c1', 0, p.tracks[1].id)).toThrow(TimelineError);
-    const extra = { ...p, tracks: [...p.tracks, { id: 'v2', kind: 'video' as const, clips: [] }] };
+    const extra = { ...p, tracks: [...p.tracks, { ...newTrack('video'), id: 'v2' }] };
     const q = moveClip(extra, 'c1', 1, 'v2');
     expect(findClip(q, 'c1').track.id).toBe('v2');
     expect(q.tracks[0].clips).toHaveLength(0);
@@ -135,7 +135,7 @@ describe('timeline', () => {
     const ids = activeClipsAt(p, 10).map((c) => c.id);
     expect(ids).toEqual(['c2']);
     expect(activeClipsAt(p, 0).map((c) => c.id)).toEqual(['c1']);
-    const q = { ...p, tracks: [...p.tracks, { id: 'v2', kind: 'video' as const, clips: [mk('top', { start: 0, out: 3 })] }] };
+    const q = { ...p, tracks: [...p.tracks, { ...newTrack('video'), id: 'v2', clips: [mk('top', { start: 0, out: 3 })] }] };
     expect(activeClipsAt(q, 1).map((c) => c.id)).toEqual(['c1', 'top']);
   });
 

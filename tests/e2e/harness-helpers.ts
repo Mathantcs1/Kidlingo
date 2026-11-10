@@ -1,6 +1,7 @@
 // Shared helpers for specs that drive the in-browser harness (/harness.html, window.cf).
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { newTrack } from '../../src/core/model';
 import type { Clip, MediaRef, Project, Track, Transform } from '../../src/core/model';
 
 export type Rgb = [number, number, number];
@@ -45,10 +46,10 @@ export function clipOf(m: MediaRef, over: Partial<Omit<Clip, 'transform'>> & { t
 /** One video track holding `video` (sorted by the caller) plus an audio track. */
 export function project(format: Project['format'], media: MediaRef[], video: Clip[]): Project {
   const tracks: Track[] = [
-    { id: 'video', kind: 'video', clips: video },
-    { id: 'audio', kind: 'audio', clips: [] },
+    { ...newTrack('video'), id: 'video', clips: video },
+    { ...newTrack('audio'), id: 'audio' },
   ];
-  return { version: 1, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 2, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 export function render(

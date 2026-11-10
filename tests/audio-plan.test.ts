@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { audibleClips, planWindow, windowBounds } from '../src/audio/plan';
 import type { Segment } from '../src/audio/plan';
-import { emptyProject } from '../src/core/model';
+import { emptyProject, newTrack } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 
 const media = (id: string, over: Partial<MediaRef> = {}): MediaRef => ({
@@ -38,8 +38,8 @@ function projectOf(videoClips: Clip[], audio: Clip[] = [], extra: MediaRef[] = [
   return {
     ...p,
     tracks: [
-      { id: 'v', kind: 'video', clips: videoClips },
-      { id: 'a', kind: 'audio', clips: audio },
+      { ...newTrack('video'), id: 'v', clips: videoClips },
+      { ...newTrack('audio'), id: 'a', clips: audio },
     ],
     media: Object.fromEntries(list.map((m) => [m.id, m])),
   };

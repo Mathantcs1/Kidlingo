@@ -29,6 +29,12 @@ export interface Clip {
 export interface Track {
   id: Id;
   kind: TrackKind;
+  /** User label; empty means the UI derives one ("Video 2"). */
+  name: string;
+  hidden: boolean;
+  muted: boolean;
+  solo: boolean;
+  locked: boolean;
   clips: Clip[];
 }
 
@@ -45,7 +51,7 @@ export interface MediaRef {
 }
 
 export interface Project {
-  version: 1;
+  version: 2;
   format: { width: number; height: number; fps: number };
   tracks: Track[];
   media: Record<Id, MediaRef>;
@@ -59,14 +65,15 @@ export function defaultTransform(): Transform {
   return { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 };
 }
 
+export function newTrack(kind: TrackKind, name = ''): Track {
+  return { id: newId(), kind, name, hidden: false, muted: false, solo: false, locked: false, clips: [] };
+}
+
 export function emptyProject(formatKey: FormatKey = 'youtube'): Project {
   return {
-    version: 1,
+    version: 2,
     format: { ...FORMATS[formatKey], fps: 30 },
-    tracks: [
-      { id: newId(), kind: 'video', clips: [] },
-      { id: newId(), kind: 'audio', clips: [] },
-    ],
+    tracks: [newTrack('video'), newTrack('audio')],
     media: {},
   };
 }

@@ -1,5 +1,6 @@
 import { get, set } from 'idb-keyval';
 import type { Id, Project } from '../core/model';
+import { migrateProject } from '../core/migrate';
 
 const KEY = 'clipforge:current';
 
@@ -19,18 +20,16 @@ export type LoadResult =
   | { status: 'unsupported'; reason: string }
   | { status: 'unavailable' };
 
-const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
-
-/** Checks the value's outline (version 1 with format, tracks and media); clips are trusted as saved. */
+/** Migrates older saves to the current version; a newer or malformed value is unsupported and must be preserved. */
 export function classifySaved(v: unknown): LoadResult {
   if (v === undefined) return { status: 'none' };
-  if (!isObject(v)) return { status: 'unsupported', reason: 'the stored data is not a ClipForge project.' };
-  if (typeof v.version === 'number' && v.version > 1) {
-    return { status: 'unsupported', reason: `it was saved by a newer version of ClipForge (format ${v.version}).` };
+  const r = migrateProject(v);
+  if (r.ok) return { status: 'ok', project: r.project };
+  if (r.reason === 'newer') {
+    const version = (v as { version: number }).version;
+    return { status: 'unsupported', reason: `it was saved by a newer version of ClipForge (format ${version}).` };
   }
-  const shaped = v.version === 1 && isObject(v.format) && Array.isArray(v.tracks) && isObject(v.media);
-  if (!shaped) return { status: 'unsupported', reason: 'the stored data is not a ClipForge project.' };
-  return { status: 'ok', project: v as unknown as Project };
+  return { status: 'unsupported', reason: 'the stored data is not a ClipForge project.' };
 }
 
 export async function loadProject(): Promise<LoadResult> {
