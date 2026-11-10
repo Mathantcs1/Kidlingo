@@ -18,6 +18,7 @@ import {
   setClipVolume,
   splitAt,
 } from '../src/ui/edits';
+import { resetClipTransform, setClipTransform } from '../src/ui/transformEdits';
 
 const video: MediaRef = { id: 'v', name: 'v.mp4', kind: 'video', duration: 10, width: 1920, height: 1080, fps: 30, hasAudio: true };
 const other: MediaRef = { ...video, id: 'w', name: 'w.mp4' };
@@ -282,5 +283,82 @@ describe('appendMedia with an active track', () => {
     expect(() => appendMedia(p, 'v', vids(p)[1].id)).toThrow('All tracks of this kind are locked');
     expect(() => appendMedia(p, 'v')).toThrow(TimelineError);
     expect(() => appendMedia(p, 't')).not.toThrow();
+  });
+});
+
+describe('setClipTransform', () => {
+  // project() is vertical: 1080×1920, so x/y clamp to ±4320 / ±7680.
+  const tr = (p: Project, id = 'a') => p.tracks.flatMap((t) => t.clips).find((c) => c.id === id)!.transform;
+
+  it('patches only the given fields and leaves the input untouched', () => {
+    const p = project();
+    const before = JSON.stringify(p);
+    const out = setClipTransform(p, 'a', { x: 12.5, opacity: 0.4 });
+    expect(tr(out)).toEqual({ ...defaultTransform(), x: 12.5, opacity: 0.4 });
+    expect(JSON.stringify(p)).toBe(before);
+    expect(out.tracks[0].clips[1]).toBe(p.tracks[0].clips[1]);
+  });
+
+  it('clamps scale to 0.02..20, opacity to 0..1 and x/y to ±4× the format; normalises rotation', () => {
+    const p = project();
+    expect(tr(setClipTransform(p, 'a', { scale: 0 })).scale).toBe(0.02);
+    expect(tr(setClipTransform(p, 'a', { scale: 99 })).scale).toBe(20);
+    expect(tr(setClipTransform(p, 'a', { opacity: 1.5 })).opacity).toBe(1);
+    expect(tr(setClipTransform(p, 'a', { opacity: -0.2 })).opacity).toBe(0);
+    expect(tr(setClipTransform(p, 'a', { x: 1e9, y: -1e9 }))).toMatchObject({ x: 4320, y: -7680 });
+    expect(tr(setClipTransform(p, 'a', { rotation: 190 })).rotation).toBe(-170);
+    expect(tr(setClipTransform(p, 'a', { rotation: -180 })).rotation).toBe(180);
+    expect(tr(setClipTransform(p, 'a', { rotation: 720 })).rotation).toBe(0);
+  });
+
+  it('rejects non-finite values with TimelineError and changes nothing', () => {
+    const p = project();
+    for (const bad of [{ x: Number.NaN }, { scale: Infinity }, { rotation: -Infinity }, { opacity: Number.NaN }, { y: '3' as unknown as number }]) {
+      expect(() => setClipTransform(p, 'a', bad)).toThrow(new TimelineError('Invalid transform value'));
+    }
+  });
+
+  it('refuses audio clips and locked tracks', () => {
+    expect(() => setClipTransform(project(), 'x', { x: 1 })).toThrow('Audio clips have no picture to move');
+    const base = project();
+    const locked = { ...base, tracks: base.tracks.map((t, i) => (i === 0 ? { ...t, locked: true } : t)) };
+    expect(() => setClipTransform(locked, 'a', { x: 1 })).toThrow('Track is locked');
+  });
+
+  it('returns the same project when the patch changes nothing (no undo step)', () => {
+    const p = project();
+    expect(setClipTransform(p, 'a', {})).toBe(p);
+    expect(setClipTransform(p, 'a', { x: 0, scale: 1, rotation: 360 })).toBe(p);
+    expect(setClipTransform(p, 'a', { opacity: 7 })).toBe(p); // clamps to the current 1
+  });
+});
+
+describe('resetClipTransform', () => {
+  it('restores the fit transform for the clip mode in one edit; a no-op returns the same project', () => {
+    const p = setClipTransform(project(), 'a', { x: 40, rotation: 30, opacity: 0.5 });
+    const out = resetClipTransform(p, 'a');
+    expect(out.tracks[0].clips[0].transform).toEqual(fitTransform({ width: 1920, height: 1080 }, { width: 1080, height: 1920 }, 'fit'));
+    expect(out.tracks[0].clips[0].fit).toBe('fit');
+    expect(resetClipTransform(out, 'a')).toBe(out);
+  });
+
+  it('refuses audio clips and locked tracks', () => {
+    expect(() => resetClipTransform(project(), 'x')).toThrow(TimelineError);
+    const base = project();
+    const locked = { ...base, tracks: base.tracks.map((t, i) => (i === 0 ? { ...t, locked: true } : t)) };
+    expect(() => resetClipTransform(locked, 'a')).toThrow('Track is locked');
+  });
+});
+
+describe('resetClipTransform with a tiny image', () => {
+  it('keeps a fitted scale above 20 (no clamp, matching setClipFit)', () => {
+    const base = project();
+    const dot: MediaRef = { id: 'i', name: 'dot.png', kind: 'image', duration: 5, width: 16, height: 16, hasAudio: false };
+    const p: Project = {
+      ...base,
+      media: { ...base.media, i: dot },
+      tracks: base.tracks.map((t, i) => (i === 0 ? { ...t, clips: [clip('img', 0, 1, 'i', 'image')] } : t)),
+    };
+    expect(resetClipTransform(p, 'img').tracks[0].clips[0].transform.scale).toBe(1080 / 16);
   });
 });
