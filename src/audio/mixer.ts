@@ -1,6 +1,6 @@
-import { clipDuration, clipEnd } from '../core/model';
+import { clipEnd } from '../core/model';
+import { audibleClips } from './plan';
 import type { Clip, Project } from '../core/model';
-import { timelineDuration } from '../core/timeline';
 import { decodeAudio } from '../media/decode';
 
 /** Live playback of a project's audio through an AudioContext. */
@@ -16,23 +16,6 @@ export interface Mixer {
   currentTime(): number;
 }
 
-/**
- * Clips that can make sound: non-missing audio clips (any track) and video clips whose media has audio.
- * Images are silent; a volume of 0 contributes nothing.
- */
-function audibleClips(p: Project): Clip[] {
-  const out: Clip[] = [];
-  for (const track of p.tracks) {
-    for (const clip of track.clips) {
-      const media = p.media[clip.mediaId];
-      if (!media || media.missing) continue;
-      if (!(clip.volume > 0) || !(clipDuration(clip) > 0)) continue;
-      if (clip.kind === 'audio' || (clip.kind === 'video' && media.hasAudio)) out.push(clip);
-    }
-  }
-  return out;
-}
-
 /** Connects `buffer` through a gain of `clip.volume` to `dest`; the caller starts the returned node. */
 function connectClip(ctx: BaseAudioContext, buffer: AudioBuffer, clip: Clip, dest: AudioNode): AudioBufferSourceNode {
   const source = ctx.createBufferSource();
@@ -43,26 +26,7 @@ function connectClip(ctx: BaseAudioContext, buffer: AudioBuffer, clip: Clip, des
   return source;
 }
 
-/**
- * Renders the project's audio to a stereo AudioBuffer covering [0, timelineDuration(p)). Each audible clip's
- * [in, out) source range is decoded at the media's native rate (the context resamples), placed at
- * `clip.start` and scaled by `clip.volume`. Returns null if nothing is audible.
- */
-export async function renderMixdown(p: Project, sampleRate = 48000): Promise<AudioBuffer | null> {
-  const clips = audibleClips(p);
-  const duration = timelineDuration(p);
-  if (clips.length === 0 || !(duration > 0)) return null;
-  const ctx = new OfflineAudioContext(2, Math.ceil(duration * sampleRate), sampleRate);
-  let scheduled = 0;
-  for (const clip of clips) {
-    const buffer = await decodeAudio(clip.mediaId, clip.in, clip.out, ctx);
-    if (!buffer) continue;
-    connectClip(ctx, buffer, clip, ctx.destination).start(clip.start);
-    scheduled++;
-  }
-  if (scheduled === 0) return null;
-  return ctx.startRendering();
-}
+export { renderMixdown } from './mixdown';
 
 class LiveMixer implements Mixer {
   private ctx: AudioContext | null = null;

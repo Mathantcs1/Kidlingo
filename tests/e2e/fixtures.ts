@@ -57,6 +57,10 @@ export function ensureFixtures(): string {
   encode(at('tone.wav'), [
     '-f', 'lavfi', '-i', 'sine=frequency=330:sample_rate=48000', '-t', '2', '-c:a', 'pcm_s16le',
   ]);
+  // Ten minutes of 8 kHz mono AAC: cheap, but long enough that decoding it whole is measurably slow.
+  encode(at('long-tone.m4a'), [
+    '-f', 'lavfi', '-i', 'sine=frequency=220:sample_rate=8000', '-t', '600', '-c:a', 'aac', '-b:a', '24k', '-ac', '1',
+  ]);
   encode(at('fps25.mp4'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '2', ...VIDEO_ENC, '-an']);
   encode(at('quad.mp4'), ['-f', 'lavfi', '-i', QUADRANTS, ...VIDEO_ENC, '-an']);
   for (const [cw, name] of Object.entries(ROTATED)) {

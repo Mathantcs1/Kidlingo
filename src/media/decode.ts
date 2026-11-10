@@ -1,4 +1,4 @@
-import { ALL_FORMATS, AudioSampleSink, BlobSource, Input, VideoSampleSink } from 'mediabunny';
+import { ALL_FORMATS, BlobSource, Input, VideoSampleSink } from 'mediabunny';
 import type { Rotation, VideoSample } from 'mediabunny';
 import type { Id } from '../core/model';
 import { getMediaFile } from './storage';
@@ -208,49 +208,5 @@ export async function openVideoSource(mediaId: Id): Promise<VideoSource> {
   }
 }
 
-/**
- * Decodes [from, to) seconds of the media's SOURCE timeline into an AudioBuffer at the media's native
- * sample rate. The range is clamped to the audio track; returns null when the media has no audio or the
- * clamped range is empty. Only the packets covering the range are read and decoded.
- */
-export async function decodeAudio(
-  mediaId: Id,
-  from: number,
-  to: number,
-  ctx: BaseAudioContext,
-): Promise<AudioBuffer | null> {
-  const input = openInput(await getMediaFile(mediaId));
-  try {
-    const track = await input.getPrimaryAudioTrack();
-    if (!track) return null;
-    const start = Math.max(from, 0);
-    const end = Math.min(to, await track.computeDuration());
-    if (!(end > start)) return null;
-    const sampleRate = track.sampleRate;
-    const channels = track.numberOfChannels;
-    const length = Math.round((end - start) * sampleRate);
-    if (length <= 0 || channels <= 0) return null;
-
-    const out = ctx.createBuffer(channels, length, sampleRate);
-    const sink = new AudioSampleSink(track);
-    for await (const sample of sink.samples(start, end)) {
-      try {
-        const offset = Math.round((sample.timestamp - start) * sampleRate);
-        const srcOffset = Math.max(0, -offset);
-        const dstOffset = Math.max(0, offset);
-        const count = Math.min(sample.numberOfFrames - srcOffset, length - dstOffset);
-        if (count <= 0) continue;
-        const tmp = new Float32Array(count);
-        for (let c = 0; c < Math.min(channels, sample.numberOfChannels); c++) {
-          sample.copyTo(tmp, { planeIndex: c, format: 'f32-planar', frameOffset: srcOffset, frameCount: count });
-          out.copyToChannel(tmp, c, dstOffset);
-        }
-      } finally {
-        sample.close();
-      }
-    }
-    return out;
-  } finally {
-    input.dispose();
-  }
-}
+export { decodeAudio, decodeAudioRange } from './audioDecode';
+export type { DecodedAudio } from './audioDecode';

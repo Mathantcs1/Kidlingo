@@ -3,18 +3,14 @@ import type { Clip, Id, Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
+import { ExportError } from './errors';
 
 // Browser-only modules (Mediabunny, WebGL compositor, decoders, Web Audio mixer) are imported lazily inside
 // exportProject so this module stays importable in Node (unit tests) and they stay off the main bundle path.
 
 export type ExportQuality = '1080p' | '4k';
 
-export class ExportError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ExportError';
-  }
-}
+export { ExportError };
 
 export interface ExportOptions {
   quality: ExportQuality;
@@ -36,8 +32,10 @@ const AUDIO_SAMPLE_RATE = 48_000;
 const KEY_FRAME_INTERVAL = 2;
 /** Mixdown audio is handed to the muxer in slices of this many seconds, interleaved with the video frames. */
 const AUDIO_SLICE = 1;
-/** Share of the progress bar covered by encoding video frames; the remainder is finalizing. */
+/** Share of the progress bar covered by rendering audio and video; the remainder is finalizing. */
 const FRAMES_SHARE = 0.95;
+/** Part of FRAMES_SHARE given to rendering the audio mix (when anything is audible). */
+const AUDIO_SHARE = 0.15;
 const TEMP_DIR = 'clipforge-export';
 
 /** Rounds each side down to the nearest even number (H.264 needs even dimensions); never below 2. */
@@ -98,13 +96,6 @@ async function ensureAacEncoder(mb: typeof import('mediabunny'), quality: Instan
   aacEncoderRegistered = true;
 }
 
-/** Copies [from, to) sample frames of `src` into a new AudioBuffer. */
-function sliceBuffer(src: AudioBuffer, from: number, to: number): AudioBuffer {
-  const out = new AudioBuffer({ length: to - from, numberOfChannels: src.numberOfChannels, sampleRate: src.sampleRate });
-  for (let c = 0; c < src.numberOfChannels; c++) out.copyToChannel(src.getChannelData(c).subarray(from, to), c);
-  return out;
-}
-
 /** Creates the render canvas: an OffscreenCanvas if it supports WebGL2, else a detached HTMLCanvasElement. */
 function createExportCompositor(
   create: typeof import('../render/compositor').createCompositor,
@@ -118,7 +109,12 @@ function createExportCompositor(
   } catch {
     compositor = create(document.createElement('canvas'), { preserveDrawingBuffer: true });
   }
-  compositor.resize(width, height);
+  try {
+    compositor.resize(width, height);
+  } catch (e) {
+    compositor.dispose();
+    throw e;
+  }
   return compositor;
 }
 
@@ -155,11 +151,11 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
     if (signal.aborted) throw abortError();
   };
 
-  const [mb, { createCompositor }, { openVideoSource }, { renderMixdown }] = await Promise.all([
+  const [mb, { createCompositor }, { openVideoSource }, { MixdownFeeder, MixdownStream }] = await Promise.all([
     import('mediabunny'),
     import('../render/compositor'),
     import('../media/decode'),
-    import('../audio/mixer'),
+    import('../audio/mixdown'),
   ]);
 
   const { width, height } = exportSize(p, quality, opts.maxLongSide);
@@ -180,10 +176,10 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
     }
     checkAbort();
 
-    // The audio track must exist before the output starts, so the mixdown is rendered up front.
-    const mixdown = await renderMixdown(p, AUDIO_SAMPLE_RATE);
-    checkAbort();
-    if (mixdown) await ensureAacEncoder(mb, audioQuality);
+    // The audio track must be declared before the output starts, so "has audio" is decided from the audible
+    // clips up front; the mix itself is rendered window by window, interleaved with the frames below.
+    const mix = new MixdownStream(p, AUDIO_SAMPLE_RATE, { signal });
+    if (mix.audible) await ensureAacEncoder(mb, audioQuality);
     checkAbort();
 
     compositor = createExportCompositor(createCompositor, width, height);
@@ -231,20 +227,20 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
       keyFrameInterval: KEY_FRAME_INTERVAL,
     });
     output.addVideoTrack(video, { frameRate: fps });
-    const audio = mixdown ? new mb.AudioBufferSource({ codec: 'aac', quality: audioQuality }) : null;
+    const audio = mix.audible ? new mb.AudioBufferSource({ codec: 'aac', quality: audioQuality }) : null;
     if (audio) output.addAudioTrack(audio);
     await output.start();
 
-    const sliceLength = Math.round(AUDIO_SLICE * AUDIO_SAMPLE_RATE);
-    let audioPos = 0;
+    const feeder = audio ? new MixdownFeeder(mix, Math.round(AUDIO_SLICE * AUDIO_SAMPLE_RATE)) : null;
+    const audioShare = feeder ? AUDIO_SHARE : 0;
+    const report = (framesDone: number): void => {
+      const audioDone = feeder ? mix.rendered / mix.length : 0;
+      progress(FRAMES_SHARE * ((1 - audioShare) * (framesDone / frameCount) + audioShare * audioDone));
+    };
     const feedAudioUntil = async (seconds: number): Promise<void> => {
-      if (!audio || !mixdown) return;
-      const end = Math.min(mixdown.length, Math.ceil(seconds * mixdown.sampleRate));
-      while (audioPos < end) {
-        const next = Math.min(mixdown.length, audioPos + sliceLength);
-        await audio.add(sliceBuffer(mixdown, audioPos, next));
-        audioPos = next;
-      }
+      if (!feeder || !audio) return;
+      await feeder.feedUntil(seconds, (b) => audio.add(b));
+      checkAbort();
     };
 
     for (let n = 0; n < frameCount; n++) {
@@ -252,10 +248,11 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
       const t = n / fps;
       // Keep audio a slice ahead of the video so the muxer can interleave without buffering a whole track.
       await feedAudioUntil(t + AUDIO_SLICE);
+      report(n);
       await syncSources(t);
       await compositor.renderFrame(p, t, sources);
       await video.add(t, 1 / fps);
-      progress(((n + 1) / frameCount) * FRAMES_SHARE);
+      report(n + 1);
     }
     checkAbort();
     await feedAudioUntil(Infinity);
