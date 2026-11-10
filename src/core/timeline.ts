@@ -30,6 +30,11 @@ export function findClip(p: Project, clipId: Id): { track: Track; clip: Clip } {
   throw new TimelineError(`Clip not found: ${clipId}`);
 }
 
+/** NaN/Infinity slip past every `<`/`>` guard below, so they are rejected up front. */
+function assertFinite(what: string, ...values: number[]): void {
+  if (!values.every(Number.isFinite)) throw new TimelineError(`Invalid ${what}`);
+}
+
 function assertFree(track: Track, clip: Clip, ignoreId?: Id): void {
   if (track.clips.some((c) => c.id !== ignoreId && overlaps(c, clip))) {
     throw new TimelineError('Clip overlaps an existing clip');
@@ -39,6 +44,7 @@ function assertFree(track: Track, clip: Clip, ignoreId?: Id): void {
 export function addClip(p: Project, trackId: Id, clip: Clip): Project {
   const track = p.tracks.find((t) => t.id === trackId);
   if (!track) throw new TimelineError(`Track not found: ${trackId}`);
+  assertFinite('clip times', clip.start, clip.in, clip.out);
   if (trackKindFor(clip) !== track.kind) {
     throw new TimelineError(`A ${clip.kind} clip cannot go on a ${track.kind} track`);
   }
@@ -52,6 +58,7 @@ export function addClip(p: Project, trackId: Id, clip: Clip): Project {
 }
 
 export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: number): Project {
+  assertFinite('trim time', time);
   const { track, clip } = findClip(p, clipId);
   let next: Clip;
   if (edge === 'start') {
@@ -67,6 +74,7 @@ export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: nu
 }
 
 export function splitClip(p: Project, clipId: Id, time: number): Project {
+  assertFinite('split time', time);
   const { clip } = findClip(p, clipId);
   if (time < clip.start + MIN_CLIP - EPS || time > clipEnd(clip) - MIN_CLIP + EPS) {
     throw new TimelineError('Split point too close to clip edge');
@@ -80,6 +88,7 @@ export function splitClip(p: Project, clipId: Id, time: number): Project {
 }
 
 export function moveClip(p: Project, clipId: Id, newStart: number, trackId?: Id): Project {
+  assertFinite('clip position', newStart);
   const { track: from, clip } = findClip(p, clipId);
   const target = trackId === undefined ? from : p.tracks.find((t) => t.id === trackId);
   if (!target) throw new TimelineError(`Track not found: ${trackId}`);
