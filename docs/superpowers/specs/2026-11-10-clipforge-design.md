@@ -23,7 +23,8 @@ WebCodecs + canvas compositing (approach B). Hardware-accelerated decode and enc
 - Speed change (0.25x to 4x) and reverse.
 - Crop, rotate, flip, scale and position; picture-in-picture via layered tracks.
 - Animation controls: keyframes for position, scale, rotation, opacity and any effect parameter; easing presets (ease in/out, back, elastic, bounce) and a custom bezier curve editor; motion paths; in/out animation presets for clips, text and overlays (pop, slide, spin, drop, whip); speed ramping with a curve (smooth slow-mo to fast); Ken Burns zoom/pan; copy/paste keyframes across clips.
-- Per-clip volume, audio fade in/out; background music track.
+- Audio editing: separate audio tracks (unlimited) alongside video; add standalone audio files (music, voiceover, sound effects) or record a voiceover; detach audio from a video clip into its own clip; trim, split, move, delete, duplicate and ripple-edit audio clips independently of video; waveform display for precise cuts; per-clip volume, pan, mute/solo, fade in/out and crossfades; track-level volume.
+- Audio effects (stackable per audio clip or per track, live preview, rendered into export): EQ (low/mid/high), noise reduction (basic), compressor/normalize, reverb, echo/delay, pitch shift, voice presets (podcast, radio, telephone, deep, chipmunk), low/high-pass filter, and auto-ducking (lower music under speech); speed change with optional pitch preservation.
 - Export 1080p or 4K MP4 (H.264 + AAC), with progress and cancel.
 - Undo/redo; autosave projects locally.
 
@@ -58,7 +59,7 @@ Vite, TypeScript, React, WebGL2 (effects and compositing), Zustand (editor state
 - `media/`: import, metadata, thumbnails, waveforms, decoded frames/audio for a time range.
 - `effects/`: effect registry (parameter schema + fragment shader per effect), keyframe interpolation with easing and bezier curves, LUT loading.
 - `render/compositor`: `(timeline, t) -> canvas frame`, WebGL2; layering, transforms, effects, text, transitions. Used by preview and export.
-- `audio/mixer`: clip and music mixing, volume; live (Web Audio) and offline (export).
+- `audio/mixer`: multi-track mixing, clip trimming/split, volume/pan, fades, and the audio effect chain (EQ, compressor, reverb, delay, pitch, filters, ducking) built on Web Audio nodes; live (AudioContext) and offline (OfflineAudioContext, used by export). Audio effects use a registry like visual effects (id, parameter schema, node-graph builder).
 - `export/`: steps the timeline frame by frame, encodes H.264/AAC, muxes MP4; progress and cancel.
 - `ui/`: media bin, preview player, timeline (drag/trim/split), inspector, keyframe/curve editor, export dialog.
 
@@ -76,6 +77,7 @@ UI actions mutate a plain-JSON project model; the compositor and mixer re-render
 ## Testing
 
 - Vitest unit tests for `core/timeline` (primary correctness risk).
+- Vitest for audio clip cut/split/trim math and ducking envelope calculation; Playwright renders audio with each effect offline and asserts expected signal changes (e.g. low-pass reduces high-frequency energy, gain scales amplitude).
 - Vitest for keyframe interpolation, easing curves, speed-ramp time mapping, and merge/join logic (gapless, correct durations with transitions, mixed frame rates and sizes).
 - Playwright: render each effect on a known test frame and assert pixel readback differs from the source in the expected way (e.g. B&W has equal RGB channels).
 - Playwright smoke test: import a generated clip, split, export, verify output MP4 duration and streams.
