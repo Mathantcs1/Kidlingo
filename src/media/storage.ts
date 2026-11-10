@@ -11,15 +11,25 @@ function isNotFound(e: unknown): boolean {
   return e instanceof DOMException && e.name === 'NotFoundError';
 }
 
-/** Streams the blob into OPFS under `id`, replacing any existing entry. */
+/**
+ * Streams the blob into OPFS under `id`, replacing any existing entry. On failure an existing entry keeps its old
+ * contents (the write is only committed on success) and an entry this call created is removed.
+ */
 export async function putMedia(id: Id, file: Blob): Promise<void> {
   const dir = await mediaDir();
+  const existed = await dir.getFileHandle(id).then(
+    () => true,
+    (e: unknown) => {
+      if (isNotFound(e)) return false;
+      throw e;
+    },
+  );
   const handle = await dir.getFileHandle(id, { create: true });
   try {
     const writable = await handle.createWritable();
     await file.stream().pipeTo(writable);
   } catch (e) {
-    await dir.removeEntry(id).catch(() => undefined);
+    if (!existed) await dir.removeEntry(id).catch(() => undefined);
     throw e;
   }
 }

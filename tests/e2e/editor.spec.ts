@@ -7,6 +7,7 @@ const dir = ensureFixtures();
 const withAudio = join(dir, 'with-audio.mp4');
 const noAudio = join(dir, 'no-audio.mp4');
 const tone = join(dir, 'tone.wav');
+const truncated = join(dir, 'truncated.mp4');
 const PPS = 60;
 
 interface ClipBox {
@@ -121,7 +122,14 @@ test('imports media into the bin and reports import errors per file', async ({ p
     mimeType: 'video/mp4',
     buffer: Buffer.from('this is just some text, not a video\n'.repeat(20)),
   });
-  await expect(page.getByTestId('error-toast')).toContainText('Unsupported file type: not-a-video.mp4');
+  await expect(page.getByTestId('error-toast')).toContainText(
+    'Could not read not-a-video.mp4: the file looks damaged or incomplete.',
+  );
+  await page.getByTestId('file-input').setInputFiles(truncated);
+  const toastWith = (text: string) => page.getByTestId('error-toast').filter({ hasText: text });
+  await expect(toastWith('Could not read truncated.mp4: the file looks damaged')).toBeVisible();
+  await page.getByTestId('file-input').setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hi') });
+  await expect(toastWith('Unsupported file type: notes.txt')).toBeVisible();
   await expect(page.getByTestId('media-item')).toHaveCount(2);
 });
 
