@@ -196,6 +196,8 @@ test('merge all renders the timeline into one clip in one undo step; cancel leav
   await page.getByTestId('btn-merge-all').click();
   await expect(dialog).toHaveCount(0, { timeout: 150_000 });
   await expect(page.getByTestId('timeline-clip')).toHaveCount(1);
+  // The opener (Merge all) is now disabled, so focus falls back to Export instead of being lost to <body>.
+  await expect(page.getByTestId('btn-export')).toBeFocused();
   const [merged] = await clipStates(page);
   expect(merged.start).toBe(0);
   expect(merged.trackKind).toBe('video');

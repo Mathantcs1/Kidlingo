@@ -144,7 +144,8 @@ interface TempFile {
  * audio mix is rendered in EXPORT_WINDOW_SECONDS windows interleaved with the frames, so memory does not grow
  * with the project length.
  *
- * Rejects with ExportError('Nothing to export') for an empty timeline, and with
+ * Rejects with ExportError('Nothing to export') for an empty timeline, ExportError('Invalid frame rate') for a
+ * non-finite or non-positive project fps, and with
  * DOMException('Aborted', 'AbortError') when `signal` aborts; either way every decoder, encoder, GL object
  * and temp file is released.
  */
@@ -152,6 +153,7 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
   const { quality, onProgress, signal } = opts;
   const duration = timelineDuration(p);
   if (!(duration > 0)) throw new ExportError('Nothing to export');
+  if (!(Number.isFinite(p.format.fps) && p.format.fps > 0)) throw new ExportError('Invalid frame rate');
   if (signal.aborted) throw abortError();
 
   let lastProgress = 0;

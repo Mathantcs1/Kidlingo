@@ -66,4 +66,21 @@ describe('exportProject', () => {
     await expect(run).rejects.toBeInstanceOf(ExportError);
     await expect(run).rejects.toThrow('Nothing to export');
   });
+
+  it.each([0, -30, Number.NaN, Number.POSITIVE_INFINITY])('rejects a frame rate of %s with ExportError', async (fps) => {
+    const base = emptyProject();
+    const video = base.tracks.find((t) => t.kind === 'video')!;
+    const clip = {
+      id: 'c', mediaId: 'm', kind: 'video' as const, start: 0, in: 0, out: 1,
+      transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 }, volume: 1, fit: 'fit' as const,
+    };
+    const p = {
+      ...base,
+      format: { ...base.format, fps },
+      tracks: base.tracks.map((t) => (t === video ? { ...t, clips: [clip] } : t)),
+    };
+    const run = exportProject(p, { quality: '1080p', onProgress: () => undefined, signal: new AbortController().signal });
+    await expect(run).rejects.toBeInstanceOf(ExportError);
+    await expect(run).rejects.toThrow('Invalid frame rate');
+  });
 });

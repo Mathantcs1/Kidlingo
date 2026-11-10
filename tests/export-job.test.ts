@@ -155,6 +155,31 @@ describe('finished exports', () => {
     expect(cleanupExportTemp).toHaveBeenLastCalledWith(['export-1.mp4']);
   });
 
+  it('never deletes a downloaded export during the page session, even after cancelled or failed jobs', async () => {
+    vi.mocked(exportTempName).mockReturnValue('export-A.mp4');
+    await finished();
+    markDownloaded();
+    closeDialog();
+    // B is cancelled: it never produces a result.
+    vi.mocked(exportProject).mockRejectedValueOnce(new DOMException('Aborted', 'AbortError'));
+    openExport();
+    await startExport('1080p', 'b');
+    expect(useExportUi.getState().phase).toBe('cancelled');
+    // C fails, then a merge runs: every cleanup still spares A (its download may still be streaming).
+    vi.mocked(exportProject).mockRejectedValueOnce(new Error('boom'));
+    await startExport('1080p', 'c');
+    expect(useExportUi.getState().phase).toBe('error');
+    closeDialog();
+    await startMerge();
+    vi.mocked(exportTempName).mockReturnValue('export-D.mp4');
+    openExport();
+    await startExport('1080p', 'd');
+    await flush();
+    const calls = vi.mocked(cleanupExportTemp).mock.calls;
+    expect(calls.length).toBeGreaterThanOrEqual(4);
+    for (const [keep] of calls.slice(1)) expect(keep).toContain('export-A.mp4');
+  });
+
   it('warns before unload while an export runs', async () => {
     let resolve: (b: Blob) => void = () => undefined;
     vi.mocked(exportProject).mockReturnValueOnce(new Promise<Blob>((r) => (resolve = r)));

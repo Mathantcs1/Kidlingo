@@ -15,6 +15,18 @@ import { DEFAULT_EXPORT_NAME, percent } from './exportName';
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled])';
 
 /**
+ * Returns focus to the dialog's opener, or to Export when the opener is gone or disabled (e.g. Merge all after a
+ * successful merge), so focus is never lost to <body>.
+ */
+function restoreFocus(opener: Element | null): void {
+  const usable = (el: Element | null): el is HTMLElement =>
+    el instanceof HTMLElement && el.isConnected && !el.matches(':disabled');
+  const fallback = document.querySelector('[data-testid="btn-export"]');
+  if (usable(opener)) opener.focus();
+  else if (usable(fallback)) fallback.focus();
+}
+
+/**
  * Keeps Tab inside `root`; Escape answers a pending discard question with "keep", else closes (unless a job is
  * running). Focus returns to the element that opened the dialog when it closes.
  */
@@ -51,7 +63,7 @@ function useDialogKeys(rootRef: RefObject<HTMLDivElement | null>, running: boole
     window.addEventListener('keydown', onKey, true);
     return () => {
       window.removeEventListener('keydown', onKey, true);
-      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+      restoreFocus(opener);
     };
   }, [rootRef, opener]);
 }

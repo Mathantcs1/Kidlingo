@@ -46,25 +46,27 @@ let controller: AbortController | null = null;
 /** Pending temp-file cleanup; a new job waits for it so it never deletes the new job's file. */
 let cleaning: Promise<void> = Promise.resolve();
 /**
- * The latest finished export. Its object URL and OPFS file outlive the dialog (a download of it may still be
- * running after Close); they are released when the next job starts (the file one job later if it was
- * downloaded) or, for the URL, when the page goes away.
+ * The latest finished export. Its object URL outlives the dialog (a download of it may still be running after
+ * Close); it is revoked when the next job starts or when the page goes away.
  */
-let last: { url: string; temp?: string; downloaded: boolean } | null = null;
-/** Temp file of a downloaded result that cleanups spare for one more job (its download may still be running). */
-let kept: string[] = [];
+let last: { url: string; temp?: string } | null = null;
+/**
+ * Temp files whose download was started during this page session. They are never deleted while the page lives (the
+ * browser may still be streaming a multi-GB download from one); the app-start cleanup of the next session removes
+ * them. Only never-downloaded, discarded, cancelled or failed temps are deleted by the cleanups below.
+ */
+const downloaded = new Set<string>();
 let againArgs: [ExportQuality, string] | null = null;
 
-/** Deletes the export temp files except `kept`, after any cleanup already queued. */
+/** Deletes the export temp files except downloaded ones, after any cleanup already queued. */
 function cleanTemp(): Promise<void> {
-  const keep = kept;
+  const keep = [...downloaded];
   cleaning = cleaning.then(() => cleanupExportTemp(keep)).catch((e: unknown) => console.error('clipforge: cleanup failed', e));
   return cleaning;
 }
 
-/** Revokes the previous result's URL and deletes old temp files, sparing a downloaded result's file one more job. */
+/** Revokes the previous result's URL and deletes old temp files (never a downloaded one). */
 function releasePrevious(): Promise<void> {
-  kept = last?.downloaded && last.temp ? [last.temp] : [];
   if (last) URL.revokeObjectURL(last.url);
   last = null;
   return cleanTemp();
@@ -113,7 +115,7 @@ export function closeDialog(): void {
 /** The download link was used: closing no longer asks, and the file is kept while it may be downloading. */
 export function markDownloaded(): void {
   set({ downloaded: true });
-  if (last) last.downloaded = true;
+  if (last?.temp) downloaded.add(last.temp);
 }
 
 /** Answers "Discard the finished export?" with yes: closes the dialog or starts the next export. */
@@ -170,7 +172,7 @@ async function runExport(quality: ExportQuality, name: string): Promise<void> {
       signal,
       onProgress: (f) => set({ progress: f }),
     });
-    last = { url: URL.createObjectURL(blob), temp: exportTempName(blob), downloaded: false };
+    last = { url: URL.createObjectURL(blob), temp: exportTempName(blob) };
     set({ phase: 'done', progress: 1, url: last.url, filename });
   } catch (e) {
     fail(e, 'export');
