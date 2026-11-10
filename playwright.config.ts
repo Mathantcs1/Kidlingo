@@ -9,6 +9,8 @@ const executablePath = process.env.PW_CHROMIUM_PATH ?? (existsSync(preinstalled)
 
 export default defineConfig({
   testDir: 'tests/e2e',
+  // Runs against the production build via playwright.preview.config.ts (npm run e2e:preview).
+  testIgnore: /preview-build\.spec\.ts/,
   globalSetup: './tests/e2e/global-setup.ts',
   workers: 1,
   use: {

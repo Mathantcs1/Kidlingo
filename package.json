@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -b",
-    "e2e": "playwright test --trace off"
+    "e2e": "playwright test --trace off",
+    "e2e:preview": "playwright test -c playwright.preview.config.ts --trace off"
   },
   "dependencies": {
     "@mediabunny/aac-encoder": "1.65.2",

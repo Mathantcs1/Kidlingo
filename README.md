@@ -119,15 +119,29 @@ Code layout: `src/core` (pure project model and timeline operations), `src/state
 persistence), `src/media` (support check, OPFS storage, import, decode), `src/render` (WebGL2 compositor),
 `src/audio` (mixer), `src/export` (MP4 exporter), `src/ui` (React components).
 
-## Deployment
+## Deploying
 
-ClipForge is a static site. Build it and host the `dist/` folder on any static host (Netlify, Vercel, GitHub
-Pages, Cloudflare Pages, S3, nginx, ...):
+ClipForge is a static site with no server-side code. Build it and host the `dist/` folder on any static host
+(Vercel, Netlify, GitHub Pages, Cloudflare Pages, S3, nginx, ...):
 
 ```sh
-npm run build
-# upload dist/
+npm run build   # typecheck + production build into dist/
+npm run preview # serve dist/ locally on http://localhost:4173
 ```
 
-It must be served over **HTTPS** (or from `localhost` during development), because WebCodecs and OPFS only work
-in secure contexts. No server-side code or special headers are required.
+It must be served over **HTTPS** (or from `localhost`), because WebCodecs and OPFS only work in secure contexts.
+No special headers (COOP/COEP) are required.
+
+- **Vercel:** `vercel.json` configures the Vite build (`npm run build` into `dist/`), rewrites every path to
+  `/index.html` (static files are served first, so assets still resolve), sets long-lived immutable caching for
+  `/assets/*`, and adds `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy` headers. Import the
+  repository in Vercel or run `vercel --prod`.
+- **Netlify / Cloudflare Pages:** build command `npm run build`, publish directory `dist`. A single-page fallback
+  is optional because the app has one route.
+- **GitHub Pages:** the site is served from a sub-path, so build with a base path:
+  `npx vite build --base=/<repo>/` (`vite.config.ts` sets no `base`, so the CLI flag is honoured), then publish `dist/`.
+  Pages is HTTPS by default.
+
+To check the production bundle (including the lazily loaded AAC encoder chunk) end to end, run
+`npm run e2e:preview`. It builds the site, serves it with `vite preview` and exports a 1 s clip, verified with
+ffprobe. The Vercel rewrite and headers are applied by Vercel and cannot be tested locally.
