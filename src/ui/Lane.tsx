@@ -8,6 +8,7 @@ import { dropMedia } from './edits';
 import { timeToPx } from './layout';
 import { MEDIA_MIME, draggedMedia, setDraggedMedia } from './mediaDrag';
 import { guard } from './Toast';
+import { trackHeight } from './trackLayout';
 import type { DragKind, DragPreview } from './useClipDrag';
 
 interface LaneProps {
@@ -31,7 +32,7 @@ export default function Lane({ project, track, label, pps, selected, preview, on
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
     const m = project.media[draggedMedia() ?? ''];
-    setDrop(m && laneRejects(track.kind, m.kind) ? 'reject' : 'true');
+    setDrop(track.locked || (m && laneRejects(track.kind, m.kind)) ? 'reject' : 'true');
   };
   const onDragLeave = (e: DragEvent<HTMLDivElement>): void => {
     if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrop(null);
@@ -51,19 +52,27 @@ export default function Lane({ project, track, label, pps, selected, preview, on
       }),
     );
   };
-  const clearSelection = (): void => {
-    if (useEditor.getState().selection.length > 0) useEditor.getState().select([]);
+  /** A click on the lane background clears the clip selection and makes this the active track. */
+  const onClick = (): void => {
+    const { selection, select, setActiveTrack } = useEditor.getState();
+    if (selection.length > 0) select([]);
+    setActiveTrack(track.id);
   };
+  const classes = ['lane', `lane-${track.kind}`];
+  if (drop) classes.push(drop === 'true' ? 'is-drop-target' : 'is-drop-reject');
+  if (track.locked) classes.push('is-locked');
+  if (track.hidden) classes.push('is-hidden');
 
   return (
     <div
-      className={`lane lane-${track.kind}${drop ? ` is-drop-${drop === 'true' ? 'target' : 'reject'}` : ''}`}
+      className={classes.join(' ')}
+      style={{ height: trackHeight(track.kind) }}
       data-testid="timeline-lane"
       data-track-id={track.id}
       data-track-kind={track.kind}
       data-drop-target={drop ?? undefined}
-      aria-label={label}
-      onClick={clearSelection}
+      aria-label={track.locked ? `${label} (locked)` : label}
+      onClick={onClick}
       onDragEnter={onDragOver}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
@@ -76,6 +85,7 @@ export default function Lane({ project, track, label, pps, selected, preview, on
           media={project.media[c.mediaId]}
           pps={pps}
           selected={selected.has(c.id)}
+          locked={track.locked}
           dragging={preview?.clipId === c.id}
           onDragStart={onDragStart}
         />

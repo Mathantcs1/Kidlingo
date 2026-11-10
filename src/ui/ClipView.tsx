@@ -11,12 +11,14 @@ interface ClipViewProps {
   media: MediaRef | undefined;
   pps: number;
   selected: boolean;
+  /** On a locked track: shown dimmed; edits are refused by the core with a toast. */
+  locked: boolean;
   dragging: boolean;
   onDragStart(e: PointerEvent<HTMLElement>, clipId: Id, kind: DragKind): void;
 }
 
 /** A clip on a lane: click selects, the body drags to move, the edge handles drag to trim. */
-export default function ClipView({ clip, media, pps, selected, dragging, onDragStart }: ClipViewProps) {
+export default function ClipView({ clip, media, pps, selected, locked, dragging, onDragStart }: ClipViewProps) {
   const missing = media?.missing === true;
   const name = media?.name ?? 'Unknown media';
   const onClick = (e: MouseEvent): void => {
@@ -28,6 +30,7 @@ export default function ClipView({ clip, media, pps, selected, dragging, onDragS
   if (selected) classes.push('is-selected');
   if (missing) classes.push('is-missing');
   if (dragging) classes.push('is-dragging');
+  if (locked) classes.push('is-locked');
   return (
     <button
       type="button"

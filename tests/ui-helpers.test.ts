@@ -12,7 +12,6 @@ import {
   pxToTime,
   rulerTicks,
   timeToPx,
-  trackLabels,
   zoom,
 } from '../src/ui/layout';
 import {
@@ -108,10 +107,6 @@ describe('layout', () => {
     expect(zoom(60, 'out')).toBe(40);
     expect(zoom(400, 'in')).toBe(480);
     expect(zoom(12, 'out')).toBe(10);
-  });
-
-  it('labels tracks per kind', () => {
-    expect(trackLabels(['video', 'audio', 'video', 'audio'])).toEqual(['Video 1', 'Audio 1', 'Video 2', 'Audio 2']);
   });
 
   it('fits a box of an aspect inside a container', () => {

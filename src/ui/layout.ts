@@ -1,7 +1,6 @@
 // Pure, DOM-free helpers for laying out the editor (time <-> pixels, ruler ticks, sizes, labels).
 import { FORMATS } from '../core/formats';
 import type { FormatKey } from '../core/formats';
-import type { TrackKind } from '../core/model';
 
 export const DEFAULT_PPS = 60;
 export const MIN_PPS = 10;
@@ -60,12 +59,6 @@ export function rulerTicks(seconds: number, pps: number): Tick[] {
 export function zoom(pps: number, dir: 'in' | 'out'): number {
   const next = dir === 'in' ? pps * ZOOM_STEP : pps / ZOOM_STEP;
   return Math.min(MAX_PPS, Math.max(MIN_PPS, next));
-}
-
-/** "Video 1", "Audio 1", "Video 2", … numbered per kind in array order. */
-export function trackLabels(kinds: TrackKind[]): string[] {
-  const seen: Record<TrackKind, number> = { video: 0, audio: 0 };
-  return kinds.map((k) => `${k === 'video' ? 'Video' : 'Audio'} ${++seen[k]}`);
 }
 
 interface Size {

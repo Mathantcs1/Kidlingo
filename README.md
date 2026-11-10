@@ -14,8 +14,13 @@ It is a static site built with React, TypeScript and Vite.
 - **Media bin**: the `×` button removes an item from the project (if clips use it, ClipForge asks first and removes
   them too, as one undo step). **New project** starts over with an empty YouTube project (it asks first if the
   current project has anything in it); the imported files it no longer needs are then deleted from the browser.
-- **Timeline** with one video track and one audio track (more tracks are planned). Add media with the `+` button (appends to the end of
-  the matching track) or by dragging it from the media bin onto a track.
+- **Timeline** with stacked **video layers** and **audio tracks** (up to 8 of each; higher video layers are drawn on
+  top and shown higher). Add media with the `+` button (appends to the end of the active track of the matching kind)
+  or by dragging it from the media bin onto a track.
+- **Track headers**: click a header (or an empty spot on its lane) to make it the active track; double-click the name
+  to rename it; **M** mutes, **S** solos (a "Solo on" badge shows while any track is soloed), the lock refuses every
+  edit on the track, the eye hides a video layer from preview and export; the arrows reorder layers and `×` removes a
+  track (asking first if it has clips). **+ Video layer** and **+ Audio track** add tracks. Each is one undo step.
 - **Editing**: select clips (Shift-, Ctrl- or Cmd-click to select more than one), drag to move, drag the clip edges to trim, split at
   the playhead, delete, and **ripple delete** (delete and close the gap). Moves and trims snap to the edges of other clips and to 0. Timeline zoom in and out; during playback the timeline scrolls to keep the playhead in view.
 - **Clip inspector** (right of the preview, for one selected clip): **volume** from 0 to 200 % (0 mutes), and for
@@ -49,7 +54,7 @@ of [docs/superpowers/plans/2026-11-10-clipforge-foundation.md](docs/superpowers/
 - **Plan 4, animation and motion**: keyframes and easing, motion paths, text with animation presets,
   transitions, speed ramps, reverse, crop/rotate/flip.
 
-There is currently no transition, text or effects tool, and only one video and one audio track.
+There is currently no transition, text or effects tool.
 
 ## Supported files
 
