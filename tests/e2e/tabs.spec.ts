@@ -67,10 +67,12 @@ test('closing the editor with two tabs waiting makes exactly one the editor; the
   await expect.poll(async () => [await session(b), await session(c)].filter((s) => s === 'ready').length).toBe(1);
   await b.waitForTimeout(3000);
   const states = [await session(b), await session(c)];
-  expect(states.sort()).toEqual(['locked', 'ready']);
+  expect([...states].sort()).toEqual(['locked', 'ready']);
   expect(navB.n).toBe(0);
   expect(navC.n).toBe(0);
-  const [winner, loser] = states[0] === 'ready' || (await session(b)) === 'ready' ? [b, c] : [c, b];
+  const [winner, loser] = states[0] === 'ready' ? [b, c] : [c, b];
+  await expect(winner.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await expect(loser.getByTestId('app')).toHaveAttribute('data-session', 'locked');
   await expect(winner.getByTestId('timeline-clip')).toHaveCount(1);
   await expect(winner.getByTestId('file-input')).toBeEnabled();
   await expect(loser.getByTestId('session-locked')).toBeVisible();
@@ -79,4 +81,23 @@ test('closing the editor with two tabs waiting makes exactly one the editor; the
   await winner.close();
   await expect(loser.getByTestId('app')).toHaveAttribute('data-session', 'ready');
   await expect(loser.getByTestId('timeline-clip')).toHaveCount(1);
+});
+
+test('a tab taking over shows loading (not the locked notice) while it restores', async ({ page, context }) => {
+  await editorWithClip(page);
+  // Slow restores from now on: reconciling each media file waits 1.5 s.
+  await context.addInitScript(() => {
+    const real = FileSystemDirectoryHandle.prototype.getFileHandle;
+    FileSystemDirectoryHandle.prototype.getFileHandle = async function (this: FileSystemDirectoryHandle, name: string, opts?: FileSystemGetFileOptions) {
+      if (this.name === 'clipforge-media' && !opts?.create) await new Promise((r) => setTimeout(r, 1500));
+      return real.call(this, name, opts);
+    };
+  });
+  const b = await locked(context);
+  await page.close();
+  await expect(b.getByTestId('app')).toHaveAttribute('data-session', 'loading');
+  await expect(b.getByTestId('session-locked')).toHaveCount(0);
+  await expect(b.getByTestId('file-input')).toBeDisabled();
+  await expect(b.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await expect(b.getByTestId('timeline-clip')).toHaveCount(1);
 });

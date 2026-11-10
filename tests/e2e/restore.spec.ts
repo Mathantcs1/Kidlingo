@@ -155,6 +155,10 @@ test('an edit made before the restore finished never autosaves over the saved pr
   await page.waitForTimeout(1200);
   expect(await savedProject(page)).toEqual(saved);
   expect(await storedIds(page)).toEqual(ids);
+  // Start new explains that the saved project exists but was not loaded (not that it failed).
+  await page.getByTestId('btn-restore-new').click();
+  await expect(page.getByTestId('confirm-dialog')).toContainText('was not loaded because you started editing first');
+  await page.getByTestId('btn-confirm-cancel').click();
   // Only the format changed (no media or clips), so loading asks nothing.
   await expect(page.getByTestId('btn-restore-retry')).toHaveText('Load saved project');
   await page.getByTestId('btn-restore-retry').click();
@@ -178,6 +182,7 @@ test('a project saved by a newer version is never overwritten or garbage-collect
   await expect(toast(page)).toHaveCount(0);
 
   await page.getByTestId('btn-restore-new').click();
+  await expect(page.getByTestId('confirm-dialog')).toContainText('could not be loaded');
   await expect(page.getByTestId('confirm-dialog')).toContainText('replaces the saved project');
   await page.getByTestId('btn-confirm-ok').click();
   await expect(page.getByTestId('restore-failed')).toHaveCount(0);

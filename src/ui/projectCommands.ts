@@ -28,6 +28,17 @@ export async function removeMediaItem(mediaId: Id): Promise<void> {
   guard(() => editor().apply((p) => removeMediaFromProject(p, mediaId)));
 }
 
+/** The New project question, by why the saved project is not loaded (null: it is loaded, or there is none). */
+export function newProjectWarning(kind: 'failed' | 'skipped' | null): string {
+  if (kind === 'failed') {
+    return 'The saved project could not be loaded. Starting over replaces the saved project and deletes its imported files from this browser. This cannot be undone.';
+  }
+  if (kind === 'skipped') {
+    return 'You have a saved project, but it was not loaded because you started editing first. Starting a new project replaces it and deletes its imported files from this browser. This cannot be undone.';
+  }
+  return 'The timeline and the media bin are cleared and the imported files are deleted from this browser. This cannot be undone.';
+}
+
 /**
  * Starts an empty YouTube project (undo history cleared), asking first unless nothing would be lost (no media or
  * clips in any undo/redo state, no unloadable saved project), then deletes the media files nothing references any
@@ -35,13 +46,12 @@ export async function removeMediaItem(mediaId: Id): Promise<void> {
  * gone; if that save fails nothing is deleted.
  */
 export async function newProject(): Promise<void> {
-  const failed = useRestoreFailure.getState().message !== null;
+  const { message, kind } = useRestoreFailure.getState();
+  const failed = message !== null;
   if (failed || projectHasWork(editor().history)) {
     const ok = await askConfirm({
       title: 'Start a new project?',
-      message: failed
-        ? 'The saved project could not be loaded. Starting over replaces the saved project and deletes its imported files from this browser. This cannot be undone.'
-        : 'The timeline and the media bin are cleared and the imported files are deleted from this browser. This cannot be undone.',
+      message: newProjectWarning(kind),
       confirmLabel: 'New project',
     });
     if (!ok) return;

@@ -141,6 +141,8 @@ async function beginEditing(): Promise<void> {
  */
 export async function startSession(): Promise<SessionState> {
   const takeOver = (): void => {
+    // Restoring can take a while: show loading (inert controls) instead of the "open in another tab" notice.
+    useSessionState.setState({ state: 'loading' });
     void beginEditing().then(() => useSessionState.setState({ state: 'ready' }));
   };
   const lock = await acquireEditorLock(typeof navigator !== 'undefined' ? navigator.locks : undefined, takeOver);
