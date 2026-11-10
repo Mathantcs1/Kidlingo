@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyMat3, clipMatrix, fullscreenMatrix, letterbox } from '../src/render/gl';
+import { applyMat3, clipMatrix, fullscreenMatrix, letterbox, rotatedSize, uvMatrix } from '../src/render/gl';
 import { defaultTransform } from '../src/core/model';
 import type { Transform } from '../src/core/model';
 
@@ -94,5 +94,49 @@ describe('letterbox', () => {
     const v = letterbox({ width: 1000, height: 1 }, { width: 10, height: 10 });
     expect(v.width).toBeGreaterThanOrEqual(1);
     expect(v.height).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('uvMatrix / rotatedSize', () => {
+  // Raw (unrotated) texture corners: top-left (0,0), top-right (1,0), bottom-left (0,1), bottom-right (1,1).
+  // Rotating an image clockwise by 90° moves its top-left corner to the top-right, so the displayed top-right
+  // corner must sample the raw top-left, and so on.
+  it('0° is the identity', () => {
+    expectPoint(applyMat3(uvMatrix(0), 0.25, 0.75), [0.25, 0.75]);
+  });
+
+  it('90° clockwise: displayed TL shows raw BL, displayed TR shows raw TL', () => {
+    const m = uvMatrix(90);
+    expectPoint(applyMat3(m, 0, 0), [0, 1]);
+    expectPoint(applyMat3(m, 1, 0), [0, 0]);
+    expectPoint(applyMat3(m, 1, 1), [1, 0]);
+    expectPoint(applyMat3(m, 0, 1), [1, 1]);
+  });
+
+  it('180°: displayed TL shows raw BR', () => {
+    const m = uvMatrix(180);
+    expectPoint(applyMat3(m, 0, 0), [1, 1]);
+    expectPoint(applyMat3(m, 1, 0), [0, 1]);
+  });
+
+  it('270° clockwise: displayed TL shows raw TR, displayed BL shows raw TL', () => {
+    const m = uvMatrix(270);
+    expectPoint(applyMat3(m, 0, 0), [1, 0]);
+    expectPoint(applyMat3(m, 0, 1), [0, 0]);
+    expectPoint(applyMat3(m, 1, 1), [0, 1]);
+  });
+
+  it('flipV turns the sampled texture upside down after the rotation', () => {
+    expectPoint(applyMat3(uvMatrix(0, true), 0.25, 0), [0.25, 1]);
+    expectPoint(applyMat3(uvMatrix(90, true), 0, 0), [0, 0]);
+    expectPoint(applyMat3(uvMatrix(90, true), 1, 0), [0, 1]);
+  });
+
+  it('rotatedSize swaps the sides for 90° and 270° only', () => {
+    const raw = { width: 640, height: 360 };
+    expect(rotatedSize(raw, 0)).toEqual(raw);
+    expect(rotatedSize(raw, 180)).toEqual(raw);
+    expect(rotatedSize(raw, 90)).toEqual({ width: 360, height: 640 });
+    expect(rotatedSize(raw, 270)).toEqual({ width: 360, height: 640 });
   });
 });

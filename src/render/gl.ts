@@ -1,79 +1,18 @@
-// WebGL2 helpers for the compositor. The matrix functions at the top are pure (no DOM, no GL) so they can
-// be unit-tested; everything that takes a `gl` only touches the context it is given.
-import type { Transform } from '../core/model';
+// WebGL2 helpers for the compositor. Everything that takes a `gl` only touches the context it is given; the pure
+// geometry lives in ./geometry and is re-exported here.
+import type { Mat3 } from './geometry';
 
-/** A 3x3 matrix in column-major order (as `uniformMatrix3fv` expects). */
-export type Mat3 = [number, number, number, number, number, number, number, number, number];
+export * from './geometry';
 
-export interface Size {
-  width: number;
-  height: number;
-}
-
-export interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/** Applies `m` to the point (x, y, 1) and returns the resulting (x, y). */
-export function applyMat3(m: Mat3, x: number, y: number): [number, number] {
-  return [m[0] * x + m[3] * y + m[6], m[1] * x + m[4] * y + m[7]];
-}
-
-/**
- * Maps the unit quad (u, v) ∈ [0, 1]², v = 0 at the top of the source image, to clip space for a canvas of
- * `canvas` logical pixels. The quad is `src * scale` pixels, rotated `rotation` degrees clockwise about its
- * centre, then centred at (x, y) canvas pixels from the canvas centre with y pointing down.
- */
-export function clipMatrix(src: Size, t: Transform, canvas: Size): Mat3 {
-  const sw = src.width * t.scale;
-  const sh = src.height * t.scale;
-  const rad = (t.rotation * Math.PI) / 180;
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
-  // Canvas pixels relative to the centre (y down): p = R · ((u - ½)·sw, (v - ½)·sh) + (x, y).
-  const ax = 2 / canvas.width;
-  const ay = -2 / canvas.height;
-  return [
-    ax * sw * cos,
-    ay * sw * sin,
-    0,
-    ax * -sh * sin,
-    ay * sh * cos,
-    0,
-    ax * (-0.5 * sw * cos + 0.5 * sh * sin + t.x),
-    ay * (-0.5 * sw * sin - 0.5 * sh * cos + t.y),
-    1,
-  ];
-}
-
-/** Maps the unit quad onto the whole of clip space, v = 0 at the top. */
-export function fullscreenMatrix(): Mat3 {
-  return [2, 0, 0, 0, -2, 0, -1, 1, 1];
-}
-
-/** The largest rectangle of `content`'s aspect ratio that fits in `target`, centred; integer pixels, never empty. */
-export function letterbox(content: Size, target: Size): Rect {
-  const scale = Math.min(target.width / content.width, target.height / content.height);
-  const width = Math.max(1, Math.min(target.width, Math.round(content.width * scale)));
-  const height = Math.max(1, Math.min(target.height, Math.round(content.height * scale)));
-  return {
-    x: Math.max(0, Math.floor((target.width - width) / 2)),
-    y: Math.max(0, Math.floor((target.height - height) / 2)),
-    width,
-    height,
-  };
-}
+const IDENTITY: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
 const VERTEX_SHADER = `#version 300 es
 in vec2 a_unit;
 uniform mat3 u_matrix;
-uniform bool u_flipV;
+uniform mat3 u_uv;
 out vec2 v_uv;
 void main() {
-  v_uv = vec2(a_unit.x, u_flipV ? 1.0 - a_unit.y : a_unit.y);
+  v_uv = (u_uv * vec3(a_unit, 1.0)).xy;
   gl_Position = vec4((u_matrix * vec3(a_unit, 1.0)).xy, 0.0, 1.0);
 }`;
 
@@ -187,7 +126,7 @@ export class QuadRenderer {
   private readonly vao: WebGLVertexArrayObject;
   private readonly buffer: WebGLBuffer;
   private readonly uMatrix: WebGLUniformLocation | null;
-  private readonly uFlipV: WebGLUniformLocation | null;
+  private readonly uUv: WebGLUniformLocation | null;
   private readonly uOpacity: WebGLUniformLocation | null;
 
   constructor(gl: WebGL2RenderingContext) {
@@ -203,21 +142,24 @@ export class QuadRenderer {
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     gl.bindVertexArray(null);
     this.uMatrix = gl.getUniformLocation(this.program, 'u_matrix');
-    this.uFlipV = gl.getUniformLocation(this.program, 'u_flipV');
+    this.uUv = gl.getUniformLocation(this.program, 'u_uv');
     this.uOpacity = gl.getUniformLocation(this.program, 'u_opacity');
     gl.useProgram(this.program);
     gl.uniform1i(gl.getUniformLocation(this.program, 'u_tex'), 0);
   }
 
-  /** Draws `tex` through `matrix` into the currently bound framebuffer/viewport. `flipV` for bottom-up textures (FBOs). */
-  draw(tex: WebGLTexture, matrix: Mat3, opacity: number, flipV = false): void {
+  /**
+   * Draws `tex` through `matrix` into the currently bound framebuffer/viewport. `uv` maps the quad to texture
+   * coordinates (see uvMatrix: display rotation, bottom-up FBO textures).
+   */
+  draw(tex: WebGLTexture, matrix: Mat3, opacity: number, uv: Mat3 = IDENTITY): void {
     const gl = this.gl;
     gl.useProgram(this.program);
     gl.bindVertexArray(this.vao);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.uniformMatrix3fv(this.uMatrix, false, matrix);
-    gl.uniform1i(this.uFlipV, flipV ? 1 : 0);
+    gl.uniformMatrix3fv(this.uUv, false, uv);
     gl.uniform1f(this.uOpacity, Math.min(1, Math.max(0, opacity)));
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.bindVertexArray(null);

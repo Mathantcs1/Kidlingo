@@ -2,8 +2,8 @@ import { activeClipsAt } from '../core/timeline';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { getMediaFile } from '../media/storage';
-import { QuadRenderer, RenderTarget, clipMatrix, createContext, createTexture, fullscreenMatrix, letterbox, uploadTexture } from './gl';
-import type { Rect, Size, TextureSlot } from './gl';
+import { QuadRenderer, RenderTarget, clipMatrix, createContext, createTexture, fullscreenMatrix, letterbox, rotatedSize, uploadTexture, uvMatrix } from './gl';
+import type { Mat3, Rect, Size, TextureSlot } from './gl';
 
 export interface Compositor {
   /**
@@ -35,8 +35,13 @@ interface ImageEntry {
 interface Draw {
   clip: Clip;
   tex: WebGLTexture;
+  /** Displayed (rotated) size in source pixels. */
   size: Size;
+  /** Quad → texture coordinates (applies the source's display rotation). */
+  uv: Mat3;
 }
+
+const UPRIGHT = uvMatrix(0);
 
 const LOST = 'WebGL context lost';
 
@@ -114,7 +119,7 @@ class GlCompositor implements Compositor {
       if (clip.kind === 'image') {
         const entry = await this.image(clip.mediaId);
         this.assertUsable();
-        if (entry) draws.push({ clip, tex: entry.slot.tex, size: entry.slot });
+        if (entry) draws.push({ clip, tex: entry.slot.tex, size: entry.slot, uv: UPRIGHT });
         continue;
       }
       const source = sources.get(clip.id) ?? sources.get(clip.mediaId);
@@ -129,7 +134,9 @@ class GlCompositor implements Compositor {
       uses.set(source, n + 1);
       const slot = this.videoSlot(source, n);
       uploadTexture(this.gl, slot, frame, width, height);
-      draws.push({ clip, tex: slot.tex, size: { width, height } });
+      // Frames arrive unrotated; draw them at their displayed size and turn the texture lookup instead.
+      const size = rotatedSize({ width, height }, source.rotation);
+      draws.push({ clip, tex: slot.tex, size, uv: uvMatrix(source.rotation) });
     }
     this.pruneVideoSlots(sources);
     this.pruneImages(p);
@@ -149,7 +156,7 @@ class GlCompositor implements Compositor {
     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
     for (const d of draws) {
       if (d.clip.fit === 'blur') this.drawBlurBackground(d, format, viewport);
-      this.quad.draw(d.tex, clipMatrix(d.size, d.clip.transform, format), d.clip.transform.opacity);
+      this.quad.draw(d.tex, clipMatrix(d.size, d.clip.transform, format), d.clip.transform.opacity, d.uv);
     }
   }
 
@@ -162,11 +169,11 @@ class GlCompositor implements Compositor {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     const cover = Math.max(format.width / d.size.width, format.height / d.size.height);
-    this.quad.draw(d.tex, clipMatrix(d.size, { x: 0, y: 0, scale: cover, rotation: 0, opacity: 1 }, format), 1);
+    this.quad.draw(d.tex, clipMatrix(d.size, { x: 0, y: 0, scale: cover, rotation: 0, opacity: 1 }, format), 1, d.uv);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
     // Framebuffer textures are stored bottom row first.
-    this.quad.draw(this.blurTarget.slot.tex, fullscreenMatrix(), d.clip.transform.opacity, true);
+    this.quad.draw(this.blurTarget.slot.tex, fullscreenMatrix(), d.clip.transform.opacity, uvMatrix(0, true));
   }
 
   private videoSlot(source: VideoSource, index: number): TextureSlot {

@@ -1,5 +1,5 @@
 import { ALL_FORMATS, AudioSampleSink, BlobSource, Input, VideoSampleSink } from 'mediabunny';
-import type { VideoSample } from 'mediabunny';
+import type { Rotation, VideoSample } from 'mediabunny';
 import type { Id } from '../core/model';
 import { getMediaFile } from './storage';
 
@@ -14,6 +14,11 @@ export interface VideoSource {
    * or `close()`. Draw or upload it immediately; never close it or keep it.
    */
   frameAt(sourceTime: number): Promise<ImageBitmap | VideoFrame | null>;
+  /**
+   * Clockwise rotation (degrees) the track's metadata asks for. Frames from `frameAt` are NOT rotated: draw them
+   * turned by this much (portrait phone videos are usually stored landscape with 90 or 270).
+   */
+  readonly rotation: Rotation;
   /** Releases the decoders, cached frames and the underlying Input. Safe to call more than once. */
   close(): void;
 }
@@ -34,6 +39,20 @@ interface CachedFrame {
   frame: VideoFrame;
 }
 
+/** Live/peak counts of open VideoSources (instrumentation for tests and leak checks). */
+const stats = { open: 0, peak: 0, opened: 0 };
+
+/** How many VideoSources are open now, the most open at once since the last reset, and how many were opened. */
+export function videoSourceStats(): { open: number; peak: number; opened: number } {
+  return { ...stats };
+}
+
+/** Restarts the peak and opened counts from the current number of open sources. */
+export function resetVideoSourceStats(): void {
+  stats.peak = stats.open;
+  stats.opened = 0;
+}
+
 function openInput(file: File): Input {
   return new Input({ source: new BlobSource(file), formats: ALL_FORMATS });
 }
@@ -52,10 +71,18 @@ class DecodedVideoSource implements VideoSource {
   /** Serialises frameAt calls so the iterator and cache are never used concurrently. */
   private queue: Promise<unknown> = Promise.resolve();
 
-  constructor(input: Input, sink: VideoSampleSink | null, firstTimestamp: number) {
+  constructor(
+    input: Input,
+    sink: VideoSampleSink | null,
+    firstTimestamp: number,
+    readonly rotation: Rotation,
+  ) {
     this.input = input;
     this.sink = sink;
     this.firstTimestamp = firstTimestamp;
+    stats.open++;
+    stats.opened++;
+    stats.peak = Math.max(stats.peak, stats.open);
   }
 
   frameAt(sourceTime: number): Promise<VideoFrame | null> {
@@ -67,6 +94,7 @@ class DecodedVideoSource implements VideoSource {
   close(): void {
     if (this.closed) return;
     this.closed = true;
+    stats.open--;
     this.dropIterator();
     this.input.dispose();
   }
@@ -167,9 +195,9 @@ export async function openVideoSource(mediaId: Id): Promise<VideoSource> {
   const input = openInput(await getMediaFile(mediaId));
   try {
     const track = await input.getPrimaryVideoTrack();
-    if (!track) return new DecodedVideoSource(input, null, 0);
+    if (!track) return new DecodedVideoSource(input, null, 0, 0);
     const first = await track.getFirstTimestamp();
-    return new DecodedVideoSource(input, new VideoSampleSink(track), first);
+    return new DecodedVideoSource(input, new VideoSampleSink(track), first, await track.getRotation());
   } catch (e) {
     input.dispose();
     throw e;
