@@ -2,10 +2,18 @@
 // across a redeploy: the old hashed file is gone. Such failures become one clear "reload" message.
 
 export const CHUNK_RELOAD_MESSAGE = 'ClipForge was updated — reload the page.';
+export const CHUNK_OFFLINE_MESSAGE = 'You appear to be offline — reconnect and reload.';
+
+/** A failed chunk load means a redeploy when online, and most likely a lost connection when offline. */
+export function chunkLoadMessage(online: boolean): string {
+  return online ? CHUNK_RELOAD_MESSAGE : CHUNK_OFFLINE_MESSAGE;
+}
+
+const isOnline = (): boolean => typeof navigator === 'undefined' || navigator.onLine !== false;
 
 export class ChunkLoadError extends Error {
-  constructor(options?: { cause?: unknown }) {
-    super(CHUNK_RELOAD_MESSAGE, options);
+  constructor(options: { cause?: unknown; online?: boolean } = {}) {
+    super(chunkLoadMessage(options.online ?? isOnline()), { cause: options.cause });
     this.name = 'ChunkLoadError';
   }
 }

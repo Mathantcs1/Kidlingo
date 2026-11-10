@@ -3,7 +3,7 @@ import type { Id, Project } from '../core/model';
 import { activeClipsAt } from '../core/timeline';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
-import { loadChunk } from '../loadChunk';
+import { ChunkLoadError, loadChunk } from '../loadChunk';
 
 export interface PreviewCallbacks {
   /** A clip's media could not be opened; called once per media file. */
@@ -34,6 +34,7 @@ export class PreviewRenderer {
   private pending: Request | null = null;
   private running = false;
   private disposed = false;
+  private stopped = false;
 
   private constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -55,10 +56,17 @@ export class PreviewRenderer {
 
   /** Renders `p` at `t` as soon as the current render (if any) finishes, replacing any older pending request. */
   request(p: Project, t: number): void {
-    if (this.disposed) return;
+    if (this.disposed || this.stopped) return;
     this.pending = { p, t };
     this.canvas.dataset.renderState = 'busy';
     if (!this.running) void this.pump();
+  }
+
+  /** Stops rendering for good and reports why (later requests are ignored). */
+  private stop(message: string): void {
+    this.pending = null;
+    this.stopped = true;
+    this.callbacks.onFatal(message);
   }
 
   dispose(): void {
@@ -82,12 +90,16 @@ export class PreviewRenderer {
         this.canvas.dataset.renderedT = String(t);
       } catch (e) {
         if (this.disposed) break;
+        // A missing code chunk (the app was updated) cannot recover either: say so once and stop rendering.
+        if (e instanceof ChunkLoadError) {
+          this.stop(e.message);
+          break;
+        }
         console.error('clipforge: preview render failed', e);
         const message = e instanceof Error ? e.message : String(e);
         // A lost context cannot recover; other failures (e.g. one bad frame) only skip this render.
         if (message === LOST) {
-          this.pending = null;
-          this.callbacks.onFatal('The preview stopped: the WebGL context was lost. Reload to restore it.');
+          this.stop('The preview stopped: the WebGL context was lost. Reload to restore it.');
           break;
         }
       }

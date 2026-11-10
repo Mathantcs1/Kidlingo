@@ -30,7 +30,7 @@ describe('describeStorageError', () => {
   it('maps quota errors (DOMException or by name) to the storage-full message', () => {
     expect(describeStorageError(new DOMException('x', 'QuotaExceededError'))).toBe(QUOTA_MESSAGE);
     expect(describeStorageError(Object.assign(new Error('x'), { name: 'QuotaExceededError' }))).toBe(QUOTA_MESSAGE);
-    expect(QUOTA_MESSAGE).toBe("Your browser's storage is full. Remove media you no longer need or free disk space.");
+    expect(QUOTA_MESSAGE).toBe("Your browser's storage is full. Remove media you no longer need, then reload the page (or start a New project) to free the space.");
   });
 
   it('passes other errors through as their message', () => {

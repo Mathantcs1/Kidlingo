@@ -9,7 +9,7 @@ import { formatTime } from './layout';
 import { MEDIA_MIME, setDraggedMedia } from './mediaDrag';
 import { removeMediaItem } from './projectCommands';
 import { showError } from './Toast';
-import { loadChunk } from '../loadChunk';
+import { ChunkLoadError, loadChunk } from '../loadChunk';
 
 interface Pending {
   key: number;
@@ -30,9 +30,9 @@ function askPersist(): void {
 }
 
 function importMessage(file: File, e: unknown): string {
-  if (e instanceof Error && e.name === 'ImportError') return e.message;
+  if (e instanceof Error && (e.name === 'ImportError' || e instanceof ChunkLoadError)) return e.message;
   if (isQuotaError(e)) return `Could not import ${file.name}: ${describeStorageError(e)}`;
-  return `Could not import ${file.name}: ${String(e)}`;
+  return `Could not import ${file.name}: ${e instanceof Error ? e.message : String(e)}`;
 }
 
 function MediaItem({ m, editable }: { m: MediaRef; editable: boolean }) {
@@ -108,7 +108,7 @@ export default function MediaBin({ supported, ready }: { supported: boolean; rea
         useEditor.getState().apply((p) => addMedia(p, m));
         askPersist();
       } catch (e) {
-        if (!(e instanceof Error && e.name === 'ImportError')) console.error('clipforge: import failed', e);
+        if (!(e instanceof Error && (e.name === 'ImportError' || e instanceof ChunkLoadError))) console.error('clipforge: import failed', e);
         showError(importMessage(file, e));
       } finally {
         setPending((p) => p.filter((x) => x.key !== items[i].key));

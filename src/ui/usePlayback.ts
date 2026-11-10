@@ -6,7 +6,7 @@ import { timelineDuration } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { playStart, playbackTick } from './playbackTime';
 import { showError } from './Toast';
-import { loadChunk } from '../loadChunk';
+import { ChunkLoadError, loadChunk } from '../loadChunk';
 
 /** True while Play waits for the mixer to decode and schedule the first audio window (aria-busy on Play). */
 export const usePlaybackStatus = create<{ buffering: boolean }>()(() => ({ buffering: false }));
@@ -70,7 +70,7 @@ export function usePlayback(): void {
         if (disposed || gen !== generation) return;
         console.error('clipforge: playback failed', e);
         usePlaybackStatus.setState({ buffering: false });
-        showError(`Could not play: ${e instanceof Error ? e.message : String(e)}`);
+        showError(e instanceof ChunkLoadError ? e.message : `Could not play: ${e instanceof Error ? e.message : String(e)}`);
         editor().setPlaying(false);
         return;
       }

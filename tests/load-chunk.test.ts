@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CHUNK_RELOAD_MESSAGE, ChunkLoadError, isChunkLoadError, loadChunk } from '../src/loadChunk';
+import { CHUNK_OFFLINE_MESSAGE, CHUNK_RELOAD_MESSAGE, ChunkLoadError, chunkLoadMessage, isChunkLoadError, loadChunk } from '../src/loadChunk';
 
 describe('isChunkLoadError', () => {
   it.each([
@@ -37,5 +37,14 @@ describe('loadChunk', () => {
   it('rethrows other failures unchanged', async () => {
     const boom = new Error('boom');
     await expect(loadChunk(() => Promise.reject(boom))).rejects.toBe(boom);
+  });
+});
+
+describe('chunkLoadMessage', () => {
+  it('says the app was updated when online and that the user is offline otherwise', () => {
+    expect(chunkLoadMessage(true)).toBe(CHUNK_RELOAD_MESSAGE);
+    expect(chunkLoadMessage(false)).toBe(CHUNK_OFFLINE_MESSAGE);
+    expect(CHUNK_OFFLINE_MESSAGE).toBe('You appear to be offline — reconnect and reload.');
+    expect(new ChunkLoadError({ online: false }).message).toBe(CHUNK_OFFLINE_MESSAGE);
   });
 });

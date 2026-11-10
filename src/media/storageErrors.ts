@@ -1,6 +1,8 @@
 // User-facing wording for storage failures (OPFS media files, export temp files, IndexedDB autosave).
 
-export const QUOTA_MESSAGE = "Your browser's storage is full. Remove media you no longer need or free disk space.";
+// Removing media frees its file only at the next start or New project (undo keeps it until then).
+export const QUOTA_MESSAGE =
+  "Your browser's storage is full. Remove media you no longer need, then reload the page (or start a New project) to free the space.";
 
 /** True for the browser's "storage quota exceeded" error, whichever object carries it. */
 export function isQuotaError(e: unknown): boolean {

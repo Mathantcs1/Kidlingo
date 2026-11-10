@@ -1,5 +1,7 @@
 // The capability banner names exactly what the browser lacks and import is disabled when it cannot work.
+import { join } from 'node:path';
 import { test, expect } from '@playwright/test';
+import { ensureFixtures } from './fixtures';
 
 test('without WebCodecs audio decoding the banner names it and import is disabled', async ({ page }) => {
   await page.addInitScript(() => {
@@ -50,5 +52,16 @@ test('a lazily loaded chunk that is gone after a redeploy asks for a reload inst
     route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>ClipForge</title>' }),
   );
   await page.goto('/');
+  await expect(page.getByTestId('preview-unavailable')).toHaveText('ClipForge was updated — reload the page.');
+});
+
+test('a vanished decoder chunk stops the preview with the reload message instead of a blank canvas', async ({ page }) => {
+  await page.route('**/src/media/decode.ts*', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>ClipForge</title>' }),
+  );
+  await page.goto('/');
+  await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await page.getByTestId('file-input').setInputFiles(join(ensureFixtures(), 'with-audio.mp4'));
+  await page.getByTestId('btn-add-to-timeline').click();
   await expect(page.getByTestId('preview-unavailable')).toHaveText('ClipForge was updated — reload the page.');
 });

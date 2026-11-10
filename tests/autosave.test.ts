@@ -120,7 +120,7 @@ describe('autosave', () => {
     add('c1');
     await vi.advanceTimersByTimeAsync(500);
     expect(useEditor.getState().saveError).toBe(
-      "Your browser's storage is full. Remove media you no longer need or free disk space.",
+      "Your browser's storage is full. Remove media you no longer need, then reload the page (or start a New project) to free the space.",
     );
     save.mockRejectedValueOnce(new Error('still broken'));
     add('c2', 5);
