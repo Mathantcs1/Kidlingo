@@ -44,6 +44,16 @@ describe('exportSize', () => {
     expect(exportSize(withFormat(1080, 1080), '1080p', 160)).toEqual({ width: 160, height: 160 });
     expect(exportSize(withFormat(101, 57), '1080p', 101)).toEqual({ width: 100, height: 56 });
   });
+
+  it('rejects a non-finite or non-positive project size or long side', () => {
+    for (const [w, h] of [[0, 1080], [1920, 0], [-1920, 1080], [NaN, 1080], [1920, Infinity]]) {
+      expect(() => exportSize(withFormat(w, h), '1080p')).toThrow(ExportError);
+      expect(() => exportSize(withFormat(w, h), '1080p')).toThrow('Invalid project size');
+    }
+    for (const side of [0, -10, NaN, Infinity]) {
+      expect(() => exportSize(withFormat(1920, 1080), '1080p', side)).toThrow('Invalid project size');
+    }
+  });
 });
 
 describe('exportProject', () => {

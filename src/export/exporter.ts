@@ -50,10 +50,13 @@ export function evenDims(w: number, h: number): { width: number; height: number 
  * Scales the project format, preserving aspect, to the largest size that fits a 1920x1080 ('1080p') or
  * 3840x2160 ('4k') frame of the same orientation, then rounds down to even dimensions. Every preset therefore
  * exports at 1080 on its short side at 1080p (square 1080x1080, 4:5 1080x1350) and 2160 at 4k. `longSide`
- * (test-only) instead scales the long side to exactly that many pixels.
+ * (test-only) instead scales the long side to exactly that many pixels. Throws ExportError('Invalid project size')
+ * for a non-finite or non-positive size.
  */
 export function exportSize(p: Project, q: ExportQuality, longSide?: number): { width: number; height: number } {
   const { width, height } = p.format;
+  const positive = (v: number | undefined): boolean => v === undefined || (Number.isFinite(v) && v > 0);
+  if (!positive(width) || !positive(height) || !positive(longSide)) throw new ExportError('Invalid project size');
   const long = Math.max(width, height);
   const short = Math.min(width, height);
   const [frameLong, frameShort] = FRAME[q];

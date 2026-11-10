@@ -39,6 +39,37 @@ describe('safeFilename', () => {
     expect(out.endsWith('.mp4')).toBe(true);
     expect(out.length).toBeLessThanOrEqual(104);
   });
+
+  it('keeps Unicode letters and emoji', () => {
+    expect(safeFilename('Mi vídeo')).toBe('Mi vídeo.mp4');
+    expect(safeFilename('Ünïcödé 日本語 видео')).toBe('Ünïcödé 日本語 видео.mp4');
+    expect(safeFilename('Trip 🎉🏖️')).toBe('Trip 🎉🏖️.mp4');
+  });
+
+  it('collapses runs of whitespace', () => {
+    expect(safeFilename('a    b \u00a0 c')).toBe('a b c.mp4');
+  });
+
+  it('strips trailing dots and spaces before the extension', () => {
+    expect(safeFilename('name. . .')).toBe('name.mp4');
+    expect(safeFilename('name .mp4')).toBe('name.mp4');
+  });
+
+  it('never yields a reserved Windows device name', () => {
+    expect(safeFilename('CON')).toBe('CON_.mp4');
+    expect(safeFilename('nul')).toBe('nul_.mp4');
+    expect(safeFilename('com1.mp4')).toBe('com1_.mp4');
+    expect(safeFilename('LPT9')).toBe('LPT9_.mp4');
+    expect(safeFilename('CONSOLE')).toBe('CONSOLE.mp4');
+  });
+
+  it('cuts long names on character boundaries (never inside an emoji)', () => {
+    const out = safeFilename('🎉'.repeat(150));
+    const base = out.slice(0, -4);
+    expect(Array.from(base)).toHaveLength(100);
+    expect(base).toBe('🎉'.repeat(100));
+    expect(safeFilename(`${'é'.repeat(99)}xyz`)).toBe(`${'é'.repeat(99)}x.mp4`);
+  });
 });
 
 describe('percent', () => {
