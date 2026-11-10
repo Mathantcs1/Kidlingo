@@ -62,11 +62,7 @@ export default function Preview() {
       // The panel shows the reason; the rest of the editor keeps working without a preview.
       (e: unknown) => {
         if (cancelled) return;
-        if (e instanceof ChunkLoadError) setFailure(e.message);
-        else {
-          console.error('clipforge: could not start the preview', e);
-          setFailure('WebGL2 is not available, so the preview cannot be shown.');
-        }
+        setFailure(e instanceof ChunkLoadError ? e.message : 'WebGL2 is not available, so the preview cannot be shown.');
       },
     );
     return () => {

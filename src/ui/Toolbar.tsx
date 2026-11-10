@@ -39,6 +39,7 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
           data-testid="btn-play"
           className="btn-play"
           onClick={togglePlay}
+          disabled={inert}
           aria-pressed={playing}
           aria-busy={buffering}
           title="Play/Pause (Space)"

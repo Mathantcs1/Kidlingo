@@ -148,12 +148,22 @@ test('a download keeps working after Close and a second export', async ({ page }
   expect(info.streams.map((s) => `${s.codec_type}:${s.codec_name}`).sort()).toEqual(['audio:aac', 'video:h264']);
   expect(Math.abs(Number(info.format.duration) - 0.4)).toBeLessThanOrEqual(0.25);
 
-  // One more export: the first file (downloaded two exports ago) is finally removed.
+  // One more export, discarding the undownloaded second: the second file goes, but the downloaded first file is
+  // kept for the whole page session (its download may still be streaming); the next app start removes it.
+  const second = both.find((n) => n !== first[0]);
   await page.getByTestId('btn-export-start').click();
   await page.getByTestId('btn-discard-confirm').click();
   await expect(page.getByTestId('export-download')).toBeVisible({ timeout: 150_000 });
   const after = await exportTempEntries(page);
-  expect(after).toHaveLength(1);
-  expect(after).not.toContain(first[0]);
+  expect(after).toHaveLength(2);
+  expect(after).toContain(first[0]);
+  expect(after).not.toContain(second);
+
+  // The next app start (here: a reload) removes every temp file, the downloaded one included.
+  await page.getByTestId('export-download').click();
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await expect.poll(() => exportTempEntries(page)).toEqual([]);
   expect(errors).toEqual([]);
 });
