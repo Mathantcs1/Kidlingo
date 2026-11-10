@@ -2,6 +2,7 @@
 import { hasWebCodecs } from './media/support';
 import { getMediaFile, hasMedia, listMediaIds, putMedia, removeMedia } from './media/storage';
 import { clipFromMedia, importFile } from './media/import';
+import { decodeAudio, openVideoSource } from './media/decode';
 import type { MediaRef } from './core/model';
 
 const cf = {
@@ -13,6 +14,12 @@ const cf = {
   listMediaIds,
   clipFromMedia,
   hasWebCodecs,
+  openVideoSource,
+  decodeAudio,
+  /** A context for `decodeAudio` to create AudioBuffers with (it is never rendered). */
+  newAudioContext(sampleRate = 48000): BaseAudioContext {
+    return new OfflineAudioContext(2, 48000, sampleRate);
+  },
   /** Imports the Nth file currently selected in `#harness-file`. */
   importInputFile(index: number): Promise<MediaRef> {
     const input = document.getElementById('harness-file') as HTMLInputElement | null;
