@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Give every video/image clip a stack of WebGL2 effects (colour, looks, `.cube` LUTs, blur/sharpen/glow/pixelate, stylise, chroma key) with live preview and identical export, then (Part B) add overlay clips (lower third, subscribe button, progress bar, stickers).
+**Goal:** Give every video/image clip a stack of WebGL2 effects (colour, looks, `.cube` LUTs, blur/sharpen/glow/pixelate, stylise, chroma key) with live preview and identical export, add blend modes, then (Part B) overlay clips (lower third, subscribe button, progress bar, stickers) and adjustment layers (one effect stack applied to everything beneath it).
 
 **Architecture:** A pure effect schema + stack edits in `src/core` (DOM-free, like the audio effect params); a WebGL2 `EffectPipeline` in `src/render/effects/` that runs each clip's enabled effects as full-screen passes (ping-pong render targets) between "upload frame" and "draw with transform", inside the ONE compositor used by both preview and export (so they cannot drift, same principle as D1 in Plan 3). `compositor.ts`/`gl.ts` are split first, behaviour-preserving. Data moves to v4 (`Clip.effects`).
 
@@ -17,17 +17,17 @@
 - One gesture = ONE `apply`; slider drags commit once on release (same as Plan 3). Store-bound commands use `guard(() => apply(...))`.
 - Geometry is in FORMAT pixels; textures hold PREMULTIPLIED alpha; every effect shader must be correct for premultiplied input (un-premultiply before colour math, re-premultiply after).
 - Preview and export call the same `renderFrame`; effects must be deterministic from (project, time): no `Math.random`/wall-clock in shaders or passes.
-- Project data version becomes **4**; unknown newer ⇒ `unsupported`, never overwritten; v1–v3 saves open unchanged. Part B bumps to **5** (decision D1).
+- Project data version becomes **4**; unknown newer ⇒ `unsupported`, never overwritten; v1–v3 saves open unchanged. Part B bumps to **5** (decision D1: overlay and adjustment clip kinds).
 - Keep every existing `data-testid` (hundreds of e2e use them); new controls get new ones. `window.__clipforge` stays DEV-only (grep `dist/`).
 - Never delete user media except via the verified-restore GC; LUT files count as media for GC.
 - A shader that fails to compile/link, or a lost GL context mid-stack, must never blank the preview or abort an export: the affected effect is skipped, a plain-English toast/notice says which, and the rest of the frame still renders (Decision D8).
 - TDD: failing test first, mutation-check important guards. Commit trailers (blank line before): `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` and `Claude-Session: <current session URL>`.
 - Never push or deploy without the user's explicit go-ahead; never touch other Vercel projects; never run `playwright install`; never run two e2e runs at once (port 5173).
-- Gate per task: `npm test && npm run typecheck && npm run build` plus touched e2e specs; full `npm run e2e` at Tasks 1, 7, 11, 12, 14 (Task 1 proves the split changed no pixel; Task 12 audits every `p.media[...]` use).
+- Gate per task: `npm test && npm run typecheck && npm run build` plus touched e2e specs; full `npm run e2e` at Tasks 1, 7, 11a, 12, 13a, 14 (Task 1 proves the split changed no pixel; Task 12 audits every `p.media[...]` use).
 
 ## Decisions to approve (rulings proposed; change any before execution)
 
-- **D1 Two deployable parts.** Part A = Tasks 1–11 (effects engine, colour, looks, LUT, blur/sharpen/glow/pixelate, stylise, chroma key, UI, parity). Part B = Tasks 12–13 (overlays). Part A is data v4 and can be deployed alone; Part B introduces a new clip kind `overlay` and so bumps data to **v5** (an older v4 build must not open overlay clips), which pushes Plan 5's keyframes to v6. Cost if wrong: you wanted one deploy; just deploy after Task 13.
+- **D1 Two deployable parts.** Part A = Tasks 1–11a (effects engine, colour, looks, LUT, blur/sharpen/glow/pixelate, stylise, chroma key, UI, parity, blend modes). Part B = Tasks 12–13a (overlays and adjustment layers). Part A is data v4 and can be deployed alone; Part B introduces new clip kinds (`overlay`, `adjustment`) and so bumps data to **v5** (an older v4 build must not open them), which pushes Plan 5's keyframes to v6 (see the roadmap file for the later plans). Cost if wrong: you wanted one deploy; just deploy after Task 13.
 - **D2 One pass per effect, ping-pong targets, working size cap.** Effects run on an offscreen texture at `min(clip display size, 2× the format's long side)`; max **8 effects per clip**; multi-pass effects (blur, glow) use 2–3 internal passes. Cost if wrong: very heavy stacks may play below real time on slow GPUs; export still renders every frame.
 - **D3 Colour is ONE fused effect** `colour` with 9 params (brightness, contrast, saturation, exposure, temperature, tint, hue, shadows, highlights) rather than nine separate effects: one shader pass, one panel, how editors present it. B&W and Sepia stay separate effects.
 - **D4 Looks are preset stacks of the same effects** (no separate system, no intensity slider): `applyLook` replaces the clip's stack in ONE edit; the user then tweaks any param. Nine looks: Black & White, Sepia, Vintage Film, Teal & Orange, Cinematic, Moody, Golden Hour, Cool Blue, Punchy. Cost if wrong: swap the list in one data file.
@@ -36,7 +36,9 @@
 - **D7 Effects apply to video and image clips only** (not audio, not overlays); the "Blur" fit's backdrop is derived from the PROCESSED clip so foreground and backdrop match.
 - **D8 Shader failure policy**: per-effect programs compile lazily; a failure disables that effect type for the session, toasts once ("Effect X is not supported on this graphics setup"), and the clip draws without it, in preview and in export.
 - **D9 Chroma key** works in YCbCr with similarity, smoothness and spill suppression and a native colour input; no eyedropper in v1 (listed as deferred).
-- **D10 Not in Plan 4:** effect keyframes/animation (Plan 5), masks/shapes, adjustment layers (one effect for a whole timeline range), copy/paste effect stacks, look thumbnails, preview eyedropper, web fonts for overlays (system font stack only), 1D/`.3dl` LUT formats, HDR/10-bit.
+- **D11 Blend modes** are per clip (`Clip.blend`, 12 standard modes: normal, multiply, screen, overlay, darken, lighten, colour dodge, colour burn, hard light, soft light, difference, exclusion), implemented by compositing into an intermediate buffer and blending in a shader against the backdrop (fixed-function blending cannot do most modes). Cost if wrong: one extra full-frame pass per non-normal clip.
+- **D12 Adjustment layers** are a clip kind `adjustment` on a video track: its effect stack is applied to the composite of every track below it for the clip's time range (data v5, Part B). Not applicable to the audio tracks. Opacity blends the adjusted result with the unadjusted composite.
+- **D10 Not in Plan 4:** effect keyframes/animation (Plan 5), masks/shapes (Plan 8), copy/paste effect stacks, look thumbnails, preview eyedropper, web fonts for overlays (system font stack only), 1D/`.3dl` LUT formats, HDR/10-bit.
 
 ## Review Focus
 
@@ -87,11 +89,12 @@
   - `interface VideoEffect { id: Id; type: VideoEffectType; enabled: boolean; params: Record<string, number>; ref?: Id }` (`ref` = LUT media id for `lut`)
   - `interface ParamDef { key: string; label: string; min: number; max: number; step: number; def: number; unit?: string }`; `interface EffectSchema { type; label; group: 'colour' | 'look' | 'blur' | 'stylise' | 'key'; params: ParamDef[]; timeBased: boolean; available: boolean }`; `VIDEO_EFFECTS: Record<VideoEffectType, EffectSchema>` (params per effect are fixed in the tasks that implement them; this task registers all types with `available: false` except none, then each task flips its own)
   - `defaultParams(type)`, `clampParams(type, params)` (clamp, fill, drop unknown keys, non-finite ⇒ default), `MAX_VIDEO_EFFECTS = 8`
-  - `Clip.effects: VideoEffect[]` (video and image clips; `[]` default; audio clips always `[]`); `Project.version: 4`; `MediaRef.kind` gains `'lut'`
+  - `Clip.effects: VideoEffect[]` (video and image clips; `[]` default; audio clips always `[]`); `Clip.blend: BlendMode` (default `'normal'`) with `type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten' | 'colourDodge' | 'colourBurn' | 'hardLight' | 'softLight' | 'difference' | 'exclusion'`; `Project.version: 4`; `MediaRef.kind` gains `'lut'`
+  - `setClipBlend(p, clipId, mode: BlendMode): Project` (lock-guarded, same-reference no-op, video/image clips only).
   - Edits (all lock-guarded, same-reference no-ops, ≤ `MAX_VIDEO_EFFECTS` else `TimelineError('At most 8 effects per clip')`): `addVideoEffect(p, clipId, type, ref?)`, `updateVideoEffect(p, clipId, effectId, patch: { enabled?: boolean; params?: Record<string, number> })`, `removeVideoEffect`, `moveVideoEffect(p, clipId, effectId, toIndex)`, `applyLook(p, clipId, lookKey)` (replaces the stack in one edit; `LOOKS` is data listed in Task 5), refusals for audio clips and images-vs-video are none (both allowed)
   - `splitClip` copies effects with NEW ids to both halves; `joinClips`/`trimClip` leave them untouched.
 
-- [ ] **Step 1: Failing tests:** migration of a v3 project with video, image and audio clips ⇒ `version: 4` and `effects: []` on every clip, input not mutated, idempotent; `{version: 5}` ⇒ `newer`; a hand-edited v4 clip with an unknown effect type is dropped, out-of-range params are clamped, duplicate effect ids are re-id'd (keep the first), more than 8 effects are truncated; `clampParams` for every type (NaN, out of range, unknown key, missing key); edit tests with exact values (add 9th effect refused; move to index clamps; split gives unique ids; locked track refuses; same reference on no-op).
+- [ ] **Step 1: Failing tests:** migration of a v3 project with video, image and audio clips ⇒ `version: 4`, `effects: []` and `blend: 'normal'` on every clip (an unknown blend value in a hand-edited save repairs to `'normal'`), input not mutated, idempotent; `{version: 5}` ⇒ `newer`; a hand-edited v4 clip with an unknown effect type is dropped, out-of-range params are clamped, duplicate effect ids are re-id'd (keep the first), more than 8 effects are truncated; `clampParams` for every type (NaN, out of range, unknown key, missing key); edit tests with exact values (add 9th effect refused; move to index clamps; split gives unique ids; locked track refuses; same reference on no-op).
 - [ ] **Step 2:** Run `npx vitest run tests/video-effects.test.ts tests/video-effect-edits.test.ts tests/migrate.test.ts` ⇒ FAIL. **Step 3:** Implement as specified (migration step `toClipEffects` modelled on `toClipAudio`).
 - [ ] **Step 4:** Update fixtures and the e2e migration spec (seed a v3 IndexedDB project, reload ⇒ re-saved as v4; `{version: 5}` stays protected).
 - [ ] **Step 5:** `npm test && npm run typecheck && npm run build`; `npx playwright test tests/e2e/layers-migration.spec.ts tests/e2e/restore.spec.ts`. **Step 6: Commit** `feat: project data v4 (video effect stacks) and pure effect edits`.
@@ -181,7 +184,17 @@
 - [ ] **Step 1: Failing/guarding tests:** build a clip with a 4-effect stack (colour, grain, vignette, LUT), export 1080p, grab frame N with ffmpeg and compare to the preview canvas read at the same time at export size: mean abs diff < 3/255 (H.264 tolerance), for an fps-25 project too; time-based effects at 25 fps export equal frame-for-frame deterministic runs (two exports byte-compare their frame hashes); failure policy: force a compile failure for `glow` (DEV hook) ⇒ one toast, preview still draws, export finishes and its frames equal the no-glow render; lost-context mid-export keeps the existing "plain-English failure" behaviour; hidden track with effects is neither drawn nor processed (pipeline pass counter 0); performance guard: a 1080p preview frame with 4 effects renders within 6× the no-effect frame time on SwiftShader (relative, reported with numbers; the threshold is a regression guard, not a promise).
 - [ ] **Step 2:** fix whatever the tests expose (if nothing, say so). **Step 3:** gate + full `npm run e2e`. **Step 4: Commit** `test: effects parity, failure policy and performance guards`.
 
-*— Deployment gate: Part A (Tasks 1–11) can be deployed here (data v4). —*
+### Task 11a: Blend modes
+
+**Files:** Create `src/render/blend.ts`, `src/render/effects/shaders/blend.ts`, `tests/blend-math.test.ts`, `tests/e2e/blend.spec.ts`; modify `src/render/compositor.ts` (composite into an intermediate target when any visible clip is non-normal; normal-only frames keep today's fast path byte-for-byte), `src/ui/Inspector.tsx`/`EffectsInspector.tsx` (a blend-mode select), `src/ui/videoEffectCommands.ts` (`setBlendCmd`).
+
+**Interfaces:**
+- Consumes: `Clip.blend`, `setClipBlend` (Task 2), `RenderTarget` (Task 1).
+- Produces: pure `blendChannel(mode: BlendMode, backdrop: number, source: number): number` (per channel, un-premultiplied 0..1, the W3C compositing formulas) and `blendPixel(mode, backdropRGBA, sourceRGBA): RGBA` (premultiplied in/out, alpha "source-over"); the GLSL mirrors them; test id `blend-mode-select`.
+- [ ] **Step 1: Failing tests:** `blendChannel` exact values for each mode at (0.2, 0.6), (0, 1), (1, 0) (multiply 0.12, screen 0.68, difference 0.4, …); all modes bounded 0..1 and finite for random inputs; `normal` equals source-over; e2e: two solid-colour images on two layers: GL result within 2/255 of `blendPixel` for every mode; a half-transparent source edge blends without a halo; a frame with only `normal` clips renders byte-identical to before this task (existing pixel specs unchanged); undo of a blend change is ONE step; hidden/locked rules as for transform edits.
+- [ ] **Step 2–5:** RED, implement, GREEN, gate + the Task 1 spec list + `effects-parity` (blend + effects together export equal to preview). **Step 6: Commit** `feat: per-clip blend modes`.
+
+*— Deployment gate: Part A (Tasks 1–11a) can be deployed here (data v4). —*
 
 ### Task 12 (Part B): Overlay clips (data v5) and renderer
 
@@ -199,6 +212,15 @@
 - [ ] **Step 1: Failing e2e:** "Add overlay" menu (`overlay-add`, `overlay-add-<type>`) adds a clip at the playhead on the active video layer in ONE undo step; the inspector edits text/subtext/colour/accent/sticker (`overlay-text`, `overlay-subtext`, `overlay-colour`, `overlay-accent`, `overlay-sticker`) each commit once and update the preview; transform fields and PiP handles work on overlays; trimming/moving/splitting works; Detach/audio controls are not shown for overlays; locked track refuses; reload restores.
 - [ ] **Step 2–5:** RED, implement, GREEN, gate. **Step 6: Commit** `feat(ui): overlay menu and inspector`.
 
+### Task 13a (Part B): Adjustment layers
+
+**Files:** Create `src/core/adjustment.ts`, `src/render/adjustment.ts`, `tests/adjustment.test.ts`, `tests/e2e/adjustment.spec.ts`; modify `src/core/model.ts` (`Clip.kind` gains `'adjustment'`; no media, `mediaId: ''`), `migrate.ts` (already v5 from Task 12), `src/render/compositor.ts`, `src/render/drawCollect.ts`, `src/ui/OverlayMenu.tsx` (an "Adjustment layer" entry), `src/ui/ClipView.tsx`; reuse the Task 12 audit of `p.media[...]` sites.
+
+**Interfaces:**
+- Produces: `addAdjustmentClip(p, trackId, start, duration = 5): Project` (placed like overlays); in the compositor, when an adjustment clip is active at time t, everything drawn BEFORE it (the tracks beneath, in array order) is first resolved into an intermediate target, the clip's effect stack runs over that target, and the result is composited back with the clip's opacity and blend mode, then drawing continues with the tracks above. An adjustment clip's own transform is ignored (full frame); effect edits/looks/LUT apply to it exactly as to a video clip (same commands); audio is untouched.
+- [ ] **Step 1: Failing tests:** `addAdjustmentClip` placement/refusals; adjustment clips are ignored by audio planning, GC and decoders; e2e: an adjustment layer with a B&W effect over two coloured layers makes both grey while a clip ABOVE the adjustment layer stays coloured; outside its time range nothing changes; opacity 0.5 gives the midpoint; hiding the track removes the effect; export frames match preview; Merge all keeps the adjustment's effect on the merged result; effects on an overlay clip are still refused.
+- [ ] **Step 2–5:** RED, implement, GREEN, gate (full `npm run e2e`). **Step 6: Commit** `feat: adjustment layers`.
+
 ### Task 14: Journey, docs, ledger, QA checklist, final review
 
 **Files:** Create `tests/e2e/effects-journey.spec.ts`, `docs/superpowers/ledgers/plan-4-visual-effects-ledger.md`, `docs/superpowers/ledgers/plan-4-manual-qa-checklist.md`; modify `README.md`, `PROJECT_HANDOFF.md`, `CLAUDE.md` (facts only: data version, roadmap).
@@ -211,7 +233,7 @@
 
 ## Self-Review notes
 
-- Spec/roadmap coverage: colour ✓ T4, looks (B&W, sepia, film grain, teal-orange, vignette, Cinematic/Moody/Golden Hour) ✓ T5, `.cube` ✓ T6, blur/sharpen/glow/pixelate ✓ T7, stylise (RGB split, glitch, VHS, mirror, invert) ✓ T8, chroma key ✓ T9, overlays (lower thirds, subscribe, progress bar, stickers) ✓ T12–13, "split compositor/gl first" ✓ T1, data v4 ✓ T2, live preview and identical export ✓ T3/T11. Deferred items are listed in D10.
+- Spec/roadmap coverage (the broader control list is in `2026-11-11-clipforge-roadmap-plans-4-13.md`): blend modes ✓ T11a, adjustment layers ✓ T13a, colour ✓ T4, looks (B&W, sepia, film grain, teal-orange, vignette, Cinematic/Moody/Golden Hour) ✓ T5, `.cube` ✓ T6, blur/sharpen/glow/pixelate ✓ T7, stylise (RGB split, glitch, VHS, mirror, invert) ✓ T8, chroma key ✓ T9, overlays (lower thirds, subscribe, progress bar, stickers) ✓ T12–13, "split compositor/gl first" ✓ T1, data v4 ✓ T2, live preview and identical export ✓ T3/T11. Deferred items are listed in D10.
 - Type consistency: `VideoEffectType`/`VideoEffect`/`ParamDef`/`EffectSchema` defined once in T2 and consumed by T3 (`EffectContext`, `PassProgram`), T4–9 (schemas/shaders), T10 (commands). `RenderTarget`/`Draw` defined in T1 and consumed by T3. `workingSize` T3 used by T7's radius scaling.
 - Order rationale: the split (T1) and the model (T2) first; pipeline (T3) before any visible effect so every later task is observable; colour (T4) is the reference for the CPU-vs-GL test pattern; LUT (T6) after looks because it needs OPFS/GC changes; UI (T10) after all effects exist so the menu is complete; parity (T11) last in Part A to catch drift once everything is in; overlays (Part B) after a deploy gate because they change the data version.
-- Proportion: 14 tasks for a scope the roadmap lists as one line; each task carries exact param ranges and tests, no shader bodies.
+- Proportion: 16 tasks for a scope the roadmap lists as one line; each task carries exact param ranges and tests, no shader bodies.
