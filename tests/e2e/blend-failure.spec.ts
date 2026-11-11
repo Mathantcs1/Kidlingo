@@ -27,7 +27,7 @@ test('a blend shader that cannot compile: one toast, the clip draws as Normal, t
   await page.getByTestId('btn-export-start').click();
   await expect(page.getByTestId('export-download')).toBeVisible({ timeout: 120_000 });
   await expect(page.getByTestId('export-notice')).toHaveText(
-    'Exported with blend modes drawn as Normal (this device cannot run them).',
+    'Exported with blend modes drawn as Normal and adjustment layers skipped (this device cannot run them).',
   );
   expect(errors).toEqual([]);
 });

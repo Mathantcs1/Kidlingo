@@ -64,14 +64,14 @@ describe('notices', () => {
   it('adds a blend line to the export or merge notice', () => {
     expect(exportSkipNotice({ effects: [], luts: [], blend: false })).toBeNull();
     expect(exportSkipNotice({ effects: [], luts: [], blend: true })).toBe(
-      'Exported with blend modes drawn as Normal (this device cannot run them).',
+      'Exported with blend modes drawn as Normal and adjustment layers skipped (this device cannot run them).',
     );
     expect(exportSkipNotice({ effects: ['glow'], luts: [], blend: true }, 'Merged')).toBe(
-      'Merged without these effects (this device cannot run them): Glow. Merged with blend modes drawn as Normal (this device cannot run them).',
+      'Merged without these effects (this device cannot run them): Glow. Merged with blend modes drawn as Normal and adjustment layers skipped (this device cannot run them).',
     );
   });
 
   it('words the preview toast for blend modes', () => {
-    expect(BLEND_UNAVAILABLE_MESSAGE).toBe('Blend modes are unavailable on this device; clips draw as Normal.');
+    expect(BLEND_UNAVAILABLE_MESSAGE).toBe('Blend modes and adjustment layers are unavailable on this device; blend modes draw as Normal and adjustment layers are skipped.');
   });
 });

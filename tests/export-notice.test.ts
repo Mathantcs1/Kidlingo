@@ -71,7 +71,7 @@ describe('export notice', () => {
     await startExport('1080p', 'clip');
     expect(useExportUi.getState()).toMatchObject({
       phase: 'done',
-      notice: 'Exported with blend modes drawn as Normal (this device cannot run them).',
+      notice: 'Exported with blend modes drawn as Normal and adjustment layers skipped (this device cannot run them).',
     });
   });
 

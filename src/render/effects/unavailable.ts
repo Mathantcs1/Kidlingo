@@ -7,12 +7,13 @@ import { VIDEO_EFFECTS } from '../../core/videoEffects';
 export interface ExportSkips {
   effects: VideoEffectType[];
   luts: string[];
-  /** Blend modes could not run on this device: blended clips were drawn as Normal. */
+  /** The blend pass could not run on this device: blended clips were drawn as Normal, adjustment layers skipped. */
   blend?: boolean;
 }
 
-/** The preview toast when the blend program cannot be compiled (shown once per preview compositor). */
-export const BLEND_UNAVAILABLE_MESSAGE = 'Blend modes are unavailable on this device; clips draw as Normal.';
+/** The preview toast when the blend program cannot be compiled (shown once per preview compositor; it serves blend
+ * modes and adjustment layers). */
+export const BLEND_UNAVAILABLE_MESSAGE = 'Blend modes and adjustment layers are unavailable on this device; blend modes draw as Normal and adjustment layers are skipped.';
 
 /** The preview toast when an effect type's shader cannot run (shown once per type per session). */
 export function effectUnavailableMessage(type: VideoEffectType): string {
@@ -44,6 +45,6 @@ export function exportSkipNotice(s: ExportSkips, verb: 'Exported' | 'Merged' = '
     const names = s.luts.map((n) => `"${n}"`).join(', ');
     parts.push(`${verb} without these LUTs (the file is missing or not a valid .cube): ${names}.`);
   }
-  if (s.blend) parts.push(`${verb} with blend modes drawn as Normal (this device cannot run them).`);
+  if (s.blend) parts.push(`${verb} with blend modes drawn as Normal and adjustment layers skipped (this device cannot run them).`);
   return parts.length > 0 ? parts.join(' ') : null;
 }

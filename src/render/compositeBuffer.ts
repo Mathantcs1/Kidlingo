@@ -86,15 +86,16 @@ export class CompositeBuffer {
    * onto the composite so far with `mode`, `opacity` scaling the layer: blendPixel per pixel into the other target,
    * which becomes current and stays bound. A texture handed in must not be either composite target, and must still
    * hold its picture (an effect pipeline output is overwritten by the next run of its size: blend it at once).
+   * `adjust` (an adjustment layer's processed composite) writes adjustPixel instead: replace, then lerp by opacity.
    */
-  blend(mode: BlendMode, opacity = 1, layer?: { tex: WebGLTexture; uv: Mat3 }): void {
+  blend(mode: BlendMode, opacity = 1, layer?: { tex: WebGLTexture; uv: Mat3 }, adjust = false): void {
     const prog = this.program;
     const layerTarget = this.layer;
     if (!prog || !this.targets || (!layer && !layerTarget)) throw new Error('CompositeBuffer.blend before begin/beginLayer');
     const backdrop = this.current().slot.tex;
     this.cur = 1 - this.cur;
     this.bindCurrent();
-    drawBlendPass(this.gl, prog, backdrop, layer?.tex ?? layerTarget!.slot.tex, layer?.uv, mode, opacity);
+    drawBlendPass(this.gl, prog, backdrop, layer?.tex ?? layerTarget!.slot.tex, layer?.uv, mode, opacity, adjust);
     this.passes++;
   }
 
@@ -174,7 +175,7 @@ export class CompositeBuffer {
     } catch (e) {
       if (this.gl.isContextLost()) throw new Error(CONTEXT_LOST);
       this.failed = true;
-      console.warn('Blend modes are unavailable; clips draw as normal:', e);
+      console.warn('Blend modes and adjustment layers are unavailable (Normal / skipped):', e);
       this.onUnavailable?.();
       return false;
     }

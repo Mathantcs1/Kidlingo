@@ -1,4 +1,4 @@
-// The GLSL twin of ../../blend.ts (blendChannel / blendPixel): the composite pass of a non-normal clip, or of any
+// The GLSL twin of ../../blend.ts (blendChannel / blendPixel / adjustPixel): the composite pass of a non-normal clip, or of any
 // layer handed to CompositeBuffer.blend. Mode numbers and constants come from the TS module (single source).
 import { BLEND_MODES } from '../../../core/videoEffects';
 import { BLEND_MODE_INDEX, SOFT_LIGHT_KNEE } from '../../blend';
@@ -11,7 +11,8 @@ export const GLSL_BLEND_MODES = BLEND_MODES.map((m) => `const int ${constName(m)
 
 /**
  * Samples the backdrop (the composite so far, `u_backdrop`, unit 0) and the layer (`u_layer`, unit 1, through
- * `u_layerUv`, scaled by `u_opacity`) at the same place and writes blendPixel(u_mode, backdrop, layer). Uses the pass
+ * `u_layerUv`, scaled by `u_opacity`) at the same place and writes blendPixel(u_mode, backdrop, layer); with
+ * `u_adjust` 1 (an adjustment layer) it writes adjustPixel(u_mode, backdrop, layer, u_opacity) instead. Uses the pass
  * vertex shader (PASS_VERTEX) with an identity u_uv, so v_uv covers the target.
  */
 export const BLEND_FRAGMENT = `#version 300 es
@@ -22,6 +23,7 @@ uniform sampler2D u_layer;
 uniform mat3 u_layerUv;
 uniform int u_mode;
 uniform float u_opacity;
+uniform int u_adjust;
 out vec4 outColor;
 ${GLSL_BLEND_MODES}
 ${GLSL_PREMULTIPLY}
@@ -52,10 +54,17 @@ float blendChannel(int mode, float b, float s) {
 
 void main() {
   vec4 bd = texture(u_backdrop, v_uv);
-  vec4 src = texture(u_layer, (u_layerUv * vec3(v_uv, 1.0)).xy) * u_opacity;
+  vec4 layer = texture(u_layer, (u_layerUv * vec3(v_uv, 1.0)).xy);
+  vec4 src = u_adjust == 1 ? layer : layer * u_opacity;
   vec3 cb = unpremultiply(bd);
   vec3 cs = unpremultiply(src);
   vec3 mixed = vec3(blendChannel(u_mode, cb.r, cs.r), blendChannel(u_mode, cb.g, cs.g), blendChannel(u_mode, cb.b, cs.b));
+  if (u_adjust == 1) {
+    // adjustPixel: the processed picture replaces the backdrop, then the backdrop is lerped towards it by opacity.
+    float w = src.a > 0.0 ? min(1.0, bd.a / src.a) : 0.0;
+    outColor = mix(bd, premultiply(mix(cs, mixed, w), src.a), u_opacity);
+    return;
+  }
   vec3 rgb = src.rgb * (1.0 - bd.a) + bd.rgb * (1.0 - src.a) + src.a * bd.a * mixed;
   outColor = vec4(rgb, src.a + bd.a * (1.0 - src.a));
 }`;

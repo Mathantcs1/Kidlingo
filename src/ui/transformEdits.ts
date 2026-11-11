@@ -37,10 +37,13 @@ export function setClipTransform(p: Project, clipId: Id, patch: Partial<Transfor
  * Puts the clip back where its fit mode places it (`fitTransform` for its media and the project format), as one
  * edit; the same project when it is already there. The fitted scale is NOT clamped to 0.02..20 (a tiny image fits
  * a 4K frame at more than 20×, exactly as `setClipFit` and a format switch place it). Media without known
- * dimensions keeps its scale. An overlay goes back to its type's default place (overlayDefaultTransform).
+ * dimensions keeps its scale. An overlay goes back to its type's default place (overlayDefaultTransform). An
+ * adjustment clip is left as it is (`p` itself).
  */
 export function resetClipTransform(p: Project, clipId: Id): Project {
   return writeTransform(p, clipId, (cur, clip) => {
+    // An adjustment layer has no frame to put back; its opacity (the one value it uses) is kept: no change.
+    if (clip.kind === 'adjustment') return cur;
     // An overlay has no media: it goes back to its type's default place.
     if (clip.kind === 'overlay' && clip.overlay) return overlayDefaultTransform(clip.overlay.type, p.format);
     const m = p.media[clip.mediaId];

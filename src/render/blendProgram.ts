@@ -55,7 +55,8 @@ export function createBlendProgram(gl: WebGL2RenderingContext): BlendProgram {
 }
 
 /**
- * One fullscreen blend pass into the bound target: blendPixel(mode, backdrop, layer · opacity) per pixel, with GL
+ * One fullscreen blend pass into the bound target: blendPixel(mode, backdrop, layer · opacity) per pixel, or with
+ * `adjust` adjustPixel(mode, backdrop, layer, opacity) (an adjustment layer's result, Ruling P10), with GL
  * blending off during the draw and re-enabled after; `layerUv` maps target coordinates to the layer's.
  */
 export function drawBlendPass(
@@ -66,6 +67,7 @@ export function drawBlendPass(
   layerUv: Mat3 | undefined,
   mode: BlendMode,
   opacity: number,
+  adjust = false,
 ): void {
   gl.disable(gl.BLEND);
   gl.useProgram(prog.program);
@@ -78,6 +80,7 @@ export function drawBlendPass(
   gl.uniformMatrix3fv(prog.at('u_layerUv'), false, layerUv ?? IDENTITY);
   gl.uniform1i(prog.at('u_mode'), BLEND_MODE_INDEX[mode] ?? 0);
   gl.uniform1f(prog.at('u_opacity'), Math.min(1, Math.max(0, opacity)));
+  gl.uniform1i(prog.at('u_adjust'), adjust ? 1 : 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   gl.activeTexture(gl.TEXTURE1);
   gl.bindTexture(gl.TEXTURE_2D, null);

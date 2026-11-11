@@ -63,6 +63,28 @@ export function blendPixel(mode: BlendMode, backdrop: Rgba, source: Rgba): Rgba 
 }
 
 /**
+ * An adjustment layer's result (Ruling P10): its effects' output `processed` (premultiplied, normally with the
+ * backdrop's alpha) REPLACES the backdrop, its straight colour mixed with the backdrop's by `mode` (weight
+ * min(1, αb/αs): fully where the backdrop covers it, not at all where the backdrop is transparent, e.g. a glow
+ * spreading out), and the backdrop is then lerped towards that by `opacity` (clamped 0..1). Unlike blendPixel the
+ * unprocessed backdrop never shows through a partly transparent pixel and coverage does not grow; opacity 0 is the
+ * backdrop itself. The GLSL blend pass mirrors it with u_adjust = 1.
+ */
+export function adjustPixel(mode: BlendMode, backdrop: Rgba, processed: Rgba, opacity: number): Rgba {
+  const o = clamp01(opacity);
+  const ab = backdrop[3];
+  const as = processed[3];
+  const w = as > 0 ? Math.min(1, ab / as) : 0;
+  const res: Rgba = [0, 0, 0, as];
+  for (let k = 0; k < 3; k++) {
+    const cb = ab > 0 ? clamp01(backdrop[k] / ab) : 0;
+    const cs = as > 0 ? clamp01(processed[k] / as) : 0;
+    res[k] = (cs + w * (blendChannel(mode, cb, cs) - cs)) * as;
+  }
+  return res.map((v, k) => backdrop[k] + o * (v - backdrop[k])) as Rgba;
+}
+
+/**
  * The intermediate composite's size for a `viewport`: the viewport itself, scaled down (same shape) to fit
  * `maxSide` (MAX_TEXTURE_SIZE) and so that `targets` RGBA8 targets fit in `budget` bytes. At least 1×1.
  */

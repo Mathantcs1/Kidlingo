@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BLEND_MODES } from '../src/core/videoEffects';
 import type { BlendMode } from '../src/core/model';
-import { BLEND_MODE_INDEX, blendChannel, blendPixel, compositeSize } from '../src/render/blend';
+import { BLEND_MODE_INDEX, adjustPixel, blendChannel, blendPixel, compositeSize } from '../src/render/blend';
 import type { Rgba } from '../src/render/blend';
 
 // blendChannel(mode, backdrop, source) at (0.2, 0.6), (0, 1) and (1, 0): the W3C Compositing Level 1 formulas.
@@ -126,6 +126,61 @@ describe('blendPixel (premultiplied in and out)', () => {
         for (const v of out) expect(Number.isFinite(v)).toBe(true);
         expect(out[3]).toBeLessThanOrEqual(1 + 1e-12);
         for (let k = 0; k < 3; k++) {
+          expect(out[k]).toBeGreaterThanOrEqual(-1e-12);
+          expect(out[k]).toBeLessThanOrEqual(out[3] + 1e-12);
+        }
+      }
+    }
+  });
+});
+
+describe('adjustPixel (an adjustment layer: replace, then lerp by opacity)', () => {
+  const close = (a: Rgba, b: Rgba, msg = ''): void => a.forEach((v, k) => expect(v, `${msg}[${k}]`).toBeCloseTo(b[k], 10));
+  const red: Rgba = [0.5, 0, 0, 0.5];
+  const grey: Rgba = [0.1063, 0.1063, 0.1063, 0.5];
+
+  it('B&W over red at alpha 0.5: the processed picture replaces it (no red shows through, coverage kept)', () => {
+    close(adjustPixel('normal', red, grey, 1), grey, 'opacity 1');
+    close(adjustPixel('normal', red, grey, 0.5), [0.30315, 0.05315, 0.05315, 0.5], 'opacity 0.5');
+    expect(adjustPixel('normal', red, grey, 0)).toEqual(red);
+  });
+
+  it('opacity 0 keeps the backdrop (alpha included) for every mode; opacity is clamped', () => {
+    const b: Rgba = [0.1, 0.2, 0.05, 0.3];
+    for (const mode of BLEND_MODES) {
+      expect(adjustPixel(mode, b, [0.2, 0.1, 0.3, 0.3], 0)).toEqual(b);
+      close(adjustPixel(mode, b, [0.2, 0.1, 0.3, 0.3], -1), b);
+      close(adjustPixel(mode, b, [0.2, 0.1, 0.3, 0.3], 2), adjustPixel(mode, b, [0.2, 0.1, 0.3, 0.3], 1));
+    }
+  });
+
+  it('a blend mode mixes the straight colours and keeps the processed alpha (multiply at alpha 0.5)', () => {
+    const b: Rgba = [0.4, 0.2, 0.1, 0.5];
+    const s: Rgba = [0.1, 0.3, 0.4, 0.5];
+    close(adjustPixel('multiply', b, s, 1), [0.08, 0.12, 0.08, 0.5]);
+    close(adjustPixel('multiply', b, s, 0.5), [0.24, 0.16, 0.09, 0.5]);
+    close(adjustPixel('screen', b, s, 1), [0.42, 0.38, 0.42, 0.5]);
+  });
+
+  it('opaque pixels equal blendPixel; where the backdrop is transparent the processed pixel shows as is', () => {
+    const b: Rgba = [0.2, 0.7, 0.4, 1];
+    const s: Rgba = [0.9, 0.1, 0.5, 1];
+    for (const mode of BLEND_MODES) {
+      close(adjustPixel(mode, b, s, 1), blendPixel(mode, b, s), mode);
+      close(adjustPixel(mode, [0, 0, 0, 0], [0.2, 0.1, 0, 0.4], 1), [0.2, 0.1, 0, 0.4], `${mode} transparent`);
+    }
+  });
+
+  it('stays finite and premultiplied for random inputs', () => {
+    const r = rng(5);
+    for (const mode of BLEND_MODES) {
+      for (let i = 0; i < 1000; i++) {
+        const ab = i % 5 === 0 ? 0 : r();
+        const as = i % 7 === 0 ? 0 : r();
+        const out = adjustPixel(mode, [r() * ab, r() * ab, r() * ab, ab], [r() * as, r() * as, r() * as, as], r());
+        expect(out[3]).toBeLessThanOrEqual(1 + 1e-12);
+        for (let k = 0; k < 3; k++) {
+          expect(Number.isFinite(out[k])).toBe(true);
           expect(out[k]).toBeGreaterThanOrEqual(-1e-12);
           expect(out[k]).toBeLessThanOrEqual(out[3] + 1e-12);
         }

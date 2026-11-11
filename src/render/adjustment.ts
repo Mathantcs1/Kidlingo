@@ -1,7 +1,7 @@
 // Adjustment layers in the compositor (Plan 4 Task 13a). Ruling P2: they reuse the ONE CompositeBuffer of Task 11a:
 // everything drawn before the adjustment clip (the layers beneath, in array order) is the composite so far; its effect
-// stack runs over that, and the result is blended back with the clip's blend mode and opacity. Drawing then continues
-// with the layers above, into the new composite.
+// stack runs over that, and the result REPLACES it (mixed by the clip's blend mode), lerped by its opacity
+// (adjustPixel, Ruling P10). Drawing then continues with the layers above, into the new composite.
 import type { Clip, Id, Project, VideoEffectType } from '../core/model';
 import { blendOf, clipEffectContext } from './clipEffects';
 import { COMPOSITE_UV } from './compositeBuffer';
@@ -24,7 +24,7 @@ export function needsComposite(d: FrameDraw): boolean {
 
 /**
  * Runs `clip`'s effects over the composite so far (read upright through COMPOSITE_UV, at the composite's size capped
- * like any working size) and IMMEDIATELY blends the result back (a pipeline output is overwritten by the next run of
+ * like any working size) and IMMEDIATELY writes the result back (adjustPixel) (a pipeline output is overwritten by the next run of
  * its size). When nothing applies the pipeline returns the composite itself: no blend then (blend must never read
  * the target it writes). Returns whether a blend pass was drawn. The new composite stays bound.
  */
@@ -43,6 +43,6 @@ export function applyAdjustment(
   const ctx = clipEffectContext(clip, p, t, luts, onUnavailable);
   const out = effects.run(backdrop, workingSize(composite.size, format), COMPOSITE_UV, clip.effects, ctx);
   if (out === backdrop) return false;
-  composite.blend(blendOf(clip), clip.transform.opacity, { tex: out.tex, uv: COMPOSITE_UV });
+  composite.blend(blendOf(clip), clip.transform.opacity, { tex: out.tex, uv: COMPOSITE_UV }, true);
   return true;
 }

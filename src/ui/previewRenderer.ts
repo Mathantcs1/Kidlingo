@@ -14,7 +14,7 @@ export interface PreviewCallbacks {
   onLutUnavailable?(name: string): void;
   /** An effect type's shader cannot run here (its effect is skipped); called once per type per session. */
   onEffectUnavailable?(type: VideoEffectType): void;
-  /** Blend modes cannot run here (clips draw as Normal); called once per renderer. */
+  /** Blend modes and adjustment layers cannot run here (Normal / skipped); called once per renderer. */
   onBlendUnavailable?(): void;
 }
 

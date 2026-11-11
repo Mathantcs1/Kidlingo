@@ -110,3 +110,32 @@ effects-lut-app: 80/80. Full `npm run e2e` not run (controller's gate).
 4. `tests/adjustment.test.ts` is 204 lines (slightly over the ~200 target). compositor.ts is 195 lines (split before
    extending again).
 5. Commit trailers follow the controller's lines (Co-Authored-By Sonnet 5.5). Not pushed.
+
+## Fix round 1 (review: 1 Important, 3 Minor)
+
+- **I1 (Ruling P10).** An adjustment's result now REPLACES the composite below and is lerped by its opacity instead of
+  being blended back source-over (which let the unprocessed picture show through partly transparent pixels and grew
+  coverage). CPU reference `adjustPixel(mode, backdrop, processed, opacity)` in src/render/blend.ts:
+  `res = premultiply(mix(cs, B(cb, cs), w), αs)` with `w = min(1, αb/αs)` (= the reviewer's `B(cb, cs)` wherever the
+  backdrop covers the processed pixel, which is the usual αb = αs case; where the backdrop is transparent, e.g. a glow
+  spreading out, the processed colour shows as is, like blendPixel over a transparent backdrop), then
+  `out = mix(backdrop, res, opacity)`. Same blend program with `uniform int u_adjust` (Ruling P2), set by
+  `drawBlendPass(..., adjust)` / `CompositeBuffer.blend(..., adjust)`; applyAdjustment passes true. Opaque pixels give
+  exactly what they gave before (adjustPixel = blendPixel there), so the existing adjustment e2e are unchanged.
+- **M1.** Toast: "Blend modes and adjustment layers are unavailable on this device; blend modes draw as Normal and
+  adjustment layers are skipped."; export/merge notice "... with blend modes drawn as Normal and adjustment layers
+  skipped (this device cannot run them)." (effect-unavailable, export-notice, blend-failure updated; adjustment-app does
+  not assert these texts).
+- **M2.** `resetClipTransform` on an adjustment clip is a no-op returning `p` (opacity kept; the Reset button was
+  already hidden for it). `tests/adjustment-transform.test.ts`.
+- Tests: tests/blend-math.test.ts +5 adjustPixel cases (red/B&W at α 0.5, opacity 0/0.5/1 and clamping, alpha kept at
+  opacity 0, multiply/screen at partial alpha, opaque = blendPixel, transparent backdrop, random premultiplied).
+  e2e in a NEW file `tests/e2e/adjustment-alpha.spec.ts` (adjustment.spec.ts is 165 lines; split to stay <= ~200):
+  B&W over red at opacity 0.5 with nothing below = grey at half the opaque B&W brightness and = per-layer B&W; the
+  partial-alpha edge PNG under an invert adjustment (normal 1, multiply 0.5, screen 0.7, normal 0.5) matches
+  adjustPixel within 2/255 at α 1, 128/255, 38/255, 0. Mutations: source-over again (flag false) fails both tests;
+  opacity ignored in the GLSL adjust branch fails the second.
+- Gate: npm test 87 files / 1182; typecheck; build; dist grep empty. e2e one at a time: adjustment 5, adjustment-alpha
+  2, adjustment-app 3, blend 6, blend-ui 3, blend-export 1, blend-failure 2, effects-parity 3, effects-failure 5,
+  overlays-render 6, compositor 10, layers-render 5 (all green).
+- Remaining: tests/adjustment.test.ts 204 lines, compositor.ts 195 (unchanged; split before extending).
