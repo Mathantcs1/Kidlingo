@@ -1,10 +1,12 @@
-import type { Id, Project } from '../core/model';
+import type { Id, Project, VideoEffectType } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
 import { collectDraws } from './drawCollect';
-import type { DrawContext } from './drawCollect';
-import { QuadRenderer, clipMatrix, createContext, forceOpaque, letterbox } from './gl';
-import type { Size, TextureSlot } from './gl';
+import type { Draw, DrawContext } from './drawCollect';
+import { EffectPipeline, frameIndex, snapToFrame, workingSize } from './effects/pipeline';
+import type { EffectContext } from './effects/types';
+import { QuadRenderer, clipMatrix, createContext, forceOpaque, letterbox, uvMatrix } from './gl';
+import type { Mat3, Size, TextureSlot } from './gl';
 import { withAttempts } from './glErrors';
 import { ImageTextures } from './images';
 
@@ -28,14 +30,19 @@ export interface CompositorStats {
   videoTextures: number;
   imageTextures: number;
   maxImageSide: number;
+  /** Effect passes drawn since creation (0 while no clip has an enabled, available effect). */
+  effectPasses: number;
 }
 
 export interface CompositorOptions {
   /** Keep the drawing buffer after presenting (needed to read pixels back after a render). Default false. */
   preserveDrawingBuffer?: boolean;
+  /** Called once per effect type per session when its shader cannot be used here; the clip draws without it (D8). */
+  onEffectUnavailable?(type: VideoEffectType): void;
 }
 
 const LOST = 'WebGL context lost';
+const UPRIGHT = uvMatrix(0);
 
 class GlCompositor implements Compositor {
   readonly canvas: HTMLCanvasElement | OffscreenCanvas;
@@ -54,6 +61,8 @@ class GlCompositor implements Compositor {
     this.lost = true;
   };
   private readonly drawContext: DrawContext;
+  private readonly effects: EffectPipeline;
+  private readonly onEffectUnavailable: (type: VideoEffectType) => void;
 
   /** Throws GlUnavailableError (with the getContext outcomes) after releasing whatever it had created. */
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, opts: CompositorOptions) {
@@ -64,6 +73,8 @@ class GlCompositor implements Compositor {
     this.quad = withAttempts(attempts, () => new QuadRenderer(gl));
     this.blur = withAttempts(attempts, () => new BlurBackground(gl, this.quad), () => this.quad.dispose());
     this.images = new ImageTextures(gl);
+    this.effects = new EffectPipeline(gl);
+    this.onEffectUnavailable = (type) => opts.onEffectUnavailable?.(type);
     this.drawContext = {
       gl,
       images: this.images,
@@ -93,6 +104,7 @@ class GlCompositor implements Compositor {
     for (const slots of this.videoSlots.values()) for (const s of slots) gl.deleteTexture(s.tex);
     this.videoSlots.clear();
     this.images.dispose();
+    this.effects.dispose();
     this.blur.dispose();
     this.quad.dispose();
   }
@@ -100,7 +112,12 @@ class GlCompositor implements Compositor {
   stats(): CompositorStats {
     let videoTextures = 0;
     for (const slots of this.videoSlots.values()) videoTextures += slots.length;
-    return { videoTextures, imageTextures: this.images.count, maxImageSide: this.images.maxSide };
+    return {
+      videoTextures,
+      imageTextures: this.images.count,
+      maxImageSide: this.images.maxSide,
+      effectPasses: this.effects.passes,
+    };
   }
 
   private assertUsable(): void {
@@ -130,10 +147,28 @@ class GlCompositor implements Compositor {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
     for (const d of draws) {
-      if (d.clip.fit === 'blur') this.blur.draw(d.slot, d.size, d.uv, d.clip.transform.opacity, format, viewport);
-      this.quad.draw(d.slot.tex, clipMatrix(d.size, d.clip.transform, format), d.clip.transform.opacity, d.uv);
+      // Effects first (working-size passes, no transform); the blur backdrop is made from the processed picture (D7).
+      const { slot, uv } = this.applyEffects(d, p, t, format);
+      if (d.clip.fit === 'blur') this.blur.draw(slot, d.size, uv, d.clip.transform.opacity, format, viewport);
+      this.quad.draw(slot.tex, clipMatrix(d.size, d.clip.transform, format), d.clip.transform.opacity, uv);
     }
     if (this.hasAlpha) forceOpaque(gl);
+  }
+
+  /** The draw's picture after its effect stack: the original slot and uv when nothing applies. */
+  private applyEffects(d: Draw, p: Project, t: number, format: Size): { slot: TextureSlot; uv: Mat3 } {
+    if (!d.clip.effects || d.clip.effects.length === 0) return d;
+    const fps = p.format.fps;
+    const ctx: EffectContext = {
+      time: snapToFrame(t - d.clip.start, fps),
+      frame: frameIndex(t - d.clip.start, fps),
+      fps,
+      lut: () => null,
+      onUnavailable: this.onEffectUnavailable,
+    };
+    const slot = this.effects.run(d.slot, workingSize(d.size, format), d.uv, d.clip.effects, ctx);
+    // Effect results are upright and stored top row first, like an uploaded texture.
+    return slot === d.slot ? d : { slot, uv: UPRIGHT };
   }
 }
 

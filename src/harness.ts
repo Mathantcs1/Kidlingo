@@ -11,6 +11,8 @@ import type { VideoSource } from './media/decode';
 import { cleanupExportTemp, exportProject } from './export/exporter';
 import { exportHarness } from './harnessExport';
 import { audioHarness } from './harnessAudio';
+import { effectsHarness } from './harnessEffects';
+import { readPixels } from './harnessPixels';
 import { createMixer, renderMixdown } from './audio/mixer';
 import type { ScheduledPiece } from './audio/mixer';
 import { audioStats, resetAudioStats } from './audio/stats';
@@ -30,9 +32,12 @@ type Rgb = [number, number, number];
 
 /**
  * A PNG of the given size: solid `rgb`; or, with `right`, `rgb` on the left half and `right` on the right half; or,
- * with `stripes`, 1 px white columns every `stripes` px on black (a pattern that aliases badly when downscaled).
+ * with `stripes`, 1 px white columns every `stripes` px on black (a pattern that aliases badly when downscaled). With
+ * `bottom`, the bottom half (or bottom-right quarter, with `right`) is `bottom`.
  */
-async function makePng(width: number, height: number, rgb: Rgb, opts: { right?: Rgb; stripes?: number } = {}): Promise<Blob> {
+async function makePng(
+  width: number, height: number, rgb: Rgb, opts: { right?: Rgb; stripes?: number; bottom?: Rgb } = {},
+): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -45,6 +50,10 @@ async function makePng(width: number, height: number, rgb: Rgb, opts: { right?: 
     ctx.fillStyle = css(opts.right);
     ctx.fillRect(width / 2, 0, width / 2, height);
   }
+  if (opts.bottom) {
+    ctx.fillStyle = css(opts.bottom);
+    ctx.fillRect(opts.right ? width / 2 : 0, height / 2, opts.right ? width / 2 : width, height / 2);
+  }
   if (opts.stripes) {
     ctx.fillStyle = css(rgb);
     for (let x = 0; x < width; x += opts.stripes) ctx.fillRect(x, 0, 1, height);
@@ -52,23 +61,6 @@ async function makePng(width: number, height: number, rgb: Rgb, opts: { right?: 
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
   );
-}
-
-/** Reads the whole drawing buffer of a canvas with a WebGL2 context, top row first. */
-function readPixels(canvas: HTMLCanvasElement): { width: number; height: number; data: number[] } {
-  const gl = canvas.getContext('webgl2');
-  if (!gl) throw new Error('canvas has no WebGL2 context');
-  const { width, height } = canvas;
-  const raw = new Uint8Array(width * height * 4);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, raw);
-  const data: number[] = new Array(raw.length);
-  const row = width * 4;
-  for (let y = 0; y < height; y++) {
-    const src = (height - 1 - y) * row;
-    for (let i = 0; i < row; i++) data[y * row + i] = raw[src + i];
-  }
-  return { width, height, data };
 }
 
 const cf = {
@@ -91,7 +83,9 @@ const cf = {
   makePng,
   readPixels,
   /** Stores a PNG (see makePng) as image media under a fresh id; returns its MediaRef (not part of any project). */
-  async putImageMedia(width: number, height: number, rgb: Rgb, opts?: { right?: Rgb; stripes?: number }): Promise<MediaRef> {
+  async putImageMedia(
+    width: number, height: number, rgb: Rgb, opts?: { right?: Rgb; stripes?: number; bottom?: Rgb },
+  ): Promise<MediaRef> {
     const id = newId();
     await putMedia(id, await makePng(width, height, rgb, opts));
     return { id, name: `${id}.png`, kind: 'image', duration: 5, width, height, hasAudio: false };
@@ -131,6 +125,7 @@ const cf = {
   cleanupExportTemp,
   ...exportHarness,
   ...audioHarness,
+  ...effectsHarness,
   renderMixdown,
   createMixer,
   /** Renders a mixdown and returns its shape plus the peak level in each [from, to) window (seconds). */

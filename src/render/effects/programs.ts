@@ -1,0 +1,128 @@
+// Per-effect GL programs: the shader registry, lazy compilation and the session-wide failure policy (D8).
+import type { VideoEffectType } from '../../core/model';
+import type { Mat3, Size } from '../geometry';
+import { createProgram } from '../gl';
+import type { EffectContext, PassShader, UniformValue, Uniforms } from './types';
+
+/**
+ * The shader of each available effect. Each effect task adds its entry here (from its own module under ./shaders)
+ * when it flips `VIDEO_EFFECTS[type].available`; a type without an entry is skipped by the pipeline.
+ */
+export const PASS_SHADERS: Partial<Record<VideoEffectType, PassShader>> = {};
+
+/** Registers (or, with undefined, removes) a type's shader. Used by tests and the dev harness's test-only effects. */
+export function registerPassShader(type: VideoEffectType, shader: PassShader | undefined): void {
+  if (shader) PASS_SHADERS[type] = shader;
+  else delete PASS_SHADERS[type];
+}
+
+/** The vertex shader of every pass: the unit quad over the whole target, unflipped, so v_uv.v = 0 is the top. */
+export const PASS_VERTEX = `#version 300 es
+layout(location = 0) in vec2 a_unit;
+uniform mat3 u_uv;
+out vec2 v_uv;
+void main() {
+  v_uv = (u_uv * vec3(a_unit, 1.0)).xy;
+  gl_Position = vec4(a_unit * 2.0 - 1.0, 0.0, 1.0);
+}`;
+
+/** A compiled effect program. Draws one fullscreen pass into the bound framebuffer with the unit quad VAO bound. */
+export interface PassProgram {
+  readonly shader: PassShader;
+  draw(src: WebGLTexture, uv: Mat3, uniforms: Uniforms, size: Size, ctx: EffectContext): void;
+  dispose(): void;
+}
+
+type UniformSetter = 'uniform1f' | 'uniform2fv' | 'uniform3fv' | 'uniform4fv';
+
+/** The setter for a uniform value (pure; exported for tests). */
+export function uniformCall(v: UniformValue): [UniformSetter, UniformValue] {
+  if (typeof v === 'number') return ['uniform1f', v];
+  const setters: Record<number, UniformSetter> = { 2: 'uniform2fv', 3: 'uniform3fv', 4: 'uniform4fv' };
+  const setter = setters[v.length];
+  if (!setter) throw new Error(`Unsupported uniform of length ${v.length}`);
+  return [setter, v];
+}
+
+class GlPassProgram implements PassProgram {
+  private readonly locations = new Map<string, WebGLUniformLocation | null>();
+
+  constructor(
+    private readonly gl: WebGL2RenderingContext,
+    private readonly program: WebGLProgram,
+    readonly shader: PassShader,
+  ) {
+    gl.useProgram(program);
+    gl.uniform1i(gl.getUniformLocation(program, 'u_src'), 0);
+  }
+
+  private at(name: string): WebGLUniformLocation | null {
+    if (!this.locations.has(name)) this.locations.set(name, this.gl.getUniformLocation(this.program, name));
+    return this.locations.get(name) ?? null;
+  }
+
+  draw(src: WebGLTexture, uv: Mat3, uniforms: Uniforms, size: Size, ctx: EffectContext): void {
+    const gl = this.gl;
+    gl.useProgram(this.program);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, src);
+    gl.uniformMatrix3fv(this.at('u_uv'), false, uv);
+    gl.uniform2f(this.at('u_size'), size.width, size.height);
+    gl.uniform1f(this.at('u_time'), ctx.time);
+    gl.uniform1f(this.at('u_frame'), ctx.frame);
+    for (const [name, value] of Object.entries(uniforms)) {
+      const [setter, v] = uniformCall(value);
+      if (setter === 'uniform1f') gl.uniform1f(this.at(name), v as number);
+      else gl[setter](this.at(name), v as number[]);
+    }
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  dispose(): void {
+    this.gl.deleteProgram(this.program);
+  }
+}
+
+/** Compiled programs per context; a shader that failed is off for the whole session (every context, D8). */
+const compiled = new WeakMap<WebGL2RenderingContext, Map<PassShader, PassProgram>>();
+const failed = new WeakSet<PassShader>();
+
+/**
+ * The program of `type`'s registered shader, compiled on first use. Returns null when no shader is registered, or
+ * when it failed to compile/link (now or earlier in the session): `onUnavailable(type)` is called only at that first
+ * failure. A lost context is not a shader failure: it throws 'WebGL context lost' and caches nothing.
+ */
+export function programFor(
+  gl: WebGL2RenderingContext,
+  type: VideoEffectType,
+  onUnavailable: (type: VideoEffectType) => void,
+): PassProgram | null {
+  const shader = PASS_SHADERS[type];
+  if (!shader || failed.has(shader)) return null;
+  let programs = compiled.get(gl);
+  const hit = programs?.get(shader);
+  if (hit) return hit;
+  let program: WebGLProgram;
+  try {
+    program = createProgram(gl, PASS_VERTEX, shader.fragment);
+  } catch (e) {
+    if (gl.isContextLost()) throw new Error('WebGL context lost');
+    failed.add(shader);
+    console.warn(`Effect '${type}' is unavailable:`, e);
+    onUnavailable(type);
+    return null;
+  }
+  if (!programs) {
+    programs = new Map();
+    compiled.set(gl, programs);
+  }
+  const pass = new GlPassProgram(gl, program, shader);
+  programs.set(shader, pass);
+  return pass;
+}
+
+/** Deletes every effect program compiled for `gl` (the compositor's dispose). */
+export function disposePrograms(gl: WebGL2RenderingContext): void {
+  for (const p of compiled.get(gl)?.values() ?? []) p.dispose();
+  compiled.delete(gl);
+}
