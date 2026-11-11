@@ -1,3 +1,4 @@
+import { cloneEffects, fitFades, withAudio } from './clipAudio';
 import { adoptFirstClipFps } from './fps';
 import { clipDuration, clipEnd, newId } from './model';
 import type { Clip, Id, Project, Track } from './model';
@@ -44,8 +45,13 @@ export function assertUnlocked(p: Project, trackId: Id): void {
   if (p.tracks.find((t) => t.id === trackId)?.locked) throw new TimelineError('Track is locked');
 }
 
+/** Whether `clip` fits on `track` without overlapping another clip (ignoring `ignoreId`). */
+export function hasRoom(track: Track, clip: Clip, ignoreId?: Id): boolean {
+  return !track.clips.some((c) => c.id !== ignoreId && overlaps(c, clip));
+}
+
 function assertFree(track: Track, clip: Clip, ignoreId?: Id): void {
-  if (track.clips.some((c) => c.id !== ignoreId && overlaps(c, clip))) {
+  if (!hasRoom(track, clip, ignoreId)) {
     throw new TimelineError('Clip overlaps an existing clip');
   }
 }
@@ -83,6 +89,8 @@ export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: nu
   }
   if (clipDuration(next) < MIN_CLIP - EPS) throw new TimelineError('Clip would be too short');
   assertFree(track, next, clip.id);
+  // Fades must still fit the (possibly shorter) clip.
+  next = withAudio(next, fitFades(next.audio, clipDuration(next)));
   return replaceClip(p, clipId, next);
 }
 
@@ -94,8 +102,12 @@ export function splitClip(p: Project, clipId: Id, time: number): Project {
     throw new TimelineError('Split point too close to clip edge');
   }
   const cut = clip.in + (time - clip.start);
-  const left: Clip = { ...clip, out: cut };
-  const right: Clip = { ...clip, id: newId(), start: time, in: cut };
+  // The left half keeps the fade-in, the right half the fade-out; effects are copied with new ids to both.
+  const left: Clip = { ...clip, out: cut, audio: { ...clip.audio, fadeOut: 0, effects: cloneEffects(clip.audio.effects) } };
+  const right: Clip = {
+    ...clip, id: newId(), start: time, in: cut,
+    audio: { ...clip.audio, fadeIn: 0, effects: cloneEffects(clip.audio.effects) },
+  };
   return mapClips(p, (t) =>
     t.clips.flatMap((c) => (c.id === clipId ? [left, right] : [c])),
   );
