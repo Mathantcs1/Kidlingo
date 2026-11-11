@@ -249,15 +249,25 @@ describe('reframeProject keeps customised placement (Ruling G)', () => {
     expect(byId(reframeProject(q, 'vertical'), 'BG').transform).toEqual(fit(v, 1080, 1920));
   });
 
-  it('keeps the scale within scaleBounds of the old scale', () => {
+  it('Ruling K: the scale is never clamped in a format switch (only guarded to stay finite and > 0)', () => {
     const p = build();
-    const tiny = { ...p, tracks: p.tracks.map((t) => (t.id === 'L2' ? { ...t, clips: [{ ...t.clips[0], transform: { ...pipT, scale: 0.02 } }] } : t)) };
-    expect(byId(reframeProject(tiny, 'square'), 'PIP').transform.scale).toBe(0.02);
-    // A custom 960×540 canvas to 1920×1080 doubles: a 15× clip stops at 20×, a 30× clip (already above) stays.
-    const custom = (s: number): Project => ({ ...tiny, format: { ...tiny.format, width: 960, height: 540 }, tracks: tiny.tracks.map((t) => (t.id === 'L2' ? { ...t, clips: [{ ...t.clips[0], transform: { ...pipT, scale: s } }] } : t)) });
-    expect(byId(reframeProject(custom(15), 'youtube'), 'PIP').transform.scale).toBe(20);
-    expect(byId(reframeProject(custom(30), 'youtube'), 'PIP').transform.scale).toBe(30);
-    expect(byId(reframeProject(custom(3), 'youtube'), 'PIP').transform.scale).toBe(6);
+    const withScale = (q: Project, s: number): Project => ({ ...q, tracks: q.tracks.map((t) => (t.id === 'L2' ? { ...t, clips: [{ ...t.clips[0], transform: { ...pipT, scale: s } }] } : t)) });
+    // 16:9 → 1:1 scales by √(1080/1920): a 0.02 clip goes below the 0.02 floor.
+    expect(byId(reframeProject(withScale(p, 0.02), 'square'), 'PIP').transform.scale).toBeCloseTo(0.02 * Math.sqrt(1080 / 1920), 12);
+    // A custom 960×540 canvas to 1920×1080 doubles the scale: 15× → 30× (above the 20× cap), 30× → 60×.
+    const custom = (s: number): Project => ({ ...withScale(p, s), format: { ...p.format, width: 960, height: 540 } });
+    expect(byId(reframeProject(custom(15), 'youtube'), 'PIP').transform.scale).toBeCloseTo(30, 9);
+    expect(byId(reframeProject(custom(30), 'youtube'), 'PIP').transform.scale).toBeCloseTo(60, 9);
+    expect(byId(reframeProject(custom(3), 'youtube'), 'PIP').transform.scale).toBeCloseTo(6, 9);
+  });
+
+  it('Ruling K guard: a non-finite or non-positive scale stays as it was instead of becoming NaN/0', () => {
+    const p = build();
+    for (const bad of [NaN, Infinity, 0, -2]) {
+      const q = { ...p, tracks: p.tracks.map((t) => (t.id === 'L2' ? { ...t, clips: [{ ...t.clips[0], transform: { ...pipT, scale: bad } }] } : t)) };
+      const s = byId(reframeProject(q, 'square'), 'PIP').transform.scale;
+      expect(Object.is(s, bad)).toBe(true);
+    }
   });
 
   it('Ruling I: untouched means x, y and scale at the old fit; a faded full-frame fill clip refits and stays faded', () => {
@@ -315,16 +325,13 @@ describe('reframeProject keeps customised placement (Ruling G)', () => {
       close(byId(p, 'PIP').transform, custom);
     });
 
-    it('a clip above 20× stays above 20×; the scale clamp (never grow past max(20, current)) is the one exception', () => {
-      const p = start('youtube', 30);
-      const sq = reframeProject(p, 'square');
-      expect(byId(sq, 'PIP').transform.scale).toBeCloseTo(22.5, 9);
-      // Back up by 4/3 would give 30, but growing is capped at max(20, 22.5): x/y still return exactly.
-      const back = byId(reframeProject(sq, 'youtube'), 'PIP').transform;
-      expect(back.scale).toBeCloseTo(22.5, 9);
-      close({ ...back, scale: 30 }, { ...custom, scale: 30 });
-      // Below the cap the same clip round-trips exactly.
-      close(byId(reframeProject(reframeProject(start('youtube', 12), 'square'), 'youtube'), 'PIP').transform, { ...custom, scale: 12 });
+    it('Ruling K: clips above 20× (and below 0.02) round-trip exactly too', () => {
+      for (const s of [30, 67.5, 0.01]) {
+        const p = start('youtube', s);
+        const sq = reframeProject(p, 'square');
+        expect(byId(sq, 'PIP').transform.scale).toBeCloseTo(s * Math.sqrt(1080 / 1920), 9);
+        close(byId(reframeProject(sq, 'youtube'), 'PIP').transform, { ...custom, scale: s });
+      }
     });
   });
 

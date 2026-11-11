@@ -2,7 +2,6 @@ import { FORMATS } from './formats';
 import type { FormatKey } from './formats';
 import { clipDuration, clipEnd } from './model';
 import type { Clip, Id, Project, Transform } from './model';
-import { scaleBounds } from './scale';
 import { TimelineError, assertUnlocked, findClip } from './timeline';
 
 const EPS = 1e-9;
@@ -89,8 +88,8 @@ function atFit(t: Transform, fit: Transform): boolean {
  * Switches the canvas to `key`. A visual clip whose x, y and scale still equal its fit for the old canvas (within
  * 1e-6) is refit to the new one (and so stays untouched on the next switch); a customised clip (moved or scaled)
  * keeps its relative placement: x·w′/w, y·h′/h, and scale·√((w′·h′)/(w·h)) (the geometric mean of the axis
- * ratios) kept within `scaleBounds` of its scale. That makes a round trip A → B → A exactly invertible for
- * customised clips (barring the scale clamp), and untouched clips refit back to the same fit. Rotation and opacity
+ * ratios), never clamped (Ruling K; a non-finite or non-positive result keeps the old scale). That makes a round
+ * trip A → B → A exactly invertible for every customised clip, and untouched clips refit back to the same fit. Rotation and opacity
  * are always kept, so a faded or rotated full-frame clip still refits. An unusable old canvas size (non-positive or
  * non-finite) refits every clip. Audio clips and media without a known size are left alone. Intentionally ignores
  * track locks: the format is a sequence-level setting and every clip, locked or not, must follow it. Returns `p`
@@ -113,8 +112,9 @@ export function reframeProject(p: Project, key: FormatKey): Project {
       const { x, y, scale } = fitTransform(dims, canvas, c.fit);
       return { ...c, transform: { ...t, x, y, scale } };
     }
-    const [lo, hi] = scaleBounds(t.scale);
-    const scale = Math.min(hi, Math.max(lo, t.scale * Math.sqrt(rx * ry)));
+    // Ruling K: no clamp, so clips outside 0.02..20 round-trip exactly; only an unusable result keeps the old scale.
+    const next = t.scale * Math.sqrt(rx * ry);
+    const scale = Number.isFinite(next) && next > 0 ? next : t.scale;
     return { ...c, transform: { ...t, x: t.x * rx, y: t.y * ry, scale } };
   };
   return {

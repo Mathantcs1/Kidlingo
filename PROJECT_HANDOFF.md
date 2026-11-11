@@ -120,7 +120,7 @@ Full text with costs is in `docs/superpowers/ledgers/plan-1-foundation-ledger.md
 5. Restore safety: GC (`gcMedia`) runs only after a verified restore and only in the tab holding the lock; a failed/unsupported restore disables autosave until the user decides. Never delete OPFS media otherwise.
 6. Lock semantics: only `setTrackFlags`, `renameTrack`, `moveTrack` and `reframeProject` may act on a locked track; everything else throws `TimelineError('Track is locked')`.
 7. Mute always wins; solo applies to ANY track kind; hidden affects picture only. After merge-all: target track unmuted/unhidden/unlocked and all solos cleared (Ruling H).
-8. Reframe (format switch): clips whose x/y/scale equal the old fit refit; customised clips keep proportional placement with `scale' = scale·√(newW·newH/oldW·oldH)` (exact round trip, Ruling J). **Ruling K (decided, NOT yet implemented): do not clamp scale in reframe** (only guard finite/>0) so clips above 20× also round-trip exactly.
+8. Reframe (format switch): clips whose x/y/scale equal the old fit refit; customised clips keep proportional placement with `scale' = scale·√(newW·newH/oldW·oldH)` (exact round trip, Ruling J). **Ruling K (implemented): no scale clamp in reframe** (only guard finite/>0) so clips above 20× also round-trip exactly.
 9. Scale bounds `[min(0.02,cur), max(20,cur)]` for edits/drags so existing >20× clips are never pulled down.
 10. Any history change pauses playback; track-flag toggles must go through `store.apply`.
 11. Space = play/pause globally, except on keyboard-focused native controls (input-modality tracking decides).

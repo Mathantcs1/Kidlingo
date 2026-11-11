@@ -56,8 +56,7 @@ It is a static site built with React, TypeScript and Vite.
   new canvas (faded or rotated full-frame clips still refit, keeping their opacity and rotation); a clip you moved
   or scaled keeps its place relative to the frame (position scaled per axis, size by the square root of the area
   ratio), so a picture-in-picture in the top-right corner stays there. Switching to another format and back
-  restores the placement exactly (only a clip that would have to grow past 20× and past its current size is
-  held at that size).
+  restores the placement exactly, whatever the clip's size.
 - **Preview** of the frame under the playhead, rendered with WebGL2, and **playback** with sound (Play/Pause).
 - **Undo/redo** for every edit, and **autosave**: the project is restored when you reopen the page (a pending
   change is also saved when the tab is hidden or closed). If saving fails (for example because browser storage is
