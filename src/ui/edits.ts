@@ -106,14 +106,18 @@ export function setClipVolume(p: Project, clipId: Id, volume: number): Project {
 }
 
 /**
- * Sets a video/image clip's fit mode and resets its transform to `fitTransform` for the project canvas (any
- * position/scale change is replaced: the modes are defined by how the whole clip covers the canvas).
+ * Sets a video/image clip's fit mode and resets its position and scale to `fitTransform` for the project canvas (the
+ * modes are defined by how the whole clip covers the canvas); rotation and opacity are kept. Returns `p` itself when
+ * the clip already has that mode.
  */
 export function setClipFit(p: Project, clipId: Id, fit: Clip['fit']): Project {
   return updateClip(p, clipId, (c) => {
     if (c.kind === 'audio') throw new TimelineError('Audio clips have no picture to fit');
+    if (c.fit === fit) return c;
     const m = p.media[c.mediaId];
-    const transform = m?.width && m.height ? fitTransform({ width: m.width, height: m.height }, p.format, fit) : c.transform;
+    const transform = m?.width && m.height
+      ? { ...fitTransform({ width: m.width, height: m.height }, p.format, fit), rotation: c.transform.rotation, opacity: c.transform.opacity }
+      : c.transform;
     return { ...c, fit, transform };
   });
 }

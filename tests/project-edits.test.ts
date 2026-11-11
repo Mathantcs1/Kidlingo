@@ -133,6 +133,20 @@ describe('setClipFit', () => {
     expect(setClipFit(p, 'a', 'blur').tracks[0].clips[0].transform.scale).toBeCloseTo(1080 / 1920, 6);
   });
 
+  it('keeps rotation and opacity when the mode changes (only position and scale are reset)', () => {
+    const base = project();
+    const styled = { ...base, tracks: base.tracks.map((t, i) => (i === 0 ? { ...t, clips: t.clips.map((c) => ({ ...c, transform: { ...c.transform, rotation: 15, opacity: 0.5 } })) } : t)) };
+    const a = setClipFit(styled, 'a', 'fill').tracks[0].clips[0];
+    expect(a.transform).toMatchObject({ rotation: 15, opacity: 0.5 });
+    expect(a.transform.scale).toBeCloseTo(1920 / 1080, 6);
+  });
+
+  it('returns the same project when the clip already has that mode (no undo step, nothing reset)', () => {
+    const p = project();
+    const mode = p.tracks[0].clips[0].fit;
+    expect(setClipFit(p, 'a', mode)).toBe(p);
+  });
+
   it('refuses audio clips', () => {
     expect(() => setClipFit(project(), 'x', 'fill')).toThrow(TimelineError);
   });
