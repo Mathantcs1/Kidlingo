@@ -38,11 +38,14 @@ export class CompositeBuffer {
   constructor(
     private readonly gl: WebGL2RenderingContext,
     private readonly quad: QuadRenderer,
+    /** Called once when the blend program cannot be compiled (not on a lost context). */
+    private readonly onUnavailable?: () => void,
   ) {}
 
   /**
-   * Starts a composite for `viewport`: binds the current target (viewport = the whole target) cleared to opaque black,
-   * and returns true. Returns false, drawing nothing, when the blend program cannot be used on this device (the
+   * Starts a composite for `viewport`: binds the current target (viewport = the whole target) cleared to TRANSPARENT
+   * (Ruling P9: the W3C isolated-group model, so a blend mode with nothing below it behaves like Normal), and returns
+   * true. Returns false, drawing nothing, when the blend program cannot be used on this device (the
    * caller then draws every clip as 'normal'). Throws Error('WebGL context lost') on a lost context.
    */
   begin(viewport: Size): boolean {
@@ -51,9 +54,9 @@ export class CompositeBuffer {
     this.idleFrames = 0;
     const max = Number(this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE)) || 4096;
     this.size = compositeSize(viewport, max, 3, COMPOSITE_BYTE_BUDGET);
-    this.targets ??= [this.create(), this.create()];
+    this.targets ??= this.createPair();
     this.bindCurrent();
-    this.gl.clearColor(0, 0, 0, 1);
+    this.gl.clearColor(0, 0, 0, 0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     return true;
   }
@@ -114,14 +117,17 @@ export class CompositeBuffer {
     this.passes++;
   }
 
-  /** Draws the composite over the default framebuffer's `viewport` (the letterboxed picture), leaving it bound. */
+  /**
+   * Draws the composite premultiplied-over the default framebuffer's `viewport` (the letterboxed picture; the caller
+   * cleared it to opaque black), leaving it bound.
+   */
   present(viewport: Rect): void {
     const gl = this.gl;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-    gl.disable(gl.BLEND);
-    this.quad.draw(this.current().slot.tex, fullscreenMatrix(), 1, COMPOSITE_UV);
     gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    this.quad.draw(this.current().slot.tex, fullscreenMatrix(), 1, COMPOSITE_UV);
     assertNotLost(gl);
   }
 
@@ -157,6 +163,17 @@ export class CompositeBuffer {
     this.idleFrames = 0;
   }
 
+  /** Creates the ping-pong pair one by one, disposing the first if the second cannot be created. */
+  private createPair(): [RenderTarget, RenderTarget] {
+    const first = this.create();
+    try {
+      return [first, this.create()];
+    } catch (e) {
+      first.dispose();
+      throw e;
+    }
+  }
+
   private create(): RenderTarget {
     try {
       return new RenderTarget(this.gl);
@@ -177,6 +194,7 @@ export class CompositeBuffer {
       if (this.gl.isContextLost()) throw new Error(CONTEXT_LOST);
       this.failed = true;
       console.warn('Blend modes are unavailable; clips draw as normal:', e);
+      this.onUnavailable?.();
       return false;
     }
   }

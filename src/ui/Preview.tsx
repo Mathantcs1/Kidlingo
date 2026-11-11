@@ -4,7 +4,7 @@ import { fitBox, previewSize } from './layout';
 import { PreviewRenderer } from './previewRenderer';
 import { showError } from './Toast';
 import { lutUnavailableMessage } from '../media/cube';
-import { effectUnavailableMessage } from '../render/effects/unavailable';
+import { BLEND_UNAVAILABLE_MESSAGE, effectUnavailableMessage } from '../render/effects/unavailable';
 import { ChunkLoadError } from '../loadChunk';
 import { toGlUnavailable } from '../render/glErrors';
 import { buildDetailsText, describeGlFailure, probeRenderer } from './previewFailure';
@@ -67,6 +67,7 @@ export default function Preview({ editable }: { editable: boolean }) {
       onSourceError: (name) => showError(`Could not open ${name} for the preview`),
       onLutUnavailable: (name) => showError(lutUnavailableMessage(name)),
       onEffectUnavailable: (type) => showError(effectUnavailableMessage(type)),
+      onBlendUnavailable: () => showError(BLEND_UNAVAILABLE_MESSAGE),
       onFatal: (message) => {
         if (!cancelled) setFailure({ message });
       },

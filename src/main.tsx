@@ -31,6 +31,8 @@ interface DevHook {
   gcMedia(): Promise<Id[]>;
   /** Replaces the shader of an effect type with one that does not compile (the D8 failure path, Task 11). */
   breakVideoEffect(type: VideoEffectType): Promise<void>;
+  /** Makes the blend shader fail to compile in compositors created from now on (blend-unavailable path). */
+  breakBlendProgram(): Promise<void>;
 }
 
 declare global {
@@ -58,6 +60,10 @@ if (import.meta.env.DEV) {
     breakVideoEffect: async (type) => {
       const { registerPassShader } = await import('./render/effects/registry');
       registerPassShader(type, { fragment: '#version 300 es\nclipforge test: does not compile;', uniforms: () => ({}) });
+    },
+    breakBlendProgram: async () => {
+      const { setBlendFragmentOverride } = await import('./render/blendProgram');
+      setBlendFragmentOverride('#version 300 es\nclipforge test: does not compile;');
     },
   };
 }

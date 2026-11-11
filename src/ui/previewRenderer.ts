@@ -14,6 +14,8 @@ export interface PreviewCallbacks {
   onLutUnavailable?(name: string): void;
   /** An effect type's shader cannot run here (its effect is skipped); called once per type per session. */
   onEffectUnavailable?(type: VideoEffectType): void;
+  /** Blend modes cannot run here (clips draw as Normal); called once per renderer. */
+  onBlendUnavailable?(): void;
 }
 
 const LOST = 'WebGL context lost';
@@ -52,7 +54,8 @@ export class PreviewRenderer {
     const { createCompositor } = await loadChunk(() => import('../render/compositor'));
     const onLutUnavailable = (_id: Id, name: string): void => callbacks.onLutUnavailable?.(name);
     const onEffectUnavailable = (type: VideoEffectType): void => callbacks.onEffectUnavailable?.(type);
-    const compositor = createCompositor(canvas, { preserveDrawingBuffer: true, onLutUnavailable, onEffectUnavailable });
+    const onBlendUnavailable = (): void => callbacks.onBlendUnavailable?.();
+    const compositor = createCompositor(canvas, { preserveDrawingBuffer: true, onLutUnavailable, onEffectUnavailable, onBlendUnavailable });
     return new PreviewRenderer(canvas, compositor, callbacks);
   }
 

@@ -108,3 +108,14 @@ Reuse `CompositeBuffer` (do not add another intermediate target):
    committed choice). Real Safari/Mac untested.
 4. `src/harness.ts` is 203 lines (dev-only; +2 lines for the blend harness).
 5. Not pushed.
+
+## Fix round 1
+
+- Ruling P9 supersedes T11a-3: `CompositeBuffer.begin` clears to TRANSPARENT; `present` draws the composite
+  premultiplied-over the black canvas (blendFunc ONE, ONE_MINUS_SRC_ALPHA). A blend mode with nothing below it (lone
+  clip, uncovered area) looks Normal; Normal pixels unchanged. blend-ui expectation updated; new blend.spec case
+  (mutation-checked: clearing to opaque black fails it). blend-math/blend-export needed no change.
+- `CompositorOptions.onBlendUnavailable` (once per compositor, on blend compile failure only). Preview: one toast
+  (`BLEND_UNAVAILABLE_MESSAGE`); export/merge: `ExportSkips.blend` adds a notice line. DEV hook `breakBlendProgram`
+  (via `setBlendFragmentOverride`), spec `tests/e2e/blend-failure.spec.ts`; `dist/` has no `__clipforge`.
+- Leak fixed: ping-pong targets created one by one, first disposed if the second throws.

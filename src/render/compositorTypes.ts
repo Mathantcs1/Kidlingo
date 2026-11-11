@@ -39,6 +39,8 @@ export interface CompositorOptions {
   preserveDrawingBuffer?: boolean;
   /** Called once per effect type per session when its shader cannot be used here; the clip draws without it (D8). */
   onEffectUnavailable?(type: VideoEffectType): void;
+  /** Called once per compositor when the blend program cannot be compiled (not on a lost context): clips draw as Normal. */
+  onBlendUnavailable?(): void;
   /**
    * Called once per LUT media (per compositor) whose file is missing, unreadable or not a valid .cube: its effect is
    * skipped and the frame still renders (D8). `name` is the media's name (see lutUnavailableMessage).

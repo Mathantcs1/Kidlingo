@@ -35,7 +35,7 @@ export interface ExportOptions {
   /**
    * Called once, when the export finished, if it left anything out (D8): effect types turned off this session after a
    * shader failure (Compositor.unavailableTypes(), used by a visible clip; read at the end because a failure noticed
-   * by the preview is not reported again to the export's compositor) and the names of LUTs that would not load.
+   * by the preview is not reported again to the export's compositor) and the names of LUTs that would not load, and whether blend modes could not run (blended clips drew as Normal).
    */
   onSkipped?(skips: ExportSkips): void;
 }
@@ -119,7 +119,9 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
 
     const lutsSkipped = new Set<string>();
     const onLutUnavailable = (_id: Id, name: string): void => void lutsSkipped.add(name);
-    compositor = createExportCompositor((c, o) => createCompositor(c, { ...o, onLutUnavailable }), width, height);
+    let blendSkipped = false;
+    const onBlendUnavailable = (): void => void (blendSkipped = true);
+    compositor = createExportCompositor((c, o) => createCompositor(c, { ...o, onLutUnavailable, onBlendUnavailable }), width, height);
     const syncSources = (t: number): Promise<void> => syncExportSources(p, t, sources, openVideoSource, checkAbort);
 
     let target: InstanceType<typeof mb.StreamTarget> | InstanceType<typeof mb.BufferTarget>;
@@ -185,7 +187,8 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
       blob = new Blob([buffer], { type: 'video/mp4' });
     }
     const skips: ExportSkips = { effects: skippedEffectTypes(p, compositor.unavailableTypes()), luts: [...lutsSkipped] };
-    if (skips.effects.length > 0 || skips.luts.length > 0) opts.onSkipped?.(skips);
+    if (blendSkipped) skips.blend = true;
+    if (skips.effects.length > 0 || skips.luts.length > 0 || skips.blend) opts.onSkipped?.(skips);
     progress(1);
     return blob;
   } catch (e) {

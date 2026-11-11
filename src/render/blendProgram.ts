@@ -13,9 +13,15 @@ export interface BlendProgram {
   dispose(): void;
 }
 
+let fragmentOverride: string | null = null;
+/** TEST-ONLY (the DEV hook): compiles `source` instead of the real blend shader (null restores it). */
+export function setBlendFragmentOverride(source: string | null): void {
+  fragmentOverride = source;
+}
+
 /** Compiles the blend pass (backdrop on unit 0, layer on unit 1) with its unit quad. Throws like createProgram. */
 export function createBlendProgram(gl: WebGL2RenderingContext): BlendProgram {
-  const program = createProgram(gl, PASS_VERTEX, BLEND_FRAGMENT);
+  const program = createProgram(gl, PASS_VERTEX, fragmentOverride ?? BLEND_FRAGMENT);
   let quad: { vao: WebGLVertexArrayObject; buffer: WebGLBuffer };
   try {
     quad = createUnitQuad(gl);

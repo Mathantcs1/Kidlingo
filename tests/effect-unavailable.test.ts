@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultClipAudio, defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, Project, VideoEffect, VideoEffectType } from '../src/core/model';
-import { effectUnavailableMessage, exportSkipNotice, skippedEffectTypes } from '../src/render/effects/unavailable';
+import { BLEND_UNAVAILABLE_MESSAGE, effectUnavailableMessage, exportSkipNotice, skippedEffectTypes } from '../src/render/effects/unavailable';
 
 const fx = (type: VideoEffectType, enabled = true): VideoEffect => ({ id: `fx-${type}`, type, enabled, params: {} });
 const clip = (id: string, effects: VideoEffect[]): Clip => ({
@@ -59,5 +59,19 @@ describe('notices', () => {
     expect(exportSkipNotice({ effects: ['glow'], luts: [] }, 'Merged')).toBe(
       'Merged without these effects (this device cannot run them): Glow.',
     );
+  });
+
+  it('adds a blend line to the export or merge notice', () => {
+    expect(exportSkipNotice({ effects: [], luts: [], blend: false })).toBeNull();
+    expect(exportSkipNotice({ effects: [], luts: [], blend: true })).toBe(
+      'Exported with blend modes drawn as Normal (this device cannot run them).',
+    );
+    expect(exportSkipNotice({ effects: ['glow'], luts: [], blend: true }, 'Merged')).toBe(
+      'Merged without these effects (this device cannot run them): Glow. Merged with blend modes drawn as Normal (this device cannot run them).',
+    );
+  });
+
+  it('words the preview toast for blend modes', () => {
+    expect(BLEND_UNAVAILABLE_MESSAGE).toBe('Blend modes are unavailable on this device; clips draw as Normal.');
   });
 });

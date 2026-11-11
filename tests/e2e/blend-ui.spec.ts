@@ -17,7 +17,7 @@ const trackHeader = async (page: Page) => {
   return page.locator(`[data-testid="track-header"][data-track-id="${id}"]`);
 };
 
-test('choosing Multiply over the black canvas darkens the preview in ONE step; Undo restores Normal', async ({ page }) => {
+test('choosing Multiply on a lone clip keeps the picture (like Normal) in ONE step; Undo restores Normal', async ({ page }) => {
   const errors = trackErrors(page);
   await setupImage(page);
   const select = f(page, 'blend-mode-select');
@@ -27,11 +27,11 @@ test('choosing Multiply over the black canvas darkens the preview in ONE step; U
   await select.selectOption('multiply');
   expect(await blend(page)).toBe('multiply');
   expect(await depth(page)).toBe(d0 + 1);
-  // Multiply with the black canvas is black; Screen with black is the picture itself.
-  await expect.poll(async () => Math.max(...(await centre(page))), { message: 'multiplied by black' }).toBeLessThanOrEqual(3);
+  // Nothing is below the lone clip (transparent backdrop, Ruling P9): Multiply and Screen both look like Normal.
+  await expect.poll(async () => (await centre(page))[2] > 150, { message: 'multiply of a lone clip' }).toBe(true);
   await select.selectOption('screen');
   expect(await depth(page)).toBe(d0 + 2);
-  await expect.poll(async () => (await centre(page))[2] > 150, { message: 'screen over black' }).toBe(true);
+  await expect.poll(async () => (await centre(page))[2] > 150, { message: 'screen of a lone clip' }).toBe(true);
   await page.keyboard.press('ControlOrMeta+z');
   await expect(select).toHaveValue('multiply');
   await page.keyboard.press('ControlOrMeta+z');

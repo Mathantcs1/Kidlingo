@@ -163,3 +163,28 @@ test('a context lost before a blended frame fails with the plain "WebGL context 
   expect(r.frames).toHaveLength(1);
   expect(r.error).toBe('WebGL context lost');
 });
+
+test('a lone Multiply clip, and one with uncovered area, look like Normal (transparent backdrop, Ruling P9)', async ({ page }) => {
+  await openHarness(page);
+  const [bottom, small] = await Promise.all([solid(page, 64, 64, [51, 153, 230]), solid(page, 32, 32, [153, 64, 200])]);
+  const lone = (blend: BlendMode): Project => ({
+    version: 4, format: FMT, media: { [bottom.id]: bottom },
+    tracks: [{ ...newTrack('video'), id: 'v', clips: [clipOf(bottom, { id: 'c', out: 1, blend })] }, { ...newTrack('audio'), id: 'audio' }],
+  });
+  // A 32x32 Multiply clip alone on a 64x64 format: its surroundings are uncovered.
+  const partial = (blend: BlendMode): Project => ({
+    version: 4, format: FMT, media: { [small.id]: small },
+    tracks: [{ ...newTrack('video'), id: 'v', clips: [clipOf(small, { id: 'c', out: 1, blend })] }, { ...newTrack('audio'), id: 'audio' }],
+  });
+  const r = await renderBlend(page, [lone('normal'), lone('multiply'), partial('normal'), partial('multiply')], [0.5, 0.5, 0.5, 0.5]);
+  expect(r.error).toBeNull();
+  const [loneN, loneM, partN, partM] = r.frames;
+  expect(loneM.blendPasses).toBeGreaterThan(loneN.blendPasses);
+  expect(partM.blendPasses).toBeGreaterThan(partN.blendPasses);
+  // Mutation check: a composite that began from opaque black would make these pixels black.
+  expect(px(loneM, 32, 32)).toEqual([51, 153, 230]);
+  expect(loneM.data).toEqual(loneN.data);
+  expect(px(partM, 32, 32)).toEqual([153, 64, 200]);
+  expect(px(partM, 4, 4)).toEqual([0, 0, 0]);
+  expect(partM.data).toEqual(partN.data);
+});

@@ -65,6 +65,16 @@ describe('export notice', () => {
     expect(useExportUi.getState()).toMatchObject({ phase: 'done', notice: null });
   });
 
+  it('an export whose blend modes could not run says so, alone or with effects', async () => {
+    exportsSkipping({ effects: [], luts: [], blend: true });
+    openExport();
+    await startExport('1080p', 'clip');
+    expect(useExportUi.getState()).toMatchObject({
+      phase: 'done',
+      notice: 'Exported with blend modes drawn as Normal (this device cannot run them).',
+    });
+  });
+
   it('a merge that left something out says so in an info toast', async () => {
     exportsSkipping({ effects: ['glow'], luts: [] });
     await startMerge();

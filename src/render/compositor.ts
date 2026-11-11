@@ -55,7 +55,7 @@ class GlCompositor implements Compositor {
     this.quad = withAttempts(attempts, () => new QuadRenderer(gl));
     this.blur = withAttempts(attempts, () => new BlurBackground(gl, this.quad), () => this.quad.dispose());
     this.images = new ImageTextures(gl);
-    this.composite = new CompositeBuffer(gl, this.quad);
+    this.composite = new CompositeBuffer(gl, this.quad, () => opts.onBlendUnavailable?.());
     this.effects = new EffectPipeline(gl);
     this.onEffectUnavailable = (type) => opts.onEffectUnavailable?.(type);
     this.luts = new LutTextures(gl, (id) => opts.onLutUnavailable?.(id, this.lutNames.get(id) ?? id));
