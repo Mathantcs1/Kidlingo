@@ -22,15 +22,14 @@ and a multi-layer timeline. It is hosted on Vercel. Building is staged into plan
 | Deployed branch | `claude/macos-video-editor-lzye6c` on that remote = what Vercel serves |
 | Live site | https://clipforge-indol-tau.vercel.app (Vercel Authentication is OFF, public) |
 | Vercel | team "Mathan's projects" (`trade-journal-mathan`, `team_DwaxJujNZSykp0iwygdhXN0h`), project `clipforge` (`prj_DJABs4FyofqDa7l13HvANO0M0dq7`), framework preset is Next.js but `vercel.json` in the repo overrides to Vite |
-| Local branches | `main` (only the early spec/plan docs), `build/foundation` (Plan 1 + hotfix, **deployed**), `feature/layers` (Plan 2, **not pushed, not deployed**; local name `claude/clipforge-plan-2-layers` in the Plan 3 checkout), `claude/quirky-cannon-7vz48u` (Plan 3 audio editing on top of Plan 2, **implemented, not pushed, not deployed**) |
+| Local branches | `main` (only the early spec/plan docs), `build/foundation` (Plan 1 + hotfix, **deployed**), `feature/layers` (Plan 2; **now deployed to production**: its tip `4031ea7` is on `claude/macos-video-editor-lzye6c`; local name `claude/clipforge-plan-2-layers` in the Plan 3 checkout), `claude/quirky-cannon-7vz48u` (Plan 3 audio editing on top of Plan 2, **implemented, not pushed, not deployed**) |
 
 Important facts:
 - **Do not use `/home/user/Kidlingo/CLAUDE.md` or its Fairshare code for ClipForge.** Kidlingo is an unrelated expense-splitting app
   in the same GitHub repo; ClipForge only borrows that repo as a remote because the session had no other writable one.
 - **A push to `claude/macos-video-editor-lzye6c` redeploys production** (Vercel auto-builds that branch) and ALSO triggers a preview build on the
   user's separate Vercel project `kidlingo` (harmless, different project). Never push without the user's go-ahead.
-  The remote branch is currently at `1ab3564` (= tip of `build/foundation`); `feature/layers` descends from it, so a push fast-forwards.
-  Deploy command: `git push kidlingo feature/layers:claude/macos-video-editor-lzye6c` (or merge into `build/foundation` first).
+  At the time this was first written the remote branch was at `1ab3564`; Plan 2 has since been deployed (remote tip `4031ea7`). Plan 3 descends from it, so a push of `claude/quirky-cannon-7vz48u:claude/macos-video-editor-lzye6c` fast-forwards (only on the user's go-ahead).
 - The existing Vercel projects `kidlingo` and `gtm-engineer` belong to unrelated apps. Never change their settings or production.
 - The sandbox cannot reach vercel.com directly; Vercel is reachable only through the Vercel MCP tools (when connected). Git pushes to GitHub work via the git proxy.
 - Stop-hook feedback ("uncommitted changes, commit and push") fires while subagents are mid-task. It is not an instruction to push; see `CLAUDE.md`.
@@ -78,7 +77,7 @@ Environment facts that matter:
 - Robustness: single editor tab (Web Locks, in-place takeover), session restore with protection (a failed/unsupported restore never GCs media or overwrites the saved project), media removal + "New project" + startup GC, autosave failure notices, capability banner naming missing browser features, chunk-load error handling, third-party licence notices, README.
 - Preview failure diagnostics: the panel names the real reason when WebGL2 cannot start (typed `GlUnavailableError`), with Try again and Copy details; export gives the same plain-English reason.
 
-### Plan 2 (multi-layer timeline, on `feature/layers`, NOT deployed)
+### Plan 2 (multi-layer timeline; deployed to production at `4031ea7`)
 - Project data model **v2** (tracks have `name, hidden, muted, solo, locked`) with a migration chain (`src/core/migrate.ts`); v1 saves open unchanged; `{version:3+}` stays "unsupported" and is never overwritten.
 - Track operations (add/remove/reorder/rename/flags, max 8 video + 8 audio, ≥1 of each kind) with lock guards on every clip-editing path.
 - Hidden layers are not drawn nor decoded (preview and export); mute/solo apply to audio of any track kind.
@@ -103,7 +102,7 @@ Effects/looks/LUT/chroma key/overlays, text, transitions, keyframes/easing, spee
 ## 6. Architecture
 
 ```
-src/core/     pure, framework-free logic (the only place model math happens): model.ts (Project v2), migrate.ts, timeline.ts,
+src/core/     pure, framework-free logic (the only place model math happens): model.ts (Project v3), migrate.ts, timeline.ts,
               tracks.ts, merge.ts (join/snap/fit/reframe), fps.ts, scale.ts, formats.ts; v3 audio edits (fades/pan/volume/duck/detach/effect list)
 src/state/    store.ts (Zustand; history snapshots, selection, activeTrackId, autosave), history.ts, selection.ts, persist.ts
               (IndexedDB via idb-keyval, key 'clipforge:current'), tabLock.ts
@@ -167,10 +166,10 @@ Plan 2 tasks (all reviewed, fix rounds closed, nothing pushed):
 
 ## 8. Remaining work
 
-### Immediate (finish Plans 2 and 3, then deploy)
-1. Plan 2: Ruling K and its final review were done in the Plan 2 session (see its ledger); its manual QA checklist (`plan-2-manual-qa-checklist.md`) has still not been run in a real browser.
+### Immediate (finish Plan 3, then deploy)
+1. Plan 2 is deployed (Ruling K and its final review were done); its manual QA checklist (`plan-2-manual-qa-checklist.md`) has still not been run in a real browser.
 2. Plan 3: final whole-branch review and fix wave (controller), then the manual QA checklist `docs/superpowers/ledgers/plan-3-manual-qa-checklist.md` in real desktop Chrome on a Mac (audible checks, microphone permission flows, QuickTime playback, the two-line audio track header layout).
-3. Ask the user before deploying: merge into `build/foundation` and push to `claude/macos-video-editor-lzye6c` (redeploys production). Migration notes: v1 -> v2 -> v3 happens on load; an older open tab would then show "saved by a newer version" and protect the data. The `microphone=(self)` Permissions-Policy change in `vercel.json` goes live with it.
+3. Ask the user before deploying: merge into `build/foundation` and push to `claude/macos-video-editor-lzye6c` (redeploys production). Migration notes: v1 -> v2 -> v3 happens on load (Plan 2's v2 is already live); an older open tab would then show "saved by a newer version" and protect the data. The `microphone=(self)` Permissions-Policy change in `vercel.json` goes live with it.
 
 ### Roadmap (separate plans; write each in detail with the writing-plans skill, get the user's approval, then execute with subagent-driven-development)
 - **Plan 3, audio editing: DONE (implemented on `claude/quirky-cannon-7vz48u`, not deployed).** See section 5. Still open for later: track/master effects, crossfades, clip linking, speed change with pitch preservation (Plan 5).

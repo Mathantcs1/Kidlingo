@@ -1,7 +1,7 @@
 # ClipForge Plan 3 (audio editing): manual QA in real Chrome on a Mac
 
 Run `npm run dev` on branch `claude/quirky-cannon-7vz48u`, open http://localhost:5173 in desktop Chrome, and wear
-headphones for items 1-8. Use a real phone clip with speech, a music file (MP3/M4A) and a good microphone. Nothing
+headphones for items 1-8 and 12. Use a real phone clip with speech, a music file (MP3/M4A) and a good microphone. Nothing
 from Plan 3 has been heard in a real browser yet; the automated tests measure signals, not how it sounds. Tick each
 item; note anything odd.
 
@@ -11,7 +11,7 @@ item; note anything odd.
    left ear, at the SAME loudness the left side had at centre (the far channel is dropped, the near one is not
    boosted or cut). At 0 % both sides are unchanged. A mono file at hard left still plays at normal level on that side.
 3. **Track volume.** Drag the volume slider in an audio track header: the whole track gets quieter/louder live while
-   playing, and the clip volume in the Inspector still works on top of it. Check the header layout in item 12.
+   playing, and the clip volume in the Inspector still works on top of it. Check the header layout in item 15.
 4. **Effects, one by one.** On a speech clip add each effect from **Add effect** and play: **EQ** (push High +12: tinny;
    Low +12: boomy), **High-pass** (thin, no rumble), **Low-pass** (muffled), **Compressor** (loud parts evened out),
    **Reverb** (a room), **Echo** (distinct repeats; try high feedback and Mix 100 %: no harsh clipping or runaway),
@@ -57,5 +57,5 @@ item; note anything odd.
     up with their headers. Also check the Inspector's audio section at a narrow window width.
 16. **Persistence.** Reload after all of the above: fades, pan, effect lists and their on/off state, track volumes,
     duck settings, recorded takes and waveforms are all back; Undo history is empty (expected).
-17. **Safari 17+ (unverified).** If you try it, expect gaps: microphone recording (interruptions, track mute),
+17. **Safari (version unverified).** If you try it, expect gaps: microphone recording (interruptions, track mute),
     AudioWorklet timing, and `AudioDecoder`/OPFS writable files (see the README). Note what happens; do not rely on it.

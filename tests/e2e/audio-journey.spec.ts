@@ -80,6 +80,7 @@ test('audio journey: detach, fade, effects, duck, reload, export and the undo ch
     await f(page, `duck-source-${musicTrack}`).selectOption(voiceTrack);
   });
   await page.keyboard.press('Escape');
+  await expect(f(page, `duck-panel-${musicTrack}`)).toHaveCount(0);
   expect(steps).toBe(6);
 
   const done = await present(page);
@@ -126,14 +127,18 @@ test('audio journey: detach, fade, effects, duck, reload, export and the undo ch
   expect(timelineEnd).toBeCloseTo(6, 1);
   expect(Math.abs(Number(probe.format.duration) - timelineEnd)).toBeLessThanOrEqual(1 / done.format.fps + 1e-3);
 
-  // The 1 kHz music: faded in (quiet at the very start), ducked while the voice (0..3 s) plays, back at full level after.
+  // The 1 kHz music. Duck: voice (0..3 s) dips it ~12 dB against the un-ducked tail (3.8..4.8 s).
+  // Fade-in: the first 0.1 s against a moment later under the SAME duck (1.2..2.7 s), so the duck cancels out.
+  // Fade-out: the last 0.15 s against the un-ducked, un-faded 3.8..4.8 s (the voice ended at 3 s).
   const start = musicBandDb(file, 0, 0.1);
   const ducked = musicBandDb(file, 1.2, 1.5);
   const full = musicBandDb(file, 3.8, 1.0);
-  console.log(`journey: fade-in start ${start.toFixed(1)} dB, ducked ${ducked.toFixed(1)} dB, full ${full.toFixed(1)} dB`);
+  const end = musicBandDb(file, 5.85, 0.15);
+  console.log(`journey: start ${start.toFixed(1)} ducked ${ducked.toFixed(1)} full ${full.toFixed(1)} end ${end.toFixed(1)} dB`);
   expect(full).toBeGreaterThan(-30);
   expect(full - ducked).toBeGreaterThanOrEqual(9);
-  expect(full - start).toBeGreaterThanOrEqual(9);
+  expect(ducked - start).toBeGreaterThanOrEqual(6);
+  expect(full - end).toBeGreaterThanOrEqual(9);
 
   await f(page, 'btn-export-close').click();
   expect(errors).toEqual([]);
