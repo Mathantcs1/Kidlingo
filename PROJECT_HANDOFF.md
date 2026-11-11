@@ -58,7 +58,7 @@ Environment facts that matter:
 
 **Plan 3 (branch `claude/quirky-cannon-7vz48u`, written at Task 10):**
 - Vitest: **813 tests passed, 55 files** (`npm test`). `npm run typecheck` clean, `npm run build` OK, `grep -rl __clipforge dist` prints nothing.
-- Playwright e2e: the full-suite count and the final-review result are recorded by the controller in `docs/superpowers/ledgers/plan-3-audio-ledger.md` (see ledger). The new journey spec `tests/e2e/audio-journey.spec.ts` passes alone (~15 s).
+- Playwright e2e: the full-suite count and the final-review result are recorded by the controller in `docs/superpowers/ledgers/plan-3-audio-ledger.md` 256 passed (see ledger). The new journey spec `tests/e2e/audio-journey.spec.ts` passes alone (~15 s).
 - Nothing from Plan 3 has been heard in a real browser: run `docs/superpowers/ledgers/plan-3-manual-qa-checklist.md` in desktop Chrome on a Mac.
 
 **Plan 2 (end of the Plan 2 session, tip `9962ea8` on `feature/layers`):**
