@@ -1,4 +1,5 @@
 import type { Id } from '../core/model';
+import { deletePeaks } from './peaksStore';
 
 const DIR = 'clipforge-media';
 
@@ -83,6 +84,8 @@ export async function removeMedia(id: Id): Promise<void> {
   } catch (e) {
     if (!isNotFound(e)) throw e;
   }
+  // Only after the file is really gone: the waveform cache for it is now useless (never throws).
+  await deletePeaks(id);
 }
 
 /** Ids of all stored media files. */

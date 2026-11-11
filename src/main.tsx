@@ -4,6 +4,7 @@ import App from './App';
 import { audioStats, resetAudioStats } from './audio/stats';
 import type { AudioStats } from './audio/stats';
 import type { Id } from './core/model';
+import { peaksDecodeCount } from './media/peaks';
 import { listMediaIds, removeMedia } from './media/storage';
 import { flushAutosave, useEditor } from './state/store';
 import type { EditorActions, EditorState } from './state/store';
@@ -20,6 +21,8 @@ interface DevHook {
   /** Audio buffer sizes and live playback nodes (see audio/stats). */
   audioStats(): AudioStats;
   resetAudioStats(): void;
+  /** Waveform peak computations by decoding (cache hits excluded; see media/peaks). */
+  peaksDecodeCount(): number;
 }
 
 declare global {
@@ -37,6 +40,7 @@ if (import.meta.env.DEV) {
     videoSourceStats: async () => (await import('./media/decode')).videoSourceStats(),
     audioStats,
     resetAudioStats,
+    peaksDecodeCount,
   };
 }
 

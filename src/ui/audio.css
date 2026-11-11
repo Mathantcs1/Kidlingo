@@ -61,3 +61,27 @@
   font-size: 10px;
   color: var(--muted);
 }
+
+/* Waveform canvas inside a clip: never takes pointer events and never changes the clip's geometry. */
+.clip-waveform {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.clip-waveform-audio {
+  top: 0;
+  height: 100%;
+}
+
+.clip-waveform-video {
+  bottom: 0;
+  height: 34%;
+  opacity: 0.8;
+}
+
+.clip .clip-name {
+  position: relative;
+  z-index: 1;
+}

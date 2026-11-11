@@ -5,6 +5,7 @@ import { useEditor } from '../state/store';
 import './audio.css';
 import { toggleSelection } from './edits';
 import { timeToPx } from './layout';
+import Waveform from './Waveform';
 import type { DragKind } from './useClipDrag';
 
 interface ClipViewProps {
@@ -46,6 +47,9 @@ export default function ClipView({ clip, media, pps, selected, locked, dragging,
       onClick={onClick}
       onPointerDown={(e) => onDragStart(e, clip.id, 'move')}
     >
+      {media && !missing && (clip.kind === 'audio' || (clip.kind === 'video' && media.hasAudio && !clip.audio.silent)) && (
+        <Waveform clip={clip} mediaId={clip.mediaId} width={timeToPx(clipDuration(clip), pps)} />
+      )}
       <span className="clip-name">{name}</span>
       {missing && <span className="clip-missing">missing media</span>}
       {clip.kind === 'video' && clip.audio.silent && (
