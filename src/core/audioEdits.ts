@@ -103,6 +103,8 @@ export function detachAudio(p: Project, clipId: Id): Project {
     id: newId(),
     kind: 'audio',
     transform: defaultTransform(),
+    effects: [],
+    blend: 'normal',
     audio: { ...clip.audio, silent: false, effects: cloneEffects(clip.audio.effects) },
   };
   let q = p;

@@ -4,12 +4,7 @@ import type { LookKey } from './looks';
 import { newId } from './model';
 import type { BlendMode, Clip, Id, Project, VideoEffect, VideoEffectType } from './model';
 import { TimelineError, assertUnlocked, findClip } from './timeline';
-import { MAX_VIDEO_EFFECTS, clampParams, defaultParams, isVideoEffectType } from './videoEffects';
-
-export const BLEND_MODES: readonly BlendMode[] = [
-  'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'colourDodge', 'colourBurn',
-  'hardLight', 'softLight', 'difference', 'exclusion',
-];
+import { BLEND_MODES, MAX_VIDEO_EFFECTS, clampParams, defaultParams, isVideoEffectType } from './videoEffects';
 
 /** Finds a video/image clip on an unlocked track; audio clips have no picture. */
 function pictureClip(p: Project, clipId: Id): Clip {

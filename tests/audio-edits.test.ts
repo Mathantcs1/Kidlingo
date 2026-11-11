@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defaultClipAudio, defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, Project } from '../src/core/model';
 import { TimelineError, splitClip, trimClip, addClip } from '../src/core/timeline';
+import { addVideoEffect, setClipBlend } from '../src/core/videoEffectEdits';
 import { joinClips } from '../src/core/merge';
 import { addTrack, removeTrack, setTrackFlags } from '../src/core/tracks';
 import {
@@ -25,6 +26,25 @@ const frozen = (p: Project): string => JSON.stringify(p);
 const vTrack = (p: Project) => p.tracks.find((t) => t.kind === 'video')!;
 const aTracks = (p: Project) => p.tracks.filter((t) => t.kind === 'audio');
 const get = (p: Project, id: string): Clip => p.tracks.flatMap((t) => t.clips).find((c) => c.id === id)!;
+
+describe('detachAudio and picture effects', () => {
+  it('the audio twin never carries the video clip picture effects or blend; the video clip keeps them', () => {
+    let p = addVideoEffect(addVideoEffect(base(), 'v1', 'colour'), 'v1', 'bw');
+    p = setClipBlend(p, 'v1', 'multiply');
+    p = addEffect(p, 'v1', 'gain');
+    const before = get(p, 'v1');
+    const q = detachAudio(p, 'v1');
+    expect(get(q, 'v1').effects).toEqual(before.effects);
+    expect(get(q, 'v1').blend).toBe('multiply');
+    const twins = aTracks(q).flatMap((t) => t.clips);
+    expect(twins).toHaveLength(1);
+    expect(twins[0].effects).toEqual([]);
+    expect(twins[0].blend).toBe('normal');
+    expect(twins[0].audio.effects).toHaveLength(1);
+    expect(twins[0].audio.effects[0].id).not.toBe(before.audio.effects[0].id);
+    for (const c of q.tracks.flatMap((t) => t.clips)) if (c.kind === 'audio') expect(c.effects).toEqual([]);
+  });
+});
 
 describe('setClipAudio', () => {
   it('clamps fades to the clip duration, shrinking the other fade', () => {

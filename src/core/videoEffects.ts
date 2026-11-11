@@ -1,5 +1,5 @@
 // DOM-free schema of the picture effects: params, ranges, defaults and clamping. Shaders live in src/render/effects.
-import type { VideoEffectType } from './model';
+import type { BlendMode, VideoEffectType } from './model';
 import type { ParamDef } from '../audio/effects/params';
 
 export type { ParamDef };
@@ -17,6 +17,11 @@ export interface EffectSchema {
 }
 
 export const MAX_VIDEO_EFFECTS = 8;
+
+export const BLEND_MODES: readonly BlendMode[] = [
+  'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'colourDodge', 'colourBurn',
+  'hardLight', 'softLight', 'difference', 'exclusion',
+];
 
 const p = (key: string, label: string, min: number, max: number, step: number, def: number, unit?: string): ParamDef =>
   ({ key, label, min, max, step, def, unit });

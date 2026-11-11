@@ -215,7 +215,7 @@ describe('migrateProject: video effects (v4)', () => {
         vfx('b', 'teleport'),
         vfx('c', 'constructor'),
         7,
-        { id: 'd', type: 'bw', enabled: 'yes', params: {} },
+        { id: 'd', type: 'bw', enabled: 'yes', params: 'junk' },
         vfx('e', 'lut', { intensity: 5 }, { ref: 'lutM' }),
         vfx('f', 'lut', {}),
         vfx('g', 'bw', {}, { ref: 'lutM' }),
@@ -223,10 +223,11 @@ describe('migrateProject: video effects (v4)', () => {
     });
     if (!r.ok) throw new Error('expected ok');
     const e = r.project.tracks[0].clips[0].effects;
-    expect(e.map((x) => x.id)).toEqual(['a', 'e', 'g']);
+    expect(e.map((x) => x.id)).toEqual(['a', 'd', 'e', 'g']);
+    expect(e[1]).toMatchObject({ type: 'bw', enabled: true, params: { amount: 1 } });
     expect(e[0].params).toEqual({ brightness: 0, contrast: 1, saturation: 0, exposure: 0, temperature: 0, tint: 0, hue: 0, shadows: 0, highlights: 0 });
-    expect(e[1]).toMatchObject({ type: 'lut', ref: 'lutM', params: { intensity: 1 } });
-    expect('ref' in e[2]).toBe(false);
+    expect(e[2]).toMatchObject({ type: 'lut', ref: 'lutM', params: { intensity: 1 } });
+    expect('ref' in e[3]).toBe(false);
   });
 
   it('re-ids duplicate effect ids (first keeps it) and truncates to 8 effects', () => {
