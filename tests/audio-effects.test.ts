@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EFFECT_SCHEMAS, MAX_PRE_ROLL, chainMargins, clampParams, defaultParams } from '../src/audio/effects/params';
+import { EFFECT_SCHEMAS, MAX_PRE_ROLL, chainMargins, clampParams, defaultParams, hasTail } from '../src/audio/effects/params';
 import { reverbImpulse } from '../src/audio/effects/impulse';
 import { normaliseGainDb } from '../src/audio/effects/normalise';
 import { PRESETS, availablePresets } from '../src/audio/presets';
@@ -93,6 +93,17 @@ describe('chainMargins', () => {
     const m = chainMargins(list);
     expect(m.pre).toBeCloseTo(0.5 + 1 + 0.2, 9);
     expect(m.post).toBeCloseTo(0.2, 9);
+  });
+});
+
+describe('hasTail', () => {
+  it('is true only for an enabled reverb or echo', () => {
+    expect(hasTail([fx('reverb')])).toBe(true);
+    expect(hasTail([fx('eq'), fx('echo')])).toBe(true);
+    expect(hasTail([fx('reverb', {}, false), fx('echo', {}, false)])).toBe(false);
+    expect(hasTail([fx('eq'), fx('highpass'), fx('lowpass'), fx('compressor'), fx('gain'), fx('pitch'), fx('denoise')])).toBe(false);
+    expect(hasTail([])).toBe(false);
+    expect(TYPES.filter((t) => EFFECT_SCHEMAS[t].tail)).toEqual(['reverb', 'echo']);
   });
 });
 

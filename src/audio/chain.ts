@@ -1,6 +1,7 @@
 // The one per-segment audio graph, shared by live playback (mixer.ts) and the offline mixdown (mixdown.ts).
 import { clipEnd } from '../core/model';
 import type { Clip } from '../core/model';
+import { hasTail } from './effects/params';
 import { buildEffects } from './effects/registry';
 import { fadePoints, windowPoints } from './fade';
 import type { GainPoint } from './fade';
@@ -58,17 +59,20 @@ export function balanceGains(pan: number): [number, number] {
  * engines feed a chain with effects some extra earlier source audio (chainMargins pre-roll) so stateful effects
  * (filters, compressor, reverb, echo) enter the segment in the state an uncut render would have; the gate keeps
  * that pre-roll, and every tail past the segment end, silent. Adjacent segments switch at the same number, so
- * back-to-back windows sum to the uncut output. Tails never sound past the clip end (live and export): there the
- * gate closes with a short linear ramp (TAIL_RAMP) instead of a step, so a still-ringing reverb or echo tail does
- * not click. Window cuts keep the exact step; only the clip's own end ramps, the same in every render.
+ * back-to-back windows sum to the uncut output. Tails never sound past the clip end (live and export). When the
+ * chain has a tail effect (hasTail: reverb, echo) the gate closes there with a short linear ramp (TAIL_RAMP), so a
+ * still-ringing tail does not click; a split of such a clip dips ~8 ms at the join and restarts the effect cold.
+ * Every other chain keeps the hard step at the clip end, so dry audio stays continuous across splits and joins.
+ * Window cuts always keep the exact step; the ramp belongs to the clip's own end, the same in every render.
  */
 function gate(ctx: BaseAudioContext, clip: Clip, from: number, to: number, ctxStart: number): GainNode {
   const g = ctx.createGain();
   g.gain.value = 0;
   // The clip-end ramp is a property of the clip, not of the segment: a window cut inside it lands on the same line.
   const end = clipEnd(clip);
-  const r = Math.min(TAIL_RAMP, Math.max(0, end - clip.start));
-  scheduleGain(g.gain, windowPoints([{ t: end - r, gain: 1 }, { t: end, gain: 0 }], from, to), 1, ctxStart);
+  const r = hasTail(clip.audio.effects) ? Math.min(TAIL_RAMP, Math.max(0, end - clip.start)) : 0;
+  if (r > 0) scheduleGain(g.gain, windowPoints([{ t: end - r, gain: 1 }, { t: end, gain: 0 }], from, to), 1, ctxStart);
+  else g.gain.setValueAtTime(1, Math.max(0, ctxStart + from));
   g.gain.setValueAtTime(0, Math.max(0, ctxStart + to));
   return g;
 }

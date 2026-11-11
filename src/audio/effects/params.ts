@@ -24,6 +24,8 @@ export interface EffectSchema {
   params: ParamDef[];
   /** False until the effect has a real builder (pitch and denoise arrive in Plan 3 Task 7). */
   available: boolean;
+  /** Whether it rings on after its input stops (reverb, echo): such chains are ramped out at the clip end. */
+  tail: boolean;
   /**
    * The effects are causal, so state carried across a window cut is HISTORY: `pre` is how much earlier audio
    * the chain must have heard for its output inside the segment to equal an uncut render (filter warm-up,
@@ -73,15 +75,17 @@ const warm = (): Margins => ({ pre: WARM_UP, post: 0 });
 export const EFFECT_SCHEMAS: Record<AudioEffectType, EffectSchema> = {
   eq: {
     type: 'eq',
+    tail: false,
     label: 'EQ',
     available: true,
     params: [p('low', 'Low (200 Hz)', -12, 12, 0.5, 0, 'dB'), p('mid', 'Mid (1 kHz)', -12, 12, 0.5, 0, 'dB'), p('high', 'High (4 kHz)', -12, 12, 0.5, 0, 'dB')],
     margins: warm,
   },
-  highpass: { type: 'highpass', label: 'High-pass', available: true, params: [p('freq', 'Cutoff', 20, 1000, 1, 80, 'Hz')], margins: warm },
-  lowpass: { type: 'lowpass', label: 'Low-pass', available: true, params: [p('freq', 'Cutoff', 1000, 20000, 10, 8000, 'Hz')], margins: warm },
+  highpass: { type: 'highpass', tail: false, label: 'High-pass', available: true, params: [p('freq', 'Cutoff', 20, 1000, 1, 80, 'Hz')], margins: warm },
+  lowpass: { type: 'lowpass', tail: false, label: 'Low-pass', available: true, params: [p('freq', 'Cutoff', 1000, 20000, 10, 8000, 'Hz')], margins: warm },
   compressor: {
     type: 'compressor',
+    tail: false,
     label: 'Compressor',
     available: true,
     params: [
@@ -95,6 +99,7 @@ export const EFFECT_SCHEMAS: Record<AudioEffectType, EffectSchema> = {
   },
   reverb: {
     type: 'reverb',
+    tail: true,
     label: 'Reverb',
     available: true,
     params: [p('seconds', 'Length', 0.2, 5, 0.1, 1.5, 's'), p('mix', 'Mix', 0, 1, 0.05, 0.3)],
@@ -103,6 +108,7 @@ export const EFFECT_SCHEMAS: Record<AudioEffectType, EffectSchema> = {
   },
   echo: {
     type: 'echo',
+    tail: true,
     label: 'Echo',
     available: true,
     params: [p('delay', 'Delay', 0.05, 1, 0.01, 0.3, 's'), p('feedback', 'Feedback', 0, 0.9, 0.05, 0.4), p('mix', 'Mix', 0, 1, 0.05, 0.4)],
@@ -110,6 +116,7 @@ export const EFFECT_SCHEMAS: Record<AudioEffectType, EffectSchema> = {
   },
   pitch: {
     type: 'pitch',
+    tail: false,
     label: 'Pitch',
     available: false,
     params: [p('semitones', 'Semitones', -12, 12, 1, 0, 'st')],
@@ -117,12 +124,13 @@ export const EFFECT_SCHEMAS: Record<AudioEffectType, EffectSchema> = {
   },
   denoise: {
     type: 'denoise',
+    tail: false,
     label: 'Noise reduction',
     available: false,
     params: [p('strength', 'Strength', 0, 1, 0.05, 0.5)],
     margins: () => ({ pre: 0.2, post: 0.2 }),
   },
-  gain: { type: 'gain', label: 'Gain', available: true, params: [p('gainDb', 'Gain', -24, 24, 0.1, 0, 'dB')], margins: () => ({ pre: 0, post: 0 }) },
+  gain: { type: 'gain', tail: false, label: 'Gain', available: true, params: [p('gainDb', 'Gain', -24, 24, 0.1, 0, 'dB')], margins: () => ({ pre: 0, post: 0 }) },
 };
 
 export function defaultParams(type: AudioEffectType): Record<string, number> {
@@ -141,8 +149,10 @@ export function clampParams(type: AudioEffectType, params: Record<string, number
 
 /**
  * Margins of a whole chain: the sum over its enabled effects (each effect delays the next one's history), with the
- * pre-roll capped at MAX_PRE_ROLL. Tails stop at the clip end (they are ramped out over a few ms, see chain.ts) and
- * a split restarts effects cold on the second half: each clip only ever hears its own source range [in, out).
+ * pre-roll capped at MAX_PRE_ROLL. Tails stop at the clip end and a split restarts effects cold on the second half:
+ * each clip only ever hears its own source range [in, out). Chains with a tail effect (hasTail) are ramped out over
+ * a few ms at the clip end, so a split of a reverb/echo clip dips ~8 ms at the join and restarts the effect cold;
+ * every other chain keeps the hard clip-end cut, so dry audio stays continuous across a split (see chain.ts).
  */
 export function chainMargins(effects: readonly AudioEffect[]): Margins {
   let pre = 0;
@@ -154,4 +164,9 @@ export function chainMargins(effects: readonly AudioEffect[]): Margins {
     post += m.post;
   }
   return { pre: Math.min(MAX_PRE_ROLL, pre), post };
+}
+
+/** Whether the chain has an enabled effect that rings on after its input (schema flag `tail`: reverb, echo). */
+export function hasTail(effects: readonly AudioEffect[]): boolean {
+  return effects.some((e) => e.enabled && EFFECT_SCHEMAS[e.type].tail);
 }

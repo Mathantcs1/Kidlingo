@@ -156,6 +156,20 @@ test('a reverb tail is ramped out at the clip end (no click), identically in win
   expect(r!.rmsDiff).toBeLessThan(1e-3);
 });
 
+test('a split clip with only stateless effects (EQ) joins without a dip or jump', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.tone100]);
+  // Split at 1.0025 s, a peak of the 100 Hz tone; both halves carry the same EQ (no tail, so no clip-end ramp).
+  const audio = () => ({ ...defaultClipAudio(), effects: [effect('eq', { mid: 3 })] });
+  const a = clipOf(m, { out: 1.0025, audio: audio() });
+  const b = clipOf(m, { start: 1.0025, in: 1.0025, out: 2, audio: audio() });
+  const base = project({ width: 64, height: 36, fps: 10 }, [m], []);
+  const p = { ...base, tracks: base.tracks.map((t) => (t.kind === 'audio' ? { ...t, clips: [a, b] } : t)) };
+  const step = await page.evaluate(({ p, sr }) => window.cf.mixdownMaxStep(p, sr, 0.98, 1.03), { p, sr: SR });
+  console.log(`split join step ${step}`);
+  expect(step!).toBeLessThan(0.02);
+});
+
 test('live playback with effects matches the export and joins its live windows', async ({ page }) => {
   await openHarness(page);
   const [m] = await importPaths(page, [fx.noisy]);
