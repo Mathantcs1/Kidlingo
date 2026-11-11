@@ -3,6 +3,7 @@ import type { VideoEffectType } from '../../core/model';
 import type { Mat3, Size } from '../geometry';
 import { createProgram } from '../gl';
 import { COLOUR } from './shaders/colour';
+import { BW, GRAIN, SEPIA, SPLIT_TONE, VIGNETTE } from './shaders/look';
 import type { EffectContext, PassShader, UniformValue, Uniforms } from './types';
 
 /**
@@ -11,6 +12,11 @@ import type { EffectContext, PassShader, UniformValue, Uniforms } from './types'
  */
 export const PASS_SHADERS: Partial<Record<VideoEffectType, PassShader>> = {
   colour: COLOUR,
+  bw: BW,
+  sepia: SEPIA,
+  splitTone: SPLIT_TONE,
+  vignette: VIGNETTE,
+  grain: GRAIN,
 };
 
 /** Registers (or, with undefined, removes) a type's shader. Used by tests and the dev harness's test-only effects. */

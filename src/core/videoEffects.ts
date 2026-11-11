@@ -30,7 +30,9 @@ const p = (key: string, label: string, min: number, max: number, step: number, d
  * The effects whose shader has landed (offered by the UI, registered in PASS_SHADERS). Each effect task adds its type
  * here, and only here.
  */
-export const AVAILABLE_VIDEO_EFFECTS: ReadonlySet<VideoEffectType> = new Set<VideoEffectType>(['colour']);
+export const AVAILABLE_VIDEO_EFFECTS: ReadonlySet<VideoEffectType> = new Set<VideoEffectType>([
+  'colour', 'bw', 'sepia', 'splitTone', 'vignette', 'grain',
+]);
 
 const fx = (
   type: VideoEffectType, label: string, group: EffectGroup, params: ParamDef[], timeBased = false,

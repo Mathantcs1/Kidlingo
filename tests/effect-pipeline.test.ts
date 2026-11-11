@@ -104,7 +104,7 @@ describe('EffectPipeline.run with nothing to apply', () => {
       const { gl, calls } = fakeGl();
       const pipeline = new EffectPipeline(gl);
       const input = slot();
-      for (const stack of [[], [effect('invert', false)], [effect('sepia')], [effect('bw', false), effect('vhs')]]) {
+      for (const stack of [[], [effect('invert', false)], [effect('mirror')], [effect('pixelate', false), effect('vhs')]]) {
         expect(pipeline.run(input, { width: 8, height: 8 }, [...IDENTITY], stack, ctx())).toBe(input);
       }
       expect(calls()).toEqual([]);
