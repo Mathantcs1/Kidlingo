@@ -24,3 +24,7 @@ export function askPersist(): void {
   persistAsked = true;
   void navigator.storage?.persist?.().catch(() => false);
 }
+
+/** Shown when a .cube file is imported through the media bin (LUTs are not listed there). */
+export const lutAddedMessage = (name: string): string =>
+  `Added the LUT "${name}". Select a picture clip and use it from the Effects panel.`;

@@ -30,12 +30,14 @@ export function isTextEntry(t: TargetLike): boolean {
   return tag === 'INPUT' && TEXT_INPUT_TYPES.has((t.type ?? '').toLowerCase());
 }
 
+const OWNS_EDITING_KEYS = new Set(['range', 'color']);
+
 /**
- * Range sliders own the editing keys: Delete/Backspace (and S) pressed on a focused slider must not delete or split
- * clips. Undo/redo and Space keep their usual behaviour.
+ * Range sliders and colour pickers own the editing keys: Delete/Backspace (and S) pressed on a focused slider or
+ * picker must not delete or split clips. Undo/redo and Space keep their usual behaviour.
  */
 export function shortcutBlockedByRange(t: TargetLike, s: Shortcut): boolean {
-  return t.tagName.toUpperCase() === 'INPUT' && (t.type ?? '').toLowerCase() === 'range' && (s === 'delete' || s === 'rippleDelete' || s === 'split');
+  return t.tagName.toUpperCase() === 'INPUT' && OWNS_EDITING_KEYS.has((t.type ?? '').toLowerCase()) && (s === 'delete' || s === 'rippleDelete' || s === 'split');
 }
 
 /** The parts of an element that decide whether Space activates it natively. */

@@ -101,6 +101,8 @@ export interface MediaRef {
   fps?: number;
   hasAudio: boolean;
   missing?: boolean;
+  /** `lut` media: the imported file's own name (`name` is the LUT's TITLE when it has one). */
+  fileName?: string;
 }
 
 export interface Project {

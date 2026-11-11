@@ -4,11 +4,11 @@ import type { MediaRef } from '../core/model';
 import { useEditor } from '../state/store';
 import { addToTimeline } from './commands';
 import { addMedia } from './edits';
-import { askPersist, importMessage } from './importMessage';
+import { askPersist, importMessage, lutAddedMessage } from './importMessage';
 import { formatTime } from './layout';
 import { MEDIA_MIME, setDraggedMedia } from './mediaDrag';
 import { removeMediaItem } from './projectCommands';
-import { showError } from './Toast';
+import { showError, showInfo } from './Toast';
 import { ChunkLoadError, loadChunk } from '../loadChunk';
 
 interface Pending {
@@ -93,6 +93,7 @@ export default function MediaBin({ supported, ready }: { supported: boolean; rea
         const m = await importFile(file);
         useEditor.getState().apply((p) => addMedia(p, m));
         askPersist();
+        if (m.kind === 'lut') showInfo(lutAddedMessage(m.name));
       } catch (e) {
         if (!(e instanceof Error && (e.name === 'ImportError' || e instanceof ChunkLoadError))) console.error('clipforge: import failed', e);
         showError(importMessage(file, e));
@@ -131,7 +132,7 @@ export default function MediaBin({ supported, ready }: { supported: boolean; rea
             className="visually-hidden"
             type="file"
             multiple
-            accept="video/*,audio/*,image/*"
+            accept="video/*,audio/*,image/*,.cube"
             data-testid="file-input"
             disabled={!canImport}
             onChange={(e) => {

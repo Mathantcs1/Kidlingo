@@ -290,6 +290,7 @@ describe('shortcutBlockedByRange', () => {
     const range = { tagName: 'INPUT', type: 'range' };
     for (const s of ['delete', 'rippleDelete', 'split'] as const) expect(shortcutBlockedByRange(range, s), s).toBe(true);
     for (const s of ['undo', 'redo', 'play'] as const) expect(shortcutBlockedByRange(range, s), s).toBe(false);
+    expect(shortcutBlockedByRange({ tagName: 'INPUT', type: 'color' }, 'delete')).toBe(true);
     expect(shortcutBlockedByRange({ tagName: 'DIV' }, 'delete')).toBe(false);
     expect(shortcutBlockedByRange({ tagName: 'INPUT', type: 'checkbox' }, 'delete')).toBe(false);
   });

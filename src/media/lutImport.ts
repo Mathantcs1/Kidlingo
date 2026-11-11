@@ -21,5 +21,5 @@ export async function importLut(file: File): Promise<MediaRef> {
   }
   const id = newId();
   await putMedia(id, file);
-  return { id, name: title ?? file.name, kind: 'lut', duration: 0, hasAudio: false };
+  return { id, name: title ?? file.name, kind: 'lut', duration: 0, hasAudio: false, fileName: file.name };
 }
