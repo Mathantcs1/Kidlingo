@@ -25,7 +25,7 @@ import {
   splitTargets,
   toggleSelection,
 } from '../src/ui/edits';
-import { isTextEntry, shortcutFor } from '../src/ui/keys';
+import { isTextEntry, shortcutBlockedByRange, shortcutFor } from '../src/ui/keys';
 import { emptyProject } from '../src/core/model';
 import type { MediaRef, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
@@ -282,5 +282,15 @@ describe('parseEntry locale forms', () => {
     expect(parseEntry('\u22120,25')).toBe(-0.25);
     expect(parseEntry('1,234.5')).toBeNull();
     expect(parseEntry('1,2,3')).toBeNull();
+  });
+});
+
+describe('shortcutBlockedByRange', () => {
+  it('range sliders own Delete/Backspace and S, but not undo, redo or play', () => {
+    const range = { tagName: 'INPUT', type: 'range' };
+    for (const s of ['delete', 'rippleDelete', 'split'] as const) expect(shortcutBlockedByRange(range, s), s).toBe(true);
+    for (const s of ['undo', 'redo', 'play'] as const) expect(shortcutBlockedByRange(range, s), s).toBe(false);
+    expect(shortcutBlockedByRange({ tagName: 'DIV' }, 'delete')).toBe(false);
+    expect(shortcutBlockedByRange({ tagName: 'INPUT', type: 'checkbox' }, 'delete')).toBe(false);
   });
 });

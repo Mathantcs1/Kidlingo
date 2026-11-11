@@ -72,15 +72,71 @@ test('Attach back removes the detached twin in one step', async ({ page }) => {
   await expect(f(page, 'audio-attach')).toHaveCount(0);
 });
 
-test('Detach is disabled for an image and for a video without audio', async ({ page }) => {
+test('Detach is disabled, with the reason as its hint, in every unavailable case', async ({ page }) => {
   await open(page);
-  await importFiles(page, [png(), noAudio], 2);
+  await importFiles(page, [png(), noAudio, withAudio], 3);
   await addToTimeline(page, 'still.png', 1);
   await addToTimeline(page, 'no-audio.mp4', 2);
-  for (const c of await clipStates(page)) {
-    await clipEl(page, c.id).click();
-    await expect(f(page, 'audio-detach')).toBeDisabled();
-  }
+  await addToTimeline(page, 'with-audio.mp4', 3);
+  const [img, silentVideo, video] = await clipStates(page);
+  const detach = f(page, 'audio-detach');
+  const expectReason = async (title: string): Promise<void> => {
+    await expect(detach).toBeDisabled();
+    await expect(detach).toHaveAttribute('title', title);
+    await expect(detach).toHaveAttribute('aria-description', title);
+  };
+  const select = async (id: string): Promise<void> => {
+    await clipEl(page, id).click();
+    await expect(clipEl(page, id)).toHaveAttribute('data-selected', 'true');
+  };
+  await select(img.id);
+  await expectReason('Images have no sound');
+  await select(silentVideo.id);
+  await expectReason('This clip has no audio');
+  await clipEl(page, video.id).click({ modifiers: ['Shift'] });
+  await expect(page.locator('[data-testid="timeline-clip"][data-selected="true"]')).toHaveCount(2);
+  await expectReason('Select a single clip');
+  await select(video.id);
+  await expect(detach).toBeEnabled();
+  await detach.click();
+  await expectReason('Audio is already detached');
+  await page.getByTestId('btn-undo').click();
+  const header = page.locator(`[data-testid="track-header"][data-track-id="${video.trackId}"]`);
+  await header.getByTestId('track-btn-lock').click();
+  await select(video.id);
+  await expectReason('Track is locked');
+});
+
+test('keyboard Detach and Attach keep focus on a useful control', async ({ page }) => {
+  await setup(page, [withAudio], 'with-audio.mp4');
+  await f(page, 'audio-detach').focus();
+  await page.keyboard.press('Enter');
+  await expect(f(page, 'audio-attach')).toBeFocused();
+  await expect(f(page, 'audio-attach')).toHaveAttribute('title', /Deletes the detached audio clip/);
+  await page.keyboard.press('Enter');
+  await expect(f(page, 'audio-detach')).toBeFocused();
+});
+
+test('Attach back is not offered for an edited twin', async ({ page }) => {
+  await setup(page, [withAudio], 'with-audio.mp4');
+  await f(page, 'audio-detach').click();
+  const twin = (await clipStates(page)).find((c) => c.trackKind === 'audio')!;
+  const video = (await clipStates(page)).find((c) => c.trackKind === 'video')!;
+  await clipEl(page, twin.id).click();
+  await enter(page, 'audio-pan', '30');
+  await clipEl(page, video.id).click();
+  await expect(f(page, 'audio-attach')).toHaveCount(0);
+});
+
+test('Delete on the focused track-volume slider does not delete the selected clip', async ({ page }) => {
+  await setup(page, [withAudio], 'with-audio.mp4');
+  const audioTrack = (await tracks(page)).find((t) => t.kind === 'audio')!;
+  await f(page, `track-volume-${audioTrack.id}`).focus();
+  const before = await depth(page);
+  await page.keyboard.press('Delete');
+  await page.keyboard.press('Backspace');
+  expect(await depth(page)).toBe(before);
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(1);
 });
 
 test('fade and pan fields each commit one undo step', async ({ page }) => {

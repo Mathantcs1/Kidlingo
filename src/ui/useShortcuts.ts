@@ -4,7 +4,7 @@ import { isKeyboardFocused } from './inputModality';
 import { TRANSFORMING_CLASS } from './useTransformDrag';
 import { isTextEntry, nativeSpaceTarget } from './keys';
 import type { Shortcut } from './keys';
-import { shortcutFor } from './keys';
+import { shortcutBlockedByRange, shortcutFor } from './keys';
 
 const COMMANDS: Record<Shortcut, () => void> = {
   play: togglePlay,
@@ -52,6 +52,7 @@ export function useShortcuts(enabled: boolean): void {
       const parts = keyParts(e);
       const shortcut = shortcutFor({ ...parts, repeat: false });
       if (!shortcut) return;
+      if (e.target instanceof HTMLInputElement && shortcutBlockedByRange(e.target, shortcut)) return;
       e.preventDefault();
       // Held Space/S/Delete keys are swallowed rather than repeated (shortcutFor drops their repeats).
       if (shortcutFor(parts)) COMMANDS[shortcut]();

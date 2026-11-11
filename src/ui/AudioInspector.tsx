@@ -25,7 +25,7 @@ export default function AudioInspector({ clip, media, editable, locked }: Props)
   const title = locked ? 'Track is locked' : detached ? 'Audio is detached from this clip' : undefined;
   const dur = clipDuration(clip);
   return (
-    <div className="inspector-field audio-fields" data-testid="inspector-audio">
+    <div className="inspector-field audio-fields" data-testid="inspector-audio" tabIndex={-1}>
       <span className="inspector-label" id="inspector-audio-label">
         Fades and pan
       </span>
@@ -81,7 +81,7 @@ export default function AudioInspector({ clip, media, editable, locked }: Props)
               type="button"
               data-testid="audio-attach"
               disabled={!editable || locked}
-              title={locked ? 'Track is locked' : 'Remove the detached audio clip and make this clip play its sound again'}
+              title={locked ? 'Track is locked' : 'Deletes the detached audio clip and makes this clip play its sound again'}
               onClick={attachSelectedAudio}
             >
               Attach back

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { detachAudio } from '../src/core/audioEdits';
-import { canDetach, findDetachedTwin, formatPan, isAudioCapable } from '../src/core/audioQueries';
+import { canDetach, detachDisabledReason, findDetachedTwin, formatPan, isAudioCapable } from '../src/core/audioQueries';
 import { addClip } from '../src/core/timeline';
 import { defaultClipAudio, defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
@@ -71,5 +71,48 @@ describe('isAudioCapable', () => {
     expect(isAudioCapable(clip('b', 'v', 'video'), p.media.v)).toBe(true);
     expect(isAudioCapable(clip('c', 'n', 'video'), p.media.n)).toBe(false);
     expect(isAudioCapable(clip('d', 'i', 'image'), p.media.i)).toBe(false);
+  });
+});
+
+describe('detachDisabledReason', () => {
+  it('names why Detach is unavailable, null when it is available', () => {
+    const p = base();
+    expect(detachDisabledReason(p, ['cv'])).toBeNull();
+    expect(detachDisabledReason(p, [])).toBe('Select a single clip');
+    expect(detachDisabledReason(p, ['cv', 'cn'])).toBe('Select a single clip');
+    expect(detachDisabledReason(p, ['ci'])).toBe('Images have no sound');
+    expect(detachDisabledReason(p, ['cn'])).toBe('This clip has no audio');
+    const locked = { ...p, tracks: p.tracks.map((t) => (t.kind === 'video' ? { ...t, locked: true } : t)) };
+    expect(detachDisabledReason(locked, ['cv'])).toBe('Track is locked');
+    expect(detachDisabledReason(detachAudio(p, 'cv'), ['cv'])).toBe('Audio is already detached');
+  });
+});
+
+describe('findDetachedTwin strictness', () => {
+  const edit = (p: Project, id: string, fn: (c: Clip) => Clip): Project => ({
+    ...p,
+    tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.map((c) => (c.id === id ? fn(c) : c)) })),
+  });
+  it('offers only an unedited twin', () => {
+    const d = detachAudio(base(), 'cv');
+    const twin = findDetachedTwin(d, 'cv')!;
+    const edits: ((c: Clip) => Clip)[] = [
+      (c) => ({ ...c, audio: { ...c.audio, fadeIn: 0.5 } }),
+      (c) => ({ ...c, audio: { ...c.audio, fadeOut: 0.5 } }),
+      (c) => ({ ...c, audio: { ...c.audio, pan: 0.3 } }),
+      (c) => ({ ...c, audio: { ...c.audio, effects: [{ id: 'e', type: 'gain', enabled: true, params: {} } as never] } }),
+      (c) => ({ ...c, volume: 0.5 }),
+    ];
+    for (const fn of edits) expect(findDetachedTwin(edit(d, twin.id, fn), 'cv')).toBeNull();
+    expect(findDetachedTwin(d, 'cv')?.id).toBe(twin.id);
+  });
+  it('offers nothing when two clips match', () => {
+    const d = detachAudio(base(), 'cv');
+    const twin = findDetachedTwin(d, 'cv')!;
+    const at = d.tracks.find((t) => t.kind === 'audio')!;
+    const second = d.tracks.some((t) => t.kind === 'audio' && t.id !== at.id)
+      ? d
+      : { ...d, tracks: [...d.tracks, { ...at, id: 'a2', clips: [{ ...twin, id: 'dup' }] }] };
+    expect(findDetachedTwin(second, 'cv')).toBeNull();
   });
 });

@@ -3,6 +3,7 @@ import { attachAudio, detachAudio, setClipAudio, setTrackVolume } from '../core/
 import { findDetachedTwin } from '../core/audioQueries';
 import type { ClipAudio, Id } from '../core/model';
 import { useEditor } from '../state/store';
+import { focusAfterRender, keyboardDriven } from './audioFocus';
 import { liveSelection } from './edits';
 import { guard } from './Toast';
 
@@ -17,19 +18,24 @@ function singleSelected(): Id | null {
 /** Moves the selected video clip's sound onto an audio track and silences the video clip (one undo step). */
 export function detachSelectedAudio(): void {
   const id = singleSelected();
-  if (id) guard(() => editor().apply((p) => detachAudio(p, id)));
+  if (!id) return;
+  const kb = keyboardDriven();
+  guard(() => editor().apply((p) => detachAudio(p, id)));
+  focusAfterRender(kb, 'audio-attach', 'inspector-audio');
 }
 
 /** Undoes a detach by hand: removes the audio twin and un-silences the selected video clip (one undo step). */
 export function attachSelectedAudio(): void {
   const id = singleSelected();
   if (!id) return;
+  const kb = keyboardDriven();
   guard(() =>
     editor().apply((p) => {
       const twin = findDetachedTwin(p, id);
       return twin ? attachAudio(p, id, twin.id) : p;
     }),
   );
+  focusAfterRender(kb, 'audio-detach', 'inspector-audio');
 }
 
 /** Fades (seconds) and pan (−1..1) of the selected clip. */

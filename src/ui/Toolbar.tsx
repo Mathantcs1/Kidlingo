@@ -1,4 +1,4 @@
-import { canDetach } from '../core/audioQueries';
+import { detachDisabledReason } from '../core/audioQueries';
 import { timelineDuration } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { detachSelectedAudio } from './audioCommands';
@@ -16,7 +16,7 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
   const selected = useEditor((s) => s.selection.length);
   const hasContent = useEditor((s) => timelineDuration(s.history.present) > 0);
   const canMergeAll = useEditor((s) => videoClipCount(s.history.present) >= 2);
-  const canDetachAudio = useEditor((s) => canDetach(s.history.present, s.selection));
+  const detachReason = useEditor((s) => detachDisabledReason(s.history.present, s.selection));
   const buffering = usePlaybackStatus((s) => s.buffering);
   const saveError = useEditor((s) => s.saveError);
 
@@ -85,8 +85,9 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
           type="button"
           data-testid="audio-detach"
           onClick={detachSelectedAudio}
-          disabled={!editable || !canDetachAudio}
-          title="Move the selected video clip's sound onto an audio track"
+          disabled={!editable || detachReason !== null}
+          title={detachReason ?? "Move the selected video clip's sound onto an audio track"}
+          aria-description={detachReason ?? undefined}
         >
           Detach audio
         </button>
