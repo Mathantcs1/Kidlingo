@@ -22,7 +22,7 @@ and a multi-layer timeline. It is hosted on Vercel. Building is staged into plan
 | Deployed branch | `claude/macos-video-editor-lzye6c` on that remote = what Vercel serves |
 | Live site | https://clipforge-indol-tau.vercel.app (Vercel Authentication is OFF, public) |
 | Vercel | team "Mathan's projects" (`trade-journal-mathan`, `team_DwaxJujNZSykp0iwygdhXN0h`), project `clipforge` (`prj_DJABs4FyofqDa7l13HvANO0M0dq7`), framework preset is Next.js but `vercel.json` in the repo overrides to Vite |
-| Local branches | `main` (only the early spec/plan docs), `build/foundation` (Plan 1 + hotfix, **deployed**), `feature/layers` (Plan 2, **not pushed, not deployed**) |
+| Local branches | `main` (only the early spec/plan docs), `build/foundation` (Plan 1 + hotfix, **deployed**), `feature/layers` (Plan 2, **not pushed, not deployed**; local name `claude/clipforge-plan-2-layers` in the Plan 3 checkout), `claude/quirky-cannon-7vz48u` (Plan 3 audio editing on top of Plan 2, **implemented, not pushed, not deployed**) |
 
 Important facts:
 - **Do not use `/home/user/Kidlingo/CLAUDE.md` or its Fairshare code for ClipForge.** Kidlingo is an unrelated expense-splitting app
@@ -55,14 +55,16 @@ Environment facts that matter:
 - `ffmpeg`/`ffprobe` 6.1 are installed; e2e fixtures are generated into `tests/e2e/.fixtures/` (git-ignored) by `tests/e2e/fixtures.ts`.
 - The e2e dev-server output shows a few forwarded `console.error` lines from tests that deliberately stub WebGL failures; they are expected.
 
-## 4. Test results (verified at the end of this session, tip `9962ea8` on `feature/layers`, clean tree)
+## 4. Test results
 
-- Vitest: **650 tests passed, 41 files**.
-- `npm run typecheck`: clean. `npm run build`: OK, `dist/` contains no `__clipforge` (dev hook is DEV-only) and has `dist/licenses/`.
-- Playwright e2e: **188 passed (5.0 min)** at the Plan 2 tip `9962ea8`, re-run at handoff time (exit 0).
-- `npm run e2e:preview`: 1 passed (production bundle incl. the lazily loaded WASM AAC chunk exports a real MP4).
+**Plan 3 (branch `claude/quirky-cannon-7vz48u`, written at Task 10):**
+- Vitest: **813 tests passed, 55 files** (`npm test`). `npm run typecheck` clean, `npm run build` OK, `grep -rl __clipforge dist` prints nothing.
+- Playwright e2e: the full-suite count and the final-review result are recorded by the controller in `docs/superpowers/ledgers/plan-3-audio-ledger.md` (see ledger). The new journey spec `tests/e2e/audio-journey.spec.ts` passes alone (~15 s).
+- Nothing from Plan 3 has been heard in a real browser: run `docs/superpowers/ledgers/plan-3-manual-qa-checklist.md` in desktop Chrome on a Mac.
+
+**Plan 2 (end of the Plan 2 session, tip `9962ea8` on `feature/layers`):**
+- Vitest: 650 tests, 41 files. Playwright e2e: 188 passed (5.0 min). `npm run e2e:preview`: 1 passed (production bundle incl. the lazily loaded WASM AAC chunk exports a real MP4).
 - The deployed `build/foundation` tip (`1ab3564`) passed 415 unit + 114 e2e + 1 preview before it was pushed.
-- Handoff-time run (2026-11-11 ~00:10 UTC): `npm test` 650/650, typecheck clean, build OK, `npm run e2e` 188/188. `e2e:preview` was last run by the Task 8 subagent (1 passed) and not repeated.
 
 ## 5. Features shipped
 
@@ -86,24 +88,39 @@ Environment facts that matter:
 - Merge-all across layers (visible layers + audible tracks; resets the target track's mute/lock/hide and all solo flags); format switches keep customised placement and round-trip exactly (Ruling J).
 - Keyboard fix: Space on a keyboard-focused button presses it (mouse-focused buttons keep Space = play/pause).
 
+### Plan 3 (audio editing, on `claude/quirky-cannon-7vz48u`, NOT deployed)
+- Project data model **v3**: every clip has `audio` (`fadeIn`, `fadeOut`, `pan`, `silent`, `effects[]`), tracks have `volume` and `duck`. Migration chain v1 -> v2 -> v3 in `src/core/migrate.ts`; a newer version stays "unsupported" and is never overwritten.
+- ONE shared clip chain (`src/audio/chain.ts`) builds the gain/fade/pan/effect graph for both the live mixer and the offline export mixdown (same code, so preview = export).
+- Detach audio (twin audio clip, `silent` flag, badge) and Attach back (only for an unedited twin); per-clip fades and balance-law pan; track volume slider; waveforms from cached peaks.
+- Effect chain per clip (EQ, high/low-pass, compressor, reverb, echo, gain, pitch shift, noise reduction), presets (Podcast, Radio, Telephone, Deep, Chipmunk), Normalise.
+- Auto-ducking (track `duck` = source track + amount/attack/release; follows clip coverage), with a header popover and cycle refusal.
+- Voice-over recording (mic -> mono WAV, Play along, 30 min cap), `Permissions-Policy: microphone=(self)` in `vercel.json`.
+- Decisions D1-D10 and any later rulings: `docs/superpowers/ledgers/plan-3-audio-ledger.md` (written by the controller; plan: `docs/superpowers/plans/2026-11-11-clipforge-plan-3-audio.md`).
+
 ### Not built (see section 8)
-Effects/looks/LUT/chroma key/overlays, text, transitions, keyframes/easing, speed/reverse, crop/flip, detach audio, waveforms, voice-over recording, audio effects (EQ/reverb/…), ducking, auto-captions, stabilisation.
+Effects/looks/LUT/chroma key/overlays, text, transitions, keyframes/easing, speed/reverse, crop/flip, track/master effects, crossfades, clip linking, auto-captions, stabilisation.
 
 ## 6. Architecture
 
 ```
 src/core/     pure, framework-free logic (the only place model math happens): model.ts (Project v2), migrate.ts, timeline.ts,
-              tracks.ts, merge.ts (join/snap/fit/reframe), fps.ts, scale.ts, formats.ts
+              tracks.ts, merge.ts (join/snap/fit/reframe), fps.ts, scale.ts, formats.ts; v3 audio edits (fades/pan/volume/duck/detach/effect list)
 src/state/    store.ts (Zustand; history snapshots, selection, activeTrackId, autosave), history.ts, selection.ts, persist.ts
               (IndexedDB via idb-keyval, key 'clipforge:current'), tabLock.ts
 src/media/    import.ts/fileKind.ts/importErrors.ts, storage.ts (OPFS), decode.ts (frameAt per clip, serialised, cached),
               audioDecode.ts, gc.ts, support.ts (capability report), clip.ts
 src/render/   compositor.ts (WebGL2; Phase 1 uploads, Phase 2 draws bottom→top), gl.ts/glContext.ts/glErrors.ts, geometry.ts,
               overlayGeometry.ts (pure PiP math), visible.ts (visualClipsAt), blur.ts, images.ts
-src/audio/    plan.ts (audibleClips, trackAudible, window planner), mixer.ts (live), mixdown.ts (offline windows), context.ts
+src/audio/    plan.ts (audibleClips, trackAudible, window planner), mixer.ts + mixerSchedule.ts + mixerTypes.ts (live), mixdown.ts (offline windows),
+              context.ts, chain.ts (the ONE shared clip chain: gain, fades, pan, effects, track volume, duck points; used by live and export),
+              fade.ts, duck.ts (duck envelope from source-track coverage), effects/ (registry, params, eq, filters, compressor, reverb, echo, gain,
+              normalise, pitch + pitchMath), presets.ts, stft.ts + denoise.ts/denoiseProfile.ts/denoiseSource.ts (spectral-gate noise reduction,
+              per-clip noise profile), stats.ts (decode counters for tests)
+src/media/    (also) peaks (waveform min/max cache per media id, getPeaks/peakAt) and the recorder (mic -> worklet -> WAV)
 src/export/   exporter.ts (frames at t=n/fps → Mediabunny CanvasSource, audio windows, OPFS StreamTarget)
 src/ui/       React components and hooks (Timeline, Lane, ClipView, TrackHeader, NewLayerZone, Preview, TransformOverlay,
-              Inspector, ExportDialog, MediaBin, session.ts startup, commands.ts/edits.ts/trackCommands.ts store-bound edits)
+              Inspector, ExportDialog, MediaBin, session.ts startup, commands.ts/edits.ts/trackCommands.ts store-bound edits;
+              Plan 3: AudioInspector, EffectList/EffectRow, TrackVolume, DuckControls, Waveform, RecordButton, audioCommands/effectCommands/recordCommands/recordEdits, audio.css)
 src/harness*.ts, harness.html   dev-only in-browser test page (window.cf), not in the production build
 tests/*.test.ts (Vitest), tests/e2e/*.spec.ts (Playwright), tests/e2e/fixtures.ts (ffmpeg fixtures)
 docs/superpowers/{specs,plans,ledgers}   design spec, plans, decision ledgers (section 12)
@@ -112,7 +129,7 @@ Data flow: UI gesture → pure `(p: Project) => Project` edit → ONE `store.app
 re-render from the plain-JSON project; autosave debounces `history.present`. Media files are referenced by id, never embedded.
 
 ### Key decisions (rulings) you must not accidentally undo
-Full text with costs is in `docs/superpowers/ledgers/plan-1-foundation-ledger.md` and `plan-2-layers-ledger.md`. The load-bearing ones:
+Full text with costs is in `docs/superpowers/ledgers/plan-1-foundation-ledger.md`, `plan-2-layers-ledger.md` and `plan-3-audio-ledger.md` (Plan 3 rulings D1-D10: read it before touching `src/audio/chain.ts`, ducking or the recorder). The load-bearing ones:
 1. All geometry is in **format pixels**; `Transform.x/y` are offsets from the canvas centre, y down, rotation clockwise, `scale` = source px → canvas px. Overlay geometry (top-left origin) must agree with `clipMatrix`.
 2. `Project.tracks` order = compositing order (index 0 bottom). UI shows video tracks highest-layer-first, then audio.
 3. The compositor `sources` map is keyed by **clip id** (one decoder per clip; split halves keep their own iterator); frames from `frameAt` are valid only until the next call and are never closed by the caller.
@@ -125,7 +142,8 @@ Full text with costs is in `docs/superpowers/ledgers/plan-1-foundation-ledger.md
 10. Any history change pauses playback; track-flag toggles must go through `store.apply`.
 11. Space = play/pause globally, except on keyboard-focused native controls (input-modality tracking decides).
 12. AAC: native `AudioEncoder` when available, else lazily imported WASM encoder; output is always AAC.
-13. Style: TypeScript strict, 2 spaces, single quotes, semicolons; keep files ≲200 lines (a few exceed, see issues).
+13. Plan 3: live preview and export must go through the same `chain.ts`; pan is a balance law (far channel dropped, near channel unchanged); effects are per clip; ducking follows source-clip coverage; a detached twin is matched by `Attach back` only while unedited; recorded audio is a normal audio media (WAV in OPFS).
+14. Style: TypeScript strict, 2 spaces, single quotes, semicolons; keep files ≲200 lines (a few exceed, see issues).
 
 ## 7. Completed work (commit trail)
 
@@ -149,14 +167,13 @@ Plan 2 tasks (all reviewed, fix rounds closed, nothing pushed):
 
 ## 8. Remaining work
 
-### Immediate (finish Plan 2)
-1. **Implement Ruling K** in `src/core/merge.ts` `reframeProject` (drop the `scaleBounds` clamp in the customised branch, keep a finite/>0 guard; update `tests/merge.test.ts`, README line). A subagent was resumed for this and was cut off by the spend limit before committing; the tree was clean afterwards.
-2. **Final whole-branch review of Plan 2** (`git diff build/foundation..feature/layers`), triage the deferred minors below, fix what matters (one themed fix wave + scoped re-review, like Plan 1).
-3. Run the manual QA checklist (`docs/superpowers/ledgers/plan-2-manual-qa-checklist.md`) in real desktop Chrome; nothing from Plan 2 has been seen in a real browser yet.
-4. Ask the user before deploying: merge `feature/layers` into `build/foundation` and push to `claude/macos-video-editor-lzye6c` (redeploys production; v1→v2 migration means an older open tab would then show "saved by a newer version" and protect the data).
+### Immediate (finish Plans 2 and 3, then deploy)
+1. Plan 2: Ruling K and its final review were done in the Plan 2 session (see its ledger); its manual QA checklist (`plan-2-manual-qa-checklist.md`) has still not been run in a real browser.
+2. Plan 3: final whole-branch review and fix wave (controller), then the manual QA checklist `docs/superpowers/ledgers/plan-3-manual-qa-checklist.md` in real desktop Chrome on a Mac (audible checks, microphone permission flows, QuickTime playback, the two-line audio track header layout).
+3. Ask the user before deploying: merge into `build/foundation` and push to `claude/macos-video-editor-lzye6c` (redeploys production). Migration notes: v1 -> v2 -> v3 happens on load; an older open tab would then show "saved by a newer version" and protect the data. The `microphone=(self)` Permissions-Policy change in `vercel.json` goes live with it.
 
 ### Roadmap (separate plans; write each in detail with the writing-plans skill, get the user's approval, then execute with subagent-driven-development)
-- **Plan 3, audio editing:** detach audio from a video clip; waveforms; record voice-over (needs `Permissions-Policy: microphone` relaxed in `vercel.json`); per-clip fades/pan, track volume; audio effect chain (EQ, compressor/normalise, reverb, echo, pitch shift, low/high-pass, voice presets, basic noise reduction) built from ONE shared clip-chain used by both `mixer.ts` and `mixdown.ts`; auto-ducking. Data model v3.
+- **Plan 3, audio editing: DONE (implemented on `claude/quirky-cannon-7vz48u`, not deployed).** See section 5. Still open for later: track/master effects, crossfades, clip linking, speed change with pitch preservation (Plan 5).
 - **Plan 4, visual effects and looks:** WebGL2 effect registry (param schema + shader) with per-clip stacks and live preview: colour, looks (B&W, sepia, film grain, teal-orange, vignette, Cinematic/Moody/Golden Hour…, `.cube` LUT import), blur/sharpen/glow/pixelate, stylise (RGB split, glitch, VHS, mirror, invert), chroma key, overlays (lower thirds, subscribe button, progress bar, stickers). Split `compositor.ts`/`gl.ts` first. Data model v4.
 - **Plan 5, animation and motion:** keyframes (transform + effect params) with easing and a curve editor, motion paths, text clips with animation presets, transitions (needs a clip-boundary overlap model), speed 0.25–4× / reverse / ramp with pitch-preserving audio (touches every `duration = out − in` call site: `clipDuration/clipEnd`, `trimClip`, `splitClip`, `ui/drag.ts`, `audio/plan.ts`, compositor source-time mapping, exporter), crop/rotate/flip. Data model v5.
 See `docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md` (Roadmap section) and the spec for details.
@@ -175,8 +192,17 @@ User-visible / behavioural:
 - Gaps, not yet planned: keyboard-only playhead/trim control, reordering clips by dragging onto others, relinking missing media, a CSP header, fast-start MP4 (the exporter writes `fastStart: false`), long 4K exports are untested (audio memory is bounded by the window design).
 - `decodeAudioRange` trusts the track's sample rate (HE-AAC with SBR could be mis-placed); no `outputLatency` compensation for the playhead.
 
+Plan 3 (audio) known issues and deferred items (full minors in the Plan 3 ledger / `.superpowers/sdd/.../progress.md`):
+- Effects are per clip only (no track or master chain, no crossfades); detached audio is not linked to its video clip; a split restarts effects cold and tails stop at the clip end.
+- Noise reduction is a basic spectral gate and runs on the main thread in short slices (first Play of a denoised clip waits ~0.5 s; a Worker was deferred); a clip that is only noise is left unchanged; probes cover at most ~4 s, so speech with pauses only outside probes gets no reduction; a failed noise probe is cached as null for the session (an export could then render a clip without reduction after a transient OPFS error).
+- Echo wet can reach about x11 at feedback 0.9 / mix 1 and clip in the export.
+- Recorder: the worklet posts every 128-frame quantum (batch to ~2048-4096 frames); Safari interrupted-state and track-mute handling is missing; 96/192 kHz interfaces use more memory (consider an `AudioContext` sampleRate of 48000); no latency compensation for Play along; recording is held in memory (30 min cap).
+- Attach back is not offered once the twin was edited, and also not if the video clip had fades/pan/effects before the detach (the twin copies them).
+- Slider arrow-key holds create many undo steps; waveform does not redraw on DPR/track-height change and failed peak decodes are not negatively cached; the two-line audio track header layout has never been viewed in a real browser (manual QA item).
+- Positive duck amounts are clamped silently; the duck popover is a `role=group` without a focus trap.
+
 Code-health (all tests pass despite these):
-- Over the ~200-line guideline: `src/export/exporter.ts` 345, `src/audio/mixer.ts` 225, `src/ui/styles.css` 1211, `src/media/decode.ts` 212, `src/harness.ts` 204, `src/render/overlayGeometry.ts` 193–203.
+- Over the ~200-line guideline: `src/export/exporter.ts` 345, `src/ui/styles.css` 1211, `src/media/decode.ts` 212, `src/harness.ts` 204, `src/render/overlayGeometry.ts` 193–203.
 - `clipFromMedia(m, trackId, …)` keeps an unused `trackId` parameter (plan defect, harmless).
 - Plan 2 deferred minors (full list in `plan-2-layers-ledger.md`): migration shares arrays with its input; `cleanName` cuts by code point not grapheme; selection unit tests are thin; moving a clip to a new layer narrows a multi-selection; Ctrl+Z/Delete/S still act mid-PiP-drag (the drag ends quietly); `ArrowUp/Down` round trip in number fields commits the rounded value; two e2e assertions are near-vacuous.
 
@@ -203,6 +229,6 @@ Model choices: opus for render/audio/UI-heavy tasks and reviews, sonnet for mech
 - `CLAUDE.md`: short operating rules for Claude Code.
 - `README.md`: user-facing feature list, limits, deployment, troubleshooting, third-party licences.
 - `docs/superpowers/specs/2026-11-10-clipforge-design.md`: the approved design (vision for all plans).
-- `docs/superpowers/plans/`: Plan 1 (foundation) and Plan 2 (layers, incl. Roadmap for Plans 3–5).
-- `docs/superpowers/ledgers/`: decision ledgers (`plan-1-foundation-ledger.md`, `plan-2-layers-ledger.md`) and `plan-2-manual-qa-checklist.md`.
+- `docs/superpowers/plans/`: Plan 1 (foundation), Plan 2 (layers, incl. Roadmap for Plans 3–5) and Plan 3 (audio editing).
+- `docs/superpowers/ledgers/`: decision ledgers (`plan-1-foundation-ledger.md`, `plan-2-layers-ledger.md`, `plan-3-audio-ledger.md`) and the manual QA checklists `plan-2-manual-qa-checklist.md`, `plan-3-manual-qa-checklist.md`.
 - `vercel.json` (SPA rewrite scoped away from `/assets`, cache + security headers; no CSP/COOP/COEP), `scripts/copy-licenses.mjs`, `playwright*.config.ts`.

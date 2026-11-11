@@ -31,6 +31,18 @@ It is a static site built with React, TypeScript and Vite.
   video and image clips how they cover the frame: **Fit** (whole picture, black bars), **Fill** (fills the frame,
   edges cropped) or **Blur** (whole picture over a blurred copy of itself). Choosing a mode resets the clip's
   position and scale to that mode's framing. Changing the project format keeps each clip's mode.
+- **Audio editing** (the Inspector's Audio section for one selected clip with sound, and the audio track headers):
+  - **Detach audio** turns a video clip's sound into its own audio clip on an audio track (the video clip is silenced
+    and badged). **Attach back** removes the twin again, offered only while the twin is unedited.
+  - **Waveforms** on audio clips (and a thin strip on video clips with sound), computed once per file and cached.
+  - **Fade in / fade out** (seconds) and **pan** per clip; **track volume** with a slider in each audio track header.
+    Pan is a balance law: at hard left or right the far channel is dropped and the near one stays at its source level.
+  - **Effect chain** per clip (add, reorder, toggle, edit, remove): EQ, high-pass, low-pass, compressor, reverb, echo,
+    gain, pitch shift and noise reduction, plus one-click **presets** (Podcast voice, Radio, Telephone, Deep voice,
+    Chipmunk) and **Normalise** (raises the clip so its peak reaches near full scale). The live preview and the
+    export use the same chain, so what you hear is what is exported.
+  - **Auto-ducking**: the **D** button in an audio track header makes that track (say, music) dip under the clips of
+    another audio track (say, a voice) by an amount you set, with attack and release. One undo step per change.
 - **Numeric position/scale/rotation/opacity fields** in the inspector for a video or image clip: X and Y in
   pixels from the frame centre (0 = centred), scale and opacity in percent, rotation in degrees clockwise. Type a
   value and press Enter (or leave the field) to apply it as one undo step; Up/Down step the value (Shift ×10) and
@@ -80,12 +92,10 @@ It is a static site built with React, TypeScript and Vite.
 
 ## Roadmap (planned, not implemented yet)
 
-The multi-layer timeline (layers, track flags, picture-in-picture) is Plan 2 and is implemented. None of the
-following exist yet. They are planned as follow-up plans (Plans 3-5, outlined in the roadmap section of
+The multi-layer timeline (layers, track flags, picture-in-picture) is Plan 2 and audio editing is Plan 3; both are
+implemented. None of the following exist yet. They are planned as follow-up plans (outlined in the roadmap section of
 [docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md](docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md)):
 
-- **Plan 3, audio editing**: detaching audio from video, waveforms, voiceover recording, per-clip fades and pan,
-  track volume, audio effects, ducking.
 - **Plan 4, visual effects and looks**: shader effects (color, blur, stylize, chroma key), LUT looks and `.cube`
   import, overlays.
 - **Plan 5, animation and motion**: keyframes and easing, motion paths, text with animation presets,
@@ -143,7 +153,7 @@ keeps working; export needs WebGL2 too and says so in the export dialog if it is
 
 ## Privacy
 
-Everything stays on your device; nothing is uploaded. Imported media files are copied into the browser's Origin
+Everything stays on your device; nothing is uploaded. Voice-over recordings and the audio processing (effects, noise reduction, waveforms) stay in the browser too. Imported media files are copied into the browser's Origin
 Private File System, and the project (the timeline as JSON, which references media by ID) is saved in IndexedDB.
 Clearing this site's data in the browser deletes your projects and imported media. Imported files that no
 project state uses any more (removed media, undone imports, replaced merges) are deleted the next time ClipForge
@@ -196,7 +206,20 @@ Layers and the preview:
 - **Tracks**: up to 8 video layers and 8 audio tracks; a project always keeps at least one of each. Layers are
   reordered with the header arrows (not by dragging headers). The preview only opens decoders for clips on visible
   layers under the playhead, so hidden layers cost nothing while playing.
-- No effects, transitions or text yet (see the roadmap).
+- **Audio editing limits**:
+  - Detaching audio does not link the two clips: moving, trimming or splitting one leaves the other where it is.
+  - Effects are per clip only (no track or master effects), and there are no crossfades between clips. An effect
+    tail (reverb, echo) stops at the end of the clip, and splitting a clip restarts the effects cold in the second half.
+  - **Noise reduction** is a basic spectral gate, not a studio denoiser. It learns the noise from the quiet parts of
+    the clip, so it needs a little room tone; a clip that is only noise is left unchanged. It runs on the main thread
+    in short slices, so the first Play of a denoised clip can wait about half a second. Export always renders it fully.
+  - **Ducking** follows where the source track's clips are (their coverage), not whether anyone is speaking.
+  - Echo with high feedback and mix can get very loud and clip in the export; keep an eye on those settings.
+  - **Voice-over** is recorded as mono WAV, held in memory until you stop and capped at 30 minutes. With Play along the
+    voice can land slightly early (no latency compensation), and without headphones the microphone hears the playback.
+    It needs the browser's microphone permission, and the host must not block it (`Permissions-Policy: microphone=(self)`,
+    see Deploying). Safari is unverified for all of this.
+- No visual effects, transitions or text yet (see the roadmap).
 
 ## Development
 
@@ -220,7 +243,7 @@ everything that ships in the bundle into `public/licenses/` (git-ignored; copied
 
 Code layout: `src/core` (pure project model and timeline operations), `src/state` (store, undo history,
 persistence), `src/media` (support check, OPFS storage, import, decode), `src/render` (WebGL2 compositor),
-`src/audio` (mixer), `src/export` (MP4 exporter), `src/ui` (React components).
+`src/audio` (shared clip chain, effects, mixer, mixdown, ducking), `src/export` (MP4 exporter), `src/ui` (React components).
 
 ## Deploying
 

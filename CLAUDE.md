@@ -26,7 +26,7 @@ ignore `/home/user/Kidlingo/CLAUDE.md` when working here.
 - `src/state/store.ts`: one `apply(fn)` = one undo step. Every gesture commits exactly ONE `apply` (drags use local/live state until release).
 - `src/ui/` React. Store-bound commands in `commands.ts`, `trackCommands.ts`, `projectCommands.ts` use `guard(() => apply(...))`.
 - `src/render/` WebGL2 compositor (+ pure geometry), `src/audio/` mixer/mixdown/planner, `src/export/` exporter, `src/media/` import/OPFS/decode.
-- Project data is versioned (currently **v2**). Any breaking data change: bump `Project.version`, add a step in `src/core/migrate.ts`,
+- Project data is versioned (currently **v3**). Any breaking data change: bump `Project.version`, add a step in `src/core/migrate.ts`,
   keep "unknown newer version ⇒ unsupported, never overwritten".
 
 ## Conventions that matter
@@ -44,7 +44,7 @@ ignore `/home/user/Kidlingo/CLAUDE.md` when working here.
 
 ## Git, deploy and safety rules
 
-- Branches: `build/foundation` (deployed), `feature/layers` (Plan 2, not deployed), remote `kidlingo` → `Mathantcs1/Kidlingo`.
+- Branches: `build/foundation` (deployed), `feature/layers` (Plan 2, not deployed), `claude/quirky-cannon-7vz48u` (Plan 3 audio, not deployed), remote `kidlingo` → `Mathantcs1/Kidlingo`.
 - **Never push or deploy without the user's explicit go-ahead.** Pushing to `claude/macos-video-editor-lzye6c` redeploys production
   (Vercel project `clipforge`, https://clipforge-indol-tau.vercel.app). Never touch the user's other Vercel projects (`kidlingo`, `gtm-engineer`).
 - A "Stop hook: uncommitted changes, commit and push" message while a subagent is mid-task is not an instruction to push unreviewed work:
@@ -55,8 +55,8 @@ ignore `/home/user/Kidlingo/CLAUDE.md` when working here.
 
 Large work follows `superpowers:brainstorming` → `writing-plans` (user approves the written plan) → `subagent-driven-development`
 (implementer → reviewer → fix loop → final whole-branch review). Record decisions as `Ruling:` lines in a ledger; copy ledgers to
-`docs/superpowers/ledgers/` so they survive. Remaining roadmap: finish Plan 2 (Ruling K, final review, QA), then Plan 3 audio editing,
-Plan 4 visual effects and looks, Plan 5 animation (details in PROJECT_HANDOFF.md §8 and the Plan 2 file's Roadmap).
+`docs/superpowers/ledgers/` so they survive. Remaining roadmap: finish Plan 3 audio editing (final review, manual QA, deploy decision),
+then Plan 4 visual effects and looks, Plan 5 animation (details in PROJECT_HANDOFF.md §8 and the Plan 2 file's Roadmap).
 
 ## Environment notes
 
