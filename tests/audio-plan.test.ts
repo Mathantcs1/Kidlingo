@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { audibleClips, planWindow, trackAudible, windowBounds } from '../src/audio/plan';
+import { audibleClips, planWindow, trackAudible, trackVolumes, windowBounds } from '../src/audio/plan';
 import type { Segment } from '../src/audio/plan';
 import { defaultClipAudio, emptyProject, newTrack } from '../src/core/model';
 import type { Clip, MediaRef, Project, Track } from '../src/core/model';
@@ -126,6 +126,18 @@ describe('mute and solo', () => {
   });
 });
 
+describe('trackVolumes', () => {
+  it('maps every clip to the volume of its track; planWindow uses it (default 1)', () => {
+    const c = clip('m1', 0, 0, 2);
+    const base = projectOf([c]);
+    const p: Project = { ...base, tracks: [{ ...base.tracks[0], volume: 0.25 }, base.tracks[1]] };
+    const vols = trackVolumes(p);
+    expect(vols.get(c.id)).toBe(0.25);
+    expect(planWindow([c], 0, 30, vols)[0].trackVolume).toBe(0.25);
+    expect(planWindow([c], 0, 30)[0].trackVolume).toBe(1);
+  });
+});
+
 describe('windowBounds', () => {
   it('splits [from, end) into windows of the given length, the last one short', () => {
     expect(windowBounds(0, 70, 30)).toEqual([
@@ -153,7 +165,7 @@ describe('planWindow', () => {
   it('returns whole clips that fit inside the window with their exact source range', () => {
     const c = clip('m1', 2, 1.5, 3.5, { volume: 0.5 });
     expect(planWindow([c], 0, 30)).toEqual<Segment[]>([
-      { clipId: c.id, mediaId: 'm1', srcFrom: 1.5, srcTo: 3.5, when: 2, volume: 0.5 },
+      { clipId: c.id, mediaId: 'm1', srcFrom: 1.5, srcTo: 3.5, when: 2, clip: c, trackVolume: 1 },
     ]);
   });
 
@@ -168,7 +180,7 @@ describe('planWindow', () => {
   it('starts inside a clip when the window starts inside it (play from the middle)', () => {
     const c = clip('m1', 1, 4, 10);
     expect(planWindow([c], 3.25, 23.25)).toEqual([
-      { clipId: c.id, mediaId: 'm1', srcFrom: 6.25, srcTo: 10, when: 3.25, volume: 1 },
+      { clipId: c.id, mediaId: 'm1', srcFrom: 6.25, srcTo: 10, when: 3.25, clip: c, trackVolume: 1 },
     ]);
   });
 

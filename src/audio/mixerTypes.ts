@@ -1,5 +1,6 @@
 // Types of the live playback mixer (see mixer.ts).
-import type { Id, Project } from '../core/model';
+import type { Clip, Id, Project } from '../core/model';
+import type { ClipChain } from './chain';
 
 /** Live playback of a project's audio through an AudioContext. */
 export interface Mixer {
@@ -37,4 +38,25 @@ export interface MixerOptions {
   onError?(e: unknown): void;
   /** Test hook: called for every piece scheduled. */
   onSchedule?(piece: ScheduledPiece): void;
+}
+
+/** State of one play() of the live mixer (see mixer.ts). */
+export interface Session {
+  gen: number;
+  /** Aborted on stop so pending decodes end early. */
+  abort: AbortController;
+  ctx: AudioContext;
+  from: number;
+  ctxStart: number;
+  clips: Clip[];
+  /** Clip id → its track's volume (see plan.trackVolumes). */
+  trackVolumes: Map<Id, number>;
+  windows: [number, number][];
+  next: number;
+  names: Map<Id, string>;
+  master: GainNode | null;
+  /** Scheduled source nodes and their clip chains, dropped as they end. */
+  nodes: Map<AudioBufferSourceNode, ClipChain>;
+  timer: ReturnType<typeof setTimeout> | undefined;
+  wake: (() => void) | null;
 }

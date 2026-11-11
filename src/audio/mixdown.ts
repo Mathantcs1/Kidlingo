@@ -3,7 +3,8 @@ import type { Clip, Id, Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import { ExportError } from '../export/errors';
 import { decodeAudioRange } from '../media/audioDecode';
-import { audibleClips, planWindow } from './plan';
+import { buildClipChain } from './chain';
+import { audibleClips, planWindow, trackVolumes } from './plan';
 import type { Segment } from './plan';
 import { noteAudioBuffer, noteWindow } from './stats';
 
@@ -27,7 +28,7 @@ export interface MixdownOptions {
 /**
  * Renders a project's stereo mix window by window. Window k covers output samples [k*W, (k+1)*W) of
  * ceil(timelineDuration * sampleRate); each is rendered by its own OfflineAudioContext from only the source
- * ranges that overlap it (see planWindow), each clip scaled by its volume. Concatenated, the windows equal a
+ * ranges that overlap it (see planWindow), each through its clip chain (volume, fades, pan, track volume). Concatenated, the windows equal a
  * single-pass render.
  */
 export class MixdownStream {
@@ -38,7 +39,7 @@ export class MixdownStream {
   /** Clip segments that decoded to audio so far (0 at the end means everything was silent). */
   decoded = 0;
   private readonly clips: Clip[];
-  private readonly byId: Map<Id, Clip>;
+  private readonly trackVolumes: Map<Id, number>;
   private readonly windowLength: number;
 
   constructor(
@@ -48,7 +49,7 @@ export class MixdownStream {
   ) {
     const duration = timelineDuration(p);
     this.clips = audibleClips(p);
-    this.byId = new Map(this.clips.map((c) => [c.id, c]));
+    this.trackVolumes = trackVolumes(p);
     this.length = duration > 0 ? Math.ceil(duration * sampleRate) : 0;
     const seconds = opts.windowSeconds ?? EXPORT_WINDOW_SECONDS;
     this.windowLength = Number.isFinite(seconds) ? Math.max(1, Math.round(seconds * sampleRate)) : this.length;
@@ -66,7 +67,7 @@ export class MixdownStream {
     const to = Math.min(this.length, from + this.windowLength);
     const t0 = from / this.sampleRate;
     const ctx = new OfflineAudioContext(2, to - from, this.sampleRate);
-    for (const seg of planWindow(this.clips, t0, to / this.sampleRate)) {
+    for (const seg of planWindow(this.clips, t0, to / this.sampleRate, this.trackVolumes)) {
       this.checkAbort();
       if (await this.schedule(ctx, seg, t0)) this.decoded++;
     }
@@ -85,8 +86,7 @@ export class MixdownStream {
 
   /** Decodes one segment (plus cut margins) and starts it at its window-relative time; false if silent. */
   private async schedule(ctx: OfflineAudioContext, seg: Segment, t0: number): Promise<boolean> {
-    const clip = this.byId.get(seg.clipId);
-    if (!clip) return false;
+    const { clip } = seg;
     const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN);
     const to = Math.min(clip.out, seg.srcTo + CUT_MARGIN);
     let decoded;
@@ -100,9 +100,10 @@ export class MixdownStream {
     if (!decoded) return false;
     const source = ctx.createBufferSource();
     source.buffer = decoded.buffer;
-    const gain = ctx.createGain();
-    gain.gain.value = seg.volume;
-    source.connect(gain).connect(ctx.destination);
+    // Context time 0 is timeline time t0.
+    const chain = buildClipChain({ ctx, clip, trackVolume: seg.trackVolume, seg, ctxStart: -t0 });
+    source.connect(chain.input);
+    chain.output.connect(ctx.destination);
     // Buffer time `lead` is source time seg.srcFrom, which plays at timeline time seg.when.
     const when = seg.when - t0;
     const lead = seg.srcFrom - decoded.start;
@@ -115,7 +116,7 @@ export class MixdownStream {
 /**
  * Renders the project's audio to one stereo AudioBuffer covering [0, timelineDuration(p)), built from
  * MixdownStream windows. Each audible clip's [in, out) source range is decoded at the media's native rate (the
- * context resamples), placed at `clip.start` and scaled by `clip.volume`. Returns null if nothing is audible.
+ * context resamples), placed at `clip.start` and played through its clip chain (see chain.ts). Returns null if nothing is audible.
  */
 export async function renderMixdown(
   p: Project,

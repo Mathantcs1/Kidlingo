@@ -57,6 +57,10 @@ export function ensureFixtures(): string {
   encode(at('tone.wav'), [
     '-f', 'lavfi', '-i', 'sine=frequency=330:sample_rate=48000', '-t', '2', '-c:a', 'pcm_s16le',
   ]);
+  // Six seconds of a stereo 1 kHz tone (both channels equal) for the clip-chain checks.
+  encode(at('tone-1k.wav'), [
+    '-f', 'lavfi', '-i', 'sine=frequency=1000:sample_rate=48000', '-t', '6', '-ac', '2', '-c:a', 'pcm_s16le',
+  ]);
   // Ten minutes of 8 kHz mono AAC: cheap, but long enough that decoding it whole is measurably slow.
   encode(at('long-tone.m4a'), [
     '-f', 'lavfi', '-i', 'sine=frequency=220:sample_rate=8000', '-t', '600', '-c:a', 'aac', '-b:a', '24k', '-ac', '1',

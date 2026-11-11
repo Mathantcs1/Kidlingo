@@ -2,14 +2,18 @@
 import { clipDuration, clipEnd } from '../core/model';
 import type { Clip, Id, Project, Track } from '../core/model';
 
-/** One clip's contribution to a window: source range [srcFrom, srcTo) plays from timeline time `when`. */
+/**
+ * One clip's contribution to a window: source range [srcFrom, srcTo) plays from timeline time `when`, through
+ * the clip's own audio settings (`clip`) and its track's volume (`trackVolume`).
+ */
 export interface Segment {
   clipId: Id;
   mediaId: Id;
   srcFrom: number;
   srcTo: number;
   when: number;
-  volume: number;
+  clip: Clip;
+  trackVolume: number;
 }
 
 /**
@@ -23,20 +27,27 @@ export function trackAudible(p: Project, track: Track): boolean {
 
 /**
  * Clips that can make sound: non-missing audio clips (any track) and video clips whose media has audio, on
- * tracks that are audible (see trackAudible). Images are silent; a volume of 0 (or NaN) contributes nothing and
- * is never decoded.
+ * tracks that are audible (see trackAudible). Images are silent; a clip or track volume of 0 (or NaN) and a clip
+ * marked `audio.silent` contribute nothing and are never decoded.
  */
 export function audibleClips(p: Project): Clip[] {
   const out: Clip[] = [];
   for (const track of p.tracks) {
-    if (!trackAudible(p, track)) continue;
+    if (!trackAudible(p, track) || !(track.volume > 0)) continue;
     for (const clip of track.clips) {
       const media = p.media[clip.mediaId];
-      if (!media || media.missing) continue;
+      if (!media || media.missing || clip.audio.silent) continue;
       if (!(clip.volume > 0) || !(clipDuration(clip) > 0)) continue;
       if (clip.kind === 'audio' || (clip.kind === 'video' && media.hasAudio)) out.push(clip);
     }
   }
+  return out;
+}
+
+/** Clip id → the volume of the track holding it (for planWindow). */
+export function trackVolumes(p: Project): Map<Id, number> {
+  const out = new Map<Id, number>();
+  for (const track of p.tracks) for (const clip of track.clips) out.set(clip.id, track.volume);
   return out;
 }
 
@@ -58,9 +69,15 @@ export function windowBounds(from: number, end: number, length: number): [number
 /**
  * The pieces of `clips` audible in the timeline window [from, to). Source offsets are exact: a clip that
  * straddles a boundary gets `srcTo` in one window equal (bit for bit) to `srcFrom` in the next, so windows
- * scheduled back to back are sample-continuous. Whole clips keep their exact `in` / `out`.
+ * scheduled back to back are sample-continuous. Whole clips keep their exact `in` / `out`. `trackVolumes` (see
+ * trackVolumes) gives each segment its track's volume; clips missing from it play at track volume 1.
  */
-export function planWindow(clips: readonly Clip[], from: number, to: number): Segment[] {
+export function planWindow(
+  clips: readonly Clip[],
+  from: number,
+  to: number,
+  trackVolumes: ReadonlyMap<Id, number> = new Map(),
+): Segment[] {
   const out: Segment[] = [];
   for (const clip of clips) {
     const end = clipEnd(clip);
@@ -70,7 +87,8 @@ export function planWindow(clips: readonly Clip[], from: number, to: number): Se
     const srcFrom = a === clip.start ? clip.in : clip.in + (a - clip.start);
     const srcTo = b === end ? clip.out : clip.in + (b - clip.start);
     if (!(srcTo > srcFrom)) continue;
-    out.push({ clipId: clip.id, mediaId: clip.mediaId, srcFrom, srcTo, when: a, volume: clip.volume });
+    const trackVolume = trackVolumes.get(clip.id) ?? 1;
+    out.push({ clipId: clip.id, mediaId: clip.mediaId, srcFrom, srcTo, when: a, clip, trackVolume });
   }
   return out;
 }

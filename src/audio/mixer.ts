@@ -1,10 +1,11 @@
-import type { Clip, Id, Project } from '../core/model';
+import type { Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import { decodeAudioRange } from '../media/audioDecode';
 import type { DecodedAudio } from '../media/audioDecode';
-import { audibleClips, planWindow, windowBounds } from './plan';
+import { buildClipChain } from './chain';
+import { audibleClips, planWindow, trackVolumes, windowBounds } from './plan';
 import type { Segment } from './plan';
-import type { Mixer, MixerOptions } from './mixerTypes';
+import type { Mixer, MixerOptions, Session } from './mixerTypes';
 import { noteLiveNodes, noteWindow } from './stats';
 
 export { renderMixdown } from './mixdown';
@@ -18,25 +19,6 @@ const START_LEAD = 0.05;
 const CUT_MARGIN = 0.05;
 /** Shortest wait between checks of whether the next window is due. */
 const MIN_WAIT_MS = 50;
-
-interface Session {
-  gen: number;
-  /** Aborted on stop so pending decodes end early. */
-  abort: AbortController;
-  ctx: AudioContext;
-  from: number;
-  ctxStart: number;
-  clips: Clip[];
-  byId: Map<Id, Clip>;
-  windows: [number, number][];
-  next: number;
-  names: Map<Id, string>;
-  master: GainNode | null;
-  /** Scheduled source nodes and their gain nodes, dropped as they end. */
-  nodes: Map<AudioBufferSourceNode, GainNode>;
-  timer: ReturnType<typeof setTimeout> | undefined;
-  wake: (() => void) | null;
-}
 
 class LiveMixer implements Mixer {
   private session: Session | null = null;
@@ -74,7 +56,7 @@ class LiveMixer implements Mixer {
       from,
       ctxStart: 0,
       clips,
-      byId: new Map(clips.map((c) => [c.id, c])),
+      trackVolumes: trackVolumes(p),
       windows: windowBounds(from, timelineDuration(p), this.window),
       next: 0,
       names: new Map(Object.values(p.media).map((m) => [m.id, m.name])),
@@ -150,8 +132,8 @@ class LiveMixer implements Mixer {
   /** Decodes the window's segments (plus cut margins); stops early once superseded. */
   private async decodeWindow(s: Session, [a, b]: [number, number]): Promise<[Segment, DecodedAudio][]> {
     const out: [Segment, DecodedAudio][] = [];
-    for (const seg of planWindow(s.clips, a, b)) {
-      const clip = s.byId.get(seg.clipId)!;
+    for (const seg of planWindow(s.clips, a, b, s.trackVolumes)) {
+      const { clip } = seg;
       let decoded: DecodedAudio | null;
       try {
         const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN);
@@ -191,19 +173,20 @@ class LiveMixer implements Mixer {
     if (!(duration > 0) || !s.master) return;
     const node = ctx.createBufferSource();
     node.buffer = decoded.buffer;
-    const gain = ctx.createGain();
-    gain.gain.value = seg.volume;
-    node.connect(gain).connect(s.master);
+    // Timeline time t plays at context time s.ctxStart + (t - s.from).
+    const chain = buildClipChain({ ctx, clip: seg.clip, trackVolume: seg.trackVolume, seg, ctxStart: s.ctxStart - s.from });
+    node.connect(chain.input);
+    chain.output.connect(s.master);
     node.onended = () => this.release(s, node, false);
     node.start(when, offset, duration);
-    s.nodes.set(node, gain);
+    s.nodes.set(node, chain);
     noteLiveNodes(1);
   }
 
   /** Disconnects a node (stopping it first when cut short) and forgets it. */
   private release(s: Session, node: AudioBufferSourceNode, stop: boolean): void {
-    const gain = s.nodes.get(node);
-    if (!gain) return;
+    const chain = s.nodes.get(node);
+    if (!chain) return;
     s.nodes.delete(node);
     node.onended = null;
     if (stop) {
@@ -214,7 +197,7 @@ class LiveMixer implements Mixer {
       }
     }
     node.disconnect();
-    gain.disconnect();
+    chain.dispose();
     noteLiveNodes(-1);
   }
 }

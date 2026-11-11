@@ -10,6 +10,7 @@ import type { Id, MediaRef, Project } from './core/model';
 import type { VideoSource } from './media/decode';
 import { cleanupExportTemp, exportProject } from './export/exporter';
 import { exportHarness } from './harnessExport';
+import { audioHarness } from './harnessAudio';
 import { createMixer, renderMixdown } from './audio/mixer';
 import type { ScheduledPiece } from './audio/mixer';
 import { audioStats, resetAudioStats } from './audio/stats';
@@ -129,6 +130,7 @@ const cf = {
   exportProject,
   cleanupExportTemp,
   ...exportHarness,
+  ...audioHarness,
   renderMixdown,
   createMixer,
   /** Renders a mixdown and returns its shape plus the peak level in each [from, to) window (seconds). */
