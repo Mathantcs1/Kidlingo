@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { audioStats, resetAudioStats } from './audio/stats';
 import type { AudioStats } from './audio/stats';
-import type { Id, MediaRef } from './core/model';
+import type { Id, MediaRef, VideoEffectType } from './core/model';
 import { peaksDecodeCount } from './media/peaks';
 import { listMediaIds, removeMedia } from './media/storage';
 import { flushAutosave, useEditor } from './state/store';
@@ -29,6 +29,8 @@ interface DevHook {
   removeMediaItem(id: Id): Promise<void>;
   /** Runs media GC against the current history now; returns the removed ids. */
   gcMedia(): Promise<Id[]>;
+  /** Replaces the shader of an effect type with one that does not compile (the D8 failure path, Task 11). */
+  breakVideoEffect(type: VideoEffectType): Promise<void>;
 }
 
 declare global {
@@ -52,6 +54,10 @@ if (import.meta.env.DEV) {
     gcMedia: async () => {
       const { gcMedia, referencedMedia } = await import('./media/gc');
       return gcMedia(() => referencedMedia(useEditor.getState().history));
+    },
+    breakVideoEffect: async (type) => {
+      const { registerPassShader } = await import('./render/effects/registry');
+      registerPassShader(type, { fragment: '#version 300 es\nclipforge test: does not compile;', uniforms: () => ({}) });
     },
   };
 }
