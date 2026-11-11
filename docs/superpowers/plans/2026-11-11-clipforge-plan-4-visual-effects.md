@@ -163,7 +163,7 @@
 **Files:** Create `shaders/chromaKey.ts`, `src/render/effects/keyMath.ts`, `tests/key-math.test.ts`, `tests/e2e/effects-chroma.spec.ts`; modify `videoEffects.ts`.
 
 **Interfaces:**
-- Produces: schema `chromaKey` params `keyR`, `keyG`, `keyB` 0..1 (def 0, 1, 0), `similarity` 0..1 def 0.35, `smoothness` 0..1 def 0.1, `spill` 0..1 def 0.5; pure `keyAlpha(rgb, key, similarity, smoothness): number` (YCbCr chroma distance with smoothstep, 0 = keyed out) and `suppressSpill(rgb, key, amount): rgb`; the shader outputs premultiplied RGBA so layers below show through.
+- Produces: schema `chromaKey` params `keyR`, `keyG`, `keyB` 0..1 (def 0, 1, 0), `similarity` 0..1 def 0.35, `smoothness` 0..1 def 0.1, `spill` 0..1 def 0.75 (Ruling P8); pure `keyAlpha(rgb, key, similarity, smoothness): number` (YCbCr chroma distance with smoothstep, 0 = keyed out) and `suppressSpill(rgb, key, amount): rgb`; the shader outputs premultiplied RGBA so layers below show through.
 - [ ] **Step 1: Failing tests:** `keyAlpha` is 0 for the key colour, 1 for far colours, monotonic in distance, bounded 0..1 for random inputs; spill suppression never increases the key channel; e2e (ffmpeg-generated green-screen fixture: a green background with a red square and a soft edge) over a blue image layer on the track below: green area shows blue, the red square stays red, edge pixels blend without a green fringe (green channel not above max(R,B) + 8 on the edge ring); `similarity 0` keeps everything; the PNG half-alpha fixture still shows no halo.
 - [ ] **Step 2–5:** RED, implement, GREEN, gate. **Step 6: Commit** `feat: chroma key`.
 

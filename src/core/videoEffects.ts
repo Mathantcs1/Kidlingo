@@ -76,7 +76,7 @@ export const VIDEO_EFFECTS: Record<VideoEffectType, EffectSchema> = {
   invert: fx('invert', 'Invert', 'stylise', [amount(1)]),
   chromaKey: fx('chromaKey', 'Chroma key', 'key', [
     p('keyR', 'Key red', 0, 1, 0.01, 0), p('keyG', 'Key green', 0, 1, 0.01, 1), p('keyB', 'Key blue', 0, 1, 0.01, 0),
-    p('similarity', 'Similarity', 0, 1, 0.01, 0.35), p('smoothness', 'Smoothness', 0, 1, 0.01, 0.1), p('spill', 'Spill', 0, 1, 0.01, 0.5),
+    p('similarity', 'Similarity', 0, 1, 0.01, 0.35), p('smoothness', 'Smoothness', 0, 1, 0.01, 0.1), p('spill', 'Spill', 0, 1, 0.01, 0.75),
   ]),
 };
 

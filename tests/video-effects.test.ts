@@ -34,7 +34,7 @@ describe('VIDEO_EFFECTS schema', () => {
       ['temperature', -1, 1, 0], ['tint', -1, 1, 0], ['hue', -180, 180, 0], ['shadows', -1, 1, 0], ['highlights', -1, 1, 0],
     ]);
     expect(VIDEO_EFFECTS.chromaKey.params.map((d) => [d.key, d.def])).toEqual([
-      ['keyR', 0], ['keyG', 1], ['keyB', 0], ['similarity', 0.35], ['smoothness', 0.1], ['spill', 0.5],
+      ['keyR', 0], ['keyG', 1], ['keyB', 0], ['similarity', 0.35], ['smoothness', 0.1], ['spill', 0.75],
     ]);
     expect(VIDEO_EFFECTS.lut.params.map((d) => [d.key, d.def])).toEqual([['intensity', 1]]);
     expect(VIDEO_EFFECTS.mirror.params[0]).toMatchObject({ key: 'mode', min: 0, max: 3, def: 0 });

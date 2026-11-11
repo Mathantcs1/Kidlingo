@@ -8,12 +8,12 @@ import type { Page } from '@playwright/test';
 import { ensureFixtures } from './fixtures';
 import { clipOf, importPaths, openHarness, project, px, render } from './harness-helpers';
 import { edgeImage, gradientImage, overBackdrops, straight } from './colour-helpers';
-import { opaque, renderEffects, textureImage, worstVsReference } from './blur-helpers';
+import { floatImage, opaque, renderEffects, textureImage, worstVsReference } from './blur-helpers';
 import { fitTransform } from '../../src/core/merge';
 import { newTrack } from '../../src/core/model';
 import type { MediaRef, Project, VideoEffect } from '../../src/core/model';
 import { VIDEO_EFFECTS, defaultParams } from '../../src/core/videoEffects';
-import { chromaKeyRef } from '../../src/render/effects/keyMath';
+import { chromaKeyRef, keyAlpha } from '../../src/render/effects/keyMath';
 
 const dir = ensureFixtures();
 let n = 0;
@@ -45,7 +45,8 @@ test('green screen over a blue layer: green shows blue, red stays red, the soft 
   const { video, blue } = await greenScreen(page);
   const [plain] = await render(page, keyedProject(video, blue, []), [0.5]);
   const worstFringe: Record<string, number> = {};
-  for (const spill of [1, 0.5]) {
+  const defSpill = defaultParams('chromaKey').spill;
+  for (const spill of [1, defSpill]) {
     const r = await renderEffects(page, keyedProject(video, blue, [ck({ spill })]), [0.5]);
     expect(r.error).toBeNull();
     expect(r.passes).toEqual([1]);
@@ -69,12 +70,12 @@ test('green screen over a blue layer: green shows blue, red stays red, the soft 
       }
     }
     worstFringe[spill] = fringe;
+    expect(fringe, `edge ring: G − max(R, B) at spill ${spill}`).toBeLessThanOrEqual(8);
     if (spill === 1) {
-      expect(fringe, 'edge ring: G − max(R, B)').toBeLessThanOrEqual(8);
       expect(blended, 'edge pixels blend red with the blue below').toBeGreaterThan(100);
     }
   }
-  console.log(`edge ring max G − max(R, B): spill 1 → ${worstFringe[1]}, spill 0.5 → ${worstFringe[0.5]}`);
+  console.log(`edge ring max G − max(R, B): spill 1 → ${worstFringe[1]}, default spill ${defSpill} → ${worstFringe[defSpill]}`);
 });
 
 test('similarity 0 keeps everything: spill 0 draws no pass, and with spill nothing below shows through', async ({ page }) => {
@@ -113,6 +114,32 @@ test('a half-alpha PNG edge keeps its alpha and straight colour (no halo); trans
     }
     expect(px(fw, 56, y)).toEqual([255, 255, 255]);
   }
+});
+
+test('a half-alpha, partly keyed green edge matches the reference (chroma and spill use the straight colour)', async ({ page }) => {
+  await openHarness(page);
+  const m = await edgeImage(page, [60, 200, 40]);
+  const white = await page.evaluate(() => window.cf.putImageMedia(64, 64, [255, 255, 255]));
+  const format = { width: 64, height: 64, fps: 30 };
+  const params = { ...defaultParams('chromaKey'), similarity: 0.3, smoothness: 0.1 };
+  const frames = async (effects: VideoEffect[]) =>
+    Promise.all(overBackdrops(m, white, effects, format).map(async (p) => (await renderEffects(page, p, [0.5])).frames[0]));
+  const [pb, pw] = await frames([]);
+  const [fb] = await frames([ck(params)]);
+  // The straight colour/alpha of the plain render (opaque 0..31, 50 % alpha 32..39, 15 % alpha 40..43) is the reference input.
+  const src = floatImage(64, 64, (x, y) => {
+    const s = straight(pb, pw, x, y);
+    return { rgb: s.rgb.map((v) => Math.min(255, Math.max(0, v))), a: s.a };
+  });
+  const k = keyAlpha([60 / 255, 200 / 255, 40 / 255], [0, 1, 0], params.similarity, params.smoothness);
+  expect(k, 'the fixture colour is partly keyed').toBeGreaterThan(0.2);
+  expect(k).toBeLessThan(0.8);
+  const err = worstVsReference(fb, chromaKeyRef(src, params));
+  expect(err, 'half-alpha edge vs reference').toBeLessThanOrEqual(3);
+  // The half-alpha column keeps ~ a * k of the colour: well below the opaque column's k share, above zero.
+  const [r, g] = [px(fb, 35, 10), px(fb, 10, 10)];
+  expect(g[1]).toBeGreaterThan(0);
+  expect(r[1]).toBeGreaterThan(0);
 });
 
 /** Each param alone at its min and at its max, the defaults and combined sets (other keys, soft and hard ramps). */
