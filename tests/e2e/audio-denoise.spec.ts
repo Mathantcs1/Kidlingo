@@ -53,3 +53,18 @@ test('live Play of a denoised clip makes sound with no main-thread task over 100
   expect(wet.peak).toBeGreaterThan(0.1);
   expect(max(wet.long)).toBeLessThan(100);
 });
+
+test('a noise-profile probe that cannot be decoded leaves the clip dry (export and mixdown, no error)', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.hiss]);
+  await page.evaluate(() => window.cf.failNoiseProbes(true));
+  const W: [number, number][] = [[0.3, 1.2], [1.8, 2.7]];
+  const dry = await levels(page, withEffects(m, []), W);
+  const wet = await levels(page, withEffects(m, [effect('denoise', { strength: 0.8 })]), W);
+  console.log(`failed probes: dry ${dry.map((v) => v.toFixed(4))} denoised ${wet.map((v) => v.toFixed(4))}`);
+  expect(wet).toEqual(dry);
+  const r = await page.evaluate((p) => window.cf.runExport(p, { maxLongSide: 32 }), withEffects(m, [effect('denoise')]));
+  expect(r.error).toBeNull();
+  expect(r.info?.audioPeak ?? 0).toBeGreaterThan(0.1);
+});
+

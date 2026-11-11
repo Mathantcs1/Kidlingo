@@ -12,20 +12,37 @@ import { clampParams } from './effects/params';
 const CACHE_SIZE = 64;
 const cache = new Map<string, Promise<ChannelNoise[] | null>>();
 
+type ProbeDecoder = typeof decodeAudioRange;
+let decodeProbe: ProbeDecoder = decodeAudioRange;
+
+/** Test seam (dev harness only): replaces the probe decoder, e.g. with one that fails; null restores the real one. */
+export function setProbeDecoder(fn: ProbeDecoder | null): void {
+  decodeProbe = fn ?? decodeAudioRange;
+}
+
+/**
+ * Never rejects: a probe decode that fails degrades the clip to NO noise reduction (null, cached like any result,
+ * so it is not retried for every window); the segment's own decode keeps its error handling. No abort signal:
+ * the estimate is shared by every caller, and each checks its own signal after awaiting it.
+ */
 async function estimate(clip: Clip, ctx: BaseAudioContext): Promise<ChannelNoise[] | null> {
   const probes: Float32Array[][] = [];
-  for (const [from, to] of profileProbes(clip.in, clip.out)) {
-    // No abort signal: the estimate is shared by every caller; each checks its own signal after awaiting it.
-    const d = await decodeAudioRange(clip.mediaId, from, to, ctx);
-    if (!d) continue;
-    for (let c = 0; c < d.buffer.numberOfChannels; c++) (probes[c] ??= []).push(d.buffer.getChannelData(c));
+  try {
+    for (const [from, to] of profileProbes(clip.in, clip.out)) {
+      const d = await decodeProbe(clip.mediaId, from, to, ctx);
+      if (!d) continue;
+      for (let c = 0; c < d.buffer.numberOfChannels; c++) (probes[c] ??= []).push(d.buffer.getChannelData(c));
+    }
+  } catch (e) {
+    console.warn('clipforge: noise profile unavailable, noise reduction skipped for this clip', e);
+    return null;
   }
   return probes.length ? probes.map((p) => estimateNoise(p)) : null;
 }
 
 /**
  * The noise profile (one ChannelNoise per source channel) of the clip's [in, out) source range, or null when it
- * has no audio there. Depends only on the media and that range, never on the render window.
+ * has no audio there or its probes cannot be decoded (then the clip plays without noise reduction). Depends only on the media and that range, never on the render window.
  */
 export function clipNoiseProfile(clip: Clip, ctx: BaseAudioContext): Promise<ChannelNoise[] | null> {
   const key = `${clip.mediaId}|${clip.in}|${clip.out}`;
@@ -33,7 +50,6 @@ export function clipNoiseProfile(clip: Clip, ctx: BaseAudioContext): Promise<Cha
   if (!p) {
     p = estimate(clip, ctx);
     cache.set(key, p);
-    p.catch(() => cache.delete(key));
     if (cache.size > CACHE_SIZE) cache.delete(cache.keys().next().value!);
   }
   return p;

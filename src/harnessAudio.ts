@@ -1,5 +1,6 @@
 // Dev-only harness hooks for the audio clip chain (fades, pan, track volume): per-channel levels of real renders.
 import { createMixer } from './audio/mixer';
+import { setProbeDecoder } from './audio/denoiseSource';
 import { renderMixdown } from './audio/mixdown';
 import type { ScheduledPiece } from './audio/mixerTypes';
 import type { Project } from './core/model';
@@ -15,6 +16,10 @@ function rms(b: AudioBuffer, c: number, from: number, to: number): number {
 }
 
 export const audioHarness = {
+  /** Makes every noise-profile probe decode fail (true) or restores the real decoder (false). */
+  failNoiseProbes(on: boolean): void {
+    setProbeDecoder(on ? async () => Promise.reject(new Error('probe decode forced to fail')) : null);
+  },
   /** Largest sample-to-sample step of the export mix over [from, to) seconds (both channels): clicks show up here. */
   async mixdownMaxStep(p: Project, sampleRate: number, from: number, to: number) {
     const b = await renderMixdown(p, sampleRate);
