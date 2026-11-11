@@ -62,6 +62,14 @@ It is a static site built with React, TypeScript and Vite.
   change is also saved when the tab is hidden or closed). If saving fails (for example because browser storage is
   full) a message says so once and the toolbar shows **Not saved** until saving works again. Clips whose media is
   no longer in browser storage are marked "missing media" instead of breaking the project.
+- **Voice-over**: **Record** (in the toolbar) records from your microphone, starting at the playhead; press it
+  again (**Stop**) to add the take as audio media named "Voice-over N", placed at the start position on the active
+  audio track (or on a new audio track when that one is locked or the take would overlap a clip); one undo step.
+  **Cancel** or Esc discards the take. The browser asks for microphone permission the first time; if it was
+  blocked, allow it for this site in the address bar and try again. A timer shows the length; a take stops by
+  itself at **30 minutes** (and keeps what was recorded). **Play along** (on by default) plays the timeline while
+  you record so you can talk over the picture: **use headphones**, or the microphone picks up the playback. The
+  take is stored as an uncompressed mono WAV on your device (about 6 MB per minute at 48 kHz) and never leaves it.
 - **Export** to MP4 (H.264 video + AAC audio) at 1080p or 4K, with a progress bar, cancel, and a file name you
   choose. 1080p fits the video in a 1920x1080 frame of the project's orientation (so 1080 px on the short side
   for every preset, e.g. 1080x1080 for Square); 4K doubles that (3840x2160 frame). A project with no audible clip
@@ -229,8 +237,9 @@ No special headers (COOP/COEP) are required.
   immutable caching for `/assets/*`, and adds `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`
   headers. A missing `/assets/*` file therefore gets a real 404 instead of the app shell, so a tab left open across
   a redeploy cannot cache an HTML page under an old chunk name; when such a tab needs a chunk that is gone, it
-  says "ClipForge was updated — reload the page." The `Permissions-Policy` header disables the microphone
-  (`microphone=()`); it must be relaxed when voiceover recording (Plan 3) lands. Import the repository in Vercel or
+  says "ClipForge was updated — reload the page." The `Permissions-Policy` header allows the microphone for
+  this site only (`microphone=(self)`, for voice-over recording) and disables the camera and geolocation. Other hosts
+  must not block the microphone in their headers, or recording reports that access was blocked. Import the repository in Vercel or
   run `vercel --prod`.
 - **Netlify / Cloudflare Pages:** build command `npm run build`, publish directory `dist`. A single-page fallback
   is optional because the app has one route.

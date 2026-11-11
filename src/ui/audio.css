@@ -176,3 +176,46 @@
   justify-content: flex-end;
   gap: 6px;
 }
+
+/* Voice-over recording (toolbar) */
+.record-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-record {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.record-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.btn-record.is-recording .record-dot {
+  border-radius: 2px;
+}
+
+.btn-record.is-recording {
+  border-color: var(--danger);
+}
+
+.record-timer {
+  min-width: 5ch;
+  font-variant-numeric: tabular-nums;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.record-playalong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}

@@ -6,6 +6,7 @@ import { deleteSelected, mergeSelected, redo, rippleDeleteSelected, splitAtPlayh
 import { videoClipCount } from './edits';
 import { openExport, startMerge } from './exportJob';
 import { formatTimecode } from './layout';
+import RecordButton from './RecordButton';
 import { usePlaybackStatus } from './usePlayback';
 
 export default function Toolbar({ editable, inert }: { editable: boolean; inert: boolean }) {
@@ -109,6 +110,9 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
         >
           Merge all into one clip
         </button>
+      </div>
+      <div className="toolbar-group">
+        <RecordButton editable={editable} />
       </div>
       <div className="toolbar-group toolbar-end">
         {saveError !== null && (
