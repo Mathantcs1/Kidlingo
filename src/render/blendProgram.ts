@@ -3,6 +3,11 @@ import { PASS_VERTEX } from './effects/programs';
 import { createUnitQuad } from './effects/passResources';
 import { BLEND_FRAGMENT } from './effects/shaders/blend';
 import { createProgram } from './gl';
+import type { Mat3 } from './gl';
+import { BLEND_MODE_INDEX } from './blend';
+import type { BlendMode } from '../core/model';
+
+const IDENTITY: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
 export interface BlendProgram {
   program: WebGLProgram;
@@ -47,4 +52,36 @@ export function createBlendProgram(gl: WebGL2RenderingContext): BlendProgram {
       gl.deleteBuffer(quad.buffer);
     },
   };
+}
+
+/**
+ * One fullscreen blend pass into the bound target: blendPixel(mode, backdrop, layer · opacity) per pixel, with GL
+ * blending off during the draw and re-enabled after; `layerUv` maps target coordinates to the layer's.
+ */
+export function drawBlendPass(
+  gl: WebGL2RenderingContext,
+  prog: BlendProgram,
+  backdrop: WebGLTexture,
+  layer: WebGLTexture,
+  layerUv: Mat3 | undefined,
+  mode: BlendMode,
+  opacity: number,
+): void {
+  gl.disable(gl.BLEND);
+  gl.useProgram(prog.program);
+  gl.bindVertexArray(prog.vao);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, layer);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, backdrop);
+  gl.uniformMatrix3fv(prog.at('u_uv'), false, IDENTITY);
+  gl.uniformMatrix3fv(prog.at('u_layerUv'), false, layerUv ?? IDENTITY);
+  gl.uniform1i(prog.at('u_mode'), BLEND_MODE_INDEX[mode] ?? 0);
+  gl.uniform1f(prog.at('u_opacity'), Math.min(1, Math.max(0, opacity)));
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindVertexArray(null);
+  gl.enable(gl.BLEND);
 }

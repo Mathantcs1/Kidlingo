@@ -1,8 +1,8 @@
 // The ONE intermediate composite of the compositor (Ruling P2): blend modes (Task 11a) and adjustment layers
 // (Task 13a) composite the frame into it instead of straight onto the canvas, then present it.
 import type { BlendMode } from '../core/model';
-import { BLEND_MODE_INDEX, compositeSize } from './blend';
-import { createBlendProgram } from './blendProgram';
+import { compositeSize } from './blend';
+import { createBlendProgram, drawBlendPass } from './blendProgram';
 import type { BlendProgram } from './blendProgram';
 import { CONTEXT_LOST, assertNotLost } from './effects/programs';
 import { fullscreenMatrix, uvMatrix } from './gl';
@@ -15,8 +15,6 @@ export const COMPOSITE_BYTE_BUDGET = 128 * 1024 * 1024;
 export const COMPOSITE_IDLE_FRAMES = 30;
 /** Reads a composite texture (stored bottom row first, like any framebuffer texture) upright. */
 export const COMPOSITE_UV: Mat3 = uvMatrix(0, true);
-
-const IDENTITY: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
 /**
  * A ping-pong pair (the composite so far and the next one) plus a layer target, all `size` (the viewport, see
@@ -90,30 +88,13 @@ export class CompositeBuffer {
    * hold its picture (an effect pipeline output is overwritten by the next run of its size: blend it at once).
    */
   blend(mode: BlendMode, opacity = 1, layer?: { tex: WebGLTexture; uv: Mat3 }): void {
-    const gl = this.gl;
     const prog = this.program;
     const layerTarget = this.layer;
     if (!prog || !this.targets || (!layer && !layerTarget)) throw new Error('CompositeBuffer.blend before begin/beginLayer');
     const backdrop = this.current().slot.tex;
     this.cur = 1 - this.cur;
     this.bindCurrent();
-    gl.disable(gl.BLEND);
-    gl.useProgram(prog.program);
-    gl.bindVertexArray(prog.vao);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, layer?.tex ?? layerTarget!.slot.tex);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, backdrop);
-    gl.uniformMatrix3fv(prog.at('u_uv'), false, IDENTITY);
-    gl.uniformMatrix3fv(prog.at('u_layerUv'), false, layer?.uv ?? IDENTITY);
-    gl.uniform1i(prog.at('u_mode'), BLEND_MODE_INDEX[mode] ?? 0);
-    gl.uniform1f(prog.at('u_opacity'), Math.min(1, Math.max(0, opacity)));
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, null);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindVertexArray(null);
-    gl.enable(gl.BLEND);
+    drawBlendPass(this.gl, prog, backdrop, layer?.tex ?? layerTarget!.slot.tex, layer?.uv, mode, opacity);
     this.passes++;
   }
 
