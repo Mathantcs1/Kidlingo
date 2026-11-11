@@ -103,10 +103,14 @@ export function splitClip(p: Project, clipId: Id, time: number): Project {
   }
   const cut = clip.in + (time - clip.start);
   // The left half keeps the fade-in, the right half the fade-out; effects are copied with new ids to both.
-  const left: Clip = { ...clip, out: cut, audio: { ...clip.audio, fadeOut: 0, effects: cloneEffects(clip.audio.effects) } };
+  // Each half's fade is re-clamped to the half's own duration.
+  const left: Clip = {
+    ...clip, out: cut,
+    audio: fitFades({ ...clip.audio, fadeOut: 0, effects: cloneEffects(clip.audio.effects) }, cut - clip.in),
+  };
   const right: Clip = {
     ...clip, id: newId(), start: time, in: cut,
-    audio: { ...clip.audio, fadeIn: 0, effects: cloneEffects(clip.audio.effects) },
+    audio: fitFades({ ...clip.audio, fadeIn: 0, effects: cloneEffects(clip.audio.effects) }, clip.out - cut),
   };
   return mapClips(p, (t) =>
     t.clips.flatMap((c) => (c.id === clipId ? [left, right] : [c])),

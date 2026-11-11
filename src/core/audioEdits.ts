@@ -185,4 +185,3 @@ export function moveEffect(p: Project, clipId: Id, effectId: Id, toIndex: number
     return next;
   });
 }
-

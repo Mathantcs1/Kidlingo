@@ -169,14 +169,29 @@ describe('split / trim / join', () => {
     expect(ids).not.toContain(get(p, 'v1').audio.effects[0].id);
     expect(get(p, 'v1').audio.effects).toHaveLength(1);
   });
-  it('trim re-clamps fades and keeps reference when nothing changes', () => {
+  it('split keeps each half\'s fades within its duration', () => {
+    const p = setClipAudio(base(), 'v1', { fadeIn: 1.5 });
+    const [l, r] = vTrack(splitClip(p, 'v1', 1)).clips;
+    expect(l.audio.fadeIn).toBe(1);
+    expect(r.audio.fadeIn).toBe(0);
+    const q = setClipAudio(setClipAudio(base(), 'v1', { fadeIn: 1 }), 'v1', { fadeOut: 1 });
+    for (const t of [0.05, 1, 1.95]) {
+      for (const h of vTrack(splitClip(q, 'v1', t)).clips) {
+        expect(h.audio.fadeIn + h.audio.fadeOut).toBeLessThanOrEqual(h.out - h.in + 1e-9);
+      }
+    }
+    const [l2, r2] = vTrack(splitClip(setClipAudio(base(), 'v1', { fadeOut: 1.5 }), 'v1', 1.5)).clips;
+    expect([l2.audio.fadeOut, r2.audio.fadeOut]).toEqual([0, 0.5]);
+  });
+  it('trim re-clamps fades and leaves audio untouched when nothing changes', () => {
     const p = setClipAudio(setClipAudio(base(), 'v1', { fadeIn: 1 }), 'v1', { fadeOut: 1 });
     const q = trimClip(p, 'v1', 'end', 1);
     expect(get(q, 'v1').audio.fadeIn + get(q, 'v1').audio.fadeOut).toBeLessThanOrEqual(1);
     expect(get(q, 'v1').audio.fadeIn).toBe(1);
     expect(get(q, 'v1').audio.fadeOut).toBe(0);
-    const same = trimClip(base(), 'v1', 'end', 2);
-    expect(same.tracks[0].clips[0].audio).toEqual(defaultClipAudio());
+    const p2 = base();
+    const same = trimClip(p2, 'v1', 'end', 2);
+    expect(get(same, 'v1').audio).toBe(get(p2, 'v1').audio);
   });
   it('join keeps the first clip audio settings', () => {
     let p = setClipAudio(base(), 'v1', { pan: 0.5 });
