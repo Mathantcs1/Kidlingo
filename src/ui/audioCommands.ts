@@ -1,7 +1,8 @@
 // Store-bound audio commands. Each is ONE `apply` (one undo step); refusals (TimelineError) become toasts.
 import { attachAudio, detachAudio, setClipAudio, setTrackVolume } from '../core/audioEdits';
 import { findDetachedTwin } from '../core/audioQueries';
-import type { ClipAudio, Id } from '../core/model';
+import { patchTrackDuck } from '../core/duckEdits';
+import type { ClipAudio, Id, TrackDuck } from '../core/model';
 import { useEditor } from '../state/store';
 import { focusAfterRender, keyboardDriven } from './audioFocus';
 import { liveSelection } from './edits';
@@ -47,4 +48,9 @@ export function setSelectedClipAudio(patch: Partial<Pick<ClipAudio, 'fadeIn' | '
 /** Track level 0..2; allowed on locked tracks. */
 export function setTrackVolumeCmd(trackId: Id, volume: number): void {
   guard(() => editor().apply((p) => setTrackVolume(p, trackId, volume)));
+}
+
+/** Track ducking (source, amount, attack, release; null = off); allowed on locked tracks. Cycles become toasts. */
+export function setTrackDuckCmd(trackId: Id, patch: Partial<TrackDuck> | null): void {
+  guard(() => editor().apply((p) => patchTrackDuck(p, trackId, patch)));
 }

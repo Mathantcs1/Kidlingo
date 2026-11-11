@@ -3,6 +3,7 @@ import { timelineDuration } from '../core/timeline';
 import { buildClipChain } from './chain';
 import { decodePieces, pieceTiming } from './mixerSchedule';
 import type { Piece } from './mixerSchedule';
+import { clipDuckPoints } from './duck';
 import { audibleClips, trackVolumes, windowBounds } from './plan';
 import type { Mixer, MixerOptions, Session } from './mixerTypes';
 import { noteLiveNodes, noteWindow } from './stats';
@@ -54,6 +55,7 @@ class LiveMixer implements Mixer {
       ctxStart: 0,
       clips,
       trackVolumes: trackVolumes(p),
+      duckPoints: clipDuckPoints(p),
       windows: windowBounds(from, timelineDuration(p), this.window),
       next: 0,
       names: new Map(Object.values(p.media).map((m) => [m.id, m.name])),

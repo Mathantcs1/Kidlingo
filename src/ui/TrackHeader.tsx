@@ -3,6 +3,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import type { Track } from '../core/model';
 import { useEditor } from '../state/store';
 import './audio.css';
+import DuckControls from './DuckControls';
 import TrackVolume from './TrackVolume';
 import { lastInputWasKeyboard } from './inputModality';
 import { ArrowIcon, CloseIcon, EyeIcon, LockIcon } from './TrackIcons';
@@ -58,7 +59,7 @@ export default function TrackHeader({ track, label, active, canMoveUp, canMoveDo
   }, [active]);
   // A click on the header body makes the track active; a click on one of its buttons does not.
   const onClick = (e: MouseEvent<HTMLDivElement>): void => {
-    if ((e.target as HTMLElement).closest('button, input')) return;
+    if ((e.target as HTMLElement).closest('button, input, select, .duck-panel')) return;
     useEditor.getState().setActiveTrack(id);
   };
   // Tabbing into the header (any control in it) makes the track active, like a click on its body would.
@@ -110,6 +111,7 @@ export default function TrackHeader({ track, label, active, canMoveUp, canMoveDo
           <LockIcon locked={track.locked} />
         </Btn>
         <TrackVolume trackId={id} volume={track.volume} label={label} />
+        <DuckControls track={track} label={label} />
         {track.kind === 'video' && (
           <Btn id="hide" label={`Hide ${label}`} pressed={track.hidden} className="is-hide" onClick={flag('hidden')}>
             <EyeIcon hidden={track.hidden} />

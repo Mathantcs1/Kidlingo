@@ -30,7 +30,7 @@ export async function decodePieces(
   current: () => boolean,
 ): Promise<Piece[]> {
   const out: Piece[] = [];
-  for (const seg of planWindow(s.clips, a, b, s.trackVolumes)) {
+  for (const seg of planWindow(s.clips, a, b, s.trackVolumes, s.duckPoints)) {
     const { clip } = seg;
     const m = chainMargins(clip.audio.effects);
     const margins = { pre: warm ? m.pre : 0, post: m.post };

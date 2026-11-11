@@ -18,8 +18,8 @@ export interface Segment {
   clip: Clip;
   trackVolume: number;
   /**
-   * Ducking envelope in timeline time (sorted, piecewise linear). This is the one source of duck automation the
-   * clip chain reads; planWindow leaves it undefined (no ducking) until Task 8 fills it.
+   * Ducking envelope in timeline time (sorted, piecewise linear; see duck.ts). This is the one source of duck
+   * automation the clip chain reads; undefined means no ducking.
    */
   duckPoints?: GainPoint[];
 }
@@ -79,13 +79,14 @@ export function windowBounds(from: number, end: number, length: number): [number
  * straddles a boundary gets `srcTo` in one window equal (bit for bit) to `srcFrom` in the next, so windows
  * scheduled back to back are sample-continuous. Whole clips keep their exact `in` / `out`. `trackVolumes` (from
  * trackVolumes(p); required so no engine forgets it) gives each segment its track's volume; a clip absent from it
- * plays at track volume 1.
+ * plays at track volume 1. `duckPoints` (from clipDuckPoints(p)) gives each segment its track's duck envelope.
  */
 export function planWindow(
   clips: readonly Clip[],
   from: number,
   to: number,
   trackVolumes: ReadonlyMap<Id, number>,
+  duckPoints?: ReadonlyMap<Id, GainPoint[]>,
 ): Segment[] {
   const out: Segment[] = [];
   for (const clip of clips) {
@@ -97,7 +98,10 @@ export function planWindow(
     const srcTo = b === end ? clip.out : clip.in + (b - clip.start);
     if (!(srcTo > srcFrom)) continue;
     const trackVolume = trackVolumes.get(clip.id) ?? 1;
-    out.push({ clipId: clip.id, mediaId: clip.mediaId, srcFrom, srcTo, when: a, whenEnd: b, clip, trackVolume });
+    const seg: Segment = { clipId: clip.id, mediaId: clip.mediaId, srcFrom, srcTo, when: a, whenEnd: b, clip, trackVolume };
+    const duck = duckPoints?.get(clip.id);
+    if (duck) seg.duckPoints = duck;
+    out.push(seg);
   }
   return out;
 }

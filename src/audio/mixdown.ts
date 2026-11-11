@@ -6,6 +6,8 @@ import { decodeAudioRange } from '../media/audioDecode';
 import { buildClipChain } from './chain';
 import { prepareSource } from './denoiseSource';
 import { chainLatency, chainMargins } from './effects/params';
+import { clipDuckPoints } from './duck';
+import type { GainPoint } from './fade';
 import { audibleClips, planWindow, trackVolumes } from './plan';
 import type { Segment } from './plan';
 import { noteAudioBuffer, noteWindow } from './stats';
@@ -44,6 +46,7 @@ export class MixdownStream {
   decoded = 0;
   private readonly clips: Clip[];
   private readonly trackVolumes: Map<Id, number>;
+  private readonly duckPoints: Map<Id, GainPoint[]>;
   private readonly windowLength: number;
 
   constructor(
@@ -54,6 +57,7 @@ export class MixdownStream {
     const duration = timelineDuration(p);
     this.clips = audibleClips(p);
     this.trackVolumes = trackVolumes(p);
+    this.duckPoints = clipDuckPoints(p);
     this.length = duration > 0 ? Math.ceil(duration * sampleRate) : 0;
     const seconds = opts.windowSeconds ?? EXPORT_WINDOW_SECONDS;
     this.windowLength = Number.isFinite(seconds) ? Math.max(1, Math.round(seconds * sampleRate)) : this.length;
@@ -70,7 +74,7 @@ export class MixdownStream {
     if (from >= this.length) return null;
     const to = Math.min(this.length, from + this.windowLength);
     const t0 = from / this.sampleRate;
-    const segs = planWindow(this.clips, t0, to / this.sampleRate, this.trackVolumes);
+    const segs = planWindow(this.clips, t0, to / this.sampleRate, this.trackVolumes, this.duckPoints);
     // Effects need earlier audio (D7): the context starts `pre` frames before the window and that part is dropped.
     const preMax = Math.max(0, ...segs.map((s) => chainMargins(s.clip.audio.effects).pre));
     const pre = Math.ceil((preMax * this.sampleRate) / QUANTUM) * QUANTUM;
