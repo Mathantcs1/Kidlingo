@@ -1,36 +1,20 @@
-// Pitch shift and noise reduction (Plan 3 Task 7): measured pitch of the real export mix, noise drop, window-seam
-// equality (D7), live = export, an export checked with ffprobe, and the effects / presets offered in the Inspector.
+// Pitch shift and noise reduction (Plan 3 Task 7): measured pitch of the real export mix, window-seam equality (D7),
+// live = export, an export checked with ffprobe, and the effects / presets offered in the Inspector. Noise reduction
+// on its own: audio-denoise.spec.ts.
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { audioFixtures } from './audio-fixtures';
-import { clipOf, importPaths, openHarness, project } from './harness-helpers';
+import { FPS, SR, effect, withEffects } from './effect-helpers';
+import { importPaths, openHarness } from './harness-helpers';
 import { addToTimeline, clipEl, clipStates, importFiles, open, playerState } from './helpers';
 import { defaultParams } from '../../src/audio/effects/params';
-import { defaultClipAudio } from '../../src/core/model';
-import type { AudioEffect, AudioEffectType, Clip, MediaRef, Project } from '../../src/core/model';
+import type { AudioEffect, Project } from '../../src/core/model';
 
 test.setTimeout(120_000);
 
-const SR = 48000;
-const FPS = 10;
 const fx = audioFixtures();
-const db = (r: number): number => 20 * Math.log10(r);
-
-let seq = 0;
-const effect = (type: AudioEffectType, params: Record<string, number> = {}): AudioEffect => ({
-  id: `fx-${++seq}`,
-  type,
-  enabled: true,
-  params: { ...defaultParams(type), ...params },
-});
-
-function withEffects(m: MediaRef, effects: AudioEffect[], over: Partial<Clip> = {}): Project {
-  const clip = clipOf(m, { ...over, audio: { ...defaultClipAudio(), effects } });
-  const p = project({ width: 64, height: 36, fps: FPS }, [m], []);
-  return { ...p, tracks: p.tracks.map((t) => (t.kind === 'audio' ? { ...t, clips: [clip] } : t)) };
-}
 
 const dominant = (page: Page, p: Project, from: number, to: number) =>
   page.evaluate(({ p, sr, from, to }) => window.cf.mixdownDominantFrequency(p, sr, from, to, 100, 1500), { p, sr: SR, from, to });
@@ -42,9 +26,9 @@ test('pitch +12 / -12 / 0 semitones move a 440 Hz tone to 880 / 220 / 440 Hz; th
     const r = await dominant(page, withEffects(m, [effect('pitch', { semitones: st })]), 0.5, 2.5);
     console.log(`pitch ${st} st: ${r?.freq.toFixed(2)} Hz (want ${f.toFixed(2)})`);
     expect(r).not.toBeNull();
-    // Octaves land exactly; other shifts land on the strongest sideband of the 10 Hz crossfade (1 / PITCH_WINDOW).
+    // Octaves land exactly; other shifts land on one of the two 10 Hz crossfade lines (1 / PITCH_WINDOW) around f.
     if (Math.abs(st) % 12 === 0) expect(Math.abs(r!.freq / f - 1)).toBeLessThan(0.02);
-    else expect(Math.abs(r!.freq - f)).toBeLessThanOrEqual(10);
+    else expect(Math.min(...[Math.floor(f / 10), Math.ceil(f / 10)].map((l) => Math.abs(r!.freq - 10 * l)))).toBeLessThan(1);
     expect(r!.length).toBe(3 * SR);
   }
 });
@@ -67,30 +51,22 @@ test('the shifted output stays time-aligned (latency compensated): a click keeps
   }
 });
 
-test('noise reduction (strength 0.8) lowers noise-only audio by >= 6 dB and keeps the tone within 1.5 dB', async ({ page }) => {
-  await openHarness(page);
-  const [m] = await importPaths(page, [fx.hiss]);
-  const W: [number, number][] = [[0.3, 1.2], [1.8, 2.7]];
-  const level = async (p: Project) =>
-    (await page.evaluate(({ p, sr, W }) => window.cf.mixdownChannelRms(p, sr, W), { p, sr: SR, W }))!.rms.map(([l]) => l);
-  const [n0, t0] = await level(withEffects(m, []));
-  const [n1, t1] = await level(withEffects(m, [effect('denoise', { strength: 0.8 })]));
-  console.log(`denoise: noise ${db(n1 / n0).toFixed(2)} dB, tone+noise ${db(t1 / t0).toFixed(2)} dB`);
-  expect(db(n1 / n0)).toBeLessThanOrEqual(-6);
-  expect(Math.abs(db(t1 / t0))).toBeLessThan(1.5);
-});
-
-// Noise reduction estimates its noise floor per decoded piece (D4: the quietest 10 % of the piece's frames), so
-// its seams hold for stationary noise (`steady`); see the Task 7 report for non-stationary measurements.
-const SEAM_CASES: [string, 'noisy' | 'steady', AudioEffect[]][] = [
+// Noise reduction uses ONE profile per clip (denoiseSource.clipNoiseProfile), so its seams hold on the
+// non-stationary `noisy` fixture too. Two +12 shifters are compensated by 100 ms, so they read up to 0.1 s past each
+// segment: more than the 0.05 s cut margin, so that case needs the effects' `post` margin (it fails with post 0).
+// The optional 4th entry bounds the largest sample difference too (an RMS hides a few short bursts).
+const SEAM_CASES: [string, 'noisy' | 'steady', AudioEffect[], number?][] = [
   ['pitch +12', 'noisy', [effect('pitch', { semitones: 12 })]],
   ['pitch -12', 'noisy', [effect('pitch', { semitones: -12 })]],
   ['pitch +5 after EQ', 'noisy', [effect('eq', { high: 6 }), effect('pitch', { semitones: 5 })]],
-  ['denoise 0.5', 'steady', [effect('denoise', { strength: 0.5 })]],
-  ['denoise 0.5 + pitch -4', 'steady', [effect('denoise', { strength: 0.5 }), effect('pitch', { semitones: -4 })]],
+  ['denoise 0.5', 'noisy', [effect('denoise', { strength: 0.5 })], 1e-3],
+  ['denoise 0.5 (speech-like)', 'steady', [effect('denoise', { strength: 0.5 })]],
+  ['denoise 1 + pitch -4', 'noisy', [effect('denoise', { strength: 1 }), effect('pitch', { semitones: -4 })], 1e-3],
+  ['pitch +12 + denoise 1', 'noisy', [effect('pitch', { semitones: 12 }), effect('denoise', { strength: 1 })], 1e-3],
+  ['two pitch +12 (post margin)', 'noisy', [effect('pitch', { semitones: 12 }), effect('pitch', { semitones: 12 })], 1e-3],
 ];
 
-for (const [name, fixture, effects] of SEAM_CASES) {
+for (const [name, fixture, effects, maxTol] of SEAM_CASES) {
   test(`seams: ${name} renders the same in 1 s windows as in one pass`, async ({ page }) => {
     await openHarness(page);
     const [m] = await importPaths(page, [fx[fixture]]);
@@ -103,14 +79,14 @@ for (const [name, fixture, effects] of SEAM_CASES) {
     expect(r.lengths[0]).toBe(r.lengths[1]);
     expect(r.rms).toBeGreaterThan(0.05);
     expect(r.rmsDiff).toBeLessThan(2e-3);
+    if (maxTol !== undefined) expect(r.maxDiff).toBeLessThan(maxTol);
   });
 }
 
-// Pitch is sample-exact live and in export. Noise reduction estimates its floor per decoded piece, and live pieces
-// (1 s windows here) are not the export's: the same per-piece variation as its seams (maxDiff ~8e-3 there).
+// Pitch is sample-exact live and in export; noise reduction uses the clip's one profile in both engines.
 for (const [name, fixture, effects, tol] of [
   ['pitch +6', 'noisy', [effect('pitch', { semitones: 6 })], 2e-3],
-  ['noise reduction 0.5 + pitch -4', 'steady', [effect('denoise', { strength: 0.5 }), effect('pitch', { semitones: -4 })], 1e-2],
+  ['noise reduction 0.5 + pitch -4', 'noisy', [effect('denoise', { strength: 0.5 }), effect('pitch', { semitones: -4 })], 2e-3],
 ] as const) {
   test(`live playback with ${name} matches the export`, async ({ page }) => {
     await openHarness(page);
@@ -167,6 +143,8 @@ test('Inspector: pitch and noise reduction can be added; Deep voice and Chipmunk
     const added = (await effects()).at(-1)!;
     expect(added).toMatchObject({ type, enabled: true, params: defaultParams(type) });
     await expect(page.getByTestId(`effect-${added.id}-${key}`)).toBeVisible();
+    // Noise reduction runs before the graph whatever its place: the row says so.
+    if (type === 'denoise') await expect(page.getByTestId(`effect-${added.id}`)).toHaveAttribute('title', /always runs first/);
   }
 
   for (const [key, st] of [['deep', -4], ['chipmunk', 6]] as const) {

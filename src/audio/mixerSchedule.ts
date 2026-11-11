@@ -1,7 +1,7 @@
 // Live mixer helpers (see mixer.ts): decoding a window's segments and the clock maths of one scheduled piece.
 import { decodeAudioRange } from '../media/audioDecode';
 import type { DecodedAudio } from '../media/audioDecode';
-import { prepareSource } from './chain';
+import { prepareSource } from './denoiseSource';
 import { chainLatency, chainMargins } from './effects/params';
 import type { Margins } from './effects/params';
 import { planWindow } from './plan';
@@ -45,7 +45,10 @@ export async function decodePieces(
       throw new Error(`Could not read the audio of "${name}": ${e instanceof Error ? e.message : String(e)}`);
     }
     if (!current()) return [];
-    if (decoded) out.push({ seg, decoded: { ...decoded, buffer: prepareSource(clip, decoded) }, margins });
+    if (!decoded) continue;
+    const buffer = await prepareSource(clip, decoded, s.ctx);
+    if (!current()) return [];
+    out.push({ seg, decoded: { ...decoded, buffer }, margins });
   }
   return out;
 }

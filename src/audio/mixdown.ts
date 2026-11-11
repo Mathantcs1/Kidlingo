@@ -3,7 +3,8 @@ import type { Clip, Id, Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import { ExportError } from '../export/errors';
 import { decodeAudioRange } from '../media/audioDecode';
-import { buildClipChain, prepareSource } from './chain';
+import { buildClipChain } from './chain';
+import { prepareSource } from './denoiseSource';
 import { chainLatency, chainMargins } from './effects/params';
 import { audibleClips, planWindow, trackVolumes } from './plan';
 import type { Segment } from './plan';
@@ -113,7 +114,9 @@ export class MixdownStream {
     }
     if (!decoded) return false;
     const source = ctx.createBufferSource();
-    source.buffer = prepareSource(clip, decoded);
+    const buffer = await prepareSource(clip, decoded, ctx);
+    if (this.opts.signal?.aborted) throw abortError();
+    source.buffer = buffer;
     // Context time 0 is timeline time t0.
     const chain = buildClipChain({ ctx, clip, trackVolume: seg.trackVolume, seg, ctxStart: -t0 });
     source.connect(chain.input);

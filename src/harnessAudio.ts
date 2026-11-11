@@ -89,6 +89,31 @@ export const audioHarness = {
     return { length: b.length, rms: windows.map(([a, e]) => [rms(b, 0, a, e), rms(b, 1, a, e)]) };
   },
   /**
+   * Main-thread responsiveness of live Play: plays `p` from 0 through the LIVE mixer (windows of `windowSeconds`)
+   * into an OfflineAudioContext until `seconds` are scheduled, recording every long task (> 50 ms) meanwhile, then
+   * renders it. Returns the long-task durations (ms), the rendered peak and whether everything was scheduled.
+   */
+  async liveLongTasks(p: Project, seconds: number, windowSeconds: number, sampleRate: number) {
+    const long: number[] = [];
+    const obs = new PerformanceObserver((list) => list.getEntries().forEach((e) => long.push(e.duration)));
+    obs.observe({ type: 'longtask', buffered: false });
+    const ctx = new OfflineAudioContext(2, Math.ceil((seconds + 0.1) * sampleRate), sampleRate);
+    let end = 0;
+    const mixer = createMixer({ context: ctx as unknown as AudioContext, windowSeconds, onSchedule: (s) => (end = Math.max(end, s.end)) });
+    const t0 = performance.now();
+    await mixer.play(p, 0);
+    const ctxStart = mixer.debugClockStart();
+    while (end < ctxStart + seconds - 1e-9 && performance.now() - t0 < 20_000) await new Promise((r) => setTimeout(r, 20));
+    const ms = performance.now() - t0;
+    await new Promise((r) => setTimeout(r, 100));
+    obs.disconnect();
+    const out = await ctx.startRendering();
+    mixer.stop();
+    let peak = 0;
+    for (const v of out.getChannelData(0)) peak = Math.max(peak, Math.abs(v));
+    return { long, peak, covered: end >= ctxStart + seconds - 1e-9, ms };
+  },
+  /**
    * Plays `p` from timeline 0 through the LIVE mixer into an OfflineAudioContext (so its real graph can be read
    * back), with live windows of `windowSeconds`, until `seconds` are scheduled; renders it and compares it sample
    * by sample with the export mixdown of the same span. Returns the largest difference, the mix peak and the pieces.

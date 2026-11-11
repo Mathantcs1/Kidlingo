@@ -1,9 +1,7 @@
 // The one per-segment audio graph, shared by live playback (mixer.ts) and the offline mixdown (mixdown.ts).
 import { clipEnd } from '../core/model';
 import type { Clip } from '../core/model';
-import type { DecodedAudio } from '../media/audioDecode';
-import { denoiseBuffer } from './denoise';
-import { clampParams, hasTail } from './effects/params';
+import { hasTail } from './effects/params';
 import { buildEffects } from './effects/registry';
 import { fadePoints, windowPoints } from './fade';
 import type { GainPoint } from './fade';
@@ -163,18 +161,4 @@ export function buildClipChain(spec: ChainSpec): ClipChain {
       }
     },
   };
-}
-
-/**
- * The buffer a segment's source plays: the decoded audio after every enabled noise-reduction effect (D4), which
- * works offline on the whole decoded piece (margins included) BEFORE the node graph, wherever it sits in the
- * list. Its STFT frames sit on the source's own sample grid, so overlapping pieces share them (window seams).
- */
-export function prepareSource(clip: Clip, decoded: DecodedAudio): AudioBuffer {
-  let buffer = decoded.buffer;
-  const origin = Math.round(decoded.start * buffer.sampleRate);
-  for (const e of clip.audio.effects) {
-    if (e.enabled && e.type === 'denoise') buffer = denoiseBuffer(buffer, clampParams('denoise', e.params).strength, origin);
-  }
-  return buffer;
 }

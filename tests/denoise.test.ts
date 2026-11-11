@@ -1,40 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { DENOISE_FRAME, denoiseChannel } from '../src/audio/denoise';
+import { estimateNoise } from '../src/audio/denoiseProfile';
 
-const SR = 48000;
-
-/** Deterministic white noise in [-amp, amp) (mulberry32). */
-function noise(n: number, amp: number, seed = 1): Float32Array {
-  let a = seed;
-  const out = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    out[i] = amp * (2 * (((t ^ (t >>> 14)) >>> 0) / 4294967296) - 1);
-  }
-  return out;
-}
-
-const rms = (d: Float32Array, a: number, e: number): number => {
-  let s = 0;
-  for (let i = a; i < e; i++) s += d[i] * d[i];
-  return Math.sqrt(s / (e - a));
-};
-
-/** Amplitude of the `f` Hz component over [a, e) (projection on sin and cos). */
-function toneAmp(d: Float32Array, f: number, a: number, e: number): number {
-  let s = 0;
-  let c = 0;
-  for (let i = a; i < e; i++) {
-    const w = (2 * Math.PI * f * i) / SR;
-    s += d[i] * Math.sin(w);
-    c += d[i] * Math.cos(w);
-  }
-  return (2 * Math.hypot(s, c)) / (e - a);
-}
-
-const db = (r: number): number => 20 * Math.log10(r);
+import { SR, db, noise, rms, toneAmp } from './signal';
 
 describe('denoiseChannel', () => {
   // 2 s of noise only, then 2 s of noise + a 0.3 amplitude 440 Hz tone.
@@ -83,11 +51,13 @@ describe('denoiseChannel', () => {
     const sig = new Float32Array(3 * SR);
     for (let i = 0; i < sig.length; i++) sig[i] = period[i % 256];
     for (let c = 0.4 * SR; c < sig.length; c += 0.31 * SR) sig[Math.round(c)] += 0.9;
-    const whole = denoiseChannel(sig, SR, 0.7);
+    // Steady noise trips the stationarity guard, so the profile is forced to full strength here.
+    const profile = { ...estimateNoise([sig]), scale: 1 };
+    const whole = denoiseChannel(sig, SR, 0.7, 0, profile);
     const a = 777;
     const [from, to] = [Math.round(0.3 * SR), Math.round(1.7 * SR)];
     const diff = (origin: number): number => {
-      const piece = denoiseChannel(sig.subarray(a, a + 2 * SR), SR, 0.7, origin);
+      const piece = denoiseChannel(sig.subarray(a, a + 2 * SR), SR, 0.7, origin, profile);
       let m = 0;
       for (let i = from; i < to; i++) m = Math.max(m, Math.abs(piece[i] - whole[a + i]));
       return m;

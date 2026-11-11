@@ -12,7 +12,7 @@ export type { Mixer, MixerOptions, ScheduledPiece } from './mixerTypes';
 
 /** Seconds of audio decoded and scheduled at a time during live playback. */
 export const LIVE_WINDOW_SECONDS = 20;
-/** Clock lead before the first window starts, so every node of it starts on the same tick. */
+/** Clock lead before the first window starts, so every node of it starts on the same tick (> pitch.ts LIVE_LEAD). */
 const START_LEAD = 0.05;
 /** Shortest wait between checks of whether the next window is due. */
 const MIN_WAIT_MS = 50;

@@ -3,7 +3,7 @@ import { EFFECT_SCHEMAS } from '../audio/effects/params';
 import { PRESET_LABELS, availablePresets } from '../audio/presets';
 import type { PresetKey } from '../audio/presets';
 import type { AudioEffectType, Clip } from '../core/model';
-import EffectRow from './EffectRow';
+import EffectRow, { DENOISE_NOTE } from './EffectRow';
 import { addClipEffect, applyClipPreset, normaliseClip } from './effectCommands';
 
 const ADDABLE = (Object.keys(EFFECT_SCHEMAS) as AudioEffectType[]).filter((t) => EFFECT_SCHEMAS[t].available);
@@ -38,7 +38,7 @@ export default function EffectList({ clip, disabled, title }: Props) {
         >
           <option value="">Effect…</option>
           {ADDABLE.map((t) => (
-            <option key={t} value={t}>
+            <option key={t} value={t} title={t === 'denoise' ? DENOISE_NOTE : undefined}>
               {EFFECT_SCHEMAS[t].label}
             </option>
           ))}

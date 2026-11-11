@@ -78,12 +78,20 @@ interface RowProps {
   disabled: boolean;
 }
 
+/** Noise reduction works on the decoded audio before the node graph, so its place in the list does not matter. */
+export const DENOISE_NOTE = 'Noise reduction always runs first, before the other effects, whatever its place in the list';
+
 /** One effect of the chain: enable toggle, name, move up/down, remove, then its parameter sliders. */
 export default function EffectRow({ clipId, effect, index, count, disabled }: RowProps) {
   const schema = EFFECT_SCHEMAS[effect.type];
   const id = effect.id;
   return (
-    <li className={`effect-row${effect.enabled ? '' : ' effect-off'}`} data-testid={`effect-${id}`} data-type={effect.type}>
+    <li
+      className={`effect-row${effect.enabled ? '' : ' effect-off'}`}
+      data-testid={`effect-${id}`}
+      data-type={effect.type}
+      title={effect.type === 'denoise' ? DENOISE_NOTE : undefined}
+    >
       <div className="effect-head">
         <label className="effect-name">
           <input

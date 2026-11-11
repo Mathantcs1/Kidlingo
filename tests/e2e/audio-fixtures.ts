@@ -32,6 +32,10 @@ export const audioFixtures = () => ({
    * like audio whose pauses hold the noise floor in every decoded piece (noise-reduction seams).
    */
   steady: wav('fx-hiss-bursts.wav', '0.05*(2*random(0)-1)+0.3*lt(mod(t,0.5),0.25)*sin(2*PI*440*t)', 5),
+  /** White noise at 0.05 under a steady 0.3 amplitude 440 Hz tone, no pauses, 3 s (noise reduction must spare it). */
+  toneHiss: wav('fx-tone-hiss.wav', '0.05*(2*random(0)-1)+0.3*sin(2*PI*440*t)', 3),
+  /** The `steady` bursts over noise, 30 s (live noise reduction over a whole 20 s window). */
+  longBursts: wav('fx-long-bursts.wav', '0.05*(2*random(0)-1)+0.3*lt(mod(t,0.5),0.25)*sin(2*PI*440*t)', 30),
   /** A 10-sample 0.8 click at 0.1 s, then silence (2 s). */
   click: wav('fx-click.wav', '0.8*between(n,4800,4809)', 2),
   /** 1 kHz: 0.05 amplitude for 2 s, then 0.8 for 2 s. */

@@ -3,7 +3,11 @@
 import { PITCH_WINDOW, pitchCurves } from './pitchMath';
 import type { EffectBuilder } from './types';
 
-/** Lead before a live context's clock when the clip's phase origin is already past (the start must be in the future). */
+/**
+ * Lead before a live context's clock when the clip's phase origin is already past (the start must be in the future).
+ * Must stay below the mixer's START_LEAD (0.05 s, mixer.ts): the first window's gate opens START_LEAD after the
+ * clock read, and the control loops must be running by then, or the shifter is silent for the difference.
+ */
 const LIVE_LEAD = 0.02;
 
 /** Start offset (seconds) of a control loop of `n` frames started at `start` with phase 0 at `phase0`, in whole frames. */
@@ -17,6 +21,9 @@ function loopOffset(start: number, phase0: number, n: number, sampleRate: number
  * with phase 0 at `at.phase0` (the clip's start), so every window of a render places the delay jumps at the same
  * timeline instants. The shifter delays its input by pitchLatency on average; the engines compensate (chainLatency).
  * At 0 semitones it is an exact pass-through.
+ *
+ * Known issue: near a clip's out point the taps read up to the latency past it, where there is no source audio,
+ * so the last ~latency (≤ 50 ms per shifter) of a shifted clip dips; the same in live playback and export.
  */
 export const buildPitch: EffectBuilder = (ctx, q, at) => {
   const input = ctx.createGain();
