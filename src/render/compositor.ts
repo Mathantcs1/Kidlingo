@@ -1,59 +1,23 @@
+// The WebGL2 compositor: Phase 1 uploads every picture of the frame, Phase 2 draws them in track order.
 import type { Id, Project, VideoEffectType } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
+import { applyClipEffects } from './clipEffects';
+import type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
 import { collectDraws } from './drawCollect';
-import type { Draw, DrawContext } from './drawCollect';
+import type { DrawContext } from './drawCollect';
 import { LutTextures } from './effects/luts';
-import { EffectPipeline, effectWorkingSize, frameIndex, snapToFrame } from './effects/pipeline';
+import { EffectPipeline } from './effects/pipeline';
 import { unavailableTypes } from './effects/programs';
-import type { EffectContext, LoadedLut } from './effects/types';
-import { QuadRenderer, clipMatrix, createContext, forceOpaque, letterbox, uvMatrix } from './gl';
-import type { Mat3, Size, TextureSlot } from './gl';
+import type { LoadedLut } from './effects/types';
+import { QuadRenderer, clipMatrix, createContext, forceOpaque, letterbox } from './gl';
+import type { Size, TextureSlot } from './gl';
 import { withAttempts } from './glErrors';
 import { ImageTextures } from './images';
 
-export interface Compositor {
-  /**
-   * Draws the project's video tracks at timeline time `t` (seconds). `sources` holds open video sources keyed
-   * by clip id or, failing that, media id; video clips without a source are skipped. Overlapping calls are
-   * serialised. Rejects once disposed or after the WebGL context is lost.
-   */
-  renderFrame(p: Project, t: number, sources: Map<Id, VideoSource>): Promise<void>;
-  canvas: HTMLCanvasElement | OffscreenCanvas;
-  /** Sets the canvas's pixel size. Transforms stay in `p.format` pixels; the output is fitted to the canvas. */
-  resize(w: number, h: number): void;
-  /** Deletes all GL objects. Idempotent. */
-  dispose(): void;
-  /** Counts of live GL textures and the largest image texture side (instrumentation for tests). */
-  stats(): CompositorStats;
-  /** Effect types turned off this session after a shader failure (every compositor shares this list; D8). */
-  unavailableTypes(): VideoEffectType[];
-}
-
-export interface CompositorStats {
-  videoTextures: number;
-  imageTextures: number;
-  maxImageSide: number;
-  /** Effect passes drawn since creation (0 while no clip has an enabled, available effect). */
-  effectPasses: number;
-  /** Effect targets allocated now and their RGBA8 bytes (bounded: see TargetPool). */
-  effectMemory: { targets: number; bytes: number };
-}
-
-export interface CompositorOptions {
-  /** Keep the drawing buffer after presenting (needed to read pixels back after a render). Default false. */
-  preserveDrawingBuffer?: boolean;
-  /** Called once per effect type per session when its shader cannot be used here; the clip draws without it (D8). */
-  onEffectUnavailable?(type: VideoEffectType): void;
-  /**
-   * Called once per LUT media (per compositor) whose file is missing, unreadable or not a valid .cube: its effect is
-   * skipped and the frame still renders (D8). `name` is the media's name (see lutUnavailableMessage).
-   */
-  onLutUnavailable?(mediaId: Id, name: string): void;
-}
+export type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
 
 const LOST = 'WebGL context lost';
-const UPRIGHT = uvMatrix(0);
 
 class GlCompositor implements Compositor {
   readonly canvas: HTMLCanvasElement | OffscreenCanvas;
@@ -173,27 +137,11 @@ class GlCompositor implements Compositor {
     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
     for (const d of draws) {
       // Effects first (working-size passes, no transform); the blur backdrop is made from the processed picture (D7).
-      const { slot, uv } = this.applyEffects(d, p, t, format);
+      const { slot, uv } = applyClipEffects(this.effects, d, p, t, format, this.frameLuts, this.onEffectUnavailable);
       if (d.clip.fit === 'blur') this.blur.draw(slot, d.size, uv, d.clip.transform.opacity, format, viewport);
       this.quad.draw(slot.tex, clipMatrix(d.size, d.clip.transform, format), d.clip.transform.opacity, uv);
     }
     if (this.hasAlpha) forceOpaque(gl);
-  }
-
-  /** The draw's picture after its effect stack: the original slot and uv when nothing applies. */
-  private applyEffects(d: Draw, p: Project, t: number, format: Size): { slot: TextureSlot; uv: Mat3 } {
-    if (!d.clip.effects || d.clip.effects.length === 0) return d;
-    const fps = p.format.fps;
-    const ctx: EffectContext = {
-      time: snapToFrame(t - d.clip.start, fps),
-      frame: frameIndex(t - d.clip.start, fps),
-      fps,
-      lut: (ref) => this.frameLuts.get(ref) ?? null,
-      onUnavailable: this.onEffectUnavailable,
-    };
-    const slot = this.effects.run(d.slot, effectWorkingSize(d.size, d.texels, format), d.uv, d.clip.effects, ctx);
-    // Effect results are upright and stored top row first, like an uploaded texture.
-    return slot === d.slot ? d : { slot, uv: UPRIGHT };
   }
 }
 
