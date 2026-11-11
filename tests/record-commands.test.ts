@@ -14,6 +14,16 @@ const fake = vi.hoisted(() => ({
   rec: null as null | { onLimit: (() => void) | null; onEnded: (() => void) | null },
   imported: [] as string[],
   removed: [] as string[],
+  elapsed: 1.5,
+  confirmAnswer: true,
+  asked: [] as string[],
+}));
+
+vi.mock('../src/ui/Confirm', () => ({
+  askConfirm: (req: { title: string; confirmLabel: string }) => {
+    fake.asked.push(`${req.title}|${req.confirmLabel}`);
+    return Promise.resolve(fake.confirmAnswer);
+  },
 }));
 
 vi.mock('../src/media/recorder', async (orig) => {
@@ -26,7 +36,7 @@ vi.mock('../src/media/recorder', async (orig) => {
         start: () => (fake.start ? fake.start() : Promise.resolve()),
         stop: async () => ({ blob: new Blob(['wav']), seconds: fake.seconds, sampleRate: 48000 }),
         cancel: fake.cancel,
-        elapsed: () => 1.5,
+        elapsed: () => fake.elapsed,
         state: () => 'recording' as const,
         onLimit: null,
         onEnded: null,
@@ -48,7 +58,14 @@ vi.mock('../src/media/storage', () => ({
   },
 }));
 
-const { cancelRecording, recordVoiceOver, setPlayAlong, useRecording } = await import('../src/ui/recordCommands');
+const { cancelRecording, recordVoiceOver, requestCancelRecording, setPlayAlong, useRecording } = await import(
+  '../src/ui/recordCommands'
+);
+
+const win = { addEventListener: vi.fn(), removeEventListener: vi.fn() };
+vi.stubGlobal('window', win);
+const unloadAdds = () => win.addEventListener.mock.calls.filter((c) => c[0] === 'beforeunload');
+const unloadRemoves = () => win.removeEventListener.mock.calls.filter((c) => c[0] === 'beforeunload');
 
 const s = () => useEditor.getState();
 const present = (): Project => s().history.present;
@@ -69,7 +86,9 @@ beforeEach(() => {
   useToasts.setState({ toasts: [] });
   useExportUi.setState({ open: null });
   setPlayAlong(true);
-  Object.assign(fake, { start: null, seconds: 2, created: 0, cancel: vi.fn(), rec: null, imported: [], removed: [] });
+  Object.assign(fake, { start: null, seconds: 2, created: 0, cancel: vi.fn(), rec: null, imported: [], removed: [], elapsed: 1.5, confirmAnswer: true, asked: [] });
+  win.addEventListener.mockClear();
+  win.removeEventListener.mockClear();
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
@@ -161,5 +180,57 @@ describe('recordVoiceOver', () => {
     expect(present()).toBe(before);
     expect(fake.removed).toEqual(['m1']);
     expect(toasts().join(' ')).toMatch(/At most 8 audio/);
+  });
+
+  it('a short take is discarded without asking', async () => {
+    recordVoiceOver();
+    await vi.waitFor(() => expect(status()).toBe('recording'));
+    await requestCancelRecording();
+    expect(fake.asked).toEqual([]);
+    expect(fake.cancel).toHaveBeenCalledTimes(1);
+    expect(status()).toBe('idle');
+    expect(depth()).toBe(0);
+  });
+
+  it('a take longer than 5 s asks first; Cancel in the question keeps recording', async () => {
+    fake.elapsed = 6;
+    recordVoiceOver();
+    await vi.waitFor(() => expect(status()).toBe('recording'));
+    fake.confirmAnswer = false;
+    await requestCancelRecording();
+    expect(fake.asked).toEqual(['Discard this recording?|Discard']);
+    expect(fake.cancel).not.toHaveBeenCalled();
+    expect(status()).toBe('recording');
+    fake.confirmAnswer = true;
+    await requestCancelRecording();
+    expect(fake.cancel).toHaveBeenCalledTimes(1);
+    expect(status()).toBe('idle');
+    expect(fake.imported).toEqual([]);
+    expect(depth()).toBe(0);
+  });
+
+  it('guards page unload while recording and removes the guard on stop, cancel and failure', async () => {
+    await recordUntilIdle();
+    expect(unloadAdds()).toHaveLength(1);
+    expect(unloadRemoves()).toHaveLength(1);
+    expect(unloadRemoves()[0][1]).toBe(unloadAdds()[0][1]);
+    const handler = unloadAdds()[0][1] as (e: { preventDefault(): void; returnValue: unknown }) => void;
+    const ev = { preventDefault: vi.fn(), returnValue: undefined as unknown };
+    handler(ev);
+    expect(ev.preventDefault).toHaveBeenCalled();
+    expect(ev.returnValue).toBe('');
+
+    recordVoiceOver();
+    await vi.waitFor(() => expect(status()).toBe('recording'));
+    cancelRecording();
+    expect(unloadAdds()).toHaveLength(2);
+    expect(unloadRemoves()).toHaveLength(2);
+
+    fake.start = () => Promise.reject(new RecorderError('busy'));
+    recordVoiceOver();
+    await vi.waitFor(() => expect(status()).toBe('idle'));
+    expect(unloadAdds()).toHaveLength(3);
+    expect(unloadRemoves()).toHaveLength(3);
+    expect(toasts().at(-1)).toMatch(/in use by another app/);
   });
 });

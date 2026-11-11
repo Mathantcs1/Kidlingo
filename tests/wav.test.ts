@@ -51,4 +51,13 @@ describe('encodeWav', () => {
       expect(v.getUint32(40, true)).toBe(0);
     }
   });
+
+  it('encodes uneven chunks exactly like one joined chunk', async () => {
+    const all = Float32Array.from({ length: 1000 }, (_, i) => Math.sin(i / 7) * 1.2);
+    const parts = [all.subarray(0, 1), all.subarray(1, 334), all.subarray(334, 335), all.subarray(335)];
+    const a = new Uint8Array(await encodeWav(parts, 22050).arrayBuffer());
+    const b = new Uint8Array(await encodeWav([all], 22050).arrayBuffer());
+    expect(a.length).toBe(44 + 2000);
+    expect(a).toEqual(b);
+  });
 });

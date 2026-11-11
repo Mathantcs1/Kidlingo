@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { RecorderError, WORKLET_SOURCE, createRecorder } from '../src/media/recorder';
+import { encodeWav } from '../src/media/wav';
 import type { RecorderDeps } from '../src/media/recorder';
 
 class FakeTrack {
@@ -180,5 +181,67 @@ describe('createRecorder', () => {
     expect(r.state()).toBe('recording');
     h.push(0.5);
     expect((await r.stop()).blob.size).toBe(46);
+  });
+
+  it('maps a busy or failing microphone to busy, with a plain message', async () => {
+    for (const name of ['NotReadableError', 'AbortError']) {
+      const h = harness({ gum: reject(name) });
+      const r = createRecorder(h.deps);
+      let err: unknown;
+      await r.start().catch((e) => (err = e));
+      expect(err).toBeInstanceOf(RecorderError);
+      expect((err as RecorderError).reason).toBe('busy');
+      expect((err as RecorderError).message).toBe(
+        'The microphone is in use by another app or could not be started. Close other apps using it, then try again.',
+      );
+      expect(r.state()).toBe('idle');
+    }
+  });
+
+  it('says unsupported when the AudioContext cannot be created', async () => {
+    const h = harness();
+    const r = createRecorder({
+      ...h.deps,
+      createContext: () => {
+        throw new DOMException('too many', 'NotSupportedError');
+      },
+    });
+    expect(await reasonOf(r.start())).toBe('unsupported');
+    expect(h.getUserMedia).not.toHaveBeenCalled();
+    expect(r.state()).toBe('idle');
+  });
+
+  for (const where of ['createNode', 'createMediaStreamSource'] as const) {
+    it(`releases the microphone when ${where} throws after permission was granted`, async () => {
+      const h = harness();
+      const boom = () => {
+        throw new DOMException('closed', 'InvalidStateError');
+      };
+      let deps = h.deps;
+      if (where === 'createNode') deps = { ...h.deps, createNode: vi.fn().mockImplementationOnce(boom).mockImplementation(h.deps.createNode!) };
+      else h.ctx.createMediaStreamSource.mockImplementationOnce(boom);
+      const r = createRecorder(deps);
+      await expect(r.start()).rejects.toBeInstanceOf(RecorderError);
+      for (const t of h.tracks) expect(t.stop).toHaveBeenCalledTimes(1);
+      expect(h.ctx.close).toHaveBeenCalledTimes(1);
+      expect(r.state()).toBe('idle');
+      await r.start();
+      expect(r.state()).toBe('recording');
+      h.push(0.5);
+      expect((await r.stop()).blob.size).toBe(46);
+    });
+  }
+
+  it('stop returns exactly the WAV of every pushed sample across several blocks', async () => {
+    const h = harness();
+    const r = createRecorder(h.deps);
+    await r.start();
+    const all = Array.from({ length: 250 }, (_, i) => ((i % 17) - 8) / 8);
+    h.push(...all.slice(0, 70));
+    h.push(...all.slice(70, 199));
+    h.push(...all.slice(199));
+    const out = new Uint8Array(await (await r.stop()).blob.arrayBuffer());
+    const want = new Uint8Array(await encodeWav([Float32Array.from(all)], 100).arrayBuffer());
+    expect(out).toEqual(want);
   });
 });

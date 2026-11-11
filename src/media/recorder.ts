@@ -2,7 +2,9 @@
 // mono Float32 chunks to the main thread, kept in memory (capped) and written out as a WAV. No MediaRecorder.
 import { CONSTRAINTS, PROCESSOR, RecorderError, WORKLET_SOURCE, aborted, browserDeps, mapError } from './recorderParts';
 import type { ContextLike, NodeLike, RecorderDeps } from './recorderParts';
-import { encodeWav } from './wav';
+import { pcm16, wavBlob } from './wav';
+
+const EMPTY = new Float32Array(0);
 
 export { RecorderError, WORKLET_SOURCE } from './recorderParts';
 export type { RecorderDeps, RecorderErrorReason } from './recorderParts';
@@ -99,7 +101,13 @@ export function createRecorder(opts: RecorderDeps & { maxSeconds?: number } = {}
     if (state !== 'idle') throw new Error('Already recording');
     const token = ++session;
     reset();
-    const ctx = deps.createContext();
+    let ctx: ContextLike | null;
+    try {
+      ctx = deps.createContext();
+    } catch (e) {
+      console.error('clipforge: could not create an AudioContext for recording', e);
+      throw new RecorderError('unsupported');
+    }
     if (!ctx?.audioWorklet) {
       void ctx?.close().catch(() => undefined);
       throw new RecorderError('unsupported');
@@ -136,11 +144,18 @@ export function createRecorder(opts: RecorderDeps & { maxSeconds?: number } = {}
       URL.revokeObjectURL(url);
     }
     if (token !== session) throw aborted();
-    const node = deps.createNode(ctx, PROCESSOR);
-    node.port.onmessage = (e) => take(e.data);
-    const source = ctx.createMediaStreamSource(stream);
-    source.connect(node);
-    Object.assign(live, { node, source });
+    try {
+      const node = deps.createNode(ctx, PROCESSOR);
+      Object.assign(live, { node });
+      node.port.onmessage = (e) => take(e.data);
+      const source = ctx.createMediaStreamSource(stream);
+      Object.assign(live, { source });
+      source.connect(node);
+    } catch (e) {
+      // A closed/interrupted context or a rejected node: never leave the microphone on.
+      console.error('clipforge: could not connect the microphone', e);
+      return fail(new RecorderError('busy'));
+    }
     for (const t of stream.getAudioTracks()) t.addEventListener('ended', onTrackEnded);
     state = 'recording';
   }
@@ -148,8 +163,13 @@ export function createRecorder(opts: RecorderDeps & { maxSeconds?: number } = {}
   async function stop(): Promise<Recording> {
     if (state !== 'recording' && state !== 'stopped') throw new Error('Not recording');
     release();
-    const chunks = blocks.map((b, i) => (i === blocks.length - 1 ? b.subarray(0, fill) : b));
-    const out = { blob: encodeWav(chunks, rate), seconds: count / rate, sampleRate: rate };
+    // Converted block by block, each Float32 block dropped once encoded: no float + int16 + Blob copy peak.
+    const parts: ArrayBuffer[] = [];
+    for (let i = 0; i < blocks.length; i++) {
+      parts.push(pcm16(i === blocks.length - 1 ? blocks[i].subarray(0, fill) : blocks[i]));
+      blocks[i] = EMPTY;
+    }
+    const out = { blob: wavBlob(parts, count, rate), seconds: count / rate, sampleRate: rate };
     reset();
     state = 'idle';
     return out;

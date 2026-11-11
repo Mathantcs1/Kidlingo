@@ -7,6 +7,7 @@ import { videoClipCount } from './edits';
 import { openExport, startMerge } from './exportJob';
 import { formatTimecode } from './layout';
 import RecordButton from './RecordButton';
+import { useRecording } from './recordCommands';
 import { usePlaybackStatus } from './usePlayback';
 
 export default function Toolbar({ editable, inert }: { editable: boolean; inert: boolean }) {
@@ -20,6 +21,8 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
   const detachReason = useEditor((s) => detachDisabledReason(s.history.present, s.selection));
   const buffering = usePlaybackStatus((s) => s.buffering);
   const saveError = useEditor((s) => s.saveError);
+  const recording = useRecording((s) => s.status !== 'idle');
+  const busyTitle = 'Stop the voice-over recording first';
 
   return (
     <div className="toolbar" role="toolbar" aria-label="Editing tools" inert={inert}>
@@ -105,8 +108,8 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
           type="button"
           data-testid="btn-merge-all"
           onClick={() => void startMerge()}
-          disabled={!editable || !canMergeAll}
-          title="Render the whole timeline into a single clip"
+          disabled={!editable || !canMergeAll || recording}
+          title={recording ? busyTitle : 'Render the whole timeline into a single clip'}
         >
           Merge all into one clip
         </button>
@@ -124,9 +127,9 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
           type="button"
           data-testid="btn-export"
           className="btn-primary"
-          disabled={!editable || !hasContent}
+          disabled={!editable || !hasContent || recording}
           onClick={openExport}
-          title="Export the timeline as an MP4"
+          title={recording ? busyTitle : 'Export the timeline as an MP4'}
         >
           Export
         </button>

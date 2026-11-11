@@ -1,10 +1,11 @@
 // Browser plumbing for the voice-over recorder: errors, the worklet module and the injectable entry points.
 
-export type RecorderErrorReason = 'denied' | 'no-device' | 'unsupported';
+export type RecorderErrorReason = 'denied' | 'no-device' | 'busy' | 'unsupported';
 
 const MESSAGES: Record<RecorderErrorReason, string> = {
   denied: "Microphone access was blocked. Allow it for this site in the browser's address bar, then try again.",
   'no-device': "No microphone was found. Connect one (or choose an input in your computer's sound settings), then try again.",
+  busy: 'The microphone is in use by another app or could not be started. Close other apps using it, then try again.',
   unsupported: 'This browser cannot record from the microphone here.',
 };
 
@@ -73,6 +74,8 @@ export function mapError(e: unknown): unknown {
   const name = e instanceof Error || e instanceof DOMException ? e.name : '';
   if (name === 'NotAllowedError' || name === 'SecurityError') return new RecorderError('denied');
   if (name === 'NotFoundError' || name === 'OverconstrainedError') return new RecorderError('no-device');
+  // Chromium reports a microphone held by another app (or one that failed to open) as NotReadableError/AbortError.
+  if (name === 'NotReadableError' || name === 'AbortError') return new RecorderError('busy');
   return e;
 }
 

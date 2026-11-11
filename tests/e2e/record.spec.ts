@@ -40,12 +40,13 @@ const audioTracks = (page: Page) =>
 async function startRecording(page: Page): Promise<void> {
   await page.getByTestId('record-button').click();
   await expect(page.getByTestId('record-timer')).toHaveText(/^\d\d:\d\d$/);
-  await expect(page.getByTestId('record-button')).toHaveAttribute('aria-label', 'Stop recording');
   await expect(page.getByTestId('record-button')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('record-button')).toHaveAttribute('aria-label', 'Record voice-over');
 }
 
 async function idle(page: Page): Promise<void> {
-  await expect(page.getByTestId('record-button')).toHaveAttribute('aria-label', 'Record voice-over');
+  await expect(page.getByTestId('record-button')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId('record-button')).toHaveText('Record'); // not "Saving…": the take is placed
   await expect(page.getByTestId('record-timer')).toHaveCount(0);
 }
 
@@ -72,6 +73,8 @@ test('records 2 s from the fake microphone at the playhead: one undo step, audib
 
   await startRecording(page);
   await expect.poll(async () => (await playerState(page)).playing).toBe(true);
+  await expect(page.getByTestId('btn-export')).toBeDisabled();
+  await expect(page.getByTestId('btn-export')).toHaveAttribute('title', 'Stop the voice-over recording first');
   await page.waitForTimeout(2000);
   await page.getByTestId('record-button').click();
   await idle(page);
@@ -142,6 +145,13 @@ test('Cancel and Escape discard the take: no media, no undo step', async ({ page
   await startRecording(page);
   await page.keyboard.press('Escape');
   await idle(page);
+  await expect(page.getByTestId('confirm-dialog')).toHaveCount(0);
+  // Keyboard Cancel: focus comes back to Record when the Cancel button goes away.
+  await startRecording(page);
+  await page.getByTestId('record-cancel').focus();
+  await page.keyboard.press('Enter');
+  await idle(page);
+  await expect(page.getByTestId('record-button')).toBeFocused();
   await page.waitForTimeout(300);
   expect(await snapshot(page)).toEqual(before);
   expect(await clipStates(page)).toEqual([]);
@@ -183,4 +193,46 @@ test('with the active audio track locked the take goes on a new audio track', as
   expect(tracks[0].clips).toEqual([]);
   expect(tracks[1].clips).toHaveLength(1);
   expect(tracks[1].clips[0].start).toBe(0);
+});
+
+test('Escape inside the track-rename field cancels the rename, not the recording', async ({ page }) => {
+  await open(page);
+  await page.getByTestId('record-playalong').uncheck();
+  await startRecording(page);
+  const header = page.locator('[data-testid="track-header"][data-track-kind="audio"]').first();
+  await header.getByTestId('track-name').dblclick();
+  const input = header.getByTestId('track-name-input');
+  await input.fill('Narration');
+  await input.press('Escape');
+  await expect(header.getByTestId('track-name-input')).toHaveCount(0);
+  await page.waitForTimeout(300);
+  await expect(page.getByTestId('record-button')).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('record-button').click();
+  await idle(page);
+  await expect.poll(async () => (await audioTracks(page))[0].clips.length).toBe(1);
+  await expect(mediaItem(page, 'Voice-over 1')).toHaveCount(1);
+});
+
+test('discarding a take longer than 5 s asks first; Cancel in the question keeps recording', async ({ page }) => {
+  await open(page);
+  await page.getByTestId('record-playalong').uncheck();
+  await startRecording(page);
+  await expect(page.getByTestId('record-timer')).toHaveText('00:06', { timeout: 10_000 });
+  await page.locator('body').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('Escape');
+  const dialog = page.getByTestId('confirm-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('Discard this recording?');
+  await expect(dialog.getByTestId('btn-confirm-ok')).toHaveText('Discard');
+  await dialog.getByTestId('btn-confirm-cancel').click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByTestId('record-button')).toHaveAttribute('aria-pressed', 'true');
+  // The Cancel button asks too; Discard drops the take: no media, no undo step.
+  const before = await snapshot(page);
+  await page.getByTestId('record-cancel').click();
+  await page.getByTestId('btn-confirm-ok').click();
+  await idle(page);
+  await page.waitForTimeout(300);
+  expect(await snapshot(page)).toEqual(before);
+  await expect(page.getByTestId('media-item')).toHaveCount(0);
 });

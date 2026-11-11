@@ -65,10 +65,13 @@ It is a static site built with React, TypeScript and Vite.
 - **Voice-over**: **Record** (in the toolbar) records from your microphone, starting at the playhead; press it
   again (**Stop**) to add the take as audio media named "Voice-over N", placed at the start position on the active
   audio track (or on a new audio track when that one is locked or the take would overlap a clip); one undo step.
-  **Cancel** or Esc discards the take. The browser asks for microphone permission the first time; if it was
+  **Cancel** or Esc discards the take (a take longer than 5 seconds asks first; Esc while typing in a field
+  or in a dialog does not). Export and Merge all wait until recording stops, and leaving the page asks first. The browser asks for microphone permission the first time; if it was
   blocked, allow it for this site in the address bar and try again. A timer shows the length; a take stops by
   itself at **30 minutes** (and keeps what was recorded). **Play along** (on by default) plays the timeline while
-  you record so you can talk over the picture: **use headphones**, or the microphone picks up the playback. The
+  you record so you can talk over the picture: **use headphones**, or the microphone picks up the playback. There
+  is no latency compensation, so the voice can land slightly early against the picture (by the microphone's
+  start-up and input latency, usually tens of milliseconds). The
   take is stored as an uncompressed mono WAV on your device (about 6 MB per minute at 48 kHz) and never leaves it.
 - **Export** to MP4 (H.264 video + AAC audio) at 1080p or 4K, with a progress bar, cancel, and a file name you
   choose. 1080p fits the video in a 1920x1080 frame of the project's orientation (so 1080 px on the short side
