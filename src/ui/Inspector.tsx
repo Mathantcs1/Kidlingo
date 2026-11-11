@@ -8,6 +8,7 @@ import { guard } from './Toast';
 import AudioInspector from './AudioInspector';
 import BlendModeSelect from './BlendModeSelect';
 import EffectsInspector from './EffectsInspector';
+import OverlayInspector from './OverlayInspector';
 import TransformFields from './TransformFields';
 
 const FIT_MODES: { mode: Clip['fit']; label: string; hint: string }[] = [
@@ -95,7 +96,7 @@ interface ControlsProps {
 
 function ClipControls({ clip, media, editable, locked }: ControlsProps) {
   const audible = clip.kind === 'audio' || (clip.kind === 'video' && media?.hasAudio !== false);
-  // Overlays take no fit, blend mode or effects (the core refuses them); their own inspector is Task 13's.
+  // Overlays take no fit, blend mode or effects (the core refuses them); they have their own inspector.
   const picture = clip.kind === 'video' || clip.kind === 'image';
   const name = clip.kind === 'overlay' ? overlayLabel(clip) : media?.name;
   return (
@@ -110,6 +111,7 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
       )}
       {audible && <AudioInspector clip={clip} media={media} editable={editable} locked={locked} />}
       {picture && <FitControl clip={clip} disabled={!editable} />}
+      {clip.kind === 'overlay' && <OverlayInspector clip={clip} editable={editable} locked={locked} />}
       {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} />}
       {picture && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
       {picture && <EffectsInspector clip={clip} editable={editable} locked={locked} />}

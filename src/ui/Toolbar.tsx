@@ -6,6 +6,7 @@ import { deleteSelected, mergeSelected, redo, rippleDeleteSelected, splitAtPlayh
 import { videoClipCount } from './edits';
 import { openExport, startMerge } from './exportJob';
 import { formatTimecode } from './layout';
+import OverlayMenu from './OverlayMenu';
 import RecordButton from './RecordButton';
 import { useRecording } from './recordCommands';
 import { usePlaybackStatus } from './usePlayback';
@@ -116,6 +117,7 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
       </div>
       <div className="toolbar-group">
         <RecordButton editable={editable} />
+        <OverlayMenu editable={editable} />
       </div>
       <div className="toolbar-group toolbar-end">
         {saveError !== null && (

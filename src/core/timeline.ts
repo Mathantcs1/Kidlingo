@@ -83,7 +83,10 @@ export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: nu
   let next: Clip;
   if (edge === 'start') {
     const delta = time - clip.start;
-    next = { ...clip, start: time, in: clip.in + delta };
+    // An overlay has no source: its start can move either way; `in` stays 0 (its animation runs from `start`).
+    next = clip.kind === 'overlay'
+      ? { ...clip, start: time, in: 0, out: clipDuration(clip) - delta }
+      : { ...clip, start: time, in: clip.in + delta };
     if (next.in < -EPS || next.start < -EPS) throw new TimelineError('Trim extends beyond source');
   } else {
     next = { ...clip, out: clip.in + (time - clip.start) };
