@@ -1,20 +1,25 @@
-import { newId } from '../core/model';
 import type { Id, Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
-import { visualClipsAt } from '../render/visible';
-import { getCapabilities } from '../media/support';
 import { ExportError } from './errors';
 import { loadChunk } from '../loadChunk';
-import { graphicsHint, isNoWebGl2, plainReason, toGlUnavailable } from '../render/glErrors';
+import { ensureAacEncoder } from './aacEncoder';
+import { createExportCompositor } from './exportCompositor';
+import { syncExportSources } from './exportSources';
+import { exportSize } from './exportSize';
+import type { ExportQuality } from './exportSize';
+import { discardTempFile, hasOpfs, openTempFile, rememberTempName } from './exportTemp';
+import type { TempFile } from './exportTemp';
 
 // Browser-only modules (Mediabunny, WebGL compositor, decoders, Web Audio mixer) are imported lazily inside
 // exportProject so this module stays importable in Node (unit tests) and they stay off the main bundle path.
 
-export type ExportQuality = '1080p' | '4k';
-
 export { ExportError };
+export { createExportCompositor } from './exportCompositor';
+export { evenDims, exportSize } from './exportSize';
+export type { ExportQuality } from './exportSize';
+export { cleanupExportTemp, exportTempName, exportUsesMemory } from './exportTemp';
 
 export interface ExportOptions {
   quality: ExportQuality;
@@ -27,8 +32,6 @@ export interface ExportOptions {
   maxLongSide?: number;
 }
 
-/** The frame each quality fits into, as [long side, short side] (1080p: 1920x1080, 4k: 3840x2160, either way up). */
-const FRAME: Record<ExportQuality, [number, number]> = { '1080p': [1920, 1080], '4k': [3840, 2160] };
 const VIDEO_BITRATE: Record<ExportQuality, number> = { '1080p': 12_000_000, '4k': 40_000_000 };
 const AUDIO_BITRATE = 128_000;
 const AUDIO_SAMPLE_RATE = 48_000;
@@ -40,145 +43,9 @@ const AUDIO_SLICE = 1;
 const FRAMES_SHARE = 0.95;
 /** Part of FRAMES_SHARE given to rendering the audio mix (when anything is audible). */
 const AUDIO_SHARE = 0.15;
-const TEMP_DIR = 'clipforge-export';
-
-/** Rounds each side down to the nearest even number (H.264 needs even dimensions); never below 2. */
-export function evenDims(w: number, h: number): { width: number; height: number } {
-  const even = (v: number): number => Math.max(2, Math.floor(v / 2) * 2);
-  return { width: even(w), height: even(h) };
-}
-
-/**
- * Scales the project format, preserving aspect, to the largest size that fits a 1920x1080 ('1080p') or
- * 3840x2160 ('4k') frame of the same orientation, then rounds down to even dimensions. Every preset therefore
- * exports at 1080 on its short side at 1080p (square 1080x1080, 4:5 1080x1350) and 2160 at 4k. `longSide`
- * (test-only) instead scales the long side to exactly that many pixels. Throws ExportError('Invalid project size')
- * for a non-finite or non-positive size.
- */
-export function exportSize(p: Project, q: ExportQuality, longSide?: number): { width: number; height: number } {
-  const { width, height } = p.format;
-  const positive = (v: number | undefined): boolean => v === undefined || (Number.isFinite(v) && v > 0);
-  if (!positive(width) || !positive(height) || !positive(longSide)) throw new ExportError('Invalid project size');
-  const long = Math.max(width, height);
-  const short = Math.min(width, height);
-  const [frameLong, frameShort] = FRAME[q];
-  const scale = longSide !== undefined ? longSide / long : Math.min(frameLong / long, frameShort / short);
-  return evenDims(Math.round(width * scale), Math.round(height * scale));
-}
 
 function abortError(): DOMException {
   return new DOMException('Aborted', 'AbortError');
-}
-
-/** OPFS with writable file streams (Safari before 26 has OPFS but no createWritable on the main thread). */
-function hasOpfs(): boolean {
-  const caps = getCapabilities();
-  return caps.opfs && caps.opfsWritable;
-}
-
-/** True when exports are built in memory (no writable OPFS): very long or 4K exports may run out of memory. */
-export function exportUsesMemory(): boolean {
-  return !hasOpfs();
-}
-
-async function tempDir(): Promise<FileSystemDirectoryHandle> {
-  const root = await navigator.storage.getDirectory();
-  return root.getDirectoryHandle(TEMP_DIR, { create: true });
-}
-
-/** Temp file name behind each exported Blob (see exportTempName). */
-const tempNames = new WeakMap<Blob, string>();
-
-/** The OPFS temp file backing a Blob returned by exportProject, if any. */
-export function exportTempName(blob: Blob): string | undefined {
-  return tempNames.get(blob);
-}
-
-/**
- * Removes the files in the export temp directory except those named in `keep`. Call it before a new export (not
- * when the dialog closes: the browser may still be reading a file it is downloading) and at app start.
- */
-export async function cleanupExportTemp(keep: readonly string[] = []): Promise<void> {
-  if (!hasOpfs()) return;
-  const dir = (await tempDir()) as unknown as FileSystemDirectoryHandle & { keys(): AsyncIterable<string> };
-  const names: string[] = [];
-  for await (const name of dir.keys()) if (!keep.includes(name)) names.push(name);
-  await Promise.all(names.map((n) => dir.removeEntry(n, { recursive: true }).catch(() => undefined)));
-}
-
-let aacEncoderRegistered = false;
-
-/** Uses the native AAC encoder when available, otherwise registers the WASM one (loaded on demand). */
-async function ensureAacEncoder(mb: typeof import('mediabunny'), quality: InstanceType<typeof mb.Quality>): Promise<void> {
-  if (aacEncoderRegistered) return;
-  const native = await mb.canEncodeAudio('aac', { numberOfChannels: 2, sampleRate: AUDIO_SAMPLE_RATE, quality });
-  if (native) return;
-  const { registerAacEncoder } = await loadChunk(() => import('@mediabunny/aac-encoder'));
-  registerAacEncoder();
-  aacEncoderRegistered = true;
-}
-
-type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
-
-interface CanvasOption {
-  label: string;
-  make(): RenderCanvas;
-}
-
-/** OffscreenCanvas when the browser has it, then a detached HTMLCanvasElement. */
-function defaultCanvases(width: number, height: number): CanvasOption[] {
-  const list: CanvasOption[] = [];
-  if (typeof OffscreenCanvas !== 'undefined') list.push({ label: 'OffscreenCanvas', make: () => new OffscreenCanvas(width, height) });
-  list.push({ label: 'canvas', make: () => document.createElement('canvas') });
-  return list;
-}
-
-/**
- * Creates the render compositor on the first of `canvases` that supports WebGL2. If none does, throws an
- * ExportError naming the last failure's plain-English reason (plus what to check when WebGL2 is missing); every
- * failure is logged with console.warn and listed in the error's `detail`.
- */
-export function createExportCompositor(
-  create: (canvas: RenderCanvas, opts: { preserveDrawingBuffer: boolean }) => Compositor,
-  width: number,
-  height: number,
-  canvases: CanvasOption[] = defaultCanvases(width, height),
-): Compositor {
-  let compositor: Compositor | null = null;
-  const failures: { label: string; error: unknown }[] = [];
-  for (const { label, make } of canvases) {
-    try {
-      compositor = create(make(), { preserveDrawingBuffer: true });
-      break;
-    } catch (e) {
-      failures.push({ label, error: e });
-    }
-  }
-  if (!compositor) {
-    const detail = failures.map(({ label, error }) => {
-      console.warn(`clipforge: export renderer could not start on ${label}`, error);
-      const g = toGlUnavailable(error);
-      return `${label}: ${g.reason === 'unknown' ? '' : `${g.reason}: `}${g.message}`;
-    });
-    const err = toGlUnavailable(failures.at(-1)?.error ?? new Error('no canvas to render on'));
-    const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
-    const hint = isNoWebGl2(err.reason) ? ` ${graphicsHint(ua)}` : '';
-    throw new ExportError(`The video renderer could not start: ${plainReason(err.reason)}.${hint}`, detail.join('\n'));
-  }
-  try {
-    compositor.resize(width, height);
-  } catch (e) {
-    compositor.dispose();
-    throw e;
-  }
-  return compositor;
-}
-
-interface TempFile {
-  dir: FileSystemDirectoryHandle;
-  name: string;
-  handle: FileSystemFileHandle;
-  writable: FileSystemWritableFileStream;
 }
 
 /**
@@ -239,35 +106,15 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
     // The audio track must be declared before the output starts, so "has audio" is decided from the audible
     // clips up front; the mix itself is rendered window by window, interleaved with the frames below.
     const mix = new MixdownStream(p, AUDIO_SAMPLE_RATE, { signal });
-    if (mix.audible) await ensureAacEncoder(mb, audioQuality);
+    if (mix.audible) await ensureAacEncoder(mb, audioQuality, AUDIO_SAMPLE_RATE);
     checkAbort();
 
     compositor = createExportCompositor(createCompositor, width, height);
-    // Decoders are opened when their clip comes under the playhead and closed as soon as it has passed, so only
-    // the clips visible in the current frame (never those on hidden layers) hold a decoder, frames and a texture.
-    const syncSources = async (t: number): Promise<void> => {
-      const visible = visualClipsAt(p, t).filter(
-        (clip) => clip.kind === 'video' && p.media[clip.mediaId] && !p.media[clip.mediaId].missing,
-      );
-      const ids = new Set(visible.map((clip) => clip.id));
-      for (const [id, open] of sources) {
-        if (ids.has(id)) continue;
-        open.close();
-        sources.delete(id);
-      }
-      for (const clip of visible) {
-        if (sources.has(clip.id)) continue;
-        sources.set(clip.id, await openVideoSource(clip.mediaId));
-        checkAbort();
-      }
-    };
+    const syncSources = (t: number): Promise<void> => syncExportSources(p, t, sources, openVideoSource, checkAbort);
 
     let target: InstanceType<typeof mb.StreamTarget> | InstanceType<typeof mb.BufferTarget>;
     if (hasOpfs()) {
-      const dir = await tempDir();
-      const name = `export-${newId()}.mp4`;
-      const handle = await dir.getFileHandle(name, { create: true });
-      temp = { dir, name, handle, writable: await handle.createWritable() };
+      temp = await openTempFile();
       // Without fast start the muxer writes mdat first and patches sizes / appends moov at the end through
       // positioned writes, which FileSystemWritableFileStream accepts directly.
       target = new mb.StreamTarget(temp.writable, { chunked: true });
@@ -321,7 +168,7 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
     if (temp) {
       // Wrapping the OPFS-backed File only references it (no copy) and gives the Blob an MP4 type.
       blob = new Blob([await temp.handle.getFile()], { type: 'video/mp4' });
-      tempNames.set(blob, temp.name);
+      rememberTempName(blob, temp.name);
     } else {
       const buffer = (target as InstanceType<typeof mb.BufferTarget>).buffer;
       if (!buffer) throw new ExportError('Export produced no data');
@@ -331,11 +178,7 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
     return blob;
   } catch (e) {
     if (output) await output.cancel().catch(() => undefined);
-    if (temp) {
-      // If the output never took the stream, it is still open; abort it so the temp file can go.
-      if (!temp.writable.locked) await temp.writable.abort().catch(() => undefined);
-      await temp.dir.removeEntry(temp.name).catch(() => undefined);
-    }
+    if (temp) await discardTempFile(temp);
     if (signal.aborted) throw abortError();
     throw e;
   } finally {
