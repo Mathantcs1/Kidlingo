@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EffectPipeline } from '../src/render/effects/pipeline';
-import { registerPassShader, uniformCall, unavailableTypes } from '../src/render/effects/programs';
+import { PASS_SHADERS, registerPassShader, uniformCall, unavailableTypes } from '../src/render/effects/programs';
 import type { EffectContext, PassShader, Uniforms } from '../src/render/effects/types';
 import type { VideoEffect, VideoEffectType } from '../src/core/model';
 import type { Mat3, TextureSlot } from '../src/render/gl';
@@ -12,14 +12,16 @@ const ok: PassShader = { fragment: 'ok', uniforms: () => ({}) };
 const ctx = (onUnavailable = vi.fn()): EffectContext => ({ time: 0, frame: 0, fps: 30, lut: () => null, onUnavailable });
 const fx = (type: VideoEffectType): VideoEffect => ({ id: `e-${type}`, type, enabled: true, params: { amount: 1 } });
 const input = (): TextureSlot => ({ tex: { kind: 'input' } as unknown as WebGLTexture, width: 8, height: 8 });
-const used: VideoEffectType[] = [];
+const saved = new Map<VideoEffectType, PassShader | undefined>();
 const register = (type: VideoEffectType, shader: PassShader): void => {
-  used.push(type);
+  if (!saved.has(type)) saved.set(type, PASS_SHADERS[type]);
   registerPassShader(type, shader);
 };
 
+// Restores the shipped shaders (blur, glow, …) rather than deleting them.
 afterEach(() => {
-  for (const t of used.splice(0)) registerPassShader(t, undefined);
+  for (const [t, s] of saved) registerPassShader(t, s);
+  saved.clear();
 });
 
 describe('a lost context during run is always "WebGL context lost"', () => {

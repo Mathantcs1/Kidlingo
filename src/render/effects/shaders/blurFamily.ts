@@ -11,10 +11,18 @@
 //             the last V pass with g = intensity·blurred: a' = clamp(a + g.a·(1 − a)), rgb' = min(rgb + g.rgb, a')
 //             (additive light, premultiplied-valid; spreads a soft glow of alpha g.a over transparent areas).
 //   pixelate  blocks of pixelBlock(size) working pixels anchored at the top-left; each takes the nearest pixel to the
-//             block centre (clamped to the picture for the partial last blocks). 1 pass.
+//             block centre (clamped to the picture for the partial last blocks; sampled LINEAR at that pixel's centre,
+//             so exact when source texels = working pixels, see below). 1 pass.
 // The first pass samples the clip's input through its uv matrix (rotation/mirror), so the blur step in source uv is
-// the linear part of u_uv applied to one working pixel. Where the input texture's resolution differs from the
-// working size (a 4K video in a smaller working size) the linear-sampling taps are a close approximation, not exact.
+// the linear part of u_uv applied to one working pixel. When the source has MORE texels than the working size (the
+// working size is capped at 2× the format's long side) the first H pass and pixelate's block centre sample the source
+// with LINEAR filtering, i.e. a bilinear mix of source texels rather than the exact taps / the nearest texel: an
+// accepted approximation (exact when texels = working pixels, as in every drift guard).
+//
+// Known limit (Task 11 adds the time guard): cost is not bounded per frame. Blur 100 on a 3840×2160 working size is
+// sigma 100 → a pre-blur stage (31 reads) and a strided stage (61 reads), H and V: 184 reads per pixel, ≈ 1.5 G texture
+// fetches per blur; a maximal stack of 8 is ≈ 12 G fetches per frame (GPU watchdog / lost-context risk on slow GPUs).
+// Candidate fix: run the strided stage at 1/s resolution.
 import { GLOW_KNEE, MAX_TAPS, BLOCK_EPS, blurRadius, blurStages, pixelBlock } from '../blurMath';
 import type { PassRunner, PassShader, Uniforms } from '../types';
 import { GLSL_HEADER, GLSL_LUMA, GLSL_PREMULTIPLY, f } from './glsl';

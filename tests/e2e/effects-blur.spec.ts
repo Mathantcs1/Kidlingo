@@ -57,8 +57,10 @@ test('blur radius 0, sharpen amount 0, glow intensity 0 or radius 0 and pixelate
 test('pixelate: every block is constant and takes the colour of its centre pixel, anchored at the top-left', async ({ page }) => {
   await openHarness(page);
   const m = await gradientImage(page);
-  // The gradient is 48 rows tall, so size 180 (1080-row pixels) is a block of 180 × 48 / 1080 = 8 working pixels.
-  const r = await renderEffects(page, project(GRADIENT, [m], [clipOf(m, { out: 1, effects: [fx('pixelate', { size: 180 })] })]), [0]);
+  // The gradient is 48 rows tall, so size 225 (1080-row pixels) is a block of 225 × 48 / 1080 = 10 working pixels:
+  // 256×48 leaves partial last blocks (6 columns, 8 rows), so any other anchoring than the top-left is visible.
+  const effects = [fx('pixelate', { size: 225 })];
+  const r = await renderEffects(page, project(GRADIENT, [m], [clipOf(m, { out: 1, effects })]), [0]);
   expect(r.error).toBeNull();
   expect(r.passes).toEqual([1]);
   const [plain] = await render(page, project(GRADIENT, [m], [clipOf(m, { out: 1 })]), [0]);
@@ -66,7 +68,7 @@ test('pixelate: every block is constant and takes the colour of its centre pixel
   const wrong: string[] = [];
   for (let y = 0; y < 48; y++) {
     for (let x = 0; x < 256; x++) {
-      const want = px(plain, x - (x % 8) + 4, y - (y % 8) + 4);
+      const want = px(plain, Math.min(255, x - (x % 10) + 5), Math.min(47, y - (y % 10) + 5));
       if (px(f, x, y).join() !== want.join()) wrong.push(`${x},${y}: ${px(f, x, y)} vs ${want}`);
     }
   }

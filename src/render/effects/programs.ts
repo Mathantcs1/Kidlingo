@@ -94,6 +94,8 @@ class GlPassProgram implements PassProgram {
     const gl = this.gl;
     gl.useProgram(this.program);
     const extra = Object.entries(textures);
+    // Without its texture, a declared u_input sampler reads unit 0 (u_src), never a stale unit (feedback loop).
+    if (!('u_input' in textures)) gl.uniform1i(this.at('u_input'), 0);
     for (const [i, [name, t]] of extra.entries()) {
       gl.activeTexture(gl.TEXTURE1 + i);
       gl.bindTexture(gl[t.target], t.texture);

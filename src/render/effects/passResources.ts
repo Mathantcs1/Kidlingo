@@ -8,15 +8,28 @@ export type TargetPair = [RenderTarget, RenderTarget];
 
 interface PoolEntry {
   pair: TargetPair;
+  /** Bytes of one target of this entry's size (width × height × 4). */
+  bytes: number;
   /** The third target, created only when a multi-pass effect needs it (see `target`). */
   scratch?: RenderTarget;
 }
 
+/** The pool's byte budget: 640 MiB of RGBA8 effect targets (see TargetPool). */
+export const POOL_BYTE_BUDGET = 640 * 1024 * 1024;
+
 /**
- * Effect targets keyed by working size: a ping-pong pair per size plus, on demand, a scratch target; the least
- * recently used size is evicted beyond `max` (default 3). Memory bound: ≤ 3 RGBA8 targets per size, ≤ `max` sizes,
- * so at most 3 × max × (working width × height × 4) bytes, the working size being capped at 2× the format's long
- * side and MAX_TEXTURE_SIZE (pipeline.ts workingSize).
+ * Effect targets keyed by working size: a ping-pong pair per size plus, on demand, a scratch target. After every
+ * `target` call the pool keeps at most `max` sizes (default 3, least recently used evicted) AND at most `budget` bytes
+ * (default POOL_BYTE_BUDGET), counting every existing target as working width × height × 4: least recently used
+ * scratches are dropped first, then least recently used sizes. The size of the CURRENT call is never evicted, so a
+ * single working size whose 2-3 targets exceed the budget is kept while in use (the total is then just that entry).
+ *
+ * Worst cases (working size = source capped at 2× the format's long side and MAX_TEXTURE_SIZE; 1 target = W×H×4):
+ *   format 1080p (working ≤ 3840×2160): 33.2 MB/target; 3 sizes × 2 = 199 MB, × 3 with scratch = 299 MB (< budget).
+ *   format 4K or portrait 4K (≤ 7680×4320): 132.7 MB/target; one size 265 MB (pair) / 398 MB (with scratch); three
+ *   sizes would be 796 MB / 1.19 GB, so the budget caps the total at 671 MB (640 MiB).
+ *   format 8K (≤ 15360×8640 where MAX_TEXTURE_SIZE ≥ 16384): 531 MB/target, one size alone 1.06-1.59 GB: the only
+ *   case above the budget, transiently, for the size in use.
  */
 export class TargetPool {
   private readonly entries = new Map<string, PoolEntry>();
@@ -24,6 +37,7 @@ export class TargetPool {
   constructor(
     private readonly gl: WebGL2RenderingContext,
     private readonly max = 3,
+    private readonly budget = POOL_BYTE_BUDGET,
   ) {}
 
   /**
@@ -33,16 +47,18 @@ export class TargetPool {
    */
   target(size: Size, avoid: readonly WebGLTexture[]): RenderTarget {
     const entry = this.entry(size);
-    for (const t of entry.pair) if (!avoid.includes(t.slot.tex)) return t;
-    if (!entry.scratch) {
+    let target = entry.pair.find((t) => !avoid.includes(t.slot.tex));
+    if (!target) {
       try {
-        entry.scratch = new RenderTarget(this.gl);
+        entry.scratch ??= new RenderTarget(this.gl);
       } catch (e) {
         assertNotLost(this.gl);
         throw e;
       }
+      target = entry.scratch;
     }
-    return entry.scratch;
+    this.enforceBudget(entry);
+    return target;
   }
 
   /** Allocated GL targets and their texture bytes (RGBA8), for tests and the memory bound. */
@@ -69,7 +85,7 @@ export class TargetPool {
       this.entries.set(key, hit);
       return hit;
     }
-    const entry = { pair: this.create() };
+    const entry: PoolEntry = { pair: this.create(), bytes: size.width * size.height * 4 };
     this.entries.set(key, entry);
     for (const [k, old] of this.entries) {
       if (this.entries.size <= this.max) break;
@@ -77,6 +93,24 @@ export class TargetPool {
       this.entries.delete(k);
     }
     return entry;
+  }
+
+  /** Drops LRU scratches, then LRU sizes, other than `current`, while the planned bytes exceed the budget. */
+  private enforceBudget(current: PoolEntry): void {
+    const planned = (): number => [...this.entries.values()].reduce((n, e) => n + all(e).length * e.bytes, 0);
+    for (const e of this.entries.values()) {
+      if (planned() <= this.budget) return;
+      if (e !== current && e.scratch) {
+        e.scratch.dispose();
+        e.scratch = undefined;
+      }
+    }
+    for (const [k, e] of this.entries) {
+      if (planned() <= this.budget) return;
+      if (e === current) continue;
+      for (const t of all(e)) t.dispose();
+      this.entries.delete(k);
+    }
   }
 
   private create(): TargetPair {

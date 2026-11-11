@@ -1,5 +1,7 @@
 // DRIFT GUARD of the blur family (Plan 4 Task 7): every param alone at its min and max, the defaults and combined sets
-// through the real compositor, per pixel against the CPU references of blurRef.ts (≤ 3/255); soft alpha edges
+// through the real compositor, per pixel against the CPU references of blurRef.ts (≤ 3/255: calibrated on SwiftShader,
+// where GL and CPU agree to ≤ 1/255; real GPUs filter with ~8-bit fractional weights, ≈ 1/255 more, doubled by sharpen
+// amount 2); soft alpha edges
 // (15 % / 50 %) keep their straight colour (no premultiplied halo); a rotated phone video blurs upright.
 import { join } from 'node:path';
 import { test, expect } from '@playwright/test';
@@ -86,21 +88,30 @@ test('soft 50 % and 15 % alpha edges: blur, sharpen and glow match the reference
   }
 });
 
-test('a rotated phone video blurs upright: matches the reference applied to the plain upright frame', async ({ page }) => {
-  test.setTimeout(90_000);
-  await openHarness(page);
-  const [m] = await importPaths(page, [join(dir, 'quad-cw90.mp4')]);
-  const size = { width: m.width!, height: m.height! };
-  const p = (effects: VideoEffect[]) =>
-    project({ ...size, fps: 30 }, [m], [clipOf(m, { effects, transform: fitTransform(size, size, 'fit') })]);
-  const [plain] = await render(page, p([]), [0.5]);
-  for (const [type, params] of [['blur', { radius: 200 }], ['pixelate', { size: 150 }]] as const) {
-    const r = await renderEffects(page, p([fx(type, params)]), [0.5]);
-    expect(r.error).toBeNull();
-    const err = worstVsReference(r.frames[0], reference(type, opaque(plain), params));
-    console.log(`rotated video ${type}: max |GL − reference| = ${err.toFixed(3)} / 255`);
-    // The effect really changed the picture (the quadrants' borders blur / snap to blocks).
-    expect(worstDiff(plain, r.frames[0]), `rotated ${type} changed the frame`).toBeGreaterThan(50);
-    expect(err, `rotated ${type}`).toBeLessThanOrEqual(3);
-  }
-});
+// sharpen and glow composite against the effect's INPUT (u_input through its uv rows): a rotated or mirrored source
+// checks those rows (a transposed or untranslated matrix would composite a wrongly oriented picture).
+const ORIENTED: [BlurType, Record<string, number>][] = [
+  ['blur', { radius: 200 }], ['pixelate', { size: 150 }], ['sharpen', { amount: 2, radius: 5 }],
+  ['glow', { threshold: 0.3, radius: 60, intensity: 1 }],
+];
+
+for (const file of ['quad-cw90.mp4', 'quad-cw90-hflip.mp4']) {
+  test(`a rotated${file.includes('hflip') ? ', mirrored' : ''} phone video: every blur-family effect matches the reference on the upright frame`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await openHarness(page);
+    const [m] = await importPaths(page, [join(dir, file)]);
+    const size = { width: m.width!, height: m.height! };
+    const p = (effects: VideoEffect[]) =>
+      project({ ...size, fps: 30 }, [m], [clipOf(m, { effects, transform: fitTransform(size, size, 'fit') })]);
+    const [plain] = await render(page, p([]), [0.5]);
+    for (const [type, params] of ORIENTED) {
+      const r = await renderEffects(page, p([fx(type, params)]), [0.5]);
+      expect(r.error).toBeNull();
+      const err = worstVsReference(r.frames[0], reference(type, opaque(plain), params));
+      console.log(`${file} ${type}: max |GL − reference| = ${err.toFixed(3)} / 255`);
+      // The effect really changed the picture (sharpen radius 5 is only 0.6 px at 128 rows: hardly visible there).
+      if (type !== 'sharpen') expect(worstDiff(plain, r.frames[0]), `${file} ${type} changed the frame`).toBeGreaterThan(50);
+      expect(err, `${file} ${type}`).toBeLessThanOrEqual(3);
+    }
+  });
+}

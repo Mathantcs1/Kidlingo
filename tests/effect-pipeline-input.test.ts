@@ -76,6 +76,28 @@ describe('a multi-pass effect reading its input', () => {
     expect(rows).toEqual([[1, 0, 0], [0, 1, 0]]);
   });
 
+  it('passes the exact rows of a rotated, translated first-effect uv (column-major mat3)', () => {
+    register('sharpen', { ...ok, run: (pass) => { pass.draw({}); pass.draw({}, { input: true }); } });
+    const rows: number[][] = [];
+    const { gl } = fakeGl({ uniform3fv: (_l, v) => void rows.push([...(v as number[])]) });
+    // uv = (1 − y, x): a quarter turn with a translation; x' = m0·x + m3·y + m6, y' = m1·x + m4·y + m7.
+    new EffectPipeline(gl).run(input(), { width: 8, height: 8 }, [0, 1, 0, -1, 0, 0, 1, 0, 1], [fx('sharpen')], ctx());
+    expect(rows).toEqual([[0, -1, 1], [1, 0, 0]]);
+  });
+
+  it('points u_input at unit 0 in passes without the input, at its own unit in the input pass', () => {
+    register('glow', { ...ok, run: (pass) => { pass.draw({}); pass.draw({}, { input: true }); } });
+    const { gl, log } = fakeGl({ getUniformLocation: (_p, name) => ({ name }) });
+    new EffectPipeline(gl).run(input(), { width: 8, height: 8 }, IDENTITY, [fx('glow')], ctx());
+    const units: unknown[] = [];
+    let unit: unknown = 'unset';
+    for (const [name, a] of log) {
+      if (name === 'uniform1i' && (a[0] as { name?: string } | null)?.name === 'u_input') unit = a[1];
+      if (name === 'drawArrays') units.push(unit);
+    }
+    expect(units).toEqual([0, 1]);
+  });
+
   it('a failure in a later pass rolls back to the untouched input', () => {
     register('invert', ok);
     register('glow', { ...ok, run: (pass) => { pass.draw({}); pass.draw({}); throw new Error('half way'); } });
