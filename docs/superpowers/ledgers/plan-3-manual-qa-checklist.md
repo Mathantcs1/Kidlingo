@@ -10,7 +10,7 @@ item; note anything odd.
 2. **Pan (balance law).** Select the music clip, set Pan to -100 %, then +100 %. Hard left: you hear it only in the
    left ear, at the SAME loudness the left side had at centre (the far channel is dropped, the near one is not
    boosted or cut). At 0 % both sides are unchanged. A mono file at hard left still plays at normal level on that side.
-3. **Track volume.** Drag the volume slider in an audio track header: the whole track gets quieter/louder live while
+3. **Track volume.** Drag the volume slider in an audio (or video) track header: the whole track gets quieter/louder live while
    playing, and the clip volume in the Inspector still works on top of it. Check the header layout in item 15.
 4. **Effects, one by one.** On a speech clip add each effect from **Add effect** and play: **EQ** (push High +12: tinny;
    Low +12: boomy), **High-pass** (thin, no rumble), **Low-pass** (muffled), **Compressor** (loud parts evened out),
@@ -30,7 +30,7 @@ item; note anything odd.
    playhead), trimmed clips show only their visible part, and the waveform redraws sharply after a window resize.
 9. **Detach / Attach back.** Select a video with sound, click **Detach audio**: the video clip shows a detached
    badge, an audio clip appears on an audio track with the same sound, and playback is not doubled. **Attach back** is
-   offered only while the twin is unedited (move, trim, fade or effect on it hides the button; one undo also restores).
+   offered only while the twin still has the sound settings (volume, fades, pan, effects) the video clip had when detached (move, trim, or any change to them on the twin hides the button; one undo also restores). Also check a video clip with a fade before Detach: Attach back is still offered.
 10. **Auto-ducking by ear.** Put the voice on one audio track and music on another. In the music track header
     open the D (duck) button, choose the voice track as the source. Play: the music dips under the voice CLIP and
     comes back after it (attack/release as set); change Amount/Attack/Release and hear the difference. Ducking follows
@@ -46,7 +46,9 @@ item; note anything odd.
     early against the picture (microphone latency, tens of ms; there is no compensation). Try Play along off too.
 13. **Esc and limits while recording.** Esc during a take under 5 s discards it; over 5 s it asks first. Export and
     Merge all are unavailable while recording, and closing the tab asks first. (Optional, long: a take stops by itself
-    at 30 minutes and keeps what was recorded.)
+    at 30 minutes and keeps what was recorded.) Switching to another browser tab while recording is believed harmless
+    in desktop Chrome but is unverified elsewhere: try it. Echo effect: loud material can clip (wet gain up to about
+    1.67x at defaults, about 11x at feedback 0.9 / mix 1); lower feedback/mix or the clip volume (a limiter is future work).
 14. **Export matches the preview.** Build a project with fades, an EQ + compressor on the voice, ducked music and a
     voice-over; export 1080p. Open the MP4 in **QuickTime Player** (and VLC if available): it plays, the length
     matches the timeline, and the audio sounds like the preview (fades, effects, ducking, pan). Check a pitch-shifted

@@ -90,7 +90,7 @@ Environment facts that matter:
 ### Plan 3 (audio editing, on `claude/quirky-cannon-7vz48u`, NOT deployed)
 - Project data model **v3**: every clip has `audio` (`fadeIn`, `fadeOut`, `pan`, `silent`, `effects[]`), tracks have `volume` and `duck`. Migration chain v1 -> v2 -> v3 in `src/core/migrate.ts`; a newer version stays "unsupported" and is never overwritten.
 - ONE shared clip chain (`src/audio/chain.ts`) builds the gain/fade/pan/effect graph for both the live mixer and the offline export mixdown (same code, so preview = export).
-- Detach audio (twin audio clip, `silent` flag, badge) and Attach back (only for an unedited twin); per-clip fades and balance-law pan; track volume slider; waveforms from cached peaks.
+- Detach audio (twin audio clip placed on an audio track with the same mix settings as the video track or a new track copying them, `silent` flag, badge) and Attach back (only while the twin still equals the video clip's own volume/fades/pan/effects); per-clip fades and balance-law pan; track volume slider; waveforms from cached peaks.
 - Effect chain per clip (EQ, high/low-pass, compressor, reverb, echo, gain, pitch shift, noise reduction), presets (Podcast, Radio, Telephone, Deep, Chipmunk), Normalise.
 - Auto-ducking (track `duck` = source track + amount/attack/release; follows clip coverage), with a header popover and cycle refusal.
 - Voice-over recording (mic -> mono WAV, Play along, 30 min cap), `Permissions-Policy: microphone=(self)` in `vercel.json`.
@@ -141,7 +141,7 @@ Full text with costs is in `docs/superpowers/ledgers/plan-1-foundation-ledger.md
 10. Any history change pauses playback; track-flag toggles must go through `store.apply`.
 11. Space = play/pause globally, except on keyboard-focused native controls (input-modality tracking decides).
 12. AAC: native `AudioEncoder` when available, else lazily imported WASM encoder; output is always AAC.
-13. Plan 3: live preview and export must go through the same `chain.ts`; pan is a balance law (far channel dropped, near channel unchanged); effects are per clip; ducking follows source-clip coverage; a detached twin is matched by `Attach back` only while unedited; recorded audio is a normal audio media (WAV in OPFS).
+13. Plan 3: live preview and export must go through the same `chain.ts`; pan is a balance law (far channel dropped, near channel unchanged); effects are per clip; ducking follows source-clip coverage; a detached twin is matched by `Attach back` only while it equals the video clip's own audio settings; recorded audio is a normal audio media (WAV in OPFS).
 14. Style: TypeScript strict, 2 spaces, single quotes, semicolons; keep files ≲200 lines (a few exceed, see issues).
 
 ## 7. Completed work (commit trail)
@@ -195,8 +195,8 @@ Plan 3 (audio) known issues and deferred items (full minors in the Plan 3 ledger
 - Effects are per clip only (no track or master chain, no crossfades); detached audio is not linked to its video clip; a split restarts effects cold and tails stop at the clip end.
 - Noise reduction is a basic spectral gate and runs on the main thread in short slices (first Play of a denoised clip waits ~0.5 s; a Worker was deferred); a clip that is only noise is left unchanged; probes cover at most ~4 s, so speech with pauses only outside probes gets no reduction; a failed noise probe is cached as null for the session (an export could then render a clip without reduction after a transient OPFS error).
 - Echo wet can reach about x11 at feedback 0.9 / mix 1 and clip in the export.
-- Recorder: the worklet posts every 128-frame quantum (batch to ~2048-4096 frames); Safari interrupted-state and track-mute handling is missing; 96/192 kHz interfaces use more memory (consider an `AudioContext` sampleRate of 48000); no latency compensation for Play along; recording is held in memory (30 min cap).
-- Attach back is not offered once the twin was edited, and also not if the video clip had fades/pan/effects before the detach (the twin copies them).
+- Recorder: the worklet posts every 128-frame quantum (batch to ~2048-4096 frames); Safari interrupted-state and track-mute handling is missing; no latency compensation for Play along; recording is held in memory (30 min cap).
+- Attach back is not offered once the twin was edited (compared with the video clip's own settings).
 - Slider arrow-key holds create many undo steps; waveform does not redraw on DPR/track-height change and failed peak decodes are not negatively cached; the two-line audio track header layout has never been viewed in a real browser (manual QA item).
 - Positive duck amounts are clamped silently; the duck popover is a `role=group` without a focus trap.
 

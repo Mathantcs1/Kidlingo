@@ -55,6 +55,8 @@ export interface RecorderDeps {
   createNode?: (ctx: ContextLike, name: string) => NodeLike;
 }
 
+const RECORD_SAMPLE_RATE = 48000;
+
 export const CONSTRAINTS: MediaStreamConstraints = { audio: { channelCount: { ideal: 1 } }, video: false };
 
 export function browserDeps(): Required<RecorderDeps> {
@@ -64,7 +66,15 @@ export function browserDeps(): Required<RecorderDeps> {
       if (!md?.getUserMedia) return Promise.reject(new RecorderError('unsupported'));
       return md.getUserMedia(c);
     },
-    createContext: () => (typeof AudioContext === 'undefined' ? null : (new AudioContext() as unknown as ContextLike)),
+    createContext: () => {
+      if (typeof AudioContext === 'undefined') return null;
+      // 48 kHz keeps a long take small on 96/192 kHz interfaces; fall back to the device rate if the option is rejected.
+      try {
+        return new AudioContext({ sampleRate: RECORD_SAMPLE_RATE }) as unknown as ContextLike;
+      } catch {
+        return new AudioContext() as unknown as ContextLike;
+      }
+    },
     createNode: (ctx, name) =>
       new AudioWorkletNode(ctx as unknown as BaseAudioContext, name, { numberOfInputs: 1, numberOfOutputs: 0 }) as unknown as NodeLike,
   };

@@ -33,9 +33,9 @@ It is a static site built with React, TypeScript and Vite.
   position and scale to that mode's framing. Changing the project format keeps each clip's mode.
 - **Audio editing** (the Inspector's Audio section for one selected clip with sound, and the audio track headers):
   - **Detach audio** turns a video clip's sound into its own audio clip on an audio track (the video clip is silenced
-    and badged). **Attach back** removes the twin again, offered only while the twin is unedited.
+    and badged). **Attach back** removes the twin again, offered only while the twin still has the sound settings (volume, fades, pan, effects) the video clip had when detached.
   - **Waveforms** on audio clips (and a thin strip on video clips with sound), computed once per file and cached.
-  - **Fade in / fade out** (seconds) and **pan** per clip; **track volume** with a slider in each audio track header.
+  - **Fade in / fade out** (seconds) and **pan** per clip; **track volume** with a slider in each audio and video track header (video clips' sound uses their track's volume).
     Pan is a balance law: at hard left or right the far channel is dropped and the near one stays at its source level.
   - **Effect chain** per clip (add, reorder, toggle, edit, remove): EQ, high-pass, low-pass, compressor, reverb, echo,
     gain, pitch shift and noise reduction, plus one-click **presets** (Podcast voice, Radio, Telephone, Deep voice,
@@ -59,7 +59,8 @@ It is a static site built with React, TypeScript and Vite.
   timeline into a single new video in the media bin and replaces the timeline with it (one undo step; it can be
   cancelled). With layers, the new video is the composite of the visible layers (hidden layers are left out; if any hold clips you are asked to confirm first, because those clips are removed) with
   the sound of the audible tracks (muted ones, or those silenced by a solo elsewhere, are left out); it lands on the
-  lowest video layer, which is unhidden, unmuted and unlocked so the result is seen and heard. Every solo is
+  lowest video layer, which is unhidden, unmuted and unlocked, with its volume reset to 100 % and no ducking (the
+  merged video already holds them) so the result is seen and heard. Every solo is
   cleared (the merged video already holds the mix); otherwise tracks keep their names, and the other (now empty)
   tracks their mute and hide flags. Undo brings back every clip and flag. A locked track that holds clips blocks
   it up front ("Track is locked") before anything is rendered; an empty locked track does not.
@@ -214,7 +215,9 @@ Layers and the preview:
     the clip, so it needs a little room tone; a clip that is only noise is left unchanged. It runs on the main thread
     in short slices, so the first Play of a denoised clip can wait about half a second. Export always renders it fully.
   - **Ducking** follows where the source track's clips are (their coverage), not whether anyone is speaking.
-  - Echo with high feedback and mix can get very loud and clip in the export; keep an eye on those settings.
+  - Echo can clip loud material in preview and export: the wet gain reaches about 1.67x at the defaults and about 11x at
+    feedback 0.9 / mix 1. Use lower feedback or mix, or lower the clip volume (a limiter is future work).
+  - Hiding the browser tab while recording is believed harmless in desktop Chrome but is unverified elsewhere.
   - **Voice-over** is recorded as mono WAV, held in memory until you stop and capped at 30 minutes. With Play along the
     voice can land slightly early (no latency compensation), and without headphones the microphone hears the playback.
     It needs the browser's microphone permission, and the host must not block it (`Permissions-Policy: microphone=(self)`,

@@ -12,15 +12,27 @@ export function formatPan(pan: number): string {
   return n === 0 ? 'C' : n < 0 ? `L${-n}` : `R${n}`;
 }
 
-/** True when `c` still has the settings detachAudio gives its copy (no fades, centre pan, no effects, same volume). */
+const sameEffects = (a: Clip['audio']['effects'], b: Clip['audio']['effects']): boolean =>
+  a.length === b.length &&
+  a.every((x, i) => {
+    const y = b[i];
+    const kx = Object.keys(x.params);
+    return x.type === y.type && x.enabled === y.enabled && kx.length === Object.keys(y.params).length && kx.every((k) => x.params[k] === y.params[k]);
+  });
+
+/**
+ * True when `c` still has the sound settings detachAudio copied from the video clip: same volume, fades, pan and
+ * effects (type, order, enabled, params; ids differ). `silent` is ignored (the video clip is silent by then).
+ */
 function isUneditedTwin(c: Clip, video: Clip): boolean {
   const a = c.audio;
-  return a.fadeIn === 0 && a.fadeOut === 0 && a.pan === 0 && !a.silent && a.effects.length === 0 && c.volume === video.volume;
+  const v = video.audio;
+  return a.fadeIn === v.fadeIn && a.fadeOut === v.fadeOut && a.pan === v.pan && !a.silent && c.volume === video.volume && sameEffects(a.effects, v.effects);
 }
 
 /**
  * The audio clip created by detaching `videoClipId`'s sound: the ONLY audio clip of the same media with identical
- * start/in/out, and still unedited (default fades/pan/effects, same volume). Null when the clip is not a detached
+ * start/in/out, and still unedited (same fades/pan/effects/volume as the video clip's own audio settings). Null when the clip is not a detached
  * video, no such clip exists, several match, or the match was edited (Attach back would delete that work).
  */
 export function findDetachedTwin(p: Project, videoClipId: Id): Clip | null {

@@ -106,6 +106,23 @@ describe('findDetachedTwin strictness', () => {
     for (const fn of edits) expect(findDetachedTwin(edit(d, twin.id, fn), 'cv')).toBeNull();
     expect(findDetachedTwin(d, 'cv')?.id).toBe(twin.id);
   });
+  it('offers the twin when the video clip had audio settings before Detach, but not once the twin differs from them', () => {
+    let p = base();
+    const e = { id: 'e1', type: 'gain', enabled: true, params: { gainDb: 3 } } as never;
+    p = edit(p, 'cv', (c) => ({ ...c, audio: { ...c.audio, fadeIn: 0.5, fadeOut: 0.25, pan: -0.3, effects: [e] } }));
+    const d = detachAudio(p, 'cv');
+    const twin = findDetachedTwin(d, 'cv');
+    expect(twin?.kind).toBe('audio');
+    const tweaks: ((c: Clip) => Clip)[] = [
+      (c) => ({ ...c, audio: { ...c.audio, fadeIn: 0.6 } }),
+      (c) => ({ ...c, audio: { ...c.audio, pan: 0 } }),
+      (c) => ({ ...c, audio: { ...c.audio, effects: [] } }),
+      (c) => ({ ...c, audio: { ...c.audio, effects: c.audio.effects.map((x) => ({ ...x, params: { gainDb: 4 } })) } }),
+      (c) => ({ ...c, audio: { ...c.audio, effects: c.audio.effects.map((x) => ({ ...x, enabled: false })) } }),
+      (c) => ({ ...c, volume: 0.4 }),
+    ];
+    for (const fn of tweaks) expect(findDetachedTwin(edit(d, twin!.id, fn), 'cv')).toBeNull();
+  });
   it('offers nothing when two clips match', () => {
     const d = detachAudio(base(), 'cv');
     const twin = findDetachedTwin(d, 'cv')!;

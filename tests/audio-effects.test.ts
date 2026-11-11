@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EFFECT_SCHEMAS, MAX_PRE_ROLL, chainLatency, chainMargins, clampParams, defaultParams, hasTail } from '../src/audio/effects/params';
 import { PITCH_WINDOW, pitchCurves } from '../src/audio/effects/pitchMath';
 import { reverbImpulse } from '../src/audio/effects/impulse';
-import { normaliseGainDb } from '../src/audio/effects/normalise';
+import { normaliseGainDb, normaliseGainOrNull } from '../src/audio/effects/normalise';
 import { PRESETS, availablePresets } from '../src/audio/presets';
 import { applyPreset, setGainEffect } from '../src/core/audioPresets';
 import { addEffect } from '../src/core/audioEdits';
@@ -174,6 +174,12 @@ describe('normaliseGainDb', () => {
   it('is 0 for silence or empty peaks', () => {
     expect(normaliseGainDb(flatPeaks(0), clip())).toBe(0);
     expect(normaliseGainDb({ rate: 100, duration: 0, data: new Uint8Array(0) }, clip())).toBe(0);
+  });
+  it('normaliseGainOrNull is null for a silent or zero-length clip and the gain otherwise', () => {
+    expect(normaliseGainOrNull(flatPeaks(0), clip())).toBeNull();
+    expect(normaliseGainOrNull({ rate: 100, duration: 0, data: new Uint8Array(0) }, clip())).toBeNull();
+    expect(normaliseGainOrNull(flatPeaks(0.5), clip({ in: 2, out: 2 }))).toBeNull();
+    expect(normaliseGainOrNull(flatPeaks(0.5), clip())).toBe(normaliseGainDb(flatPeaks(0.5), clip()));
   });
   it('only looks at the clip source range [in, out)', () => {
     const p = flatPeaks(0.25);

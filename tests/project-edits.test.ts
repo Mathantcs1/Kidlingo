@@ -488,6 +488,14 @@ describe('replaceWithMedia with layers (merge all)', () => {
     expect(r.tracks[0].clips).toHaveLength(1);
   });
 
+  it('resets the target track volume and duck (the mixdown already holds them) and leaves other tracks alone', () => {
+    const duck = { sourceTrackId: 'A1', amountDb: -12, attack: 0.05, release: 0.3 };
+    const p = setTrack(setTrack(layered(), 'L1', { volume: 0.5, duck }), 'L3', { volume: 1.5 });
+    const r = replaceWithMedia(p, other);
+    expect(r.tracks[0]).toMatchObject({ id: 'L1', volume: 1, duck: null });
+    expect(r.tracks.find((t) => t.id === 'L3')!.volume).toBe(1.5);
+  });
+
   it('resets hidden on the target even when it holds clips (unlocked)', () => {
     const r = replaceWithMedia(setTrack(layered(), 'L1', { hidden: true }), other);
     expect(r.tracks[0].hidden).toBe(false);

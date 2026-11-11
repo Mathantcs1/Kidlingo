@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RecorderError, WORKLET_SOURCE, createRecorder } from '../src/media/recorder';
+import { browserDeps } from '../src/media/recorderParts';
 import { encodeWav } from '../src/media/wav';
 import type { RecorderDeps } from '../src/media/recorder';
 
@@ -243,5 +244,41 @@ describe('createRecorder', () => {
     const out = new Uint8Array(await (await r.stop()).blob.arrayBuffer());
     const want = new Uint8Array(await encodeWav([Float32Array.from(all)], 100).arrayBuffer());
     expect(out).toEqual(want);
+  });
+});
+
+describe('browserDeps.createContext', () => {
+  const g = globalThis as unknown as { AudioContext?: unknown };
+  const saved = g.AudioContext;
+  afterEach(() => {
+    g.AudioContext = saved;
+  });
+
+  it('asks for a 48 kHz context (bounded memory on 96/192 kHz interfaces)', () => {
+    const calls: unknown[][] = [];
+    g.AudioContext = class {
+      constructor(...a: unknown[]) {
+        calls.push(a);
+      }
+    };
+    expect(browserDeps().createContext()).not.toBeNull();
+    expect(calls).toEqual([[{ sampleRate: 48000 }]]);
+  });
+
+  it('falls back to the default context when the option is rejected', () => {
+    const calls: unknown[][] = [];
+    g.AudioContext = class {
+      constructor(...a: unknown[]) {
+        calls.push(a);
+        if (a.length > 0) throw new DOMException('unsupported rate', 'NotSupportedError');
+      }
+    };
+    expect(browserDeps().createContext()).not.toBeNull();
+    expect(calls).toEqual([[{ sampleRate: 48000 }], []]);
+  });
+
+  it('is null without AudioContext', () => {
+    g.AudioContext = undefined;
+    expect(browserDeps().createContext()).toBeNull();
   });
 });

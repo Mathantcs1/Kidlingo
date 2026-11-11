@@ -1,4 +1,5 @@
-import { defaultClipAudio } from './model';
+import { fitFades } from './clipAudio';
+import { defaultClipAudio, newId } from './model';
 import type { AudioEffect, AudioEffectType, Clip, ClipAudio, Project, Track, TrackDuck } from './model';
 
 export type MigrateResult = { ok: true; project: Project } | { ok: false; reason: 'newer' | 'malformed' };
@@ -21,19 +22,37 @@ function toEffect(raw: unknown): AudioEffect | null {
   return { ...raw, id: raw.id, type: raw.type as AudioEffectType, enabled: raw.enabled, params };
 }
 
-/** Repairs per field: clamps or defaults, drops invalid effects; never rejects. */
-function toClipAudio(raw: unknown): ClipAudio {
+/** Later effects that reuse an id get a new one (the first keeps it), so ids stay unique within a clip. */
+function uniqueEffectIds(list: AudioEffect[]): AudioEffect[] {
+  const seen = new Set<string>();
+  return list.map((e) => {
+    if (!seen.has(e.id)) {
+      seen.add(e.id);
+      return e;
+    }
+    const id = newId();
+    seen.add(id);
+    return { ...e, id };
+  });
+}
+
+/** Repairs per field: clamps or defaults, drops invalid effects; never rejects. `duration` (out - in) trims fades. */
+function toClipAudio(raw: unknown, duration: number | null): ClipAudio {
   const d = defaultClipAudio();
   if (!isObject(raw)) return d;
-  return {
+  const audio: ClipAudio = {
     ...raw,
     fadeIn: num(raw.fadeIn, d.fadeIn, 0, Infinity),
     fadeOut: num(raw.fadeOut, d.fadeOut, 0, Infinity),
     pan: num(raw.pan, d.pan, -1, 1),
     silent: raw.silent === true,
-    effects: Array.isArray(raw.effects) ? raw.effects.map(toEffect).filter((e): e is AudioEffect => e !== null) : [],
+    effects: Array.isArray(raw.effects) ? uniqueEffectIds(raw.effects.map(toEffect).filter((e): e is AudioEffect => e !== null)) : [],
   };
+  return duration === null ? audio : fitFades(audio, duration);
 }
+
+const clipSeconds = (c: Record<string, unknown>): number | null =>
+  typeof c.in === 'number' && typeof c.out === 'number' && Number.isFinite(c.in) && Number.isFinite(c.out) && c.out >= c.in ? c.out - c.in : null;
 
 function toDuck(raw: unknown): TrackDuck | null {
   if (!isObject(raw) || typeof raw.sourceTrackId !== 'string') return null;
@@ -62,7 +81,7 @@ function toTrack(raw: unknown): Track | null {
     locked: raw.locked === true,
     volume: num(raw.volume, 1, 0, 2),
     duck: toDuck(raw.duck),
-    clips: raw.clips.map((c) => ({ ...c, audio: toClipAudio(c.audio) }) as unknown as Clip),
+    clips: raw.clips.map((c) => ({ ...c, audio: toClipAudio(c.audio, clipSeconds(c)) }) as unknown as Clip),
   };
 }
 

@@ -3,7 +3,7 @@ import { defaultClipAudio, defaultTransform, emptyProject } from '../src/core/mo
 import type { Clip, Project } from '../src/core/model';
 import { TimelineError, splitClip, trimClip, addClip } from '../src/core/timeline';
 import { joinClips } from '../src/core/merge';
-import { addTrack, setTrackFlags } from '../src/core/tracks';
+import { addTrack, removeTrack, setTrackFlags } from '../src/core/tracks';
 import {
   addEffect, attachAudio, detachAudio, moveEffect, removeEffect, setClipAudio, setTrackDuck, setTrackVolume, updateEffect,
 } from '../src/core/audioEdits';
@@ -125,6 +125,65 @@ describe('detachAudio', () => {
     for (let i = 0; i < 7; i++) p = addTrack(p, 'audio');
     for (const t of aTracks(p)) p = addClip(p, t.id, clip(`x${t.id}`, { kind: 'audio', start: 1 }));
     expect(() => detachAudio(p, 'v1')).toThrow('Cannot add another audio track');
+  });
+  describe('keeps what is heard (mix settings of the video track)', () => {
+    const setT = (p: Project, id: string, patch: Partial<Project['tracks'][number]>): Project => ({
+      ...p,
+      tracks: p.tracks.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+    });
+    const cases: [string, (p: Project) => Project][] = [
+      ['volume', (p) => setT(p, vTrack(p).id, { volume: 0.5 })],
+      ['muted', (p) => setT(p, vTrack(p).id, { muted: true })],
+      ['solo', (p) => setT(p, vTrack(p).id, { solo: true })],
+      ['duck', (p) => setT(p, vTrack(p).id, { duck: { sourceTrackId: aTracks(p)[0].id, amountDb: -9, attack: 0.1, release: 0.4 } })],
+    ];
+    for (const [name, mk] of cases) {
+      it(`video track ${name} differs from the audio track: the copy goes on a NEW track with the video track's mix`, () => {
+        const p = mk(base());
+        const q = detachAudio(p, 'v1');
+        expect(aTracks(q)).toHaveLength(2);
+        expect(aTracks(q)[0].clips).toHaveLength(0);
+        const fresh = aTracks(q)[1];
+        expect(fresh.clips).toHaveLength(1);
+        expect(fresh.name).toBe('');
+        expect([fresh.volume, fresh.muted, fresh.solo, fresh.duck]).toEqual([vTrack(p).volume, vTrack(p).muted, vTrack(p).solo, vTrack(p).duck]);
+      });
+    }
+    it('an audio track with the same mix settings as the video track is reused', () => {
+      const p0 = base();
+      const duck = { sourceTrackId: aTracks(p0)[1]?.id ?? 'other', amountDb: -9, attack: 0.1, release: 0.4 };
+      let p = addTrack(p0, 'audio');
+      const [a0, a1] = aTracks(p);
+      p = setT(p, vTrack(p).id, { volume: 0.5, muted: true, duck: { ...duck, sourceTrackId: a0.id } });
+      p = setT(p, a1.id, { volume: 0.5, muted: true, duck: { ...duck, sourceTrackId: a0.id } });
+      p = setT(p, a0.id, { volume: 1, muted: false, duck: null });
+      const q = detachAudio(p, 'v1');
+      expect(aTracks(q)).toHaveLength(2);
+      expect(aTracks(q)[0].clips).toHaveLength(0);
+      expect(aTracks(q)[1].clips).toHaveLength(1);
+    });
+    it('first audio track muted but the video track is not: copy goes on a new track', () => {
+      const p0 = base();
+      const p = setT(p0, aTracks(p0)[0].id, { muted: true });
+      const q = detachAudio(p, 'v1');
+      expect(aTracks(q)).toHaveLength(2);
+      expect(aTracks(q)[1].muted).toBe(false);
+      expect(aTracks(q)[1].clips).toHaveLength(1);
+    });
+    it('the duck copied onto the new track is valid for setTrackDuck, and removeTrack still clears dependent ducks', () => {
+      const p = cases[3][1](base());
+      const q = detachAudio(p, 'v1');
+      const fresh = aTracks(q)[1];
+      expect(setTrackDuck(q, fresh.id, fresh.duck)).toBe(q);
+      const r = removeTrack(q, aTracks(q)[0].id);
+      expect(r.tracks.every((t) => t.duck === null)).toBe(true);
+    });
+    it('refuses when a new track would be needed but 8 audio tracks exist', () => {
+      const b = base();
+      let p = setT(b, vTrack(b).id, { volume: 0.5 });
+      for (let i = 0; i < 7; i++) p = addTrack(p, 'audio');
+      expect(() => detachAudio(p, 'v1')).toThrow('Cannot add another audio track');
+    });
   });
   it('refuses media without audio, double detach, audio clips and locked source', () => {
     expect(() => detachAudio(base(false), 'v1')).toThrow(TimelineError);

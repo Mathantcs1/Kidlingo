@@ -92,4 +92,24 @@ describe('placeRecording', () => {
     full = { ...full, tracks: full.tracks.map((t) => (t.kind === 'audio' ? { ...t, locked: true } : t)) };
     expect(() => placeRecording(full, media('vo', 'V'), 0, null)).toThrow(TimelineError);
   });
+
+  it('with 8 audio tracks, the active one full and another with room, places the take on the first track with room', () => {
+    let p = base();
+    for (let i = 0; i < 7; i++) p = addTrack(p, 'audio');
+    const full = audioTrack(p, 2);
+    p = withClips(p, full.id, [audioClip('x', 0, 10)]);
+    p = withClips(p, audioTrack(p, 0).id, [audioClip('y', 0, 10)]);
+    const next = placeRecording(p, media('vo', 'Voice-over 1', 2), 1, full.id);
+    expect(next.tracks.filter((t) => t.kind === 'audio')).toHaveLength(8);
+    expect(audioTrack(next, 1).clips[0]).toMatchObject({ mediaId: 'vo', start: 1 });
+    expect(audioTrack(next, 0).clips).toHaveLength(1);
+    expect(audioTrack(next, 2).clips).toHaveLength(1);
+  });
+
+  it('with 8 full audio tracks refuses with a TimelineError', () => {
+    let p = base();
+    for (let i = 0; i < 7; i++) p = addTrack(p, 'audio');
+    for (const t of p.tracks.filter((x) => x.kind === 'audio')) p = withClips(p, t.id, [audioClip(`x${t.id}`, 0, 10)]);
+    expect(() => placeRecording(p, media('vo', 'V'), 1, audioTrack(p, 0).id)).toThrow(TimelineError);
+  });
 });

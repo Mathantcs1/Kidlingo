@@ -106,6 +106,34 @@ describe('migrateProject', () => {
     });
   });
 
+  it('trims hand-edited fades longer than the clip (fadeOut first), and skips clips with unusable in/out', () => {
+    const mk = (extra: Record<string, unknown>, audio: Record<string, unknown>) =>
+      migrateProject({ ...v1(), version: 3, tracks: [{ id: 't', kind: 'video', clips: [clip('c1', { ...extra, audio })] }] });
+    const a = mk({}, { fadeIn: 1.5, fadeOut: 9 });
+    const b = mk({}, { fadeIn: 5, fadeOut: 1 });
+    const c = mk({ in: 'x' }, { fadeIn: 5, fadeOut: 1 });
+    if (!a.ok || !b.ok || !c.ok) throw new Error('expected ok');
+    expect(a.project.tracks[0].clips[0].audio).toMatchObject({ fadeIn: 1.5, fadeOut: 0.5 });
+    expect(b.project.tracks[0].clips[0].audio).toMatchObject({ fadeIn: 2, fadeOut: 0 });
+    expect(c.project.tracks[0].clips[0].audio).toMatchObject({ fadeIn: 5, fadeOut: 1 });
+  });
+
+  it('gives duplicate effect ids on one clip new ids, keeping the first occurrence', () => {
+    const fx = (id: string, gainDb: number) => ({ id, type: 'gain', enabled: true, params: { gainDb } });
+    const r = migrateProject({
+      ...v1(), version: 3,
+      tracks: [{ id: 't', kind: 'video', clips: [clip('c1', { audio: { effects: [fx('e', 1), fx('e', 2), fx('f', 3), fx('e', 4)] } })] }],
+    });
+    if (!r.ok) throw new Error('expected ok');
+    const e = r.project.tracks[0].clips[0].audio.effects;
+    expect(e.map((x) => x.params.gainDb)).toEqual([1, 2, 3, 4]);
+    expect(e[0].id).toBe('e');
+    expect(e[2].id).toBe('f');
+    expect(new Set(e.map((x) => x.id)).size).toBe(4);
+    const again = migrateProject(r.project);
+    expect(again.ok && again.project.tracks[0].clips[0].audio.effects.map((x) => x.id)).toEqual(e.map((x) => x.id));
+  });
+
   it('repairs track duck settings or drops them', () => {
     const mk = (duck: unknown) =>
       migrateProject({ ...v1(), version: 3, tracks: [{ id: 't', kind: 'audio', duck, clips: [] }] });

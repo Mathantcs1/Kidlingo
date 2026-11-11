@@ -2,7 +2,7 @@
 import { applyPreset, setGainEffect } from '../core/audioPresets';
 import { addEffect, moveEffect, removeEffect, updateEffect } from '../core/audioEdits';
 import type { AudioEffectType, Id, Project } from '../core/model';
-import { normaliseGainDb } from '../audio/effects/normalise';
+import { normaliseGainOrNull } from '../audio/effects/normalise';
 import type { PresetKey } from '../audio/presets';
 import { getPeaks } from '../media/peaks';
 import { useEditor } from '../state/store';
@@ -32,8 +32,13 @@ export async function normaliseClip(clipId: Id, mediaId: Id): Promise<void> {
     showError('Cannot normalise: the waveform of this clip is not available');
     return;
   }
+  let silent = false;
   apply((p) => {
     const clip = p.tracks.flatMap((t) => t.clips).find((c) => c.id === clipId);
-    return clip ? setGainEffect(p, clipId, normaliseGainDb(peaks, clip)) : p;
+    if (!clip) return p;
+    const gainDb = normaliseGainOrNull(peaks, clip);
+    silent = gainDb === null;
+    return gainDb === null ? p : setGainEffect(p, clipId, gainDb);
   });
+  if (silent) showError('This clip is silent');
 }

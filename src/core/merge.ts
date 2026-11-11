@@ -6,7 +6,7 @@ import { TimelineError, assertUnlocked, findClip } from './timeline';
 
 const EPS = 1e-9;
 
-/** Joined clips keep their own audio settings; the first clip's settings are the ones that survive on `clipIds[0]`. */
+/** Closes the gaps between the selected clips by moving them back to back; every clip stays a separate clip and keeps its own audio settings. */
 export function joinClips(p: Project, clipIds: Id[]): Project {
   if (clipIds.length < 2) throw new TimelineError('Select at least two clips to join');
   if (new Set(clipIds).size !== clipIds.length) throw new TimelineError('Duplicate clip ids');
