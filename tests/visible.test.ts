@@ -13,7 +13,7 @@ function clip(kind: Clip['kind'], start: number, len: number): Clip {
     in: 0,
     out: len,
     volume: 1,
-    audio: defaultClipAudio(),
+    audio: defaultClipAudio(), effects: [], blend: 'normal',
     fit: 'fit',
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
   };

@@ -16,7 +16,7 @@ const clip = (id: string, over: Partial<Clip> = {}): Clip => ({
   out: 5,
   transform: defaultTransform(),
   volume: 1,
-  audio: defaultClipAudio(),
+  audio: defaultClipAudio(), effects: [], blend: 'normal',
   fit: 'fit',
   ...over,
 });

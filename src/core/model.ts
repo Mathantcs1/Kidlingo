@@ -24,6 +24,23 @@ export interface AudioEffect {
   params: Record<string, number>;
 }
 
+export type VideoEffectType =
+  | 'colour' | 'bw' | 'sepia' | 'splitTone' | 'vignette' | 'grain' | 'lut' | 'blur' | 'sharpen' | 'glow' | 'pixelate'
+  | 'rgbSplit' | 'glitch' | 'vhs' | 'mirror' | 'invert' | 'chromaKey';
+
+/** One entry of a clip's picture effect stack. `ref` is the LUT media id (`lut` only). */
+export interface VideoEffect {
+  id: Id;
+  type: VideoEffectType;
+  enabled: boolean;
+  params: Record<string, number>;
+  ref?: Id;
+}
+
+export type BlendMode =
+  | 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten' | 'colourDodge' | 'colourBurn'
+  | 'hardLight' | 'softLight' | 'difference' | 'exclusion';
+
 /** Per-clip audio settings: fades in seconds, pan -1..1. */
 export interface ClipAudio {
   fadeIn: number;
@@ -53,6 +70,9 @@ export interface Clip {
   volume: number;
   fit: 'fit' | 'fill' | 'blur';
   audio: ClipAudio;
+  /** Picture effects, applied in order (video and image clips; always [] on audio clips). Max 8. */
+  effects: VideoEffect[];
+  blend: BlendMode;
 }
 
 export interface Track {
@@ -73,7 +93,8 @@ export interface Track {
 export interface MediaRef {
   id: Id;
   name: string;
-  kind: 'video' | 'audio' | 'image';
+  /** `lut` media (a .cube file) is never placed on the timeline: effects reference it by id. */
+  kind: 'video' | 'audio' | 'image' | 'lut';
   duration: number;
   width?: number;
   height?: number;
@@ -83,7 +104,7 @@ export interface MediaRef {
 }
 
 export interface Project {
-  version: 3;
+  version: 4;
   format: { width: number; height: number; fps: number };
   tracks: Track[];
   media: Record<Id, MediaRef>;
@@ -107,7 +128,7 @@ export function newTrack(kind: TrackKind, name = ''): Track {
 
 export function emptyProject(formatKey: FormatKey = 'youtube'): Project {
   return {
-    version: 3,
+    version: 4,
     format: { ...FORMATS[formatKey], fps: 30 },
     tracks: [newTrack('video'), newTrack('audio')],
     media: {},

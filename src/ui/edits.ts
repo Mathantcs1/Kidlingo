@@ -21,6 +21,7 @@ export function addMedia(p: Project, m: MediaRef): Project {
 export function appendMedia(p: Project, mediaId: Id, activeTrackId?: Id | null): Project {
   const m = p.media[mediaId];
   if (!m) throw new TimelineError(`Media not found: ${mediaId}`);
+  if (m.kind === 'lut') throw new TimelineError('LUT files cannot be placed on the timeline');
   const kind = m.kind === 'audio' ? 'audio' : 'video';
   const ofKind = p.tracks.filter((t) => t.kind === kind);
   if (ofKind.length === 0) throw new TimelineError(`There is no ${kind} track to add ${m.name} to`);

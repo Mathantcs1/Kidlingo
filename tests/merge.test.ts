@@ -14,7 +14,7 @@ const mk = (id: string, start: number, dur: number, over: Partial<Clip> = {}): C
   out: dur,
   transform: defaultTransform(),
   volume: 1,
-  audio: defaultClipAudio(),
+  audio: defaultClipAudio(), effects: [], blend: 'normal',
   fit: 'fit',
   ...over,
 });

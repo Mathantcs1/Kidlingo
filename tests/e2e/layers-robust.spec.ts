@@ -23,7 +23,7 @@ async function stacked(page: Page, layers: number, perLayer: number): Promise<vo
         const clip = (L: number, k: number) => {
           const inPoint = (k * LEN + L * 0.1) % 2;
           const transform = { x: (L - 2.5) * 150, y: (k % 2) * 60, scale: 0.2, rotation: 0, opacity: 1 };
-          return { id: `L${L}c${k}`, mediaId: m.id, kind: 'video' as const, start: k * LEN, in: inPoint, out: inPoint + LEN, volume: 1, audio: { fadeIn: 0, fadeOut: 0, pan: 0, silent: false, effects: [] }, fit: 'fit' as const, transform };
+          return { id: `L${L}c${k}`, mediaId: m.id, kind: 'video' as const, start: k * LEN, in: inPoint, out: inPoint + LEN, volume: 1, audio: { fadeIn: 0, fadeOut: 0, pan: 0, silent: false, effects: [] }, effects: [], blend: 'normal' as const, fit: 'fit' as const, transform };
         };
         const video = Array.from({ length: layers }, (_, L) => ({
           ...flags,

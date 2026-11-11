@@ -37,7 +37,7 @@ const clip = (id: string, start: number, dur: number, mediaId = 'v', kind: Clip[
   out: dur,
   transform: defaultTransform(),
   volume: 1,
-  audio: defaultClipAudio(),
+  audio: defaultClipAudio(), effects: [], blend: 'normal',
   fit: 'fit',
 });
 

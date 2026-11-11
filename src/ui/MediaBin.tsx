@@ -16,8 +16,8 @@ interface Pending {
   name: string;
 }
 
-const KIND_LABEL: Record<MediaRef['kind'], string> = { video: 'Video', audio: 'Audio', image: 'Image' };
-const KIND_ICON: Record<MediaRef['kind'], string> = { video: '🎬', audio: '🎵', image: '🖼' };
+const KIND_LABEL: Record<MediaRef['kind'], string> = { video: 'Video', audio: 'Audio', image: 'Image', lut: 'LUT' };
+const KIND_ICON: Record<MediaRef['kind'], string> = { video: '🎬', audio: '🎵', image: '🖼', lut: '🎨' };
 
 let pendingSeq = 0;
 let persistAsked = false;
@@ -122,7 +122,8 @@ export default function MediaBin({ supported, ready }: { supported: boolean; rea
     if (canImport && e.dataTransfer.files.length > 0) void importAll([...e.dataTransfer.files]);
   };
 
-  const list = Object.values(media);
+  // LUT files are not placeable media: effects reference them, so the bin's add-to-timeline flow never lists them.
+  const list = Object.values(media).filter((m) => m.kind !== 'lut');
   return (
     <aside
       className={`media-bin${dragOver ? ' is-drag-over' : ''}`}

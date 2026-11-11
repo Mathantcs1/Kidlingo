@@ -19,7 +19,7 @@ const clip = (id: string, start: number, dur: number, mediaId = 'v', kind: Clip[
   transform: { ...defaultTransform(), x: 12, scale: 0.5 },
   volume: 0.7,
   fit: 'fill',
-  audio: defaultClipAudio(),
+  audio: defaultClipAudio(), effects: [], blend: 'normal',
 });
 
 /** Tracks: [video V1 (a [0,2), i [3,5)), audio A1 (x [0,3)), video V2 (empty)] — audio sits between the videos. */

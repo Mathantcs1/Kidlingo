@@ -32,7 +32,7 @@ function media(id: string, kind: MediaRef['kind'], fps?: number): MediaRef {
 }
 
 function clip(id: string, m: MediaRef, start = 0): Clip {
-  return { id, mediaId: m.id, kind: m.kind, start, in: 0, out: 2, transform: defaultTransform(), volume: 1, audio: defaultClipAudio(), fit: 'fit' };
+  return { id, mediaId: m.id, kind: m.kind as Clip['kind'], start, in: 0, out: 2, transform: defaultTransform(), volume: 1, audio: defaultClipAudio(), effects: [], blend: 'normal', fit: 'fit' };
 }
 
 function project(...ms: MediaRef[]): Project {

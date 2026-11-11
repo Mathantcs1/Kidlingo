@@ -13,6 +13,7 @@ export function clipFromMedia(
     m.kind !== 'audio' && m.width && m.height
       ? fitTransform({ width: m.width, height: m.height }, canvas, 'fit')
       : defaultTransform();
+  if (m.kind === 'lut') throw new Error('LUT files cannot be placed on the timeline');
   return {
     id: newId(),
     mediaId: m.id,
@@ -24,5 +25,7 @@ export function clipFromMedia(
     volume: 1,
     fit: 'fit',
     audio: defaultClipAudio(),
+    effects: [],
+    blend: 'normal',
   };
 }

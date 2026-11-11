@@ -38,12 +38,12 @@ function clipOf(m: MediaRef, over: Partial<Omit<Clip, 'transform'>> & { transfor
   return {
     id: `clip-${++seq}`,
     mediaId: m.id,
-    kind: m.kind,
+    kind: m.kind as Clip['kind'],
     start: 0,
     in: 0,
     out: 1,
     volume: 1,
-    audio: defaultClipAudio(),
+    audio: defaultClipAudio(), effects: [], blend: 'normal',
     fit: 'fit',
     ...rest,
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1, ...transform },
@@ -55,7 +55,7 @@ function project(width: number, height: number, media: MediaRef[], clips: Clip[]
   const tracks: Track[] = clips.map((c, i) => ({ ...newTrack('video'), id: `track-${i}`, clips: [c] }));
   tracks.push({ ...newTrack('audio'), id: 'audio' });
   return {
-    version: 3,
+    version: 4,
     format: { width, height, fps: 30 },
     tracks,
     media: Object.fromEntries(media.map((m) => [m.id, m])),

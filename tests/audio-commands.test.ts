@@ -9,7 +9,7 @@ const media = (id: string, kind: MediaRef['kind'], hasAudio: boolean): MediaRef 
   ({ id, kind, hasAudio, name: id, duration: 10, missing: false }) as unknown as MediaRef;
 
 function clip(id: string, mediaId: string, kind: Clip['kind']): Clip {
-  return { id, mediaId, kind, start: 1, in: 0, out: 4, transform: defaultTransform(), volume: 1, fit: 'fit', audio: defaultClipAudio() };
+  return { id, mediaId, kind, start: 1, in: 0, out: 4, transform: defaultTransform(), volume: 1, fit: 'fit', audio: defaultClipAudio(), effects: [], blend: 'normal' };
 }
 
 function base(): Project {

@@ -27,7 +27,7 @@ function clip(id: string, start: number, inT: number, out: number, mediaId = 'v'
     out,
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
     volume: 1,
-    audio: defaultClipAudio(),
+    audio: defaultClipAudio(), effects: [], blend: 'normal',
     fit: 'fit',
   };
 }

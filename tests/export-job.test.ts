@@ -47,7 +47,7 @@ const clip = (id: string, start: number): Clip => ({
   out: 1,
   transform: defaultTransform(),
   volume: 1,
-  audio: defaultClipAudio(),
+  audio: defaultClipAudio(), effects: [], blend: 'normal',
   fit: 'fit',
 });
 

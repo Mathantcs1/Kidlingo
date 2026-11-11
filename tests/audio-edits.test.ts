@@ -10,7 +10,7 @@ import {
 
 const clip = (id: string, over: Partial<Clip> = {}): Clip => ({
   id, mediaId: 'm1', kind: 'video', start: 0, in: 0, out: 2, transform: defaultTransform(), volume: 1,
-  audio: defaultClipAudio(), fit: 'fit', ...over,
+  audio: defaultClipAudio(), effects: [], blend: 'normal', fit: 'fit', ...over,
 });
 
 function base(hasAudio = true): Project {

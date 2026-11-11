@@ -72,7 +72,7 @@ describe('exportProject', () => {
     const video = base.tracks.find((t) => t.kind === 'video')!;
     const clip = {
       id: 'c', mediaId: 'm', kind: 'video' as const, start: 0, in: 0, out: 1,
-      transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 }, volume: 1, audio: defaultClipAudio(), fit: 'fit' as const,
+      transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 }, volume: 1, audio: defaultClipAudio(), effects: [], blend: 'normal' as const, fit: 'fit' as const,
     };
     const p = {
       ...base,

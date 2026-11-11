@@ -15,6 +15,8 @@ function clip(start: number, duration: number, audio: Partial<ClipAudio> = {}, o
     out: 10 + duration,
     volume: 1,
     audio: { ...defaultClipAudio(), ...audio },
+    effects: [],
+    blend: 'normal',
     fit: 'fit',
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
     ...over,

@@ -34,12 +34,12 @@ function clipOf(m: MediaRef, over: Partial<Clip> = {}): Clip {
   return {
     id: `clip-${++seq}`,
     mediaId: m.id,
-    kind: m.kind,
+    kind: m.kind as Clip['kind'],
     start: 0,
     in: 0,
     out: m.duration,
     volume: 1,
-    audio: defaultClipAudio(),
+    audio: defaultClipAudio(), effects: [], blend: 'normal',
     fit: 'fit',
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
     ...over,
@@ -56,7 +56,7 @@ function project(
     { ...newTrack('video'), id: 'video', clips: video },
     { ...newTrack('audio'), id: 'audio', clips: audio },
   ];
-  return { version: 3, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 4, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 interface RunOpts {

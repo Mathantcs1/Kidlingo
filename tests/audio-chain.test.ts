@@ -55,6 +55,8 @@ function clip(over: Partial<Clip> = {}): Clip {
     out: 4,
     volume: 0.5,
     audio: { ...defaultClipAudio(), fadeIn: 1, fadeOut: 1, pan: -0.25 },
+    effects: [],
+    blend: 'normal',
     fit: 'fit',
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
     ...over,

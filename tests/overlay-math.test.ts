@@ -62,7 +62,7 @@ const clip = (over: Partial<Clip> = {}): Clip => ({
   in: 0,
   out: 5,
   volume: 1,
-  audio: defaultClipAudio(),
+  audio: defaultClipAudio(), effects: [], blend: 'normal',
   fit: 'fit',
   transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
   ...over,
@@ -89,7 +89,7 @@ describe('sourceSizeFor', () => {
 describe('overlayTarget', () => {
   const v = (id: string, clips: Clip[], over: Partial<Track> = {}): Track => ({ ...newTrack('video'), id, clips, ...over });
   const build = (over: Partial<Track> = {}, extraMedia: Partial<MediaRef> = {}): Project => ({
-    version: 3,
+    version: 4,
     format: { ...FHD, fps: 30 },
     tracks: [
       v('bottom', [clip({ id: 'bg', kind: 'image', mediaId: 'img', out: 5 })]),

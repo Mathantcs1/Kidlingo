@@ -161,7 +161,7 @@ function flatPeaks(amp: number, seconds = 10): Peaks {
 
 const clip = (over: Partial<Clip> = {}): Clip => ({
   id: 'c1', mediaId: 'm1', kind: 'audio', start: 0, in: 1, out: 4, transform: defaultTransform(), volume: 1,
-  audio: defaultClipAudio(), fit: 'fit', ...over,
+  audio: defaultClipAudio(), effects: [], blend: 'normal', fit: 'fit', ...over,
 });
 
 describe('normaliseGainDb', () => {
