@@ -2,13 +2,16 @@
 import type { VideoEffectType } from '../../core/model';
 import type { Mat3, Size } from '../geometry';
 import { createProgram } from '../gl';
+import { COLOUR } from './shaders/colour';
 import type { EffectContext, PassShader, UniformValue, Uniforms } from './types';
 
 /**
  * The shader of each available effect. Each effect task adds its entry here (from its own module under ./shaders)
  * when it flips `VIDEO_EFFECTS[type].available`; a type without an entry is skipped by the pipeline.
  */
-export const PASS_SHADERS: Partial<Record<VideoEffectType, PassShader>> = {};
+export const PASS_SHADERS: Partial<Record<VideoEffectType, PassShader>> = {
+  colour: COLOUR,
+};
 
 /** Registers (or, with undefined, removes) a type's shader. Used by tests and the dev harness's test-only effects. */
 export function registerPassShader(type: VideoEffectType, shader: PassShader | undefined): void {

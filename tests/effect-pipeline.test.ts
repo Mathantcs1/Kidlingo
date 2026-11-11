@@ -113,8 +113,8 @@ describe('EffectPipeline.run with nothing to apply', () => {
     }
   });
 
-  it('nothing is registered by default yet (every effect still unavailable)', () => {
-    expect(Object.keys(PASS_SHADERS)).toEqual([]);
+  it('registers exactly the available effects (colour so far)', () => {
+    expect(Object.keys(PASS_SHADERS)).toEqual(['colour']);
   });
 });
 

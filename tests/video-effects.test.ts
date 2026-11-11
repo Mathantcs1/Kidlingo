@@ -5,7 +5,7 @@ import type { VideoEffectType } from '../src/core/model';
 const TYPES = Object.keys(VIDEO_EFFECTS) as VideoEffectType[];
 
 describe('VIDEO_EFFECTS schema', () => {
-  it('registers the 17 effect types, none available yet, with unique param keys', () => {
+  it('registers the 17 effect types, only colour available so far, with unique param keys', () => {
     expect(TYPES.sort()).toEqual([
       'blur', 'bw', 'chromaKey', 'colour', 'glitch', 'glow', 'grain', 'invert', 'lut', 'mirror', 'pixelate',
       'rgbSplit', 'sepia', 'sharpen', 'splitTone', 'vhs', 'vignette',
@@ -14,7 +14,7 @@ describe('VIDEO_EFFECTS schema', () => {
     for (const t of TYPES) {
       const s = VIDEO_EFFECTS[t];
       expect(s.type).toBe(t);
-      expect(s.available).toBe(false);
+      expect(s.available, t).toBe(t === 'colour');
       expect(new Set(s.params.map((d) => d.key)).size).toBe(s.params.length);
       for (const d of s.params) {
         expect(d.min).toBeLessThan(d.max);
