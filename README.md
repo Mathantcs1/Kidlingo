@@ -43,6 +43,23 @@ It is a static site built with React, TypeScript and Vite.
     export use the same chain, so what you hear is what is exported.
   - **Auto-ducking**: the **D** button in an audio track header makes that track (say, music) dip under the clips of
     another audio track (say, a voice) by an amount you set, with attack and release. One undo step per change.
+- **Picture effects** (the Inspector's Effects section for one selected video or image clip; Plan 4, effect stacks run in
+  list order, up to 8 per clip, each add/edit/toggle/reorder/remove is one undo step, and the preview and the export use the same shaders):
+  - **Colour** (brightness, contrast, saturation, exposure, temperature, tint, hue, shadows, highlights), **LUT**,
+    looks (**Black & white**, **Sepia**, **Split tone**, **Vignette**, **Film grain**), **Blur**, **Sharpen**, **Glow**,
+    **Pixelate**, **RGB split**, **Glitch**, **VHS**, **Mirror**, **Invert** and **Chroma key**.
+  - **Look presets** (Black & White, Sepia, Vintage Film, Teal & Orange, Cinematic, Moody, Golden Hour, Cool Blue,
+    Punchy): one click replaces the clip's stack with the look's effects, as one undo step.
+  - **LUTs**: import a `.cube` 3D LUT (2 to 65 points per side, up to 40 MB) with the Effects section's LUT import or the media bin's
+    Import button; it is stored like media, named by its TITLE and file name, and used through the LUT effect (with an
+    intensity). A LUT that a clip uses cannot be removed until the effect is removed. A bad `.cube` gives a message naming the file.
+  - **Chroma key**: key colour (one colour picker, one undo step), similarity, smoothness and spill.
+  - **Blend modes** (12, in the Inspector next to the effects) for any video or image clip, and **adjustment layers**
+    (Add overlay menu): an effect stack, plus opacity and blend mode, that applies to everything on the layers beneath it
+    during its time range; hide the track to turn it off.
+  - **Overlays** (Add overlay menu): lower third, subscribe button, progress bar and stickers (heart, star, arrow, like,
+    bell, fire, check, sparkle). They are clips on a video layer (text, subtext, colour, accent and sticker in the
+    Inspector; position, scale, rotation and opacity like any clip) and are drawn with the system font stack.
 - **Numeric position/scale/rotation/opacity fields** in the inspector for a video or image clip: X and Y in
   pixels from the frame centre (0 = centred), scale and opacity in percent, rotation in degrees clockwise. Type a
   value and press Enter (or leave the field) to apply it as one undo step; Up/Down step the value (Shift ×10) and
@@ -93,16 +110,15 @@ It is a static site built with React, TypeScript and Vite.
 
 ## Roadmap (planned, not implemented yet)
 
-The multi-layer timeline (layers, track flags, picture-in-picture) is Plan 2 and audio editing is Plan 3; both are
-implemented. None of the following exist yet. They are planned as follow-up plans (outlined in the roadmap section of
-[docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md](docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md)):
+The multi-layer timeline (Plan 2), audio editing (Plan 3) and visual effects (Plan 4) are implemented (Plans 2 and 3 and
+Plan 4 Part A, through blend modes, are deployed; Plan 4 Part B, the overlays and adjustment layers, is on the work
+branch and not deployed). The next plan, not implemented yet, is outlined in the roadmap section of
+[docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md](docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md):
 
-- **Plan 4, visual effects and looks**: shader effects (color, blur, stylize, chroma key), LUT looks and `.cube`
-  import, overlays.
 - **Plan 5, animation and motion**: keyframes and easing, motion paths, text with animation presets,
   transitions, speed ramps, reverse, crop/rotate/flip.
 
-There is currently no transition, text or effects tool.
+There is currently no transition, keyframe or text-clip tool (overlays carry fixed text only).
 
 ## Supported files
 
@@ -222,7 +238,24 @@ Layers and the preview:
     voice can land slightly early (no latency compensation), and without headphones the microphone hears the playback.
     It needs the browser's microphone permission, and the host must not block it (`Permissions-Policy: microphone=(self)`,
     see Deploying). Safari is unverified for all of this.
-- No visual effects, transitions or text yet (see the roadmap).
+- **Visual effects limits** (Plan 4):
+  - At most 8 effects per clip. Effects run at the clip's picture size capped at twice the project's long side (for
+    example 3840 px in a 1080p project), so very large photos are processed at a reduced size. Effects are refused on overlay
+    clips; adjustment layers take effects.
+  - A LUT must be a 3D `.cube` with 2 to 65 points per side and at most 40 MB; 1D LUTs are refused.
+  - A **neutral key colour** (white, grey, black) keys every neutral pixel regardless of brightness. Spill suppression
+    keeps brightness, so hair over a dark layer can keep a light-grey edge.
+  - **Film grain (and other fine noise) is weaker in an export than in the preview** after the first few frames: the
+    exporter's H.264 rate (12 Mbit/s) cannot hold per-pixel noise.
+  - **Blend modes and adjustment layers need an extra blend shader.** If it cannot be built, a message says so and
+    those clips are drawn normally or skipped, in the preview and in the export notice.
+  - Overlay text uses the system font stack of the device; there are no custom fonts, so the look differs between machines.
+  - Very heavy stacks are slow, for example 8 blurs of radius 100 took about 17 s per frame in the software renderer used
+    by the tests; there is no time guard yet, and a GPU reset during an export ends it with a "WebGL context lost" error.
+    The preview and an export each hold their own effect memory while an export runs.
+  - All performance and accuracy measurements were made with the software renderer (SwiftShader) in headless Chromium;
+    nothing was measured on a real GPU. There are no keyframes yet, so effect parameters cannot be animated.
+- No transitions, keyframes or text clips yet (see the roadmap).
 
 ## Development
 

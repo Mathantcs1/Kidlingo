@@ -22,7 +22,7 @@ and a multi-layer timeline. It is hosted on Vercel. Building is staged into plan
 | Deployed branch | `claude/macos-video-editor-lzye6c` on that remote = what Vercel serves |
 | Live site | https://clipforge-indol-tau.vercel.app (Vercel Authentication is OFF, public) |
 | Vercel | team "Mathan's projects" (`trade-journal-mathan`, `team_DwaxJujNZSykp0iwygdhXN0h`), project `clipforge` (`prj_DJABs4FyofqDa7l13HvANO0M0dq7`), framework preset is Next.js but `vercel.json` in the repo overrides to Vite |
-| Local branches | `main` (only the early spec/plan docs), `build/foundation` (Plan 1 + hotfix, **deployed**), `feature/layers` (Plan 2; **now deployed to production**: its tip `4031ea7` is on `claude/macos-video-editor-lzye6c`; local name `claude/clipforge-plan-2-layers` in the Plan 3 checkout), `claude/quirky-cannon-7vz48u` (Plan 3 audio editing on top of Plan 2, **implemented, not pushed, not deployed**) |
+| Local branches | `main` (only the early spec/plan docs), `build/foundation` (Plan 1 + hotfix, **deployed**), `feature/layers` (Plan 2; **now deployed to production**: its tip `4031ea7` is on `claude/macos-video-editor-lzye6c`; local name `claude/clipforge-plan-2-layers` in the Plan 3 checkout), `claude/quirky-cannon-7vz48u` (the work branch: Plan 3 audio editing and Plan 4 visual effects on top of Plan 2; Plans 3 and Plan 4 Part A are **deployed** to production (`3aa8eb6`, then fast-forward to `df7364e`); Plan 4 Part B (overlays, adjustment layers) and Task 14 are on this branch and **not deployed**) |
 
 Important facts:
 - **Do not use `/home/user/Kidlingo/CLAUDE.md` or its Fairshare code for ClipForge.** Kidlingo is an unrelated expense-splitting app
@@ -55,6 +55,11 @@ Environment facts that matter:
 - The e2e dev-server output shows a few forwarded `console.error` lines from tests that deliberately stub WebGL failures; they are expected.
 
 ## 4. Test results
+
+**Plan 4 (branch `claude/quirky-cannon-7vz48u`, written at Task 14):**
+- Vitest: **1182 tests passed, 87 files** (`npm test`). `npm run typecheck` clean, `npm run build` OK, `grep -rl __clipforge dist` prints nothing.
+- Playwright e2e: the Part B gate (Task 13a) was 389/390 in the full run (15.3 min; the one failure was the unrelated `audio-denoise.spec.ts:57` flake, 3/3 alone) and `e2e:preview` 1/1. At Task 14 only the journey `tests/e2e/effects-journey.spec.ts` (~20 s) and `effects-ui` 8, `overlays-ui` 7, `adjustment-app` 3 were re-run, all green; the full suite was not re-run.
+- Nothing from Plan 4 has been seen on a real GPU or in a real browser window: run `docs/superpowers/ledgers/plan-4-manual-qa-checklist.md` in desktop Chrome on a Mac.
 
 **Plan 3 (branch `claude/quirky-cannon-7vz48u`, written at Task 10):**
 - Vitest: **813 tests passed, 55 files** (`npm test`). `npm run typecheck` clean, `npm run build` OK, `grep -rl __clipforge dist` prints nothing.
@@ -96,19 +101,26 @@ Environment facts that matter:
 - Voice-over recording (mic -> mono WAV, Play along, 30 min cap), `Permissions-Policy: microphone=(self)` in `vercel.json`.
 - Decisions D1-D10 and any later rulings: `docs/superpowers/ledgers/plan-3-audio-ledger.md` (written by the controller; plan: `docs/superpowers/plans/2026-11-11-clipforge-plan-3-audio.md`).
 
+### Plan 4 (visual effects and looks, on `claude/quirky-cannon-7vz48u`; Part A deployed at `df7364e`, Part B NOT deployed)
+- Project data model **v5** (v4 added per-clip `effects[]` and `blend`; v5 added `Clip.kind` `'overlay'` with `overlay: OverlaySpec` and `'adjustment'`, both with `mediaId: ''`). Migration chain v1 -> v2 -> v3 -> v4 -> v5; a newer version stays "unsupported" and is never overwritten.
+- 17 effect types in per-clip stacks (max 8; `src/core/videoEffects.ts` schema, `src/render/effects/` shaders and the `EffectPipeline`): colour, black & white, sepia, split tone, vignette, film grain, LUT, blur, sharpen, glow, pixelate, RGB split, glitch, VHS, mirror, invert, chroma key. Nine look presets (`src/core/looks.ts`, applied in one edit), `.cube` LUT import (`src/media/cube.ts`, LUT media is hidden `kind: 'lut'` media kept alive by effect references in `gc.ts`).
+- 12 blend modes and adjustment layers share ONE composite helper (`src/render/compositeBuffer.ts`, Rulings P2, P9 transparent backdrop, P10 replace-then-lerp). Overlays (lower third, subscribe, progress bar, 8 stickers) are drawn to a 2D canvas texture (`src/render/overlays/`, system font stack only).
+- UI: EffectsInspector/LooksGallery/LutPicker/VideoEffectRow, BlendModeSelect, OverlayMenu/OverlayInspector. Preview and export go through the same compositor; the export dialog lists skipped effects/LUTs/blend (`src/render/effects/unavailable.ts`).
+- Decisions: `docs/superpowers/ledgers/plan-4-visual-effects-ledger.md` (Rulings P1-P10, T11-1..3, T13-1..4) and the per-task reports in `docs/superpowers/ledgers/plan-4-task-reports/`; manual QA: `plan-4-manual-qa-checklist.md`.
+
 ### Not built (see section 8)
-Effects/looks/LUT/chroma key/overlays, text, transitions, keyframes/easing, speed/reverse, crop/flip, track/master effects, crossfades, clip linking, auto-captions, stabilisation.
+Text clips, transitions, keyframes/easing, speed/reverse, crop/flip, track/master effects, crossfades, clip linking, auto-captions, stabilisation.
 
 ## 6. Architecture
 
 ```
-src/core/     pure, framework-free logic (the only place model math happens): model.ts (Project v3), migrate.ts, timeline.ts,
+src/core/     pure, framework-free logic (the only place model math happens): model.ts (Project v5), migrate.ts, timeline.ts,
               tracks.ts, merge.ts (join/snap/fit/reframe), fps.ts, scale.ts, formats.ts; v3 audio edits (fades/pan/volume/duck/detach/effect list)
 src/state/    store.ts (Zustand; history snapshots, selection, activeTrackId, autosave), history.ts, selection.ts, persist.ts
               (IndexedDB via idb-keyval, key 'clipforge:current'), tabLock.ts
 src/media/    import.ts/fileKind.ts/importErrors.ts, storage.ts (OPFS), decode.ts (frameAt per clip, serialised, cached),
               audioDecode.ts, gc.ts, support.ts (capability report), clip.ts
-src/render/   compositor.ts (WebGL2; Phase 1 uploads, Phase 2 draws bottom→top), gl.ts/glContext.ts/glErrors.ts, geometry.ts,
+src/render/   compositor.ts (WebGL2; Phase 1 uploads, Phase 2 draws bottom→top), effects/ (EffectPipeline, pass shaders, LUT, pool), overlays/, compositeBuffer.ts (blend + adjustment), drawCollect.ts, gl.ts/glContext.ts/glErrors.ts, geometry.ts,
               overlayGeometry.ts (pure PiP math), visible.ts (visualClipsAt), blur.ts, images.ts
 src/audio/    plan.ts (audibleClips, trackAudible, window planner), mixer.ts + mixerSchedule.ts + mixerTypes.ts (live), mixdown.ts (offline windows),
               context.ts, chain.ts (the ONE shared clip chain: gain, fades, pan, effects, track volume, duck points; used by live and export),
@@ -166,15 +178,15 @@ Plan 2 tasks (all reviewed, fix rounds closed, nothing pushed):
 
 ## 8. Remaining work
 
-### Immediate (finish Plan 3, then deploy)
+### Immediate (Plan 3 and Plan 4 Part A are deployed; finish Plan 4 Part B)
 1. Plan 2 is deployed (Ruling K and its final review were done); its manual QA checklist (`plan-2-manual-qa-checklist.md`) has still not been run in a real browser.
 2. Plan 3: final whole-branch review and fix wave (controller), then the manual QA checklist `docs/superpowers/ledgers/plan-3-manual-qa-checklist.md` in real desktop Chrome on a Mac (audible checks, microphone permission flows, QuickTime playback, the two-line audio track header layout).
 3. Ask the user before deploying: merge into `build/foundation` and push to `claude/macos-video-editor-lzye6c` (redeploys production). Migration notes: v1 -> v2 -> v3 happens on load (Plan 2's v2 is already live); an older open tab would then show "saved by a newer version" and protect the data. The `microphone=(self)` Permissions-Policy change in `vercel.json` goes live with it.
 
 ### Roadmap (separate plans; write each in detail with the writing-plans skill, get the user's approval, then execute with subagent-driven-development)
 - **Plan 3, audio editing: DONE (implemented on `claude/quirky-cannon-7vz48u`, not deployed).** See section 5. Still open for later: track/master effects, crossfades, clip linking, speed change with pitch preservation (Plan 5).
-- **Plan 4, visual effects and looks:** WebGL2 effect registry (param schema + shader) with per-clip stacks and live preview: colour, looks (B&W, sepia, film grain, teal-orange, vignette, Cinematic/Moody/Golden Hour…, `.cube` LUT import), blur/sharpen/glow/pixelate, stylise (RGB split, glitch, VHS, mirror, invert), chroma key, overlays (lower thirds, subscribe button, progress bar, stickers). Split `compositor.ts`/`gl.ts` first. Data model v4.
-- **Plan 5, animation and motion:** keyframes (transform + effect params) with easing and a curve editor, motion paths, text clips with animation presets, transitions (needs a clip-boundary overlap model), speed 0.25–4× / reverse / ramp with pitch-preserving audio (touches every `duration = out − in` call site: `clipDuration/clipEnd`, `trimClip`, `splitClip`, `ui/drag.ts`, `audio/plan.ts`, compositor source-time mapping, exporter), crop/rotate/flip. Data model v5.
+- **Plan 4, visual effects and looks: DONE except the deploy of Part B (overlays, adjustment layers) and the manual QA (`plan-4-manual-qa-checklist.md`, never run on a real GPU or Mac). Original scope:** WebGL2 effect registry (param schema + shader) with per-clip stacks and live preview: colour, looks (B&W, sepia, film grain, teal-orange, vignette, Cinematic/Moody/Golden Hour…, `.cube` LUT import), blur/sharpen/glow/pixelate, stylise (RGB split, glitch, VHS, mirror, invert), chroma key, overlays (lower thirds, subscribe button, progress bar, stickers). Split `compositor.ts`/`gl.ts` first. Data model v4.
+- **NEXT: Plan 5, animation and motion:** keyframes (transform + effect params) with easing and a curve editor, motion paths, text clips with animation presets, transitions (needs a clip-boundary overlap model), speed 0.25–4× / reverse / ramp with pitch-preserving audio (touches every `duration = out − in` call site: `clipDuration/clipEnd`, `trimClip`, `splitClip`, `ui/drag.ts`, `audio/plan.ts`, compositor source-time mapping, exporter), crop/rotate/flip. Data model v6 (v5 is taken by Plan 4).
 See `docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md` (Roadmap section) and the spec for details.
 
 ## 9. Known issues and deferred items
@@ -199,6 +211,15 @@ Plan 3 (audio) known issues and deferred items (full minors in the Plan 3 ledger
 - Attach back is not offered once the twin was edited (compared with the video clip's own settings).
 - Slider arrow-key holds create many undo steps; waveform does not redraw on DPR/track-height change and failed peak decodes are not negatively cached; the two-line audio track header layout has never been viewed in a real browser (manual QA item).
 - Positive duck amounts are clamped silently; the duck popover is a `role=group` without a focus trap.
+
+Plan 4 (visual effects) known limits and deferred items (full text in the Plan 4 ledger):
+- A neutral key colour (white/grey/black) keys all neutrals; spill suppression keeps luma, so hair over a dark layer can keep a light-grey edge (Ruling P8, spill default 0.75).
+- Film grain is weaker in exports after the first frames (12 Mbit/s H.264 cannot hold per-pixel noise; Ruling T11-1); the bitrate decision waits for the manual QA.
+- Blend modes and adjustment layers need the blend shader; if it fails, they are skipped with a toast and an export notice.
+- Overlay text uses the system font stack (looks differ per machine); effects are refused on overlay clips; there are no keyframes.
+- The heavy-stack time guard is deferred (Ruling T11-3): 8 x blur 100 at 1080p took ~17 s/frame on SwiftShader; a watchdog reset ends an export as "WebGL context lost". Preview and export pools coexist during an export (about 1.3 GB worst case at 4K); the effect pool has a 640 MiB byte budget, the composite buffer 128 MiB per compositor.
+- ALL Plan 4 measurements (14x perf threshold, 3/255 GPU-vs-CPU drift guards, memory) are SwiftShader-only; recheck on a real GPU. RGBA8 working targets (8-bit quantisation per pass).
+- A known e2e flake: `audio-denoise.spec.ts:57` once failed with "Execution context was destroyed" in the full run and passes alone.
 
 Code-health (all tests pass despite these):
 - Over the ~200-line guideline: `src/export/exporter.ts` 345, `src/ui/styles.css` 1211, `src/media/decode.ts` 212, `src/harness.ts` 204, `src/render/overlayGeometry.ts` 193–203.
@@ -228,6 +249,6 @@ Model choices: opus for render/audio/UI-heavy tasks and reviews, sonnet for mech
 - `CLAUDE.md`: short operating rules for Claude Code.
 - `README.md`: user-facing feature list, limits, deployment, troubleshooting, third-party licences.
 - `docs/superpowers/specs/2026-11-10-clipforge-design.md`: the approved design (vision for all plans).
-- `docs/superpowers/plans/`: Plan 1 (foundation), Plan 2 (layers, incl. Roadmap for Plans 3–5) and Plan 3 (audio editing).
-- `docs/superpowers/ledgers/`: decision ledgers (`plan-1-foundation-ledger.md`, `plan-2-layers-ledger.md`, `plan-3-audio-ledger.md`) and the manual QA checklists `plan-2-manual-qa-checklist.md`, `plan-3-manual-qa-checklist.md`.
+- `docs/superpowers/plans/`: Plan 1 (foundation), Plan 2 (layers, incl. Roadmap for Plans 3–5), Plan 3 (audio editing) and Plan 4 (visual effects, with the roadmap for Plans 4-13).
+- `docs/superpowers/ledgers/`: decision ledgers (`plan-1-foundation-ledger.md`, `plan-2-layers-ledger.md`, `plan-3-audio-ledger.md`, `plan-4-visual-effects-ledger.md`, with `plan-4-task-reports/`) and the manual QA checklists `plan-2-manual-qa-checklist.md`, `plan-3-manual-qa-checklist.md`, `plan-4-manual-qa-checklist.md`.
 - `vercel.json` (SPA rewrite scoped away from `/assets`, cache + security headers; no CSP/COOP/COEP), `scripts/copy-licenses.mjs`, `playwright*.config.ts`.
