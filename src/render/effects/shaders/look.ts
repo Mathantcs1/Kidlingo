@@ -2,7 +2,7 @@
 // the CPU references are in ../looksMath.ts. Colour maths runs on straight colour (un-premultiplied), alpha is untouched.
 import { CELL_EPS, MIN_SOFTNESS, SEPIA_MATRIX, grainCell, grainInvCell, splitToneCoeffs, vignetteCoeffs } from '../looksMath';
 import type { PassShader } from '../types';
-import { GLSL_HEADER, GLSL_LUMA, GLSL_PREMULTIPLY, f } from './glsl';
+import { GLSL_HASH, GLSL_HEADER, GLSL_LUMA, GLSL_PREMULTIPLY, f } from './glsl';
 
 const num = (v: number | undefined): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const PRE = `${GLSL_LUMA}${GLSL_PREMULTIPLY}`;
@@ -73,27 +73,19 @@ void main() {
 };
 
 export const GRAIN: PassShader = {
-  // The uint arithmetic wraps mod 2^32 exactly like Math.imul in grainHash (looksMath.ts).
+  // GLSL_HASH is the twin of grainHash (looksMath.ts).
   fragment: `${GLSL_HEADER}
 uniform float u_frame;
 uniform float u_amount;
 uniform float u_invCell;
 ${PRE}
-float grainHash(uint frame, uint x, uint y) {
-  uint h = frame * 0x9e3779b1u + x * 0x85ebca6bu + y * 0xc2b2ae35u;
-  h ^= h >> 16;
-  h *= 0x7feb352du;
-  h ^= h >> 15;
-  h *= 0x846ca68bu;
-  h ^= h >> 16;
-  return float(h >> 8) / 16777216.0;
-}
+${GLSL_HASH}
 
 void main() {
   vec4 src = texture(u_src, v_uv);
   vec3 c = unpremultiply(src);
   vec2 cell = floor(gl_FragCoord.xy * u_invCell + ${f(CELL_EPS)});
-  float n = u_amount * (grainHash(uint(u_frame), uint(cell.x), uint(cell.y)) - 0.5);
+  float n = u_amount * (hash(uint(u_frame), uint(cell.x), uint(cell.y)) - 0.5);
   outColor = premultiply(clamp(c + n, 0.0, 1.0), src.a);
 }`,
   uniforms: (p, _ctx, size) => ({ u_amount: num(p.amount), u_invCell: grainInvCell(grainCell(p.size, size.height)) }),

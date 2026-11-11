@@ -6,6 +6,7 @@ import { BLUR, GLOW, PIXELATE, SHARPEN } from './shaders/blurFamily';
 import { COLOUR } from './shaders/colour';
 import { BW, GRAIN, SEPIA, SPLIT_TONE, VIGNETTE } from './shaders/look';
 import { LUT } from './shaders/lut';
+import { GLITCH, INVERT, MIRROR, RGB_SPLIT, VHS_SHADER } from './shaders/stylise';
 import type { EffectContext, PassShader, PassTexture, UniformValue, Uniforms } from './types';
 
 /**
@@ -24,6 +25,11 @@ export const PASS_SHADERS: Partial<Record<VideoEffectType, PassShader>> = {
   sharpen: SHARPEN,
   glow: GLOW,
   pixelate: PIXELATE,
+  rgbSplit: RGB_SPLIT,
+  glitch: GLITCH,
+  vhs: VHS_SHADER,
+  mirror: MIRROR,
+  invert: INVERT,
 };
 
 /** Registers (or, with undefined, removes) a type's shader. Used by tests and the dev harness's test-only effects. */

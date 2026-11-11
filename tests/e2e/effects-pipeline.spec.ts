@@ -83,8 +83,8 @@ test('disabled and unavailable effects leave the same slot: no pass, identical p
   await openHarness(page);
   const m = await quadImage(page);
   await register(page, 'invert', 'invert');
-  // invert disabled; mirror/pixelate have no shader registered.
-  const r = await renderEffects(page, imageProject(m, [fx('invert', false), fx('mirror'), fx('pixelate')]), [0, 0.5]);
+  // invert disabled; chromaKey has no shader registered; pixelate with no size param draws no pass.
+  const r = await renderEffects(page, imageProject(m, [fx('invert', false), fx('chromaKey'), fx('pixelate')]), [0, 0.5]);
   const [plain] = await render(page, imageProject(m, []), [0]);
   expect(r.passes).toEqual([0, 0]);
   expect(r.unavailable).toEqual([]);

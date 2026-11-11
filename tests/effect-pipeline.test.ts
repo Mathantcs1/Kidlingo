@@ -99,18 +99,21 @@ describe('EffectPipeline.run with nothing to apply', () => {
   const shader: PassShader = { fragment: 'void main() {}', uniforms: () => ({}) };
 
   it('returns the SAME slot and makes no GL call for an empty, disabled or unregistered stack', () => {
+    // invert is shipped (Task 8): replace it for this test and restore the shipped shader afterwards. chromaKey is the
+    // one type still without a shader (Task 9 must pick another stand-in, e.g. by unregistering a type here).
+    const shipped = PASS_SHADERS.invert;
     registerPassShader('invert', shader);
     try {
       const { gl, calls } = fakeGl();
       const pipeline = new EffectPipeline(gl);
       const input = slot();
-      for (const stack of [[], [effect('invert', false)], [effect('mirror')], [effect('pixelate', false), effect('vhs')], [effect('glitch')]]) {
+      for (const stack of [[], [effect('invert', false)], [effect('chromaKey')], [effect('pixelate', false), effect('chromaKey')]]) {
         expect(pipeline.run(input, { width: 8, height: 8 }, [...IDENTITY], stack, ctx())).toBe(input);
       }
       expect(calls()).toEqual([]);
       expect(pipeline.passes).toBe(0);
     } finally {
-      registerPassShader('invert', undefined);
+      registerPassShader('invert', shipped);
     }
   });
 
@@ -165,7 +168,7 @@ describe('programFor failure policy', () => {
   it('returns null without notifying for a type with no registered shader', () => {
     const { gl, calls } = fakeGl();
     const onUnavailable = vi.fn();
-    expect(programFor(gl, 'vhs', onUnavailable)).toBeNull();
+    expect(programFor(gl, 'chromaKey', onUnavailable)).toBeNull();
     expect(onUnavailable).not.toHaveBeenCalled();
     expect(calls()).toEqual([]);
   });

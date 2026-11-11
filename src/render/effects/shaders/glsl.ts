@@ -40,3 +40,31 @@ vec3 unpremultiply(vec4 p) {
 vec4 premultiply(vec3 c, float a) {
   return vec4(c * a, a);
 }`;
+
+/**
+ * `hash(uint frame, uint x, uint y)`: deterministic noise in [0, 1), the GLSL twin of looksMath `grainHash` (the uint
+ * arithmetic wraps mod 2^32 exactly like Math.imul).
+ */
+export const GLSL_HASH = `
+float hash(uint frame, uint x, uint y) {
+  uint h = frame * 0x9e3779b1u + x * 0x85ebca6bu + y * 0xc2b2ae35u;
+  h ^= h >> 16;
+  h *= 0x7feb352du;
+  h ^= h >> 15;
+  h *= 0x846ca68bu;
+  h ^= h >> 16;
+  return float(h >> 8) / 16777216.0;
+}`;
+
+/**
+ * `at(vec2 p)`: the source at working-pixel position p (pixel centres are index + 0.5, y down), clamped to the
+ * picture's pixel centres and mapped through the source's uv matrix, so it is correct in an effect's first pass
+ * (rotated / mirrored input) as in later ones. Declares u_uv and u_size.
+ */
+export const GLSL_SAMPLE = `
+uniform mat3 u_uv;
+uniform vec2 u_size;
+vec4 at(vec2 p) {
+  vec2 c = clamp(p, vec2(0.5), u_size - 0.5);
+  return texture(u_src, (u_uv * vec3(c / u_size, 1.0)).xy);
+}`;
