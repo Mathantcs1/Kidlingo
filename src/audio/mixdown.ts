@@ -3,8 +3,8 @@ import type { Clip, Id, Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import { ExportError } from '../export/errors';
 import { decodeAudioRange } from '../media/audioDecode';
-import { buildClipChain } from './chain';
-import { chainMargins } from './effects/params';
+import { buildClipChain, prepareSource } from './chain';
+import { chainLatency, chainMargins } from './effects/params';
 import { audibleClips, planWindow, trackVolumes } from './plan';
 import type { Segment } from './plan';
 import { noteAudioBuffer, noteWindow } from './stats';
@@ -95,7 +95,8 @@ export class MixdownStream {
   /**
    * Decodes one segment (plus cut margins and its effects' pre-roll / post-roll, never past the clip's in/out) and
    * starts it so source time srcFrom plays at timeline seg.when; `t0` is the timeline time of context time 0.
-   * With effects the pre-roll plays too (the chain's seam gate keeps it silent); false if silent.
+   * With effects the pre-roll plays too (the chain's seam gate keeps it silent), all of it chainLatency earlier
+   * (pitch compensation) and through noise reduction first (prepareSource); false if silent.
    */
   private async schedule(ctx: OfflineAudioContext, seg: Segment, t0: number): Promise<boolean> {
     const { clip } = seg;
@@ -112,13 +113,13 @@ export class MixdownStream {
     }
     if (!decoded) return false;
     const source = ctx.createBufferSource();
-    source.buffer = decoded.buffer;
+    source.buffer = prepareSource(clip, decoded);
     // Context time 0 is timeline time t0.
     const chain = buildClipChain({ ctx, clip, trackVolume: seg.trackVolume, seg, ctxStart: -t0 });
     source.connect(chain.input);
     chain.output.connect(ctx.destination);
     // Buffer time `lead` is source time seg.srcFrom, which plays at timeline time seg.when.
-    const when = seg.when - t0;
+    const when = seg.when - t0 - chainLatency(clip.audio.effects, ctx.sampleRate);
     const lead = seg.srcFrom - decoded.start;
     if (margins.pre > 0) {
       // Play the whole decoded history: buffer time 0 sounds at context time when - lead (clipped at 0).

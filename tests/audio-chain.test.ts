@@ -41,7 +41,7 @@ function fakeCtx() {
     nodes.push(n);
     return n;
   };
-  const ctx = { createGain: make('gain'), createChannelSplitter: make('split'), createChannelMerger: make('merge') };
+  const ctx = { sampleRate: 48000, createGain: make('gain'), createChannelSplitter: make('split'), createChannelMerger: make('merge') };
   return { nodes, ctx };
 }
 
@@ -164,5 +164,18 @@ describe('buildClipChain', () => {
     const duck = chain.output as never as FakeNode;
     expect(duck.gain.value).toBe(1);
     expect(duck.gain.calls).toEqual([]);
+  });
+
+  it('the seam gate opens and closes on whole frames, whatever the float error of ctxStart + from', () => {
+    const { ctx, nodes } = fakeCtx();
+    const c = clip({ audio: { ...defaultClipAudio(), effects: [{ id: 'g', type: 'gain', enabled: true, params: { gainDb: 0 } }] } });
+    // Window 3 of a 1 s render with a 0.2 s pre-roll: (0.2 - 3) + 3 is 0.20000000000000018, a hair past frame 9600,
+    // which a ceil would push to frame 9601 (the gate one frame late in this window and not in the one-pass render).
+    const ctxStart = 9600 / 48000 - 3;
+    buildClipChain({ ctx: ctx as never, clip: c, trackVolume: 1, seg: seg(c, 3, 1, 2, { whenEnd: 4 }), ctxStart });
+    const gate = nodes.find((n) => n.gain.calls.length === 2 && n.gain.calls[0][1] === 1 && n.gain.calls[1][1] === 0)!;
+    const frames = gate.gain.calls.map(([, , t]) => t * 48000);
+    expect(frames.map(Math.ceil)).toEqual([9600, 57600]);
+    expect(frames.map(Math.round)).toEqual([9600, 57600]);
   });
 });

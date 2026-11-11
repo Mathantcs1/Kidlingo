@@ -236,11 +236,12 @@ test('effect list: add EQ and change a parameter (one undo step each); disabling
   await page.keyboard.press('ControlOrMeta+z');
   expect(clipOfP(await present(page)).audio.effects[0].params.mid).toBe(0);
 
-  // Only available presets are offered (pitch presets arrive with the pitch effect).
+  // Every preset and effect is offered since Task 7 (pitch and noise reduction included).
   const presets = await page.getByTestId('audio-preset').locator('option').allTextContents();
-  expect(presets.slice(1)).toEqual(['Podcast voice', 'Radio', 'Telephone']);
+  expect(presets.slice(1)).toEqual(['Podcast voice', 'Radio', 'Telephone', 'Deep voice', 'Chipmunk']);
   const addable = await page.getByTestId('effect-add').locator('option').allTextContents();
-  expect(addable).not.toContain('Pitch');
+  expect(addable).toContain('Pitch');
+  expect(addable).toContain('Noise reduction');
 
   // Same origin: the harness reads the media the app imported. The 440 Hz tone with mid −12 dB is quieter.
   const h = await context.newPage();

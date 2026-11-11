@@ -54,6 +54,34 @@ export const audioHarness = {
     const n = 2 * whole.length;
     return { lengths: [cut.length, whole.length], rmsDiff: Math.sqrt(sq / n), maxDiff, rms: Math.sqrt(ref / n), peak };
   },
+  /**
+   * The strongest frequency (1 Hz steps over [fMin, fMax], refined by parabolic interpolation) of the export mix's
+   * left channel over [from, to) seconds: a Hann-windowed DFT scan (Goertzel per bin), plus the mix length.
+   */
+  async mixdownDominantFrequency(p: Project, sampleRate: number, from: number, to: number, fMin: number, fMax: number) {
+    const b = await renderMixdown(p, sampleRate);
+    if (!b) return null;
+    const d = b.getChannelData(0);
+    const a = Math.max(0, Math.round(from * sampleRate));
+    const e = Math.min(b.length, Math.round(to * sampleRate));
+    const n = e - a;
+    const x = Float64Array.from({ length: n }, (_, i) => d[a + i] * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / n)));
+    const power = (f: number): number => {
+      const k = 2 * Math.cos((2 * Math.PI * f) / sampleRate);
+      let [s1, s2] = [0, 0];
+      for (let i = 0; i < n; i++) [s1, s2] = [x[i] + k * s1 - s2, s1];
+      return s1 * s1 + s2 * s2 - k * s1 * s2;
+    };
+    let best = fMin;
+    let top = -1;
+    for (let f = fMin; f <= fMax; f++) {
+      const v = power(f);
+      if (v > top) [best, top] = [f, v];
+    }
+    const [l, r] = [power(best - 1), power(best + 1)];
+    const den = l - 2 * top + r;
+    return { freq: den < 0 ? best + (0.5 * (l - r)) / den : best, length: b.length };
+  },
   /** Renders the export mixdown and returns [left, right] RMS for each [from, to) window (seconds). */
   async mixdownChannelRms(p: Project, sampleRate: number, windows: [number, number][]) {
     const b = await renderMixdown(p, sampleRate);

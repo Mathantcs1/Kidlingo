@@ -8,7 +8,15 @@ export interface EffectNodes {
   all: AudioNode[];
 }
 
-export type EffectBuilder = (ctx: BaseAudioContext, params: Record<string, number>) => EffectNodes;
+/** Where an effect sits on the context clock (modulated effects keep their phase tied to the clip, not the window). */
+export interface EffectTiming {
+  /** Context time of the clip's start: phase 0 of any modulation (the same timeline instant in every render). */
+  phase0: number;
+  /** Context time after which the effect's output is never heard (the segment end): its sources may stop there. */
+  end: number;
+}
+
+export type EffectBuilder = (ctx: BaseAudioContext, params: Record<string, number>, at: EffectTiming) => EffectNodes;
 
 export interface EffectDef extends EffectSchema {
   build: EffectBuilder;

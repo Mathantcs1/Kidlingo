@@ -8,5 +8,5 @@ export const buildGain: EffectBuilder = (ctx, q) => {
   return single(g);
 };
 
-/** Identity pass-through for effects whose builder is not there yet (pitch and denoise until Task 7). */
+/** Identity pass-through: the in-graph node of noise reduction, which runs on the decoded buffer (see chain.ts). */
 export const buildIdentity: EffectBuilder = (ctx) => single(ctx.createGain());

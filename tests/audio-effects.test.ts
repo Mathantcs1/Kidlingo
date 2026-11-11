@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { EFFECT_SCHEMAS, MAX_PRE_ROLL, chainMargins, clampParams, defaultParams, hasTail } from '../src/audio/effects/params';
+import { EFFECT_SCHEMAS, MAX_PRE_ROLL, chainLatency, chainMargins, clampParams, defaultParams, hasTail } from '../src/audio/effects/params';
+import { PITCH_WINDOW, pitchCurves } from '../src/audio/effects/pitchMath';
 import { reverbImpulse } from '../src/audio/effects/impulse';
 import { normaliseGainDb } from '../src/audio/effects/normalise';
 import { PRESETS, availablePresets } from '../src/audio/presets';
@@ -43,12 +44,10 @@ describe('clampParams', () => {
     expect(clampEffectParams('gain', { gainDb: -99 })).toEqual({ gainDb: -24 });
   });
 
-  it('pitch and denoise are registered but not yet available', () => {
-    expect(EFFECT_SCHEMAS.pitch.available).toBe(false);
-    expect(EFFECT_SCHEMAS.denoise.available).toBe(false);
+  it('every effect is available, pitch and denoise included (Task 7)', () => {
     expect(defaultParams('pitch')).toEqual({ semitones: 0 });
     expect(defaultParams('denoise')).toEqual({ strength: 0.5 });
-    for (const t of TYPES.filter((t) => t !== 'pitch' && t !== 'denoise')) expect(EFFECT_SCHEMAS[t].available).toBe(true);
+    for (const t of TYPES) expect(EFFECT_SCHEMAS[t].available, t).toBe(true);
   });
 });
 
@@ -93,6 +92,31 @@ describe('chainMargins', () => {
     const m = chainMargins(list);
     expect(m.pre).toBeCloseTo(0.5 + 1 + 0.2, 9);
     expect(m.post).toBeCloseTo(0.2, 9);
+  });
+});
+
+describe('pitch shifter maths (D3)', () => {
+  it('latency is half the delay sweep: 0 at 0 st, 50 ms at +12, 25 ms at -12; only enabled pitch counts', () => {
+    expect(chainLatency([fx('pitch')])).toBe(0);
+    expect(chainLatency([fx('pitch', { semitones: 12 })])).toBeCloseTo(PITCH_WINDOW / 2, 9);
+    expect(chainLatency([fx('pitch', { semitones: -12 })])).toBeCloseTo(PITCH_WINDOW / 4, 9);
+    expect(chainLatency([fx('pitch', { semitones: 12 }, false), fx('eq'), fx('denoise'), fx('reverb')])).toBe(0);
+    expect(chainLatency([fx('pitch', { semitones: 99 })])).toBeCloseTo(PITCH_WINDOW / 2, 9);
+  });
+  it.each([12, 6, -4, -12])('%i st: two taps whose gains sum to 1 and whose delay slope gives the pitch ratio', (st) => {
+    const sr = 48000;
+    const { delay, gain, period } = pitchCurves(st, sr);
+    const n = delay.length;
+    expect(n).toBe(Math.round(PITCH_WINDOW * sr));
+    expect(period).toBeCloseTo(n / sr, 12);
+    for (let i = 0; i < n; i++) expect(gain[i] + gain[(i + n / 2) % n]).toBeCloseTo(1, 6);
+    expect(gain[0]).toBeCloseTo(0, 9);
+    const ratio = 2 ** (st / 12);
+    // y(t) = x(t + latency - d(t)): the read position advances at 1 - d'(t) = ratio.
+    const slope = ((delay[n / 2 + 1] - delay[n / 2 - 1]) / 2) * sr;
+    expect(1 - slope).toBeCloseTo(ratio, 6);
+    for (const d of delay) expect(d).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...delay)).toBeLessThanOrEqual(Math.abs(1 - ratio) * PITCH_WINDOW + 1e-9);
   });
 });
 
@@ -180,7 +204,9 @@ describe('presets', () => {
         expect(clampParams(e.type, e.params), `${key}/${e.type}`).toEqual(e.params);
       }
     }
-    expect(availablePresets().map(([k]) => k)).toEqual(['podcast', 'radio', 'telephone']);
+    expect(availablePresets().map(([k]) => k)).toEqual(['podcast', 'radio', 'telephone', 'deep', 'chipmunk']);
+    expect(PRESETS.deep).toEqual([{ type: 'pitch', enabled: true, params: { semitones: -4 } }]);
+    expect(PRESETS.chipmunk).toEqual([{ type: 'pitch', enabled: true, params: { semitones: 6 } }]);
   });
   it('applyPreset replaces the effect list in one edit with fresh ids; same reference when unchanged', () => {
     const p0 = addEffect(base(), 'c1', 'reverb');
@@ -193,11 +219,13 @@ describe('presets', () => {
     const again = applyPreset(p, 'c1', 'telephone');
     expect(again).toBe(p);
   });
-  it('refuses on a locked track and on an unavailable preset', () => {
+  it('refuses on a locked track and on an unknown preset; applies the pitch presets', () => {
     const p0 = base();
     const locked = setTrackFlags(p0, p0.tracks.find((t) => t.kind === 'audio')!.id, { locked: true });
     expect(() => applyPreset(locked, 'c1', 'podcast')).toThrow('Track is locked');
-    expect(() => applyPreset(p0, 'c1', 'deep')).toThrow();
+    expect(() => applyPreset(p0, 'c1', 'nope' as never)).toThrow();
+    expect(effectsOf(applyPreset(p0, 'c1', 'deep')).map((e) => [e.type, e.params.semitones])).toEqual([['pitch', -4]]);
+    expect(effectsOf(applyPreset(p0, 'c1', 'chipmunk')).map((e) => [e.type, e.params.semitones])).toEqual([['pitch', 6]]);
   });
 });
 

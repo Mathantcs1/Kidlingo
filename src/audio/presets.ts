@@ -33,7 +33,7 @@ export const PRESETS: Record<PresetKey, PresetEffect[]> = {
     fx('compressor', { threshold: -30, ratio: 6, attack: 0.003, release: 0.1, makeup: 8 }),
   ],
   telephone: [fx('highpass', { freq: 400 }), fx('lowpass', { freq: 3400 }), fx('eq', { low: 0, mid: 6, high: 0 })],
-  // Pitch presets: their effect is built in Plan 3 Task 7; until then they are listed as unavailable.
+  // Voice presets built on the pitch shifter (Plan 3 Task 7).
   deep: [fx('pitch', { semitones: -4 })],
   chipmunk: [fx('pitch', { semitones: 6 })],
 };

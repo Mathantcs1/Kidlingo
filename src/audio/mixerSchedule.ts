@@ -1,7 +1,8 @@
 // Live mixer helpers (see mixer.ts): decoding a window's segments and the clock maths of one scheduled piece.
 import { decodeAudioRange } from '../media/audioDecode';
 import type { DecodedAudio } from '../media/audioDecode';
-import { chainMargins } from './effects/params';
+import { prepareSource } from './chain';
+import { chainLatency, chainMargins } from './effects/params';
 import type { Margins } from './effects/params';
 import { planWindow } from './plan';
 import type { Segment } from './plan';
@@ -44,7 +45,7 @@ export async function decodePieces(
       throw new Error(`Could not read the audio of "${name}": ${e instanceof Error ? e.message : String(e)}`);
     }
     if (!current()) return [];
-    if (decoded) out.push({ seg, decoded, margins });
+    if (decoded) out.push({ seg, decoded: { ...decoded, buffer: prepareSource(clip, decoded) }, margins });
   }
   return out;
 }
@@ -64,7 +65,7 @@ export interface Timing {
  * Source [srcFrom, srcTo) of the buffer at its exact clock time (sub-sample offsets). With effects the decoded
  * pre-roll plays before and the post-roll after (the chain's seam gate silences both), so effects enter the segment
  * warmed up. Pre-roll that is already in the past is skipped as late, so pre-roll longer than the live look-ahead
- * (one window) starts cold; export is always exact.
+ * (one window) starts cold; export is always exact. A pitch-shifted chain is fed chainLatency earlier, as in export.
  */
 export function pieceTiming(s: Session, { seg, decoded, margins }: Piece, now: number): Timing {
   const start = s.ctxStart + (seg.when - s.from);
@@ -73,11 +74,12 @@ export function pieceTiming(s: Session, { seg, decoded, margins }: Piece, now: n
   const lead = seg.srcFrom - decoded.start;
   // Seconds played before srcFrom: all decoded pre-roll with effects (negative if the buffer starts after srcFrom).
   const roll = lead < 0 || margins.pre > 0 ? lead : 0;
+  const latency = chainLatency(seg.clip.audio.effects, s.ctx.sampleRate);
   let offset = lead - roll;
-  let when = start - roll;
+  let when = start - roll - latency;
   const late = Math.max(0, now - when);
   when += late;
   offset += late;
   const duration = lead + (seg.srcTo - seg.srcFrom) + margins.post - offset;
-  return { start, end, when, offset, duration, late: Math.max(0, late - Math.max(0, roll)) };
+  return { start, end, when, offset, duration, late: Math.max(0, late - Math.max(0, roll) - latency) };
 }

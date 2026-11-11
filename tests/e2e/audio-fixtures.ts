@@ -23,6 +23,15 @@ export const audioFixtures = () => ({
   tone100: wav('fx-tone-100.wav', '0.25*sin(2*PI*100*t)', 3),
   tone4k: wav('fx-tone-4k.wav', '0.25*sin(2*PI*4000*t)', 3),
   tone8k: wav('fx-tone-8k.wav', '0.25*sin(2*PI*8000*t)', 3),
+  /** 440 Hz sine at 0.25 amplitude, 3 s (pitch shifting). */
+  tone440: wav('fx-tone-440.wav', '0.25*sin(2*PI*440*t)', 3),
+  /** White noise at 0.05 amplitude; from 1.5 s a 0.3 amplitude 440 Hz tone on top (noise reduction), 3 s. */
+  hiss: wav('fx-hiss.wav', '0.05*(2*random(0)-1)+0.3*gte(t,1.5)*sin(2*PI*440*t)', 3),
+  /**
+   * Stationary white noise at 0.05 amplitude under 0.3 amplitude 440 Hz bursts (0.25 s on, 0.25 s off), 5 s: speech-
+   * like audio whose pauses hold the noise floor in every decoded piece (noise-reduction seams).
+   */
+  steady: wav('fx-hiss-bursts.wav', '0.05*(2*random(0)-1)+0.3*lt(mod(t,0.5),0.25)*sin(2*PI*440*t)', 5),
   /** A 10-sample 0.8 click at 0.1 s, then silence (2 s). */
   click: wav('fx-click.wav', '0.8*between(n,4800,4809)', 2),
   /** 1 kHz: 0.05 amplitude for 2 s, then 0.8 for 2 s. */

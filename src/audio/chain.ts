@@ -1,7 +1,9 @@
 // The one per-segment audio graph, shared by live playback (mixer.ts) and the offline mixdown (mixdown.ts).
 import { clipEnd } from '../core/model';
 import type { Clip } from '../core/model';
-import { hasTail } from './effects/params';
+import type { DecodedAudio } from '../media/audioDecode';
+import { denoiseBuffer } from './denoise';
+import { clampParams, hasTail } from './effects/params';
 import { buildEffects } from './effects/registry';
 import { fadePoints, windowPoints } from './fade';
 import type { GainPoint } from './fade';
@@ -71,10 +73,23 @@ function gate(ctx: BaseAudioContext, clip: Clip, from: number, to: number, ctxSt
   // The clip-end ramp is a property of the clip, not of the segment: a window cut inside it lands on the same line.
   const end = clipEnd(clip);
   const r = hasTail(clip.audio.effects) ? Math.min(TAIL_RAMP, Math.max(0, end - clip.start)) : 0;
-  if (r > 0) scheduleGain(g.gain, windowPoints([{ t: end - r, gain: 1 }, { t: end, gain: 0 }], from, to), 1, ctxStart);
-  else g.gain.setValueAtTime(1, Math.max(0, ctxStart + from));
-  g.gain.setValueAtTime(0, Math.max(0, ctxStart + to));
+  const points = r > 0 ? windowPoints([{ t: end - r, gain: 1 }, { t: end, gain: 0 }], from, to) : [{ t: from, gain: 1 }];
+  // Every gate event on a whole frame; the close shares its time with a ramp ending at `to` and follows it.
+  points.forEach(({ t, gain }, i) => {
+    if (i === 0) g.gain.setValueAtTime(gain, frameTime(ctx, ctxStart + t));
+    else g.gain.linearRampToValueAtTime(gain, frameTime(ctx, ctxStart + t));
+  });
+  g.gain.setValueAtTime(0, frameTime(ctx, ctxStart + to));
   return g;
+}
+
+/**
+ * Context time `t` snapped to its nearest frame, a hair before it: an event lands on that frame whether the engine
+ * rounds or ceils (ctxStart + from is not exact in binary, e.g. (0.2 - 2.8) + 3, and ceil would open the gate one
+ * frame late in one window and not in another).
+ */
+function frameTime(ctx: BaseAudioContext, t: number): number {
+  return Math.max(0, (Math.round(t * ctx.sampleRate) - 1e-3) / ctx.sampleRate);
 }
 
 /** Seconds over which effects (dry and wet) fade out at a clip's end. */
@@ -95,7 +110,7 @@ export function buildClipChain(spec: ChainSpec): ClipChain {
   const to = seg.whenEnd;
 
   const input = ctx.createGain();
-  const effects = buildEffects(ctx, clip.audio.effects);
+  const effects = buildEffects(ctx, clip.audio.effects, { phase0: ctxStart + clip.start, end: ctxStart + to });
   const seam = effects ? gate(ctx, clip, from, to, ctxStart) : null;
   const clipGain = ctx.createGain();
   clipGain.channelCount = 2;
@@ -134,7 +149,32 @@ export function buildClipChain(spec: ChainSpec): ClipChain {
     input,
     output: duck,
     dispose: () => {
-      for (const n of nodes) n.disconnect();
+      for (const n of nodes) {
+        // Looping control sources (pitch) would otherwise run on until their scheduled stop.
+        const source = n as Partial<AudioScheduledSourceNode>;
+        if (typeof source.stop === 'function') {
+          try {
+            source.stop();
+          } catch {
+            // Never started.
+          }
+        }
+        n.disconnect();
+      }
     },
   };
+}
+
+/**
+ * The buffer a segment's source plays: the decoded audio after every enabled noise-reduction effect (D4), which
+ * works offline on the whole decoded piece (margins included) BEFORE the node graph, wherever it sits in the
+ * list. Its STFT frames sit on the source's own sample grid, so overlapping pieces share them (window seams).
+ */
+export function prepareSource(clip: Clip, decoded: DecodedAudio): AudioBuffer {
+  let buffer = decoded.buffer;
+  const origin = Math.round(decoded.start * buffer.sampleRate);
+  for (const e of clip.audio.effects) {
+    if (e.enabled && e.type === 'denoise') buffer = denoiseBuffer(buffer, clampParams('denoise', e.params).strength, origin);
+  }
+  return buffer;
 }

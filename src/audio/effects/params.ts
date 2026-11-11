@@ -1,6 +1,7 @@
 // DOM-free effect parameter schema: ranges, defaults, clamping and the decode margins each effect needs (D7).
 // src/core may import this file; the Web Audio builders live in sibling files that only the engine imports.
 import type { AudioEffect, AudioEffectType } from '../../core/model';
+import { pitchLatency } from './pitchMath';
 
 export interface ParamDef {
   key: string;
@@ -22,14 +23,15 @@ export interface EffectSchema {
   type: AudioEffectType;
   label: string;
   params: ParamDef[];
-  /** False until the effect has a real builder (pitch and denoise arrive in Plan 3 Task 7). */
+  /** Whether the UI offers it (every effect has a real builder since Plan 3 Task 7). */
   available: boolean;
   /** Whether it rings on after its input stops (reverb, echo): such chains are ramped out at the clip end. */
   tail: boolean;
   /**
    * The effects are causal, so state carried across a window cut is HISTORY: `pre` is how much earlier audio
    * the chain must have heard for its output inside the segment to equal an uncut render (filter warm-up,
-   * reverb impulse length, echo repeats). `post` is look-ahead for effects that need later audio (Task 7).
+   * reverb impulse length, echo repeats). `post` is look-ahead for effects that need later audio: the pitch
+   * shifter (latency-compensated, so it reads up to half its sweep ahead) and noise reduction (STFT frames).
    * Tails never sound past the clip end (live and export alike), so no effect needs audio decoded past it.
    */
   margins(params: Record<string, number>): Margins;
@@ -118,7 +120,7 @@ export const EFFECT_SCHEMAS: Record<AudioEffectType, EffectSchema> = {
     type: 'pitch',
     tail: false,
     label: 'Pitch',
-    available: false,
+    available: true,
     params: [p('semitones', 'Semitones', -12, 12, 1, 0, 'st')],
     margins: () => ({ pre: 0.2, post: 0.2 }),
   },
@@ -126,7 +128,7 @@ export const EFFECT_SCHEMAS: Record<AudioEffectType, EffectSchema> = {
     type: 'denoise',
     tail: false,
     label: 'Noise reduction',
-    available: false,
+    available: true,
     params: [p('strength', 'Strength', 0, 1, 0.05, 0.5)],
     margins: () => ({ pre: 0.2, post: 0.2 }),
   },
@@ -169,4 +171,16 @@ export function chainMargins(effects: readonly AudioEffect[]): Margins {
 /** Whether the chain has an enabled effect that rings on after its input (schema flag `tail`: reverb, echo). */
 export function hasTail(effects: readonly AudioEffect[]): boolean {
   return effects.some((e) => e.enabled && EFFECT_SCHEMAS[e.type].tail);
+}
+
+/**
+ * Seconds the chain delays its input on average: the sum of the enabled pitch shifters' latencies (pitchLatency;
+ * every other effect is zero-latency). Both engines start the source this much earlier, so output stays aligned.
+ * With `sampleRate` it is rounded to whole frames, so the shift never moves a sample-aligned start off the grid
+ * (Chromium rounds a start time and a buffer offset differently, which would differ between window renders).
+ */
+export function chainLatency(effects: readonly AudioEffect[], sampleRate?: number): number {
+  let out = 0;
+  for (const e of effects) if (e.enabled && e.type === 'pitch') out += pitchLatency(clampParams('pitch', e.params).semitones);
+  return sampleRate ? Math.round(out * sampleRate) / sampleRate : out;
 }
