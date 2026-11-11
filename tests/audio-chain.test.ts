@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildClipChain } from '../src/audio/chain';
+import { balanceGains, buildClipChain } from '../src/audio/chain';
 import type { Segment } from '../src/audio/plan';
 import { defaultClipAudio } from '../src/core/model';
 import type { Clip } from '../src/core/model';
@@ -18,14 +18,16 @@ class FakeParam {
   }
 }
 class FakeNode {
-  out: FakeNode[] = [];
+  /** [target, output, input] */
+  out: [FakeNode, number, number][] = [];
   disconnected = false;
   channelCount = 1;
   channelCountMode = 'max';
   channelInterpretation = 'speakers';
-  constructor(readonly kind: string, readonly gain = new FakeParam(), readonly pan = new FakeParam()) {}
-  connect(n: FakeNode) {
-    this.out.push(n);
+  readonly gain = new FakeParam();
+  constructor(readonly kind: string) {}
+  connect(n: FakeNode, output = 0, input = 0) {
+    this.out.push([n, output, input]);
     return n;
   }
   disconnect() {
@@ -34,12 +36,13 @@ class FakeNode {
 }
 function fakeCtx() {
   const nodes: FakeNode[] = [];
-  const make = (kind: string) => {
+  const make = (kind: string) => () => {
     const n = new FakeNode(kind);
     nodes.push(n);
     return n;
   };
-  return { nodes, ctx: { createGain: () => make('gain'), createStereoPanner: () => make('pan') } };
+  const ctx = { createGain: make('gain'), createChannelSplitter: make('split'), createChannelMerger: make('merge') };
+  return { nodes, ctx };
 }
 
 function clip(over: Partial<Clip> = {}): Clip {
@@ -57,34 +60,64 @@ function clip(over: Partial<Clip> = {}): Clip {
     ...over,
   };
 }
-const seg = (c: Clip, when: number, srcFrom: number, srcTo: number): Segment => ({
+const seg = (c: Clip, when: number, srcFrom: number, srcTo: number, over: Partial<Segment> = {}): Segment => ({
   clipId: c.id,
   mediaId: c.mediaId,
   srcFrom,
   srcTo,
   when,
+  whenEnd: when + (srcTo - srcFrom),
   clip: c,
   trackVolume: 0.8,
+  ...over,
 });
 
-function path(from: FakeNode): string[] {
-  const out = [from.kind];
-  for (let n = from; n.out.length === 1; n = n.out[0]) out.push(n.out[0].kind);
-  return out;
-}
+const one = (n: FakeNode): FakeNode => {
+  expect(n.out).toHaveLength(1);
+  return n.out[0][0];
+};
+
+describe('balanceGains', () => {
+  it('is unity at the centre, never above 1, and silences the far side at full pan', () => {
+    expect(balanceGains(0)).toEqual([1, 1]);
+    expect(balanceGains(-1)[0]).toBe(1);
+    expect(balanceGains(-1)[1]).toBeCloseTo(0, 12);
+    expect(balanceGains(1)[0]).toBeCloseTo(0, 12);
+    expect(balanceGains(1)[1]).toBe(1);
+    expect(balanceGains(0.5)[0]).toBeCloseTo(Math.SQRT1_2, 12);
+    for (let p = -1; p <= 1; p += 0.05) for (const g of balanceGains(p)) expect(g).toBeLessThanOrEqual(1);
+    expect(balanceGains(Number.NaN)).toEqual([1, 1]);
+    expect(balanceGains(-7)).toEqual(balanceGains(-1));
+  });
+});
 
 describe('buildClipChain', () => {
-  it('wires input → clip gain → panner → track gain → duck gain = output', () => {
+  it('wires input → clip gain → splitter → L/R balance gains → merger → track gain → duck gain = output', () => {
     const { ctx, nodes } = fakeCtx();
     const c = clip();
     const chain = buildClipChain({ ctx: ctx as never, clip: c, trackVolume: 0.8, seg: seg(c, 2, 0, 4), ctxStart: 10 });
-    expect(path(chain.input as never)).toEqual(['gain', 'gain', 'pan', 'gain', 'gain']);
-    const [, clipGain, pan, track, duck] = [chain.input as never as FakeNode, ...nodes.slice(1)];
-    expect(chain.output).toBe(duck);
-    expect(pan.pan.value).toBe(-0.25);
-    expect(pan.channelCount).toBe(2);
-    expect(pan.channelCountMode).toBe('explicit');
+    const input = chain.input as never as FakeNode;
+    const clipGain = one(input);
+    const split = one(clipGain);
+    expect(split.kind).toBe('split');
+    // Mono is up-mixed to L = R before the split, so the centre is unity for mono and stereo.
+    expect([clipGain.channelCount, clipGain.channelCountMode, clipGain.channelInterpretation]).toEqual([
+      2,
+      'explicit',
+      'speakers',
+    ]);
+    expect(split.out.map(([, o]) => o)).toEqual([0, 1]);
+    const [gl, gr] = split.out.map(([n]) => n);
+    expect(gl.gain.value).toBe(1);
+    expect(gr.gain.value).toBeCloseTo(Math.cos((0.25 * Math.PI) / 2), 12);
+    const merge = one(gl);
+    expect(merge.kind).toBe('merge');
+    expect(gl.out[0][2]).toBe(0);
+    expect(gr.out).toEqual([[merge, 0, 1]]);
+    const track = one(merge);
     expect(track.gain.value).toBe(0.8);
+    const duck = one(track);
+    expect(chain.output).toBe(duck);
     // Fade × clip volume, scheduled at ctxStart + timeline time.
     expect(clipGain.gain.calls).toEqual([
       ['set', 0, 12],
@@ -96,30 +129,40 @@ describe('buildClipChain', () => {
     expect(nodes.every((n) => n.disconnected)).toBe(true);
   });
 
-  it('a later window starts at the cut gain and duck points are scheduled within the window', () => {
+  it('ends the fade at the planned end (whenEnd), so a cut lands on the same time on both sides', () => {
+    const { ctx, nodes } = fakeCtx();
+    const c = clip();
+    buildClipChain({ ctx: ctx as never, clip: c, trackVolume: 1, seg: seg(c, 2, 0, 1, { whenEnd: 2.75 }), ctxStart: 0 });
+    expect(nodes[1].gain.calls[nodes[1].gain.calls.length - 1]).toEqual(['ramp', 0.375, 2.75]);
+  });
+
+  it('a later window starts at the cut gain; duck points come from the segment', () => {
     const { ctx, nodes } = fakeCtx();
     const c = clip();
     const duckPoints = [
       { t: 0, gain: 1 },
       { t: 4, gain: 0.5 },
     ];
-    buildClipChain({ ctx: ctx as never, clip: c, trackVolume: 1, seg: seg(c, 2.5, 0.5, 1.5), ctxStart: 1, duckPoints });
+    const s = seg(c, 2.5, 0.5, 1.5, { duckPoints });
+    const chain = buildClipChain({ ctx: ctx as never, clip: c, trackVolume: 1, seg: s, ctxStart: 1 });
     expect(nodes[1].gain.calls).toEqual([
       ['set', 0.25, 3.5],
       ['ramp', 0.5, 4],
       ['ramp', 0.5, 4.5],
     ]);
-    expect(nodes[4].gain.calls).toEqual([
+    const duck = chain.output as never as FakeNode;
+    expect(duck.gain.calls).toEqual([
       ['set', 0.6875, 3.5],
       ['ramp', 0.5625, 4.5],
     ]);
   });
 
   it('without duck points the duck gain stays at unity with no automation', () => {
-    const { ctx, nodes } = fakeCtx();
+    const { ctx } = fakeCtx();
     const c = clip();
-    buildClipChain({ ctx: ctx as never, clip: c, trackVolume: 1, seg: seg(c, 2, 0, 4), ctxStart: 0 });
-    expect(nodes[4].gain.value).toBe(1);
-    expect(nodes[4].gain.calls).toEqual([]);
+    const chain = buildClipChain({ ctx: ctx as never, clip: c, trackVolume: 1, seg: seg(c, 2, 0, 4), ctxStart: 0 });
+    const duck = chain.output as never as FakeNode;
+    expect(duck.gain.value).toBe(1);
+    expect(duck.gain.calls).toEqual([]);
   });
 });

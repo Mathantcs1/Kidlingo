@@ -9,7 +9,7 @@ import type { Clip, ClipAudio, MediaRef, Project } from '../../src/core/model';
 test.setTimeout(120_000);
 
 const dir = ensureFixtures();
-/** Stereo 1 kHz, 6 s, 48 kHz, amplitude 1/8 (RMS ~0.088). */
+/** Stereo 1 kHz, 6 s, 48 kHz, amplitude 1/8 up-mixed at -3 dB (RMS ~0.0625 per channel). */
 const tone1k = join(dir, 'tone-1k.wav');
 /** Mono 220 Hz, 600 s, 8 kHz AAC. */
 const longTone = join(dir, 'long-tone.m4a');
@@ -43,19 +43,29 @@ test('a 1 s fade-in starts silent and reaches full level', async ({ page }) => {
   expect(Math.abs(mid[0] / full[0] - 0.5)).toBeLessThan(0.05);
 });
 
-test('pan -1 sends a stereo and a mono source to the left only', async ({ page }) => {
+/** Per-channel source RMS: a 1/8 sine (mono), and the same sine up-mixed to stereo by ffmpeg at -3 dB. */
+const MONO_RMS = 0.125 / Math.SQRT2;
+const STEREO_RMS = 0.125 / 2;
+const near = (a: number, b: number, tol = 0.02): boolean => Math.abs(a / b - 1) < tol;
+
+test('pan is a balance that never boosts: hard left keeps the source level, the far side fades', async ({ page }) => {
   await openHarness(page);
   const [tone, mono] = await importPaths(page, [tone1k, longTone]);
-  for (const m of [tone, mono]) {
-    const p = audioProject([m], [clipOf(m, { out: 3, audio: audioOf({ pan: -1 }) })]);
-    const [[left, right]] = await channelRms(page, p, [[0.5, 2.5]]);
-    expect(left, m.name).toBeGreaterThan(0.1);
+  for (const [m, source] of [[tone, STEREO_RMS], [mono, MONO_RMS]] as const) {
+    const rmsAt = async (pan: number) =>
+      (await channelRms(page, audioProject([m], [clipOf(m, { out: 3, audio: audioOf({ pan }) })]), [[0.5, 2.5]]))[0];
+    const [l0, r0] = await rmsAt(0);
+    // Centre is unity for stereo and for mono (duplicated to both sides, not attenuated).
+    expect(near(l0, source), `${m.name} centre L ${l0}`).toBe(true);
+    expect(near(r0, source), `${m.name} centre R ${r0}`).toBe(true);
+    const [left, right] = await rmsAt(-1);
+    expect(near(left, l0), `${m.name} hard-left near side ${left} vs ${l0}`).toBe(true);
     expect(right, m.name).toBeLessThan(0.01 * left);
+    // Half right: near side unchanged, far side cos(pi/4).
+    const [hl, hr] = await rmsAt(0.5);
+    expect(near(hr, r0), `${m.name} half-right near ${hr}`).toBe(true);
+    expect(near(hl, l0 * Math.SQRT1_2), `${m.name} half-right far ${hl}`).toBe(true);
   }
-  // Pan 0 keeps both channels equal at the source level (mono is up-mixed, not attenuated).
-  const centre = audioProject([mono], [clipOf(mono, { out: 3 })]);
-  const [[l, r]] = await channelRms(page, centre, [[0.5, 2.5]]);
-  expect(Math.abs(l / r - 1)).toBeLessThan(0.001);
 });
 
 test('track volume 0.5 halves the amplitude', async ({ page }) => {
@@ -89,7 +99,9 @@ test('fades, pan and track volume join seamlessly across export window cuts', as
   const r = await page.evaluate(({ p, sr, w }) => window.cf.mixdownCompare(p, sr, w), { p, sr: SR, w: WINDOW });
   expect(r).not.toBeNull();
   if (!r) return;
-  expect(r.single.peak).toBeGreaterThan(0.1);
+  // Source peak 0.125 × track volume 0.7 (pan never boosts the near side).
+  expect(r.single.peak).toBeGreaterThan(0.05);
+  expect(r.single.peak).toBeLessThan(0.125 * 0.7 * 1.02);
   expect(r.boundaryDiff).toBeLessThan(5e-5);
   expect(r.maxDiff).toBeLessThan(1e-3);
 });

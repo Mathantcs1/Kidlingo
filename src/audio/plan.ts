@@ -1,10 +1,12 @@
 // DOM-free planning of windowed audio: which part of which clip sounds in a timeline window.
 import { clipDuration, clipEnd } from '../core/model';
 import type { Clip, Id, Project, Track } from '../core/model';
+import type { GainPoint } from './fade';
 
 /**
- * One clip's contribution to a window: source range [srcFrom, srcTo) plays from timeline time `when`, through
- * the clip's own audio settings (`clip`) and its track's volume (`trackVolume`).
+ * One clip's contribution to a window: source range [srcFrom, srcTo) plays over timeline [when, whenEnd), through
+ * the clip's own audio settings (`clip`) and its track's volume (`trackVolume`). `whenEnd` is the planned end
+ * itself (the window edge or the clip end), so a cut is the same number in both windows' segments.
  */
 export interface Segment {
   clipId: Id;
@@ -12,8 +14,14 @@ export interface Segment {
   srcFrom: number;
   srcTo: number;
   when: number;
+  whenEnd: number;
   clip: Clip;
   trackVolume: number;
+  /**
+   * Ducking envelope in timeline time (sorted, piecewise linear). This is the one source of duck automation the
+   * clip chain reads; planWindow leaves it undefined (no ducking) until Task 8 fills it.
+   */
+  duckPoints?: GainPoint[];
 }
 
 /**
@@ -69,14 +77,15 @@ export function windowBounds(from: number, end: number, length: number): [number
 /**
  * The pieces of `clips` audible in the timeline window [from, to). Source offsets are exact: a clip that
  * straddles a boundary gets `srcTo` in one window equal (bit for bit) to `srcFrom` in the next, so windows
- * scheduled back to back are sample-continuous. Whole clips keep their exact `in` / `out`. `trackVolumes` (see
- * trackVolumes) gives each segment its track's volume; clips missing from it play at track volume 1.
+ * scheduled back to back are sample-continuous. Whole clips keep their exact `in` / `out`. `trackVolumes` (from
+ * trackVolumes(p); required so no engine forgets it) gives each segment its track's volume; a clip absent from it
+ * plays at track volume 1.
  */
 export function planWindow(
   clips: readonly Clip[],
   from: number,
   to: number,
-  trackVolumes: ReadonlyMap<Id, number> = new Map(),
+  trackVolumes: ReadonlyMap<Id, number>,
 ): Segment[] {
   const out: Segment[] = [];
   for (const clip of clips) {
@@ -88,7 +97,7 @@ export function planWindow(
     const srcTo = b === end ? clip.out : clip.in + (b - clip.start);
     if (!(srcTo > srcFrom)) continue;
     const trackVolume = trackVolumes.get(clip.id) ?? 1;
-    out.push({ clipId: clip.id, mediaId: clip.mediaId, srcFrom, srcTo, when: a, clip, trackVolume });
+    out.push({ clipId: clip.id, mediaId: clip.mediaId, srcFrom, srcTo, when: a, whenEnd: b, clip, trackVolume });
   }
   return out;
 }

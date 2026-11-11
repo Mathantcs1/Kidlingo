@@ -46,6 +46,9 @@ function projectOf(videoClips: Clip[], audio: Clip[] = [], extra: MediaRef[] = [
   };
 }
 
+/** No track volumes known: every clip plays at track volume 1. */
+const NO_TRACKS = new Map<string, number>();
+
 describe('audibleClips', () => {
   it('skips silent, muted, missing, unknown and image clips', () => {
     const loud = clip('m1', 0, 0, 2);
@@ -134,7 +137,8 @@ describe('trackVolumes', () => {
     const vols = trackVolumes(p);
     expect(vols.get(c.id)).toBe(0.25);
     expect(planWindow([c], 0, 30, vols)[0].trackVolume).toBe(0.25);
-    expect(planWindow([c], 0, 30)[0].trackVolume).toBe(1);
+    // A clip whose track is unknown to the map plays at track volume 1.
+    expect(planWindow([c], 0, 30, new Map())[0].trackVolume).toBe(1);
   });
 });
 
@@ -164,23 +168,24 @@ describe('windowBounds', () => {
 describe('planWindow', () => {
   it('returns whole clips that fit inside the window with their exact source range', () => {
     const c = clip('m1', 2, 1.5, 3.5, { volume: 0.5 });
-    expect(planWindow([c], 0, 30)).toEqual<Segment[]>([
-      { clipId: c.id, mediaId: 'm1', srcFrom: 1.5, srcTo: 3.5, when: 2, clip: c, trackVolume: 1 },
+    expect(planWindow([c], 0, 30, NO_TRACKS)).toEqual<Segment[]>([
+      { clipId: c.id, mediaId: 'm1', srcFrom: 1.5, srcTo: 3.5, when: 2, whenEnd: 4, clip: c, trackVolume: 1 },
     ]);
   });
 
   it('cuts a clip straddling the window boundary at the boundary', () => {
     const c = clip('m1', 25, 10, 20);
-    const [a] = planWindow([c], 0, 30);
-    const [b] = planWindow([c], 30, 60);
-    expect(a).toMatchObject({ srcFrom: 10, srcTo: 15, when: 25 });
-    expect(b).toMatchObject({ srcFrom: 15, srcTo: 20, when: 30 });
+    const [a] = planWindow([c], 0, 30, NO_TRACKS);
+    const [b] = planWindow([c], 30, 60, NO_TRACKS);
+    expect(a).toMatchObject({ srcFrom: 10, srcTo: 15, when: 25, whenEnd: 30 });
+    expect(b).toMatchObject({ srcFrom: 15, srcTo: 20, when: 30, whenEnd: 35 });
+    expect(a.duckPoints).toBeUndefined();
   });
 
   it('starts inside a clip when the window starts inside it (play from the middle)', () => {
     const c = clip('m1', 1, 4, 10);
-    expect(planWindow([c], 3.25, 23.25)).toEqual([
-      { clipId: c.id, mediaId: 'm1', srcFrom: 6.25, srcTo: 10, when: 3.25, clip: c, trackVolume: 1 },
+    expect(planWindow([c], 3.25, 23.25, NO_TRACKS)).toEqual([
+      { clipId: c.id, mediaId: 'm1', srcFrom: 6.25, srcTo: 10, when: 3.25, whenEnd: 7, clip: c, trackVolume: 1 },
     ]);
   });
 
@@ -188,20 +193,20 @@ describe('planWindow', () => {
     const before = clip('m1', 0, 0, 5);
     const after = clip('m1', 30, 0, 5);
     const inside = clip('m1', 12, 0, 1);
-    expect(planWindow([before, after, inside], 5, 30).map((s) => s.clipId)).toEqual([inside.id]);
+    expect(planWindow([before, after, inside], 5, 30, NO_TRACKS).map((s) => s.clipId)).toEqual([inside.id]);
   });
 
   it('keeps gaps: a window with no clip under it is empty', () => {
     const c = clip('m1', 40, 0, 5);
-    expect(planWindow([c], 0, 30)).toEqual([]);
-    expect(planWindow([c], 30, 60)).toHaveLength(1);
+    expect(planWindow([c], 0, 30, NO_TRACKS)).toEqual([]);
+    expect(planWindow([c], 30, 60, NO_TRACKS)).toHaveLength(1);
   });
 
   it('plans several short clips and overlapping tracks in one window', () => {
     const a = clip('m1', 0, 0, 0.5);
     const b = clip('m1', 0.5, 0, 0.5);
     const music = clip('m2', 0.25, 0, 0.5, { kind: 'audio' });
-    const segs = planWindow([a, b, music], 0, 30);
+    const segs = planWindow([a, b, music], 0, 30, NO_TRACKS);
     expect(segs.map((s) => [s.when, s.srcFrom, s.srcTo])).toEqual([
       [0, 0, 0.5],
       [0.5, 0, 0.5],
@@ -212,20 +217,21 @@ describe('planWindow', () => {
   it('is sample-continuous: consecutive windows of a long clip share their exact source boundary', () => {
     const c = clip('m1', 0.37, 3.1, 603.1);
     const segs: Segment[] = [];
-    for (const [a, b] of windowBounds(1.3, 600.37, 25)) segs.push(...planWindow([c], a, b));
+    for (const [a, b] of windowBounds(1.3, 600.37, 25)) segs.push(...planWindow([c], a, b, NO_TRACKS));
     expect(segs.length).toBe(24);
     expect(segs[0].srcFrom).toBeCloseTo(3.1 + 1.3 - 0.37, 12);
     expect(segs[segs.length - 1].srcTo).toBe(603.1);
     for (let i = 1; i < segs.length; i++) {
       // Bit-exact: no gap, no overlap, no per-window rounding.
       expect(segs[i].srcFrom).toBe(segs[i - 1].srcTo);
+      expect(segs[i].when).toBe(segs[i - 1].whenEnd);
       expect(segs[i].when).toBeCloseTo(segs[i - 1].when + (segs[i - 1].srcTo - segs[i - 1].srcFrom), 9);
     }
   });
 
   it('never yields empty or inverted segments', () => {
     const c = clip('m1', 10, 0, 5);
-    expect(planWindow([c], 15, 20)).toEqual([]);
-    expect(planWindow([c], 9, 9)).toEqual([]);
+    expect(planWindow([c], 15, 20, NO_TRACKS)).toEqual([]);
+    expect(planWindow([c], 9, 9, NO_TRACKS)).toEqual([]);
   });
 });
