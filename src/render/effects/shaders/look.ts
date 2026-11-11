@@ -1,6 +1,6 @@
 // The look effects (Plan 4 Task 5): bw, sepia, splitTone, vignette, grain. One pass each; the maths, its constants and
 // the CPU references are in ../looksMath.ts. Colour maths runs on straight colour (un-premultiplied), alpha is untouched.
-import { MIN_SOFTNESS, SEPIA_MATRIX, grainCell, splitToneCoeffs, vignetteCoeffs } from '../looksMath';
+import { CELL_EPS, MIN_SOFTNESS, SEPIA_MATRIX, grainCell, grainInvCell, splitToneCoeffs, vignetteCoeffs } from '../looksMath';
 import type { PassShader } from '../types';
 import { GLSL_HEADER, GLSL_LUMA, GLSL_PREMULTIPLY, f } from './glsl';
 
@@ -77,7 +77,7 @@ export const GRAIN: PassShader = {
   fragment: `${GLSL_HEADER}
 uniform float u_frame;
 uniform float u_amount;
-uniform float u_cell;
+uniform float u_invCell;
 ${PRE}
 float grainHash(uint frame, uint x, uint y) {
   uint h = frame * 0x9e3779b1u + x * 0x85ebca6bu + y * 0xc2b2ae35u;
@@ -92,9 +92,9 @@ float grainHash(uint frame, uint x, uint y) {
 void main() {
   vec4 src = texture(u_src, v_uv);
   vec3 c = unpremultiply(src);
-  vec2 cell = floor(gl_FragCoord.xy / u_cell);
+  vec2 cell = floor(gl_FragCoord.xy * u_invCell + ${f(CELL_EPS)});
   float n = u_amount * (grainHash(uint(u_frame), uint(cell.x), uint(cell.y)) - 0.5);
   outColor = premultiply(clamp(c + n, 0.0, 1.0), src.a);
 }`,
-  uniforms: (p) => ({ u_amount: num(p.amount), u_cell: grainCell(p.size) }),
+  uniforms: (p, _ctx, size) => ({ u_amount: num(p.amount), u_invCell: grainInvCell(grainCell(p.size, size.height)) }),
 };

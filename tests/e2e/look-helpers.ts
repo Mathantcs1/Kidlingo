@@ -25,7 +25,7 @@ export function refLook(type: LookType, c: number[], params: Record<string, numb
     : type === 'sepia' ? sepiaPixel(rgb, p.amount)
     : type === 'splitTone' ? splitTonePixel(rgb, p)
     : type === 'vignette' ? vignettePixel(rgb, x + 0.5, y + 0.5, size, p)
-    : grainPixel(rgb, x, y, frame, p);
+    : grainPixel(rgb, x, y, frame, p, size.height);
   return out.map((v) => v * 255);
 }
 

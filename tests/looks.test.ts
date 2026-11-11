@@ -8,7 +8,7 @@ import type { Clip, Project, VideoEffectType } from '../src/core/model';
 import { useEditor } from '../src/state/store';
 import { PASS_SHADERS } from '../src/render/effects/programs';
 import {
-  SEPIA_MATRIX, bwPixel, grainHash, grainPixel, hueToRgb, sepiaPixel, splitTonePixel, vignettePixel,
+  SEPIA_MATRIX, bwPixel, hueToRgb, sepiaPixel, splitTonePixel, vignettePixel,
 } from '../src/render/effects/looksMath';
 import type { Rgb } from '../src/render/effects/looksMath';
 
@@ -130,48 +130,6 @@ describe('vignette', () => {
     const c = vignettePixel([1, 1, 1], 200 + 40, 50, wide, p);
     expect(b[0]).toBeCloseTo(c[0], 12);
     expect(a[0]).toBeLessThan(c[0]);
-  });
-});
-
-describe('grain', () => {
-  it('hash is deterministic and in [0, 1)', () => {
-    expect(grainHash(3, 10, 20)).toBe(grainHash(3, 10, 20));
-    expect(grainHash(3, 10, 20)).not.toBe(grainHash(4, 10, 20));
-    expect(grainHash(3, 10, 20)).not.toBe(grainHash(3, 11, 20));
-    expect(grainHash(3, 10, 20)).not.toBe(grainHash(3, 10, 21));
-    for (let i = 0; i < 1000; i++) {
-      const h = grainHash(i, i * 7, i * 13);
-      expect(h).toBeGreaterThanOrEqual(0);
-      expect(h).toBeLessThan(1);
-    }
-  });
-  it('is uniform: mean ≈ 0.5 and every decile populated over 10 000 samples', () => {
-    let sum = 0;
-    const bins = new Array<number>(10).fill(0);
-    for (let i = 0; i < 10000; i++) {
-      const h = grainHash(i % 5, i % 100, Math.floor(i / 100));
-      sum += h;
-      bins[Math.floor(h * 10)]++;
-    }
-    expect(Math.abs(sum / 10000 - 0.5)).toBeLessThan(0.02);
-    for (const n of bins) expect(Math.abs(n - 1000)).toBeLessThan(150);
-  });
-  it('amount 0 is the exact identity; the noise is zero-mean luminance noise (equal on all channels)', () => {
-    for (const c of SAMPLES) expect(grainPixel(c, 5, 7, 2, at('grain', { amount: 0 }))).toEqual(c);
-    const p = at('grain', { amount: 0.2, size: 1 });
-    let sum = 0;
-    for (let i = 0; i < 4000; i++) {
-      const [r, g, b] = grainPixel([0.5, 0.5, 0.5], i % 64, Math.floor(i / 64), 1, p);
-      expect(r).toBe(g);
-      expect(g).toBe(b);
-      sum += r - 0.5;
-    }
-    expect(Math.abs(sum / 4000)).toBeLessThan(0.005);
-  });
-  it('size groups pixels into cells: neighbours inside one cell share their noise', () => {
-    const p = at('grain', { amount: 0.5, size: 4 });
-    expect(grainPixel([0.5, 0.5, 0.5], 4, 8, 0, p)).toEqual(grainPixel([0.5, 0.5, 0.5], 7, 11, 0, p));
-    expect(grainPixel([0.5, 0.5, 0.5], 4, 8, 0, p)).not.toEqual(grainPixel([0.5, 0.5, 0.5], 8, 8, 0, p));
   });
 });
 

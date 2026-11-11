@@ -11,7 +11,15 @@
 //             s = smoothstep(p − 0.5, p + 0.5, L(c)):  c + shadowAmount·(1 − s)·tShadow + highlightAmount·s·tHighlight.
 //   vignette  d = distance from the image centre in PIXELS / half-diagonal (a circle, so aspect-correct; 1 at the
 //             corners). falloff = smoothstep(size, size + softness, d); c · (1 − amount·falloff).
-//   grain     c + amount · (hash(frame, ⌊x/size⌋, ⌊y/size⌋) − 0.5) on every channel (luminance noise, zero mean).
+//   grain     c + amount · (hash(frame, cellX, cellY) − 0.5) on every channel (luminance noise, zero mean before
+//             clamping). The noise cell is `size` · referenceScale(workingHeight) working pixels wide; cellX =
+//             ⌊x · invCell + 1e-4⌋ (invCell = float32(1/cell), computed on the CPU and passed as a uniform; the epsilon
+//             keeps exact cell boundaries on the same side on GPUs that divide by reciprocal-multiply).
+//
+// Grain size is relative to 1080 working rows (`referenceScale`), so the look is the same at any source resolution;
+// working size, not canvas size, is used so preview and export agree. Task 8 (glitch blocks, VHS) reuses referenceScale.
+// Because the result is clamped to 0..1, grain is only zero-mean away from the extremes: pure white can only go
+// darker and pure black only lighter, so the mean is biased towards mid-grey there.
 import { LUMA } from './colourMath';
 import type { Rgb } from './colourMath';
 
@@ -92,8 +100,20 @@ export function vignettePixel(c: Rgb, x: number, y: number, size: { width: numbe
   return lift(c, (v) => v * k);
 }
 
-/** Noise cell edge in pixels (the schema's `size`), as a float32 like the uniform. */
-export const grainCell = (size: number): number => Math.fround(Math.min(4, Math.max(1, num(size) || 1)));
+/** The working height that `size`-like pixel params (grain cells, glitch blocks, scanlines) are relative to. */
+export const REFERENCE_ROWS = 1080;
+/** Factor from reference-1080 pixels to working pixels; 1 for a non-finite or non-positive height. */
+export const referenceScale = (workingHeight: number): number =>
+  Number.isFinite(workingHeight) && workingHeight > 0 ? workingHeight / REFERENCE_ROWS : 1;
+/** Added before flooring a cell coordinate (see the header). */
+export const CELL_EPS = 1e-4;
+
+/** Noise cell edge in working pixels for the schema's `size` (1..4, relative to 1080 rows), as a float32. */
+export const grainCell = (size: number, workingHeight: number): number =>
+  Math.fround(Math.min(4, Math.max(1, num(size) || 1)) * referenceScale(workingHeight));
+
+/** The reciprocal the shader multiplies pixel coordinates by (float32, like the uniform). */
+export const grainInvCell = (cell: number): number => Math.fround(1 / cell);
 
 /**
  * Deterministic noise in [0, 1) from (frame, x, y): 32-bit integer mixing (lowbias32 finaliser over a linear
@@ -109,11 +129,12 @@ export function grainHash(frame: number, x: number, y: number): number {
   return (h >>> 8) / 16777216;
 }
 
-/** Grain at pixel index (px, py) of frame `frame` (the shader sees the pixel centre, px + 0.5). */
-export function grainPixel(c: Rgb, px: number, py: number, frame: number, p: Record<string, number>): Rgb {
-  const cell = grainCell(p.size);
-  const cx = Math.floor(Math.fround((px + 0.5) / cell));
-  const cy = Math.floor(Math.fround((py + 0.5) / cell));
+/** Grain at pixel index (px, py) of frame `frame` in a picture `workingHeight` rows tall (the shader sees px + 0.5). */
+export function grainPixel(c: Rgb, px: number, py: number, frame: number, p: Record<string, number>, workingHeight: number): Rgb {
+  const inv = grainInvCell(grainCell(p.size, workingHeight));
+  const eps = Math.fround(CELL_EPS);
+  const cx = Math.floor(Math.fround(Math.fround(Math.fround(px + 0.5) * inv) + eps));
+  const cy = Math.floor(Math.fround(Math.fround(Math.fround(py + 0.5) * inv) + eps));
   const n = num(p.amount) * (grainHash(frame, cx, cy) - 0.5);
   return lift(c, (v) => v + n);
 }
