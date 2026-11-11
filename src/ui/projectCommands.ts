@@ -3,7 +3,7 @@ import { emptyProject } from '../core/model';
 import type { Id } from '../core/model';
 import { flushAutosave, useEditor } from '../state/store';
 import { askConfirm } from './Confirm';
-import { clipsUsingMedia, projectHasWork, removeMediaFromProject } from './edits';
+import { clipsUsingMedia, projectHasWork, removeMediaFromProject, usedByText } from './edits';
 import { collectUnusedMedia, gcPermitForNewProject, resolveRestoreFailure, useRestoreFailure } from './session';
 import { guard } from './Toast';
 
@@ -17,10 +17,11 @@ export async function removeMediaItem(mediaId: Id): Promise<void> {
   const m = editor().history.present.media[mediaId];
   if (!m) return;
   const used = clipsUsingMedia(editor().history.present, mediaId);
-  if (used > 0) {
+  // A LUT in use is refused (removeMediaFromProject says why); other media asks, then removes its clips too.
+  if (used > 0 && m.kind !== 'lut') {
     const ok = await askConfirm({
       title: `Remove ${m.name}?`,
-      message: `It is used by ${used === 1 ? '1 clip' : `${used} clips`} on the timeline. ${used === 1 ? 'That clip is' : 'Those clips are'} removed too.`,
+      message: `${usedByText(used)} ${used === 1 ? 'That clip is' : 'Those clips are'} removed too.`,
       confirmLabel: 'Remove',
     });
     if (!ok) return;

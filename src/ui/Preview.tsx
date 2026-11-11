@@ -3,6 +3,7 @@ import { useEditor } from '../state/store';
 import { fitBox, previewSize } from './layout';
 import { PreviewRenderer } from './previewRenderer';
 import { showError } from './Toast';
+import { lutUnavailableMessage } from '../media/cube';
 import { ChunkLoadError } from '../loadChunk';
 import { toGlUnavailable } from '../render/glErrors';
 import { buildDetailsText, describeGlFailure, probeRenderer } from './previewFailure';
@@ -63,6 +64,7 @@ export default function Preview({ editable }: { editable: boolean }) {
     let cancelled = false;
     PreviewRenderer.create(canvas, {
       onSourceError: (name) => showError(`Could not open ${name} for the preview`),
+      onLutUnavailable: (name) => showError(lutUnavailableMessage(name)),
       onFatal: (message) => {
         if (!cancelled) setFailure({ message });
       },

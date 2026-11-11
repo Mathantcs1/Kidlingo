@@ -6,7 +6,7 @@ import { cappedSize } from '../images';
 import { TargetPool, createUnitQuad } from './passResources';
 import { CONTEXT_LOST, PASS_SHADERS, assertNotLost, disposePrograms, markUnavailable, programFor } from './programs';
 import type { PassProgram } from './programs';
-import type { EffectContext, Uniforms } from './types';
+import type { EffectContext, PassInputs, Uniforms } from './types';
 
 const IDENTITY: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
@@ -88,10 +88,11 @@ export class EffectPipeline {
       let n = 0;
       for (const [effect, program] of steps) {
         const before = { out, srcUv, n };
+        let inputs: PassInputs | null = { textures: {} };
         const pass = (uniforms: Uniforms): void => {
           const target = targets[n++ % 2];
           target.bind(work.width, work.height);
-          program.draw(out.tex, srcUv, uniforms, work, ctx);
+          program.draw(out.tex, srcUv, { ...uniforms, ...inputs?.uniforms }, work, ctx, inputs?.textures);
           target.slot.mipmapped = false;
           out = target.slot;
           srcUv = IDENTITY;
@@ -99,6 +100,9 @@ export class EffectPipeline {
         };
         try {
           const { shader } = program;
+          // A missing input (e.g. a LUT that could not be loaded) skips the effect this frame; it stays available.
+          if (shader.inputs) inputs = shader.inputs(effect, ctx);
+          if (!inputs) continue;
           if (shader.run) shader.run({ draw: pass }, effect.params, ctx, work);
           else pass(shader.uniforms(effect.params, ctx, work));
         } catch (e) {

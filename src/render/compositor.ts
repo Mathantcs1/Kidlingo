@@ -3,9 +3,10 @@ import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
 import { collectDraws } from './drawCollect';
 import type { Draw, DrawContext } from './drawCollect';
+import { LutTextures } from './effects/luts';
 import { EffectPipeline, effectWorkingSize, frameIndex, snapToFrame } from './effects/pipeline';
 import { unavailableTypes } from './effects/programs';
-import type { EffectContext } from './effects/types';
+import type { EffectContext, LoadedLut } from './effects/types';
 import { QuadRenderer, clipMatrix, createContext, forceOpaque, letterbox, uvMatrix } from './gl';
 import type { Mat3, Size, TextureSlot } from './gl';
 import { withAttempts } from './glErrors';
@@ -42,6 +43,11 @@ export interface CompositorOptions {
   preserveDrawingBuffer?: boolean;
   /** Called once per effect type per session when its shader cannot be used here; the clip draws without it (D8). */
   onEffectUnavailable?(type: VideoEffectType): void;
+  /**
+   * Called once per LUT media (per compositor) whose file is missing, unreadable or not a valid .cube: its effect is
+   * skipped and the frame still renders (D8). `name` is the media's name (see lutUnavailableMessage).
+   */
+  onLutUnavailable?(mediaId: Id, name: string): void;
 }
 
 const LOST = 'WebGL context lost';
@@ -66,6 +72,10 @@ class GlCompositor implements Compositor {
   private readonly drawContext: DrawContext;
   private readonly effects: EffectPipeline;
   private readonly onEffectUnavailable: (type: VideoEffectType) => void;
+  private readonly luts: LutTextures;
+  /** The LUTs loaded for the frame being drawn (Phase 1), read synchronously by EffectContext.lut in Phase 2. */
+  private frameLuts = new Map<Id, LoadedLut>();
+  private lutNames = new Map<Id, string>();
 
   /** Throws GlUnavailableError (with the getContext outcomes) after releasing whatever it had created. */
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, opts: CompositorOptions) {
@@ -78,6 +88,7 @@ class GlCompositor implements Compositor {
     this.images = new ImageTextures(gl);
     this.effects = new EffectPipeline(gl);
     this.onEffectUnavailable = (type) => opts.onEffectUnavailable?.(type);
+    this.luts = new LutTextures(gl, (id) => opts.onLutUnavailable?.(id, this.lutNames.get(id) ?? id));
     this.drawContext = {
       gl,
       images: this.images,
@@ -107,6 +118,7 @@ class GlCompositor implements Compositor {
     for (const slots of this.videoSlots.values()) for (const s of slots) gl.deleteTexture(s.tex);
     this.videoSlots.clear();
     this.images.dispose();
+    this.luts.dispose();
     this.effects.dispose();
     this.blur.dispose();
     this.quad.dispose();
@@ -139,6 +151,9 @@ class GlCompositor implements Compositor {
     this.assertUsable();
     // Phase 1 (async): every frame/bitmap is uploaded before anything is drawn.
     const draws = await collectDraws(this.drawContext, p, t, sources);
+    // LUT textures too, so the export never encodes an ungraded frame while a LUT file is still loading.
+    for (const [id, m] of Object.entries(p.media)) if (m.kind === 'lut') this.lutNames.set(id, m.name);
+    this.frameLuts = await this.luts.forFrame(p, draws.map((d) => d.clip));
 
     // Phase 2 (sync): composite.
     this.assertUsable();
@@ -170,7 +185,7 @@ class GlCompositor implements Compositor {
       time: snapToFrame(t - d.clip.start, fps),
       frame: frameIndex(t - d.clip.start, fps),
       fps,
-      lut: () => null,
+      lut: (ref) => this.frameLuts.get(ref) ?? null,
       onUnavailable: this.onEffectUnavailable,
     };
     const slot = this.effects.run(d.slot, effectWorkingSize(d.size, d.texels, format), d.uv, d.clip.effects, ctx);

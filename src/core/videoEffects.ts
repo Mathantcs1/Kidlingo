@@ -31,7 +31,7 @@ const p = (key: string, label: string, min: number, max: number, step: number, d
  * here, and only here.
  */
 export const AVAILABLE_VIDEO_EFFECTS: ReadonlySet<VideoEffectType> = new Set<VideoEffectType>([
-  'colour', 'bw', 'sepia', 'splitTone', 'vignette', 'grain',
+  'colour', 'bw', 'sepia', 'splitTone', 'vignette', 'grain', 'lut',
 ]);
 
 const fx = (

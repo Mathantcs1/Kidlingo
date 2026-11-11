@@ -2,9 +2,13 @@
 
 /**
  * 'av': a container Mediabunny reads; 'image': an image of `format`; 'unsupported-av': a known audio/video
- * container ClipForge cannot open (`label` names it, e.g. 'AVI').
+ * container ClipForge cannot open (`label` names it, e.g. 'AVI'); 'lut': a `.cube` colour LUT (by extension only).
  */
-export type FileKind = { kind: 'av' } | { kind: 'image'; format: string } | { kind: 'unsupported-av'; label: string };
+export type FileKind =
+  | { kind: 'av' }
+  | { kind: 'image'; format: string }
+  | { kind: 'unsupported-av'; label: string }
+  | { kind: 'lut' };
 
 const AV_EXT = new Set(['mp4', 'm4v', 'mov', 'webm', 'mkv', 'mts', 'm2ts', 'mp3', 'wav', 'm4a', 'aac', 'ogg', 'oga', 'opus', 'flac']);
 const AV_MIME = new Set([
@@ -93,6 +97,8 @@ function fromName(name: string): FileKind | null {
 
 /** What `name`/`mime` claim to be (see FileKind), or null when unknown. */
 export function classifyFile(name: string, mime: string): FileKind | null {
+  // .cube files arrive with no, a text or a generic MIME type: the extension decides.
+  if (extension(name) === 'cube') return { kind: 'lut' };
   return fromMime(mime) ?? fromName(name);
 }
 

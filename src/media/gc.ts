@@ -3,10 +3,16 @@ import type { Id, Project } from '../core/model';
 import type { History } from '../state/history';
 import { listMediaIds, removeMedia, unsettledMedia } from './storage';
 
-/** Media ids referenced by any state of the history (undo and redo included), so GC never breaks an undo. */
+/**
+ * Media ids referenced by any state of the history (undo and redo included), so GC never breaks an undo: every
+ * media table entry, plus every effect `ref` (a LUT file) of any clip, even one whose media entry is gone.
+ */
 export function referencedMedia(h: History<Project>): Set<Id> {
   const ids = new Set<Id>();
-  for (const p of [...h.past, h.present, ...h.future]) for (const id of Object.keys(p.media)) ids.add(id);
+  for (const p of [...h.past, h.present, ...h.future]) {
+    for (const id of Object.keys(p.media)) ids.add(id);
+    for (const t of p.tracks) for (const c of t.clips) for (const e of c.effects ?? []) if (e.ref !== undefined) ids.add(e.ref);
+  }
   return ids;
 }
 

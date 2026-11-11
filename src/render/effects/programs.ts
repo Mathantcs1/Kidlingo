@@ -4,7 +4,8 @@ import type { Mat3, Size } from '../geometry';
 import { createProgram } from '../gl';
 import { COLOUR } from './shaders/colour';
 import { BW, GRAIN, SEPIA, SPLIT_TONE, VIGNETTE } from './shaders/look';
-import type { EffectContext, PassShader, UniformValue, Uniforms } from './types';
+import { LUT } from './shaders/lut';
+import type { EffectContext, PassShader, PassTexture, UniformValue, Uniforms } from './types';
 
 /**
  * The shader of each available effect. Each effect task adds its entry here (from its own module under ./shaders)
@@ -17,6 +18,7 @@ export const PASS_SHADERS: Partial<Record<VideoEffectType, PassShader>> = {
   splitTone: SPLIT_TONE,
   vignette: VIGNETTE,
   grain: GRAIN,
+  lut: LUT,
 };
 
 /** Registers (or, with undefined, removes) a type's shader. Used by tests and the dev harness's test-only effects. */
@@ -44,10 +46,13 @@ void main() {
   gl_Position = vec4(a_unit * 2.0 - 1.0, 0.0, 1.0);
 }`;
 
-/** A compiled effect program. Draws one fullscreen pass into the bound framebuffer with the unit quad VAO bound. */
+/**
+ * A compiled effect program. Draws one fullscreen pass into the bound framebuffer with the unit quad VAO bound;
+ * `textures` (PassShader.inputs) are bound to units 1.. for that pass only.
+ */
 export interface PassProgram {
   readonly shader: PassShader;
-  draw(src: WebGLTexture, uv: Mat3, uniforms: Uniforms, size: Size, ctx: EffectContext): void;
+  draw(src: WebGLTexture, uv: Mat3, uniforms: Uniforms, size: Size, ctx: EffectContext, textures?: Record<string, PassTexture>): void;
   dispose(): void;
 }
 
@@ -79,9 +84,15 @@ class GlPassProgram implements PassProgram {
     return this.locations.get(name) ?? null;
   }
 
-  draw(src: WebGLTexture, uv: Mat3, uniforms: Uniforms, size: Size, ctx: EffectContext): void {
+  draw(src: WebGLTexture, uv: Mat3, uniforms: Uniforms, size: Size, ctx: EffectContext, textures: Record<string, PassTexture> = {}): void {
     const gl = this.gl;
     gl.useProgram(this.program);
+    const extra = Object.entries(textures);
+    for (const [i, [name, t]] of extra.entries()) {
+      gl.activeTexture(gl.TEXTURE1 + i);
+      gl.bindTexture(gl[t.target], t.texture);
+      gl.uniform1i(this.at(name), i + 1);
+    }
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, src);
     gl.uniformMatrix3fv(this.at('u_uv'), false, uv);
@@ -94,6 +105,12 @@ class GlPassProgram implements PassProgram {
       else gl[setter](this.at(name), v as number[]);
     }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    if (extra.length === 0) return;
+    for (const [i, [, t]] of extra.entries()) {
+      gl.activeTexture(gl.TEXTURE1 + i);
+      gl.bindTexture(gl[t.target], null);
+    }
+    gl.activeTexture(gl.TEXTURE0);
   }
 
   dispose(): void {

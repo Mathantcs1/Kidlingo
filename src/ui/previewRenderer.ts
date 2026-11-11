@@ -10,6 +10,8 @@ export interface PreviewCallbacks {
   onSourceError(name: string): void;
   /** Rendering is no longer possible (e.g. the WebGL context was lost). */
   onFatal(message: string): void;
+  /** A clip's LUT file cannot be used (its effect is skipped); called once per LUT media. */
+  onLutUnavailable?(name: string): void;
 }
 
 const LOST = 'WebGL context lost';
@@ -46,7 +48,8 @@ export class PreviewRenderer {
   static async create(canvas: HTMLCanvasElement, callbacks: PreviewCallbacks): Promise<PreviewRenderer> {
     // Shares the lazily loaded chunk the exporter uses for the compositor.
     const { createCompositor } = await loadChunk(() => import('../render/compositor'));
-    return new PreviewRenderer(canvas, createCompositor(canvas, { preserveDrawingBuffer: true }), callbacks);
+    const onLutUnavailable = (_id: Id, name: string): void => callbacks.onLutUnavailable?.(name);
+    return new PreviewRenderer(canvas, createCompositor(canvas, { preserveDrawingBuffer: true, onLutUnavailable }), callbacks);
   }
 
   resize(width: number, height: number): void {

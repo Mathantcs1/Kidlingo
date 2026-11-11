@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { audioStats, resetAudioStats } from './audio/stats';
 import type { AudioStats } from './audio/stats';
-import type { Id } from './core/model';
+import type { Id, MediaRef } from './core/model';
 import { peaksDecodeCount } from './media/peaks';
 import { listMediaIds, removeMedia } from './media/storage';
 import { flushAutosave, useEditor } from './state/store';
@@ -23,6 +23,12 @@ interface DevHook {
   resetAudioStats(): void;
   /** Waveform peak computations by decoding (cache hits excluded; see media/peaks). */
   peaksDecodeCount(): number;
+  /** The LUT import command (ui/lutCommands; Task 10's picker calls it from a file input). */
+  importLutFiles(files: File[]): Promise<MediaRef[]>;
+  /** The media bin's remove command (ui/projectCommands). */
+  removeMediaItem(id: Id): Promise<void>;
+  /** Runs media GC against the current history now; returns the removed ids. */
+  gcMedia(): Promise<Id[]>;
 }
 
 declare global {
@@ -41,6 +47,12 @@ if (import.meta.env.DEV) {
     audioStats,
     resetAudioStats,
     peaksDecodeCount,
+    importLutFiles: async (files) => (await import('./ui/lutCommands')).importLutFiles(files),
+    removeMediaItem: async (id) => (await import('./ui/projectCommands')).removeMediaItem(id),
+    gcMedia: async () => {
+      const { gcMedia, referencedMedia } = await import('./media/gc');
+      return gcMedia(() => referencedMedia(useEditor.getState().history));
+    },
   };
 }
 

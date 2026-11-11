@@ -1,6 +1,7 @@
 // Effect pipeline hooks for the dev harness: test-only effect shaders (never shipped) and an instrumented render.
 import type { Id, Project, VideoEffectType } from './core/model';
 import { openVideoSource } from './media/decode';
+import { importLut } from './media/lutImport';
 import type { VideoSource } from './media/decode';
 import { createCompositor } from './render/compositor';
 import { registerPassShader } from './render/effects/programs';
@@ -16,16 +17,25 @@ export const effectsHarness = {
   registerTestEffect(type: VideoEffectType, shader: TestShader | null): void {
     registerPassShader(type, shader ? { ...TEST_SHADERS[shader] } : undefined);
   },
+  /** Imports `text` as a .cube file named `name` through importLut (the app's LUT import). */
+  importLutText(text: string, name = 'test.cube') {
+    return importLut(new File([text], name, { type: 'application/octet-stream' }));
+  },
   /**
    * Renders `p` at each time into one compositor (p.format size) and returns each frame's pixels and the effect
    * pass count after it, the onEffectUnavailable calls, the compositor's unavailableTypes() at the end, and the
-   * error that stopped rendering (if any). With `loseAfter`, the context is lost after that many frames; the
+   * error that stopped rendering (if any), and the onLutUnavailable calls ([media id, name]). With `loseAfter`, the context is lost after that many frames; the
    * `loseMidway` test shader loses it between its two passes.
    */
   async renderEffects(p: Project, times: number[], opts: { loseAfter?: number } = {}) {
     const canvas = document.createElement('canvas');
     const unavailable: VideoEffectType[] = [];
-    const compositor = createCompositor(canvas, { preserveDrawingBuffer: true, onEffectUnavailable: (t) => unavailable.push(t) });
+    const lutUnavailable: [Id, string][] = [];
+    const compositor = createCompositor(canvas, {
+      preserveDrawingBuffer: true,
+      onEffectUnavailable: (t) => unavailable.push(t),
+      onLutUnavailable: (id, name) => lutUnavailable.push([id, name]),
+    });
     const sources = new Map<Id, VideoSource>();
     const frames: { width: number; height: number; data: number[] }[] = [];
     const passes: number[] = [];
@@ -48,7 +58,7 @@ export const effectsHarness = {
         frames.push(readPixels(canvas));
         passes.push(compositor.stats().effectPasses);
       }
-      return { frames, passes, unavailable, unavailableTypes: compositor.unavailableTypes(), error };
+      return { frames, passes, unavailable, unavailableTypes: compositor.unavailableTypes(), error, lutUnavailable };
     } finally {
       setMidwayHook(() => undefined);
       compositor.dispose();

@@ -4,6 +4,7 @@ import { newId } from '../core/model';
 import type { MediaRef } from '../core/model';
 import { classifyFile } from './fileKind';
 import { ImportError, damaged, noContent, undecodableImage, unreadable, withoutAudioOrVideo } from './importErrors';
+import { importLut } from './lutImport';
 import { putMedia } from './storage';
 
 // Kept here for existing callers; lives in ./clip so the timeline can use it without loading Mediabunny.
@@ -95,11 +96,13 @@ async function probeImage(file: File, format: string): Promise<Probed> {
 }
 
 /**
- * Probes `file`, then stores it in OPFS under a new media id. Nothing is stored if probing fails; the ImportError
+ * Probes `file` (a .cube file is a LUT: see importLut), then stores it in OPFS under a new media id. Nothing is
+ * stored if probing fails; the ImportError
  * says whether the file is of an unsupported type or container, damaged, an undecodable image format, or empty.
  */
 export async function importFile(file: File): Promise<MediaRef> {
   const claimed = classifyFile(file.name, file.type);
+  if (claimed?.kind === 'lut') return importLut(file);
   let probed: Probed | null;
   if (claimed?.kind === 'image') {
     probed = await probeImage(file, claimed.format);
