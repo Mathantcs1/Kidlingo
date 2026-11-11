@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const save = vi.hoisted(() => vi.fn<(p: unknown) => Promise<void>>());
 vi.mock('../src/state/persist', () => ({ saveProject: save }));
 
-import { emptyProject, defaultTransform } from '../src/core/model';
+import { defaultClipAudio, emptyProject, defaultTransform } from '../src/core/model';
 import type { Clip } from '../src/core/model';
 import { addClip } from '../src/core/timeline';
 import { useEditor, flushAutosave, flushOnHide, setAutosaveEnabled } from '../src/state/store';
@@ -17,6 +17,7 @@ const clip = (id: string, start = 0): Clip => ({
   out: 5,
   transform: defaultTransform(),
   volume: 1,
+  audio: defaultClipAudio(),
   fit: 'fit',
 });
 const add = (id: string, start = 0) =>

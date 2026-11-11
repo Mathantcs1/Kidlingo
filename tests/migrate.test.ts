@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { migrateProject } from '../src/core/migrate';
-import { emptyProject, newTrack } from '../src/core/model';
+import { defaultClipAudio, emptyProject, newTrack } from '../src/core/model';
 
 const clip = (id: string, extra: Record<string, unknown> = {}) => ({
   id,
@@ -25,22 +25,23 @@ const v1 = () => ({
   media: { m1: { id: 'm1', name: 'a.mp4', kind: 'video', duration: 4, hasAudio: true, missing: true } },
 });
 
-const defaults = { name: '', hidden: false, muted: false, solo: false, locked: false };
+const defaults = { name: '', hidden: false, muted: false, solo: false, locked: false, volume: 1, duck: null };
+const withAudio = <T extends object>(c: T) => ({ ...c, audio: defaultClipAudio() });
 
 describe('migrateProject', () => {
-  it('migrates v1 to v2, adding track defaults and keeping clips and media intact', () => {
+  it('migrates v1 to v3, adding track and clip defaults and keeping clips and media intact', () => {
     const raw = v1();
     const r = migrateProject(raw);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.project.version).toBe(2);
+    expect(r.project.version).toBe(3);
     expect(r.project.format).toEqual(raw.format);
     expect(r.project.media).toEqual(raw.media);
     r.project.tracks.forEach((t, i) => {
       expect(t).toMatchObject(defaults);
       expect(t.id).toBe(raw.tracks[i].id);
       expect(t.kind).toBe(raw.tracks[i].kind);
-      expect(t.clips).toEqual(raw.tracks[i].clips);
+      expect(t.clips).toEqual(raw.tracks[i].clips.map(withAudio));
     });
   });
 
@@ -51,7 +52,7 @@ describe('migrateProject', () => {
     expect(raw).toEqual(copy);
   });
 
-  it('passes a v2 project through equal', () => {
+  it('passes a v3 project through equal', () => {
     const p = emptyProject();
     p.tracks[0].name = 'Main';
     p.tracks[0].muted = true;
@@ -73,8 +74,56 @@ describe('migrateProject', () => {
     expect(migrateProject(first.project)).toEqual(first);
   });
 
+  it('migrates a v2 project: every clip gets default audio, every track volume 1 and duck null', () => {
+    const raw = { ...v1(), version: 2 };
+    const copy = structuredClone(raw);
+    const r = migrateProject(raw);
+    expect(raw).toEqual(copy);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.project.version).toBe(3);
+    for (const t of r.project.tracks) {
+      expect(t).toMatchObject({ volume: 1, duck: null });
+      for (const c of t.clips) expect(c.audio).toEqual(defaultClipAudio());
+    }
+    expect(r.project.tracks.flatMap((t) => t.clips)).toHaveLength(3);
+  });
+
+  it('repairs malformed clip audio per field instead of rejecting', () => {
+    const bad = clip('c1', {
+      audio: {
+        fadeIn: 'x', fadeOut: -3, pan: 9, silent: 'yes',
+        effects: [{ id: 'e1', type: 'eq', enabled: true, params: { low: 3, bad: 'x' } }, { id: 'e2', type: 'nope', enabled: true, params: {} }, 5],
+      },
+    });
+    const r = migrateProject({ ...v1(), version: 3, tracks: [{ id: 't', kind: 'video', volume: 7, duck: null, clips: [bad] }] });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.project.tracks[0].volume).toBe(2);
+    expect(r.project.tracks[0].clips[0].audio).toEqual({
+      fadeIn: 0, fadeOut: 0, pan: 1, silent: false,
+      effects: [{ id: 'e1', type: 'eq', enabled: true, params: { low: 3 } }],
+    });
+  });
+
+  it('repairs track duck settings or drops them', () => {
+    const mk = (duck: unknown) =>
+      migrateProject({ ...v1(), version: 3, tracks: [{ id: 't', kind: 'audio', duck, clips: [] }] });
+    const a = mk({ sourceTrackId: 's', amountDb: 6, attack: 0, release: 99 });
+    expect(a.ok && a.project.tracks[0].duck).toEqual({ sourceTrackId: 's', amountDb: 0, attack: 0.01, release: 2 });
+    const b = mk({ sourceTrackId: 's', amountDb: -100, attack: 0.1, release: 0.2 });
+    expect(b.ok && b.project.tracks[0].duck?.amountDb).toBe(-40);
+    const c = mk({ sourceTrackId: 5, amountDb: -6 });
+    expect(c.ok && c.project.tracks[0].duck).toBeNull();
+  });
+
+  it('keeps unknown extra fields on clips', () => {
+    const r = migrateProject({ ...v1(), tracks: [{ id: 't', kind: 'video', clips: [clip('c1', { future: 1 })] }] });
+    expect(r.ok && (r.project.tracks[0].clips[0] as unknown as { future: number }).future).toBe(1);
+  });
+
   it('reports a newer version', () => {
-    expect(migrateProject({ version: 3 })).toEqual({ ok: false, reason: 'newer' });
+    expect(migrateProject({ version: 4 })).toEqual({ ok: false, reason: 'newer' });
     expect(migrateProject({ ...emptyProject(), version: 99 })).toEqual({ ok: false, reason: 'newer' });
   });
 

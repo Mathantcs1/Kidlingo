@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { audibleClips, planWindow, trackAudible, windowBounds } from '../src/audio/plan';
 import type { Segment } from '../src/audio/plan';
-import { emptyProject, newTrack } from '../src/core/model';
+import { defaultClipAudio, emptyProject, newTrack } from '../src/core/model';
 import type { Clip, MediaRef, Project, Track } from '../src/core/model';
 
 const media = (id: string, over: Partial<MediaRef> = {}): MediaRef => ({
@@ -25,6 +25,7 @@ function clip(mediaId: string, start: number, inPoint: number, out: number, over
     in: inPoint,
     out,
     volume: 1,
+    audio: defaultClipAudio(),
     fit: 'fit',
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
     ...over,

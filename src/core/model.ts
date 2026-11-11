@@ -13,6 +13,34 @@ export interface Transform {
   opacity: number;
 }
 
+export type AudioEffectType =
+  | 'eq' | 'highpass' | 'lowpass' | 'compressor' | 'reverb' | 'echo' | 'pitch' | 'denoise' | 'gain';
+
+/** `gain` is the Normalise result (param `gainDb`). */
+export interface AudioEffect {
+  id: Id;
+  type: AudioEffectType;
+  enabled: boolean;
+  params: Record<string, number>;
+}
+
+/** Per-clip audio settings: fades in seconds, pan -1..1. */
+export interface ClipAudio {
+  fadeIn: number;
+  fadeOut: number;
+  pan: number;
+  silent: boolean;
+  effects: AudioEffect[];
+}
+
+/** Ducks this track by `amountDb` (<= 0) while the source track has sound. */
+export interface TrackDuck {
+  sourceTrackId: Id;
+  amountDb: number;
+  attack: number;
+  release: number;
+}
+
 /** Times in seconds; duration = out - in. */
 export interface Clip {
   id: Id;
@@ -24,6 +52,7 @@ export interface Clip {
   transform: Transform;
   volume: number;
   fit: 'fit' | 'fill' | 'blur';
+  audio: ClipAudio;
 }
 
 export interface Track {
@@ -35,6 +64,9 @@ export interface Track {
   muted: boolean;
   solo: boolean;
   locked: boolean;
+  /** Track gain 0..2 (1 = unity). */
+  volume: number;
+  duck: TrackDuck | null;
   clips: Clip[];
 }
 
@@ -51,7 +83,7 @@ export interface MediaRef {
 }
 
 export interface Project {
-  version: 2;
+  version: 3;
   format: { width: number; height: number; fps: number };
   tracks: Track[];
   media: Record<Id, MediaRef>;
@@ -65,13 +97,17 @@ export function defaultTransform(): Transform {
   return { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 };
 }
 
+export function defaultClipAudio(): ClipAudio {
+  return { fadeIn: 0, fadeOut: 0, pan: 0, silent: false, effects: [] };
+}
+
 export function newTrack(kind: TrackKind, name = ''): Track {
-  return { id: newId(), kind, name, hidden: false, muted: false, solo: false, locked: false, clips: [] };
+  return { id: newId(), kind, name, hidden: false, muted: false, solo: false, locked: false, volume: 1, duck: null, clips: [] };
 }
 
 export function emptyProject(formatKey: FormatKey = 'youtube'): Project {
   return {
-    version: 2,
+    version: 3,
     format: { ...FORMATS[formatKey], fps: 30 },
     tracks: [newTrack('video'), newTrack('audio')],
     media: {},

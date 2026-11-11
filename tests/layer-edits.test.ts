@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultTransform, emptyProject } from '../src/core/model';
+import { defaultClipAudio, defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
 import { addTrack } from '../src/core/tracks';
@@ -19,6 +19,7 @@ const clip = (id: string, start: number, dur: number, mediaId = 'v', kind: Clip[
   transform: { ...defaultTransform(), x: 12, scale: 0.5 },
   volume: 0.7,
   fit: 'fill',
+  audio: defaultClipAudio(),
 });
 
 /** Tracks: [video V1 (a [0,2), i [3,5)), audio A1 (x [0,3)), video V2 (empty)] — audio sits between the videos. */

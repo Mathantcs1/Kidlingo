@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 import { ensureFixtures } from './fixtures';
 import { joinClips } from '../../src/core/merge';
 import { moveClip, splitClip } from '../../src/core/timeline';
-import { newTrack } from '../../src/core/model';
+import { defaultClipAudio, newTrack } from '../../src/core/model';
 import type { Clip, MediaRef, Project, Track } from '../../src/core/model';
 
 test.setTimeout(120_000);
@@ -39,6 +39,7 @@ function clipOf(m: MediaRef, over: Partial<Clip> = {}): Clip {
     in: 0,
     out: m.duration,
     volume: 1,
+    audio: defaultClipAudio(),
     fit: 'fit',
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
     ...over,
@@ -55,7 +56,7 @@ function project(
     { ...newTrack('video'), id: 'video', clips: video },
     { ...newTrack('audio'), id: 'audio', clips: audio },
   ];
-  return { version: 2, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 3, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 interface RunOpts {

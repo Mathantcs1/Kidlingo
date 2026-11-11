@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emptyProject, defaultTransform, clipEnd } from '../src/core/model';
+import { defaultClipAudio, emptyProject, defaultTransform, clipEnd } from '../src/core/model';
 import type { Clip, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
 import { joinClips, snapTime, fitTransform, reframeProject } from '../src/core/merge';
@@ -14,6 +14,7 @@ const mk = (id: string, start: number, dur: number, over: Partial<Clip> = {}): C
   out: dur,
   transform: defaultTransform(),
   volume: 1,
+  audio: defaultClipAudio(),
   fit: 'fit',
   ...over,
 });

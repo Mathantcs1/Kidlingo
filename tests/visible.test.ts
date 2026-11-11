@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { shownClipIds, visualClipsAt } from '../src/render/visible';
-import { emptyProject, newTrack } from '../src/core/model';
+import { defaultClipAudio, emptyProject, newTrack } from '../src/core/model';
 import type { Clip, Project, Track } from '../src/core/model';
 
 let seq = 0;
@@ -13,6 +13,7 @@ function clip(kind: Clip['kind'], start: number, len: number): Clip {
     in: 0,
     out: len,
     volume: 1,
+    audio: defaultClipAudio(),
     fit: 'fit',
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
   };

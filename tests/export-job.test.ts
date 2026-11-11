@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { defaultTransform, emptyProject } from '../src/core/model';
+import { defaultClipAudio, defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
 import { useEditor } from '../src/state/store';
@@ -47,6 +47,7 @@ const clip = (id: string, start: number): Clip => ({
   out: 1,
   transform: defaultTransform(),
   volume: 1,
+  audio: defaultClipAudio(),
   fit: 'fit',
 });
 

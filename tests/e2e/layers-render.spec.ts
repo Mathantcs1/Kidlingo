@@ -28,7 +28,7 @@ function track(kind: Track['kind'], id: string, clips: Clip[], over: Partial<Tra
 }
 
 function projectOf(tracks: Track[], media: MediaRef[], format = FMT): Project {
-  return { version: 2, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 3, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 /** Red 48×48 on the bottom video track, green 32×32 on the top one, both centred in a 64×64 frame. */
@@ -154,6 +154,7 @@ test('the preview opens no decoder for a hidden layer and closes it when a layer
         in: 0,
         out: 1,
         volume: 1,
+        audio: { fadeIn: 0, fadeOut: 0, pan: 0, silent: false, effects: [] },
         fit: 'fit' as const,
         transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
       };

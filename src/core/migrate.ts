@@ -1,12 +1,52 @@
-import type { Project, Track } from './model';
+import { defaultClipAudio } from './model';
+import type { AudioEffect, AudioEffectType, Clip, ClipAudio, Project, Track, TrackDuck } from './model';
 
 export type MigrateResult = { ok: true; project: Project } | { ok: false; reason: 'newer' | 'malformed' };
 
-const CURRENT = 2;
+const CURRENT = 3;
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const num = (v: unknown, fallback: number, min: number, max: number): number =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
 
-/** Validates a track's outline and fills the v2 flags it lacks. Clips are only checked to be objects. */
+const EFFECT_TYPES: readonly AudioEffectType[] = [
+  'eq', 'highpass', 'lowpass', 'compressor', 'reverb', 'echo', 'pitch', 'denoise', 'gain',
+];
+
+function toEffect(raw: unknown): AudioEffect | null {
+  if (!isObject(raw) || typeof raw.id !== 'string' || !EFFECT_TYPES.includes(raw.type as AudioEffectType)) return null;
+  if (typeof raw.enabled !== 'boolean' || !isObject(raw.params)) return null;
+  const params: Record<string, number> = {};
+  for (const [k, v] of Object.entries(raw.params)) if (typeof v === 'number' && Number.isFinite(v)) params[k] = v;
+  return { ...raw, id: raw.id, type: raw.type as AudioEffectType, enabled: raw.enabled, params };
+}
+
+/** Repairs per field: clamps or defaults, drops invalid effects; never rejects. */
+function toClipAudio(raw: unknown): ClipAudio {
+  const d = defaultClipAudio();
+  if (!isObject(raw)) return d;
+  return {
+    ...raw,
+    fadeIn: num(raw.fadeIn, d.fadeIn, 0, Infinity),
+    fadeOut: num(raw.fadeOut, d.fadeOut, 0, Infinity),
+    pan: num(raw.pan, d.pan, -1, 1),
+    silent: raw.silent === true,
+    effects: Array.isArray(raw.effects) ? raw.effects.map(toEffect).filter((e): e is AudioEffect => e !== null) : [],
+  };
+}
+
+function toDuck(raw: unknown): TrackDuck | null {
+  if (!isObject(raw) || typeof raw.sourceTrackId !== 'string') return null;
+  return {
+    ...raw,
+    sourceTrackId: raw.sourceTrackId,
+    amountDb: num(raw.amountDb, -12, -40, 0),
+    attack: num(raw.attack, 0.05, 0.01, 2),
+    release: num(raw.release, 0.3, 0.01, 2),
+  };
+}
+
+/** Validates a track's outline and fills/repairs the v2/v3 fields. Clips only need to be objects. */
 function toTrack(raw: unknown): Track | null {
   if (!isObject(raw)) return null;
   if (typeof raw.id !== 'string' || (raw.kind !== 'video' && raw.kind !== 'audio')) return null;
@@ -20,16 +60,18 @@ function toTrack(raw: unknown): Track | null {
     muted: raw.muted === true,
     solo: raw.solo === true,
     locked: raw.locked === true,
-    clips: raw.clips as unknown as Track['clips'],
+    volume: num(raw.volume, 1, 0, 2),
+    duck: toDuck(raw.duck),
+    clips: raw.clips.map((c) => ({ ...c, audio: toClipAudio(c.audio) }) as unknown as Clip),
   };
 }
 
-/** Pure and idempotent: never mutates `raw`. v1 gains track defaults; v2 is shape-checked; newer versions are refused. */
+/** Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3 is repaired per field; newer versions are refused. */
 export function migrateProject(raw: unknown): MigrateResult {
   if (!isObject(raw)) return { ok: false, reason: 'malformed' };
   const { version } = raw;
   if (typeof version === 'number' && version > CURRENT) return { ok: false, reason: 'newer' };
-  if (version !== 1 && version !== CURRENT) return { ok: false, reason: 'malformed' };
+  if (version !== 1 && version !== 2 && version !== CURRENT) return { ok: false, reason: 'malformed' };
   if (!isObject(raw.format) || !Array.isArray(raw.tracks) || !isObject(raw.media)) return { ok: false, reason: 'malformed' };
   const tracks: Track[] = [];
   for (const t of raw.tracks) {

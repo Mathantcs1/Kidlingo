@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fitTransform } from '../src/core/merge';
-import { defaultTransform, emptyProject } from '../src/core/model';
+import { defaultClipAudio, defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
 import { addTrack } from '../src/core/tracks';
@@ -37,6 +37,7 @@ const clip = (id: string, start: number, dur: number, mediaId = 'v', kind: Clip[
   out: dur,
   transform: defaultTransform(),
   volume: 1,
+  audio: defaultClipAudio(),
   fit: 'fit',
 });
 

@@ -11,7 +11,7 @@ import {
   trimTarget,
   withoutClip,
 } from '../src/ui/drag';
-import { emptyProject } from '../src/core/model';
+import { defaultClipAudio, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 
 const video: MediaRef = { id: 'v', name: 'v.mp4', kind: 'video', duration: 3, width: 640, height: 360, hasAudio: true };
@@ -27,6 +27,7 @@ function clip(id: string, start: number, inT: number, out: number, mediaId = 'v'
     out,
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
     volume: 1,
+    audio: defaultClipAudio(),
     fit: 'fit',
   };
 }

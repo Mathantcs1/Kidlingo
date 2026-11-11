@@ -50,9 +50,9 @@ export async function setupPip(page: Page, which: 'green' | 'split' = 'green'): 
       const t = (scale: number) => ({ x: 0, y: 0, scale, rotation: 0, opacity: 1 });
       const clip = (id: string, n: string, out: number, scale: number) => {
         const m = byName(n);
-        return { id, mediaId: m.id, kind: m.kind, start: 0, in: 0, out, volume: 1, fit: 'fit' as const, transform: t(scale) };
+        return { id, mediaId: m.id, kind: m.kind, start: 0, in: 0, out, volume: 1, audio: { fadeIn: 0, fadeOut: 0, pan: 0, silent: false, effects: [] }, fit: 'fit' as const, transform: t(scale) };
       };
-      const flags = { hidden: false, muted: false, solo: false, locked: false, name: '' };
+      const flags = { hidden: false, muted: false, solo: false, locked: false, name: '', volume: 1, duck: null };
       return {
         ...p,
         tracks: [

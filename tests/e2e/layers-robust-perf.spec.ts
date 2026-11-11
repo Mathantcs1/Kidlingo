@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { importFiles, open, tone, trackErrors, withAudio } from './helpers';
 import { importPaths, openHarness } from './harness-helpers';
+import { defaultClipAudio } from '../../src/core/model';
 import type { MediaRef, Project, Track } from '../../src/core/model';
 
 test.setTimeout(240_000);
@@ -11,7 +12,7 @@ const LAYERS = 8;
 
 /** 8 video layers each holding a 1 s with-audio.mp4 clip at 25 % (spread over the frame), 8 audio tracks of tone. */
 function stack(p: Pick<Project, 'format'>, video: MediaRef, audio: MediaRef): Project {
-  const flags = { hidden: false, muted: false, solo: false, locked: false, name: '' };
+  const flags = { hidden: false, muted: false, solo: false, locked: false, name: '', volume: 1, duck: null };
   const clip = (id: string, m: MediaRef, i: number) => ({
     id,
     mediaId: m.id,
@@ -20,6 +21,7 @@ function stack(p: Pick<Project, 'format'>, video: MediaRef, audio: MediaRef): Pr
     in: (i * 0.2) % 2,
     out: ((i * 0.2) % 2) + 1,
     volume: 0.2,
+    audio: defaultClipAudio(),
     fit: 'fit' as const,
     transform: { x: ((i % 4) - 1.5) * 400, y: (Math.floor(i / 4) - 0.5) * 400, scale: 0.5, rotation: 0, opacity: 1 },
   });
@@ -27,7 +29,7 @@ function stack(p: Pick<Project, 'format'>, video: MediaRef, audio: MediaRef): Pr
     ...Array.from({ length: LAYERS }, (_, i) => ({ ...flags, id: `v${i}`, kind: 'video' as const, clips: [clip(`vc${i}`, video, i)] })),
     ...Array.from({ length: LAYERS }, (_, i) => ({ ...flags, id: `a${i}`, kind: 'audio' as const, clips: [{ ...clip(`ac${i}`, audio, i), in: 0, out: 1 }] })),
   ];
-  return { version: 2, format: { ...p.format }, tracks, media: { [video.id]: video, [audio.id]: audio } };
+  return { version: 3, format: { ...p.format }, tracks, media: { [video.id]: video, [audio.id]: audio } };
 }
 
 async function renderedWithin(page: Page, t: number, ms: number): Promise<void> {

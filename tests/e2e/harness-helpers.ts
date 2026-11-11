@@ -1,7 +1,7 @@
 // Shared helpers for specs that drive the in-browser harness (/harness.html, window.cf).
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { newTrack } from '../../src/core/model';
+import { defaultClipAudio, newTrack } from '../../src/core/model';
 import type { Clip, MediaRef, Project, Track, Transform } from '../../src/core/model';
 
 export type Rgb = [number, number, number];
@@ -37,6 +37,7 @@ export function clipOf(m: MediaRef, over: Partial<Omit<Clip, 'transform'>> & { t
     in: 0,
     out: m.duration,
     volume: 1,
+    audio: defaultClipAudio(),
     fit: 'fit',
     ...rest,
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1, ...transform },
@@ -49,7 +50,7 @@ export function project(format: Project['format'], media: MediaRef[], video: Cli
     { ...newTrack('video'), id: 'video', clips: video },
     { ...newTrack('audio'), id: 'audio' },
   ];
-  return { version: 2, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 3, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 export function render(

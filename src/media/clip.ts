@@ -1,5 +1,5 @@
 import { fitTransform } from '../core/merge';
-import { defaultTransform, newId } from '../core/model';
+import { defaultClipAudio, defaultTransform, newId } from '../core/model';
 import type { Clip, Id, MediaRef } from '../core/model';
 
 /** A clip spanning the whole media, fitted to the canvas. Track placement is the caller's job. */
@@ -23,5 +23,6 @@ export function clipFromMedia(
     transform,
     volume: 1,
     fit: 'fit',
+    audio: defaultClipAudio(),
   };
 }

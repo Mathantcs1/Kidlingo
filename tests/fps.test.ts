@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { snapFps } from '../src/core/fps';
-import { defaultTransform, emptyProject } from '../src/core/model';
+import { defaultClipAudio, defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, MediaRef, Project } from '../src/core/model';
 import { addClip, deleteClip } from '../src/core/timeline';
 import { reframeProject } from '../src/core/merge';
@@ -32,7 +32,7 @@ function media(id: string, kind: MediaRef['kind'], fps?: number): MediaRef {
 }
 
 function clip(id: string, m: MediaRef, start = 0): Clip {
-  return { id, mediaId: m.id, kind: m.kind, start, in: 0, out: 2, transform: defaultTransform(), volume: 1, fit: 'fit' };
+  return { id, mediaId: m.id, kind: m.kind, start, in: 0, out: 2, transform: defaultTransform(), volume: 1, audio: defaultClipAudio(), fit: 'fit' };
 }
 
 function project(...ms: MediaRef[]): Project {

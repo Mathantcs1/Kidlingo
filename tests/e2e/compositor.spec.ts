@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { ensureFixtures } from './fixtures';
 import { fitTransform } from '../../src/core/merge';
-import { newTrack } from '../../src/core/model';
+import { defaultClipAudio, newTrack } from '../../src/core/model';
 import type { Clip, MediaRef, Project, Track, Transform } from '../../src/core/model';
 
 const dir = ensureFixtures();
@@ -43,6 +43,7 @@ function clipOf(m: MediaRef, over: Partial<Omit<Clip, 'transform'>> & { transfor
     in: 0,
     out: 1,
     volume: 1,
+    audio: defaultClipAudio(),
     fit: 'fit',
     ...rest,
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1, ...transform },
@@ -54,7 +55,7 @@ function project(width: number, height: number, media: MediaRef[], clips: Clip[]
   const tracks: Track[] = clips.map((c, i) => ({ ...newTrack('video'), id: `track-${i}`, clips: [c] }));
   tracks.push({ ...newTrack('audio'), id: 'audio' });
   return {
-    version: 2,
+    version: 3,
     format: { width, height, fps: 30 },
     tracks,
     media: Object.fromEntries(media.map((m) => [m.id, m])),

@@ -30,9 +30,9 @@ async function setup(page: Page): Promise<void> {
       const byName = (n: string) => Object.values(p.media).find((m) => m.name === n)!;
       const clip = (id: string, n: string, scale: number, x: number, volume = 1) => {
         const m = byName(n);
-        return { id, mediaId: m.id, kind: m.kind, start: 0, in: 0, out: 1, volume, fit: 'fit' as const, transform: { x, y: 0, scale, rotation: 0, opacity: 1 } };
+        return { id, mediaId: m.id, kind: m.kind, start: 0, in: 0, out: 1, volume, audio: { fadeIn: 0, fadeOut: 0, pan: 0, silent: false, effects: [] }, fit: 'fit' as const, transform: { x, y: 0, scale, rotation: 0, opacity: 1 } };
       };
-      const flags = { hidden: false, muted: false, solo: false, locked: false, name: '' };
+      const flags = { hidden: false, muted: false, solo: false, locked: false, name: '', volume: 1, duck: null };
       return {
         ...p,
         tracks: [

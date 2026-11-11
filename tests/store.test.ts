@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { emptyProject, defaultTransform } from '../src/core/model';
+import { defaultClipAudio, emptyProject, defaultTransform } from '../src/core/model';
 import type { Clip } from '../src/core/model';
 import { addClip, deleteClip } from '../src/core/timeline';
 import { addTrack, removeTrack } from '../src/core/tracks';
@@ -16,6 +16,7 @@ const clip = (id: string, over: Partial<Clip> = {}): Clip => ({
   out: 5,
   transform: defaultTransform(),
   volume: 1,
+  audio: defaultClipAudio(),
   fit: 'fit',
   ...over,
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultTransform, emptyProject, newTrack } from '../src/core/model';
+import { defaultClipAudio, defaultTransform, emptyProject, newTrack } from '../src/core/model';
 import type { Clip, Project } from '../src/core/model';
 import { TimelineError } from '../src/core/timeline';
 import {
@@ -22,6 +22,7 @@ const mk = (id: string): Clip => ({
   out: 5,
   transform: defaultTransform(),
   volume: 1,
+  audio: defaultClipAudio(),
   fit: 'fit',
 });
 

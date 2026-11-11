@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emptyProject, defaultTransform, newTrack } from '../src/core/model';
+import { defaultClipAudio, emptyProject, defaultTransform, newTrack } from '../src/core/model';
 import type { Clip, Project } from '../src/core/model';
 import {
   MIN_CLIP,
@@ -23,6 +23,7 @@ const mk = (id: string, over: Partial<Clip> = {}): Clip => ({
   out: 10,
   transform: defaultTransform(),
   volume: 1,
+  audio: defaultClipAudio(),
   fit: 'fit',
   ...over,
 });
