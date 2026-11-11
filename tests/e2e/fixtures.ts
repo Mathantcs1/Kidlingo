@@ -16,6 +16,13 @@ const QUADRANTS =
   "color=black:s=128x72:r=30:d=1,format=rgb24,geq=r='if(lt(X\\,W/2)\\,if(lt(Y\\,H/2)\\,255\\,0)\\,if(lt(Y\\,H/2)\\,0\\,255))'" +
   ":g='if(gte(X\\,W/2)\\,255\\,0)':b='if(gte(Y\\,H/2)\\,255\\,0)'";
 
+/**
+ * 160x160 green screen: a red 80x80 square (|X − 80|, |Y − 80| ≤ 40) blending linearly into pure green over 8 px
+ * (Chebyshev distance 40..48 from the centre), green beyond.
+ */
+const RED_RAMP = "255*clip((48-max(abs(X-80)\\,abs(Y-80)))/8\\,0\\,1)";
+const GREEN_SCREEN = `color=black:s=160x160:r=30:d=1,format=rgb24,geq=r='${RED_RAMP}':g='255-${RED_RAMP}':b='0'`;
+
 /** Clockwise display rotation (as Mediabunny reports it) → the rotated quadrant fixture's file name. */
 export const ROTATED: Record<90 | 180 | 270, string> = {
   90: 'quad-cw90.mp4',
@@ -67,6 +74,7 @@ export function ensureFixtures(): string {
   ]);
   encode(at('fps25.mp4'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '2', ...VIDEO_ENC, '-an']);
   encode(at('quad.mp4'), ['-f', 'lavfi', '-i', QUADRANTS, ...VIDEO_ENC, '-an']);
+  encode(at('green-screen.mp4'), ['-f', 'lavfi', '-i', GREEN_SCREEN, ...VIDEO_ENC, '-an']);
   for (const [cw, name] of Object.entries(ROTATED)) {
     // ffmpeg's -display_rotation is counter-clockwise.
     encode(at(name), ['-display_rotation', String(360 - Number(cw)), '-i', at('quad.mp4'), '-c', 'copy']);

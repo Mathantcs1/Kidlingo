@@ -1,43 +1,11 @@
-// Per-effect GL programs: the shader registry, lazy compilation and the session-wide failure policy (D8).
+// Per-effect GL programs: lazy compilation and the session-wide failure policy (D8). The shader registry is ./registry.ts.
 import type { VideoEffectType } from '../../core/model';
 import type { Mat3, Size } from '../geometry';
 import { createProgram } from '../gl';
-import { BLUR, GLOW, PIXELATE, SHARPEN } from './shaders/blurFamily';
-import { COLOUR } from './shaders/colour';
-import { BW, GRAIN, SEPIA, SPLIT_TONE, VIGNETTE } from './shaders/look';
-import { LUT } from './shaders/lut';
-import { GLITCH, INVERT, MIRROR, RGB_SPLIT, VHS_SHADER } from './shaders/stylise';
+import { PASS_SHADERS, failedTypes } from './registry';
 import type { EffectContext, PassShader, PassTexture, UniformValue, Uniforms } from './types';
 
-/**
- * The shader of each available effect. Each effect task adds its entry here (from its own module under ./shaders)
- * when it flips `VIDEO_EFFECTS[type].available`; a type without an entry is skipped by the pipeline.
- */
-export const PASS_SHADERS: Partial<Record<VideoEffectType, PassShader>> = {
-  colour: COLOUR,
-  bw: BW,
-  sepia: SEPIA,
-  splitTone: SPLIT_TONE,
-  vignette: VIGNETTE,
-  grain: GRAIN,
-  lut: LUT,
-  blur: BLUR,
-  sharpen: SHARPEN,
-  glow: GLOW,
-  pixelate: PIXELATE,
-  rgbSplit: RGB_SPLIT,
-  glitch: GLITCH,
-  vhs: VHS_SHADER,
-  mirror: MIRROR,
-  invert: INVERT,
-};
-
-/** Registers (or, with undefined, removes) a type's shader. Used by tests and the dev harness's test-only effects. */
-export function registerPassShader(type: VideoEffectType, shader: PassShader | undefined): void {
-  if (shader) PASS_SHADERS[type] = shader;
-  else delete PASS_SHADERS[type];
-  failedTypes.delete(type);
-}
+export { PASS_SHADERS, registerPassShader, unavailableTypes } from './registry';
 
 /** The compositor's message for a lost context (the preview and exporter match it). */
 export const CONTEXT_LOST = 'WebGL context lost';
@@ -135,12 +103,6 @@ class GlPassProgram implements PassProgram {
 /** Compiled programs per context; a shader that failed is off for the whole session (every context, D8). */
 const compiled = new WeakMap<WebGL2RenderingContext, Map<PassShader, PassProgram>>();
 const failed = new WeakSet<PassShader>();
-const failedTypes = new Set<VideoEffectType>();
-
-/** Every effect type turned off this session (compile/link or run-time failure), in failure order (D8). */
-export function unavailableTypes(): VideoEffectType[] {
-  return [...failedTypes];
-}
 
 /**
  * Turns `type`'s current shader off for the session after a failure that is not a lost context, and calls

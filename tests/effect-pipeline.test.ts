@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EffectPipeline, effectWorkingSize, frameIndex, snapToFrame, workingSize } from '../src/render/effects/pipeline';
 import { PASS_SHADERS, programFor, registerPassShader, uniformCall, unavailableTypes } from '../src/render/effects/programs';
 import { cappedSize } from '../src/render/images';
 import { fakeGl } from './fake-gl';
 import type { EffectContext, PassShader } from '../src/render/effects/types';
-import type { VideoEffect } from '../src/core/model';
+import type { VideoEffect, VideoEffectType } from '../src/core/model';
 import { AVAILABLE_VIDEO_EFFECTS } from '../src/core/videoEffects';
 import type { TextureSlot } from '../src/render/gl';
 
@@ -95,26 +95,31 @@ const effect = (type: VideoEffect['type'], enabled = true): VideoEffect => ({ id
 const slot = (): TextureSlot => ({ tex: {} as WebGLTexture, width: 8, height: 8 });
 const IDENTITY = [1, 0, 0, 0, 1, 0, 0, 0, 1] as const;
 
+// Every type has a shipped shader (Task 9): tests replace or unregister one and the afterEach restores it.
+const saved = new Map<VideoEffectType, PassShader | undefined>();
+const register = (type: VideoEffectType, shader: PassShader | undefined): void => {
+  if (!saved.has(type)) saved.set(type, PASS_SHADERS[type]);
+  registerPassShader(type, shader);
+};
+afterEach(() => {
+  for (const [t, s] of saved) registerPassShader(t, s);
+  saved.clear();
+});
+
 describe('EffectPipeline.run with nothing to apply', () => {
   const shader: PassShader = { fragment: 'void main() {}', uniforms: () => ({}) };
 
   it('returns the SAME slot and makes no GL call for an empty, disabled or unregistered stack', () => {
-    // invert is shipped (Task 8): replace it for this test and restore the shipped shader afterwards. chromaKey is the
-    // one type still without a shader (Task 9 must pick another stand-in, e.g. by unregistering a type here).
-    const shipped = PASS_SHADERS.invert;
-    registerPassShader('invert', shader);
-    try {
-      const { gl, calls } = fakeGl();
-      const pipeline = new EffectPipeline(gl);
-      const input = slot();
-      for (const stack of [[], [effect('invert', false)], [effect('chromaKey')], [effect('pixelate', false), effect('chromaKey')]]) {
-        expect(pipeline.run(input, { width: 8, height: 8 }, [...IDENTITY], stack, ctx())).toBe(input);
-      }
-      expect(calls()).toEqual([]);
-      expect(pipeline.passes).toBe(0);
-    } finally {
-      registerPassShader('invert', shipped);
+    register('invert', shader);
+    register('mirror', undefined);
+    const { gl, calls } = fakeGl();
+    const pipeline = new EffectPipeline(gl);
+    const input = slot();
+    for (const stack of [[], [effect('invert', false)], [effect('mirror')], [effect('pixelate', false), effect('mirror')]]) {
+      expect(pipeline.run(input, { width: 8, height: 8 }, [...IDENTITY], stack, ctx())).toBe(input);
     }
+    expect(calls()).toEqual([]);
+    expect(pipeline.passes).toBe(0);
   });
 
   it('registers a shader for exactly the available effects', () => {
@@ -125,7 +130,7 @@ describe('EffectPipeline.run with nothing to apply', () => {
 describe('programFor failure policy', () => {
   it('caches a compile failure: null, onUnavailable once, no recompile', () => {
     const broken: PassShader = { fragment: 'not glsl', uniforms: () => ({}) };
-    registerPassShader('sepia', broken);
+    register('sepia', broken);
     try {
       const { gl, count } = fakeGl({ getShaderParameter: () => false, getShaderInfoLog: () => 'bad' });
       const onUnavailable = vi.fn();
@@ -142,7 +147,7 @@ describe('programFor failure policy', () => {
       expect(onUnavailable).toHaveBeenCalledWith('sepia');
       expect(unavailableTypes()).toContain('sepia');
     } finally {
-      registerPassShader('sepia', undefined);
+      register('sepia', undefined);
     }
     // Registering again (a fixed or different shader) clears the memory for that type.
     expect(unavailableTypes()).not.toContain('sepia');
@@ -150,7 +155,7 @@ describe('programFor failure policy', () => {
 
   it('a lost context is an error, not an unavailable effect (and is not cached)', () => {
     const fine: PassShader = { fragment: 'void main() {}', uniforms: () => ({}) };
-    registerPassShader('bw', fine);
+    register('bw', fine);
     try {
       const lost = fakeGl({ getShaderParameter: () => false, isContextLost: () => true });
       const onUnavailable = vi.fn();
@@ -161,11 +166,12 @@ describe('programFor failure policy', () => {
       // Compiled once per context.
       expect(programFor(gl, 'bw', onUnavailable)).toBe(programFor(gl, 'bw', onUnavailable));
     } finally {
-      registerPassShader('bw', undefined);
+      register('bw', undefined);
     }
   });
 
   it('returns null without notifying for a type with no registered shader', () => {
+    register('chromaKey', undefined);
     const { gl, calls } = fakeGl();
     const onUnavailable = vi.fn();
     expect(programFor(gl, 'chromaKey', onUnavailable)).toBeNull();

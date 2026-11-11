@@ -32,7 +32,7 @@ const p = (key: string, label: string, min: number, max: number, step: number, d
  */
 export const AVAILABLE_VIDEO_EFFECTS: ReadonlySet<VideoEffectType> = new Set<VideoEffectType>([
   'colour', 'bw', 'sepia', 'splitTone', 'vignette', 'grain', 'lut', 'blur', 'sharpen', 'glow', 'pixelate',
-  'rgbSplit', 'glitch', 'vhs', 'mirror', 'invert',
+  'rgbSplit', 'glitch', 'vhs', 'mirror', 'invert', 'chromaKey',
 ]);
 
 const fx = (
