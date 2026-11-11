@@ -5,6 +5,7 @@ import { useEditor } from '../state/store';
 import { liveSelection, setClipFit, setClipVolume } from './edits';
 import { guard } from './Toast';
 import AudioInspector from './AudioInspector';
+import BlendModeSelect from './BlendModeSelect';
 import EffectsInspector from './EffectsInspector';
 import TransformFields from './TransformFields';
 
@@ -106,6 +107,7 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
       {audible && <AudioInspector clip={clip} media={media} editable={editable} locked={locked} />}
       {clip.kind !== 'audio' && <FitControl clip={clip} disabled={!editable} />}
       {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} />}
+      {clip.kind !== 'audio' && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
       {clip.kind !== 'audio' && <EffectsInspector clip={clip} editable={editable} locked={locked} />}
     </>
   );

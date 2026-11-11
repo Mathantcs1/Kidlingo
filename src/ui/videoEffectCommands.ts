@@ -1,9 +1,9 @@
 // Store-bound commands for the selected clip's PICTURE effects (Plan 4 Task 10). Each is ONE `apply` (one undo
 // step); refusals (locked track, 9th effect, missing LUT file) become toasts through `guard`.
 import type { LookKey } from '../core/looks';
-import type { Id, Project, VideoEffectType } from '../core/model';
+import type { BlendMode, Id, Project, VideoEffectType } from '../core/model';
 import {
-  addVideoEffect, applyLook, moveVideoEffect, removeVideoEffect, updateVideoEffect,
+  addVideoEffect, applyLook, moveVideoEffect, removeVideoEffect, setClipBlend, updateVideoEffect,
 } from '../core/videoEffectEdits';
 import { VIDEO_EFFECTS } from '../core/videoEffects';
 import type { EffectGroup } from '../core/videoEffects';
@@ -26,6 +26,9 @@ export const moveVideoEffectCmd = (clipId: Id, effectId: Id, toIndex: number): v
 
 /** Replaces the whole stack with a look in ONE step; one Undo restores the previous stack exactly. */
 export const applyLookCmd = (clipId: Id, key: LookKey): void => apply((p) => applyLook(p, clipId, key));
+
+/** The clip's blend mode in ONE step (no step when unchanged); a locked track refuses with a toast. */
+export const setBlendCmd = (clipId: Id, mode: BlendMode): void => apply((p) => setClipBlend(p, clipId, mode));
 
 export type KeyColour = { keyR: number; keyG: number; keyB: number };
 

@@ -28,6 +28,10 @@ export interface CompositorStats {
   effectPasses: number;
   /** Effect targets allocated now and their RGBA8 bytes (bounded: see TargetPool). */
   effectMemory: { targets: number; bytes: number };
+  /** Blend passes drawn since creation (0 while every visible clip is 'normal'). */
+  blendPasses: number;
+  /** Intermediate composite targets allocated now and their RGBA8 bytes (see CompositeBuffer). */
+  compositeMemory: { targets: number; bytes: number };
 }
 
 export interface CompositorOptions {

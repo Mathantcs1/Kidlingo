@@ -3,15 +3,16 @@ import type { Id, Project, VideoEffectType } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
 import { applyClipEffects } from './clipEffects';
+import { CompositeBuffer } from './compositeBuffer';
 import type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
 import { collectDraws } from './drawCollect';
-import type { DrawContext } from './drawCollect';
+import type { Draw, DrawContext } from './drawCollect';
 import { LutTextures } from './effects/luts';
 import { EffectPipeline } from './effects/pipeline';
 import { unavailableTypes } from './effects/programs';
 import type { LoadedLut } from './effects/types';
 import { QuadRenderer, clipMatrix, createContext, forceOpaque, letterbox } from './gl';
-import type { Size, TextureSlot } from './gl';
+import type { Mat3, Rect, Size, TextureSlot } from './gl';
 import { withAttempts } from './glErrors';
 import { ImageTextures } from './images';
 
@@ -24,6 +25,8 @@ class GlCompositor implements Compositor {
   private readonly gl: WebGL2RenderingContext;
   private readonly quad: QuadRenderer;
   private readonly blur: BlurBackground;
+  /** Frames with a non-normal blend mode composite here (Ruling P2); normal-only frames never touch it. */
+  private readonly composite: CompositeBuffer;
   /** Textures per video source; a source used by several clips in one frame gets one texture per use. */
   private readonly videoSlots = new Map<VideoSource, TextureSlot[]>();
   private readonly images: ImageTextures;
@@ -52,6 +55,7 @@ class GlCompositor implements Compositor {
     this.quad = withAttempts(attempts, () => new QuadRenderer(gl));
     this.blur = withAttempts(attempts, () => new BlurBackground(gl, this.quad), () => this.quad.dispose());
     this.images = new ImageTextures(gl);
+    this.composite = new CompositeBuffer(gl, this.quad);
     this.effects = new EffectPipeline(gl);
     this.onEffectUnavailable = (type) => opts.onEffectUnavailable?.(type);
     this.luts = new LutTextures(gl, (id) => opts.onLutUnavailable?.(id, this.lutNames.get(id) ?? id));
@@ -86,6 +90,7 @@ class GlCompositor implements Compositor {
     this.images.dispose();
     this.luts.dispose();
     this.effects.dispose();
+    this.composite.dispose();
     this.blur.dispose();
     this.quad.dispose();
   }
@@ -99,6 +104,8 @@ class GlCompositor implements Compositor {
       maxImageSide: this.images.maxSide,
       effectPasses: this.effects.passes,
       effectMemory: this.effects.memory(),
+      blendPasses: this.composite.passes,
+      compositeMemory: this.composite.stats(),
     };
   }
 
@@ -134,15 +141,39 @@ class GlCompositor implements Compositor {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+    // Only a frame with a visible non-normal clip pays for the intermediate composite; the rest draw straight.
+    const composite = draws.some((d) => (d.clip.blend ?? 'normal') !== 'normal') && this.composite.begin(viewport);
+    if (!composite) this.composite.idle();
+    const bindOutput = composite ? () => this.composite.bindCurrent() : () => bindCanvas(gl, viewport);
+    bindOutput();
     for (const d of draws) {
       // Effects first (working-size passes, no transform); the blur backdrop is made from the processed picture (D7).
+      // A pipeline output is overwritten by the next clip's run of its size: it is drawn right here.
       const { slot, uv } = applyClipEffects(this.effects, d, p, t, format, this.frameLuts, this.onEffectUnavailable);
-      if (d.clip.fit === 'blur') this.blur.draw(slot, d.size, uv, d.clip.transform.opacity, format, viewport);
-      this.quad.draw(slot.tex, clipMatrix(d.size, d.clip.transform, format), d.clip.transform.opacity, uv);
+      const mode = d.clip.blend ?? 'normal';
+      if (!composite || mode === 'normal') {
+        this.drawPicture(d, slot, uv, format, viewport, bindOutput);
+        continue;
+      }
+      this.composite.beginLayer();
+      this.drawPicture(d, slot, uv, format, viewport, () => this.composite.bindLayer());
+      this.composite.blend(mode);
     }
+    if (composite) this.composite.present(viewport);
     if (this.hasAlpha) forceOpaque(gl);
   }
+
+  /** The clip's picture (blur backdrop first, for the 'blur' fit) into the output `bindOutput` binds. */
+  private drawPicture(d: Draw, slot: TextureSlot, uv: Mat3, format: Size, viewport: Rect, bindOutput: () => void): void {
+    const { opacity } = d.clip.transform;
+    if (d.clip.fit === 'blur') this.blur.draw(slot, d.size, uv, opacity, format, viewport, bindOutput);
+    this.quad.draw(slot.tex, clipMatrix(d.size, d.clip.transform, format), opacity, uv);
+  }
+}
+
+function bindCanvas(gl: WebGL2RenderingContext, viewport: Rect): void {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 }
 
 /** Throws GlUnavailableError when WebGL2 cannot be started on `canvas` (see GlFailureReason). */

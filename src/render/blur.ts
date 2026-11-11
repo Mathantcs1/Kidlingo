@@ -21,9 +21,13 @@ export class BlurBackground {
    * Draws `slot` (shown at `size` through `uv`) scaled to cover `format` into a target 1/16 of the viewport, then
    * stretches that over the viewport, leaving it bound. The downscale samples the source's mipmaps (a chain of 2x
    * box filters), so each low-res pixel is the average of the whole area it covers: fine detail and moving video
-   * give a steady blur instead of aliasing/shimmer.
+   * give a steady blur instead of aliasing/shimmer. `bindOutput` rebinds the framebuffer and viewport being drawn
+   * (by default the canvas at `viewport`; the intermediate composite when blending).
    */
-  draw(slot: TextureSlot, size: Size, uv: Mat3, opacity: number, format: Size, viewport: Rect): void {
+  draw(
+    slot: TextureSlot, size: Size, uv: Mat3, opacity: number, format: Size, viewport: Rect,
+    bindOutput: () => void = () => this.bindCanvas(viewport),
+  ): void {
     const gl = this.gl;
     const w = Math.max(1, Math.round(viewport.width / BLUR_DOWNSCALE));
     const h = Math.max(1, Math.round(viewport.height / BLUR_DOWNSCALE));
@@ -41,10 +45,14 @@ export class BlurBackground {
     // The normal draw samples level 0 only (its mip chain goes stale on the next upload).
     gl.bindTexture(gl.TEXTURE_2D, slot.tex);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+    bindOutput();
     // Framebuffer textures are stored bottom row first.
     this.quad.draw(this.target.slot.tex, fullscreenMatrix(), opacity, FLIPPED);
+  }
+
+  private bindCanvas(viewport: Rect): void {
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+    this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
   }
 
   dispose(): void {

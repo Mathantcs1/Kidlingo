@@ -5,7 +5,7 @@ import { useEditor } from '../src/state/store';
 import { useToasts } from '../src/ui/Toast';
 import {
   addMenuGroups, addVideoEffectCmd, applyLookCmd, hexToKey, keyToHex, lutStatus, moveVideoEffectCmd,
-  removeVideoEffectCmd, setKeyColourCmd, updateVideoEffectCmd,
+  removeVideoEffectCmd, setBlendCmd, setKeyColourCmd, updateVideoEffectCmd,
 } from '../src/ui/videoEffectCommands';
 import { VIDEO_EFFECTS } from '../src/core/videoEffects';
 
@@ -136,5 +136,29 @@ describe('lutStatus', () => {
     expect(lutStatus({ ...p, media: { ...p.media, lut1: { ...lut, missing: true } } }, 'lut1')).toBe('missing');
     expect(lutStatus(p, 'gone')).toBe('missing');
     expect(lutStatus(p, undefined)).toBe('missing');
+  });
+});
+
+describe('setBlendCmd', () => {
+  const blend = () => state().history.present.tracks.flatMap((t) => t.clips)[0].blend;
+
+  it('changes the blend mode in ONE undo step; the same mode again is no step; Undo restores normal', () => {
+    const d0 = depth();
+    setBlendCmd('c1', 'multiply');
+    expect(blend()).toBe('multiply');
+    expect(depth()).toBe(d0 + 1);
+    setBlendCmd('c1', 'multiply');
+    expect(depth()).toBe(d0 + 1);
+    state().undo();
+    expect(blend()).toBe('normal');
+  });
+
+  it('a locked track refuses with a toast and no step', () => {
+    state().loadProject(project(true));
+    const d0 = depth();
+    setBlendCmd('c1', 'screen');
+    expect(blend()).toBe('normal');
+    expect(depth()).toBe(d0);
+    expect(toasts().length).toBe(1);
   });
 });
