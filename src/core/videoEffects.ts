@@ -26,19 +26,25 @@ export const BLEND_MODES: readonly BlendMode[] = [
 const p = (key: string, label: string, min: number, max: number, step: number, def: number, unit?: string): ParamDef =>
   ({ key, label, min, max, step, def, unit });
 
+/**
+ * The effects whose shader has landed (offered by the UI, registered in PASS_SHADERS). Each effect task adds its type
+ * here, and only here.
+ */
+export const AVAILABLE_VIDEO_EFFECTS: ReadonlySet<VideoEffectType> = new Set<VideoEffectType>(['colour']);
+
 const fx = (
   type: VideoEffectType, label: string, group: EffectGroup, params: ParamDef[], timeBased = false,
-): EffectSchema => ({ type, label, group, params, timeBased, available: false });
+): EffectSchema => ({ type, label, group, params, timeBased, available: AVAILABLE_VIDEO_EFFECTS.has(type) });
 
 const amount = (def: number): ParamDef => p('amount', 'Amount', 0, 1, 0.01, def);
 
 export const VIDEO_EFFECTS: Record<VideoEffectType, EffectSchema> = {
-  colour: { ...fx('colour', 'Colour', 'colour', [
+  colour: fx('colour', 'Colour', 'colour', [
     p('brightness', 'Brightness', -1, 1, 0.01, 0), p('contrast', 'Contrast', -1, 1, 0.01, 0),
     p('saturation', 'Saturation', -1, 1, 0.01, 0), p('exposure', 'Exposure', -2, 2, 0.01, 0, 'stops'),
     p('temperature', 'Temperature', -1, 1, 0.01, 0), p('tint', 'Tint', -1, 1, 0.01, 0),
     p('hue', 'Hue', -180, 180, 1, 0, '°'), p('shadows', 'Shadows', -1, 1, 0.01, 0), p('highlights', 'Highlights', -1, 1, 0.01, 0),
-  ]), available: true },
+  ]),
   bw: fx('bw', 'Black & white', 'look', [amount(1)]),
   sepia: fx('sepia', 'Sepia', 'look', [amount(1)]),
   splitTone: fx('splitTone', 'Split tone', 'look', [

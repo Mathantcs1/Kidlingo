@@ -9,7 +9,11 @@
 //   5. brightness   c + 0.5·brightness
 //   6. saturation   L + (c − L) · (1 + saturation), L = Rec.709 luma (−1 = grey)
 //   7. hue          the W3C Filter Effects hueRotate matrix (rotation about the grey axis), degrees
-// Stages at their default are skipped (exactly the identity); the shader skips the same ones.
+// At the defaults every stage is exactly the identity: exposure, contrast and saturation are skipped when their
+// coefficient is 1 (the shader has the same guards); white balance (×1), tone and brightness (+0) and hue (the literal
+// identity matrix) are the identity by arithmetic. Note for later effects copying this pattern: the CPU guards compare
+// JS doubles while GLSL compares float32 uniforms; both are exactly 1 at the default, and a param a 0.01 step away is
+// far from 1 in either precision, so the two always take the same branch.
 
 export type Rgb = [number, number, number];
 type Mat3Rows = [Rgb, Rgb, Rgb];
@@ -95,8 +99,7 @@ export function applyColour(rgb: Rgb, k: ColourCoeffs): Rgb {
     const y = luma(c);
     c = map(c, (v) => y + (v - y) * k.sat);
   }
-  const h = c;
-  return map(h, (_, i) => dot(k.hue[i], h));
+  return map(c, (_, i) => dot(k.hue[i], c));
 }
 
 /** The CPU reference of the colour effect: `params` as stored on the effect (missing keys = default 0). */

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MAX_VIDEO_EFFECTS, VIDEO_EFFECTS, clampParams, defaultParams } from '../src/core/videoEffects';
+import { AVAILABLE_VIDEO_EFFECTS, MAX_VIDEO_EFFECTS, VIDEO_EFFECTS, clampParams, defaultParams } from '../src/core/videoEffects';
 import type { VideoEffectType } from '../src/core/model';
 
 const TYPES = Object.keys(VIDEO_EFFECTS) as VideoEffectType[];
@@ -11,10 +11,11 @@ describe('VIDEO_EFFECTS schema', () => {
       'rgbSplit', 'sepia', 'sharpen', 'splitTone', 'vhs', 'vignette',
     ]);
     expect(MAX_VIDEO_EFFECTS).toBe(8);
+    expect([...AVAILABLE_VIDEO_EFFECTS]).toEqual(['colour']);
     for (const t of TYPES) {
       const s = VIDEO_EFFECTS[t];
       expect(s.type).toBe(t);
-      expect(s.available, t).toBe(t === 'colour');
+      expect(s.available, t).toBe(AVAILABLE_VIDEO_EFFECTS.has(t));
       expect(new Set(s.params.map((d) => d.key)).size).toBe(s.params.length);
       for (const d of s.params) {
         expect(d.min).toBeLessThan(d.max);

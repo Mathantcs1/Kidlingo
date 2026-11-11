@@ -5,6 +5,7 @@ import { cappedSize } from '../src/render/images';
 import { fakeGl } from './fake-gl';
 import type { EffectContext, PassShader } from '../src/render/effects/types';
 import type { VideoEffect } from '../src/core/model';
+import { AVAILABLE_VIDEO_EFFECTS } from '../src/core/videoEffects';
 import type { TextureSlot } from '../src/render/gl';
 
 const fmt1080 = { width: 1920, height: 1080 };
@@ -113,8 +114,8 @@ describe('EffectPipeline.run with nothing to apply', () => {
     }
   });
 
-  it('registers exactly the available effects (colour so far)', () => {
-    expect(Object.keys(PASS_SHADERS)).toEqual(['colour']);
+  it('registers a shader for exactly the available effects', () => {
+    expect(Object.keys(PASS_SHADERS).sort()).toEqual([...AVAILABLE_VIDEO_EFFECTS].sort());
   });
 });
 
