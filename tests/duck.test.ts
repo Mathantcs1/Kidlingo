@@ -5,6 +5,8 @@ import { planWindow, trackVolumes, windowBounds } from '../src/audio/plan';
 import { DEFAULT_DUCK, patchTrackDuck } from '../src/core/duckEdits';
 import { defaultClipAudio, emptyProject, newTrack } from '../src/core/model';
 import type { Clip, MediaRef, Project, Track } from '../src/core/model';
+import { removeTrack } from '../src/core/tracks';
+import { commit, createHistory, undo } from '../src/state/history';
 
 const OPTS = { amountDb: -12, attack: 0.2, release: 0.5 };
 const DUCKED = 10 ** (-12 / 20);
@@ -165,5 +167,44 @@ describe('patchTrackDuck', () => {
     const plain: Project = { ...p, tracks: p.tracks.map((t) => (t.id === 'music' ? { ...t, duck: null } : t)) };
     expect(patchTrackDuck(plain, 'music', { amountDb: -3 })).toBe(plain);
     expect(() => patchTrackDuck(p, 'voice', { sourceTrackId: 'music' })).toThrow(/cycle/);
+  });
+});
+
+describe('removeTrack and ducking', () => {
+  /** Tracks: v, voice (source), music (ducks under voice), other (ducks under v), spare (no duck). */
+  function deps(): Project {
+    const p = project([]);
+    return {
+      ...p,
+      tracks: [
+        ...p.tracks,
+        { ...newTrack('audio'), id: 'other', duck: { sourceTrackId: 'v', ...OPTS } },
+        { ...newTrack('audio'), id: 'spare' },
+      ],
+    };
+  }
+
+  it('clears the duck of every track ducking under the removed track, keeping the others as the same objects', () => {
+    const p = deps();
+    const next = removeTrack(p, 'voice');
+    expect(next.tracks.map((t) => t.id)).toEqual(['v', 'music', 'other', 'spare']);
+    expect(music(next).duck).toBeNull();
+    const same = (id: string) => next.tracks.find((t) => t.id === id) === p.tracks.find((t) => t.id === id);
+    expect(same('v') && same('other') && same('spare')).toBe(true);
+  });
+
+  it('leaves every remaining track untouched when nobody ducks under the removed track', () => {
+    const p = deps();
+    const next = removeTrack(p, 'spare');
+    next.tracks.forEach((t, i) => expect(t).toBe(p.tracks[i]));
+  });
+
+  it('is one history step: undo restores the duck settings', () => {
+    const p = deps();
+    let h = createHistory(p);
+    h = commit(h, removeTrack(p, 'voice'));
+    h = undo(h);
+    expect(music(h.present).duck).toEqual({ sourceTrackId: 'voice', ...OPTS });
+    expect(h.present).toBe(p);
   });
 });

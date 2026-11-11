@@ -42,7 +42,11 @@ export function removeTrack(p: Project, trackId: Id, opts?: { removeClips?: bool
     throw new TimelineError(`A project needs at least one ${track.kind} track`);
   }
   if (track.clips.length > 0 && !opts?.removeClips) throw new TimelineError('Track has clips');
-  return { ...p, tracks: p.tracks.filter((t) => t.id !== trackId) };
+  // Tracks ducking under the removed one lose that setting (same pure step, so one undo restores both).
+  const tracks = p.tracks
+    .filter((t) => t.id !== trackId)
+    .map((t) => (t.duck?.sourceTrackId === trackId ? { ...t, duck: null } : t));
+  return { ...p, tracks };
 }
 
 /** Layer order is not clip editing, so this works on locked tracks. Any index is accepted and clamped. */

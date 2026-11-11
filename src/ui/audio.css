@@ -145,7 +145,8 @@
 
 .duck-panel {
   position: fixed;
-  z-index: 50;
+  /* Above the timeline's sticky parts and modal backdrop (5), below the toasts (10) so a refusal stays visible. */
+  z-index: 9;
   width: 220px;
   display: flex;
   flex-direction: column;

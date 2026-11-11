@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { ensureFixtures } from './fixtures';
 import { clipOf, importPaths, openHarness, project } from './harness-helpers';
-import { expectOnlyToast, open, playerState, trackErrors } from './helpers';
+import { clearToasts, expectOnlyToast, open, playerState, toast, trackErrors } from './helpers';
 import { defaultClipAudio, newTrack } from '../../src/core/model';
 import type { MediaRef, Project, Track } from '../../src/core/model';
 
@@ -136,6 +136,14 @@ test('UI: choose a source, edit the shape, refuse a cycle, turn off; one undo st
   d = await depth(page);
   await f(page, `duck-source-${a.id}`).selectOption(b.id);
   await expectOnlyToast(page, 'Ducking cannot form a cycle');
+  // The toast stays visible and stacks above the open popover (both are fixed layers of the body).
+  await expect(f(page, `duck-panel-${a.id}`)).toBeVisible();
+  await expect(toast(page)).toBeVisible();
+  const z = await page.evaluate(
+    (id) => [document.querySelector(`[data-testid="${id}"]`)!, document.querySelector('.toasts')!].map((el) => Number(getComputedStyle(el).zIndex)),
+    `duck-panel-${a.id}`,
+  );
+  expect(z[0]).toBeLessThan(z[1]);
   expect(await depth(page)).toBe(d);
   expect(await duckOf(page, a.id)).toBeNull();
   await expect(f(page, `duck-source-${a.id}`)).toHaveValue('');
@@ -149,4 +157,54 @@ test('UI: choose a source, edit the shape, refuse a cycle, turn off; one undo st
   await page.getByTestId('btn-undo').click();
   expect((await duckOf(page, b.id))!.release).toBe(1);
   expect(errors).toEqual([]);
+});
+
+test('UI: removing the source track turns the dependent duck off in one undo step, without a toast', async ({ page }) => {
+  const errors = trackErrors(page);
+  await open(page);
+  await f(page, 'btn-add-audio-track').click();
+  const [a, b] = (await tracksOf(page)).filter((t) => t.kind === 'audio');
+  await f(page, `duck-toggle-${b.id}`).click();
+  await f(page, `duck-source-${b.id}`).selectOption(a.id);
+  await page.keyboard.press('Escape');
+  await expect(f(page, `duck-toggle-${b.id}`)).toHaveAttribute('aria-pressed', 'true');
+  await clearToasts(page);
+
+  const d = await depth(page);
+  await page.locator(`[data-testid="track-header"][data-track-id="${a.id}"]`).getByTestId('track-btn-remove').click();
+  await expect(page.locator(`[data-testid="track-header"][data-track-id="${a.id}"]`)).toHaveCount(0);
+  expect(await depth(page)).toBe(d + 1);
+  expect(await duckOf(page, b.id)).toBeNull();
+  await expect(f(page, `duck-toggle-${b.id}`)).toHaveAttribute('aria-pressed', 'false');
+  await expect(toast(page)).toHaveCount(0);
+
+  await page.getByTestId('btn-undo').click();
+  expect((await duckOf(page, b.id))!.sourceTrackId).toBe(a.id);
+  await expect(f(page, `duck-toggle-${b.id}`)).toHaveAttribute('aria-pressed', 'true');
+  expect(errors).toEqual([]);
+});
+
+test('UI: the popover closes when the timeline scrolls or the window resizes', async ({ page }) => {
+  await open(page);
+  const [a] = (await tracksOf(page)).filter((t) => t.kind === 'audio');
+  await f(page, `duck-toggle-${a.id}`).click();
+  await expect(f(page, `duck-panel-${a.id}`)).toBeVisible();
+  await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+  await expect(f(page, `duck-panel-${a.id}`)).toHaveCount(0);
+  // A short timeline that scrolls vertically: a scroll that moves the toggle closes the popover.
+  await f(page, 'btn-add-audio-track').click();
+  await f(page, 'btn-add-audio-track').click();
+  await f(page, 'timeline-scroll').evaluate((el) => {
+    el.style.height = '140px';
+    el.style.flex = 'none';
+    el.scrollTop = 0;
+  });
+  await f(page, `duck-toggle-${a.id}`).click();
+  await expect(f(page, `duck-panel-${a.id}`)).toBeVisible();
+  const moved = await f(page, 'timeline-scroll').evaluate((el) => {
+    el.scrollTop += 30;
+    return el.scrollTop;
+  });
+  expect(moved).toBeGreaterThan(0);
+  await expect(f(page, `duck-panel-${a.id}`)).toHaveCount(0);
 });

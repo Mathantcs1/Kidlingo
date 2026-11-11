@@ -32,6 +32,8 @@ export default function DuckControls({ track, label }: Props) {
   });
   const options = sources ? sources.split('\u0001').map((x) => x.split('\u0000') as [string, string]) : [];
   const sourceId = duck && options.some(([tid]) => tid === duck.sourceTrackId) ? duck.sourceTrackId : '';
+  // Active only with a resolvable source: a dangling (hand-edited) setting looks and behaves as off.
+  const active = sourceId !== '';
 
   useLayoutEffect(() => {
     if (!open || !toggle.current) return;
@@ -42,7 +44,7 @@ export default function DuckControls({ track, label }: Props) {
     const below = r.bottom + 4 + height <= window.innerHeight;
     const top = below ? r.bottom + 4 : Math.max(4, r.top - 4 - height);
     setPos({ top, left: Math.max(4, Math.min(r.left, window.innerWidth - width - 4)) });
-    panel.current?.querySelector('select')?.focus();
+    panel.current?.querySelector('select')?.focus({ preventScroll: true });
   }, [open]);
 
   useEffect(() => {
@@ -51,8 +53,22 @@ export default function DuckControls({ track, label }: Props) {
       const t = e.target as Node;
       if (!panel.current?.contains(t) && !toggle.current?.contains(t)) setOpen(false);
     };
+    // A scroll that moves the toggle (timeline or page) or a resize would leave the fixed popover detached from it:
+    // close. Scrolls that leave the toggle in place (e.g. the click's own scroll-into-view, sticky headers) do not.
+    const anchor = toggle.current?.getBoundingClientRect();
+    const onScroll = (): void => {
+      const r = toggle.current?.getBoundingClientRect();
+      if (!anchor || !r || Math.abs(r.top - anchor.top) > 0.5 || Math.abs(r.left - anchor.left) > 0.5) setOpen(false);
+    };
+    const onResize = (): void => setOpen(false);
     document.addEventListener('pointerdown', onDown, true);
-    return () => document.removeEventListener('pointerdown', onDown, true);
+    document.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true);
+      document.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
+    };
   }, [open]);
 
   const close = (): void => {
@@ -67,19 +83,18 @@ export default function DuckControls({ track, label }: Props) {
     }
   };
 
-  const title = duck ? `Ducking ${label} under ${trackLabelOf(options, duck.sourceTrackId)}` : `Ducking of ${label}: off`;
+  const title = active ? `Ducking ${label} under ${trackLabelOf(options, sourceId)}` : `Ducking of ${label}: off`;
   return (
     <>
       <button
         ref={toggle}
         type="button"
-        className={`track-btn is-duck${duck ? ' is-on' : ''}`}
+        className={`track-btn is-duck${active ? ' is-on' : ''}`}
         data-testid={`duck-toggle-${id}`}
         aria-label={`Ducking of ${label}`}
         title={title}
         aria-expanded={open}
-        aria-haspopup="dialog"
-        aria-pressed={!!duck}
+        aria-pressed={active}
         onClick={() => setOpen((o) => !o)}
       >
         D
@@ -89,7 +104,7 @@ export default function DuckControls({ track, label }: Props) {
           <div
             ref={panel}
             className="duck-panel"
-            role="dialog"
+            role="group"
             aria-label={`Ducking of ${label}`}
             data-testid={`duck-panel-${id}`}
             style={{ top: pos.top, left: pos.left }}
@@ -122,7 +137,7 @@ export default function DuckControls({ track, label }: Props) {
                 step={1}
                 min={-40}
                 max={0}
-                disabled={!duck}
+                disabled={!active}
                 onCommit={(v) => setTrackDuckCmd(id, { amountDb: v })}
               />
               <NumberField
@@ -134,7 +149,7 @@ export default function DuckControls({ track, label }: Props) {
                 step={0.05}
                 min={0.01}
                 max={2}
-                disabled={!duck}
+                disabled={!active}
                 onCommit={(v) => setTrackDuckCmd(id, { attack: v })}
               />
               <NumberField
@@ -146,7 +161,7 @@ export default function DuckControls({ track, label }: Props) {
                 step={0.05}
                 min={0.01}
                 max={2}
-                disabled={!duck}
+                disabled={!active}
                 onCommit={(v) => setTrackDuckCmd(id, { release: v })}
               />
             </div>
@@ -154,7 +169,7 @@ export default function DuckControls({ track, label }: Props) {
               <button
                 type="button"
                 data-testid={`duck-off-${id}`}
-                disabled={!duck}
+                disabled={!active}
                 onClick={() => setTrackDuckCmd(id, null)}
               >
                 Off
@@ -171,5 +186,5 @@ export default function DuckControls({ track, label }: Props) {
 }
 
 function trackLabelOf(options: [string, string][], tid: string): string {
-  return options.find(([x]) => x === tid)?.[1] ?? 'a removed track';
+  return options.find(([x]) => x === tid)?.[1] ?? tid;
 }
