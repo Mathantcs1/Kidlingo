@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CubeError, MAX_CUBE_BYTES, assertCubeBytes, parseCube } from '../src/media/cube';
+import { CubeError, MAX_CUBE_BYTES, assertCubeBytes, parseCube, quoteLine } from '../src/media/cube';
 
 /** A .cube text of `size` with rows from `row(r, g, b)` (lattice indices), red fastest. */
 function cube(size: number, row: (r: number, g: number, b: number) => number[], head = `LUT_3D_SIZE ${size}`): string {
@@ -118,5 +118,37 @@ describe('parseCube', () => {
     expect(() => assertCubeBytes(MAX_CUBE_BYTES)).not.toThrow();
     expect(() => assertCubeBytes(MAX_CUBE_BYTES + 1)).toThrow(CubeError);
     expect(() => assertCubeBytes(MAX_CUBE_BYTES + 1)).toThrow('This .cube file is too large (over 40 MB) to be a LUT ClipForge can use.');
+  });
+
+  it('quotes at most 40 printable characters of an offending line', () => {
+    const long = `0 0 ${'7'.repeat(60)} x`;
+    const rows = cube(2, identity(2)).split('\n');
+    rows[2] = long;
+    expect(refusal(rows.join('\n'))).toBe(`Line 3 of this .cube file is not three numbers: "${long.slice(0, 40)}…".`);
+    expect(quoteLine('a\u0000b\u0007c\u001bd\u007fe\u0085f\ufffdg')).toBe('abcdefg');
+    expect(quoteLine('x'.repeat(40))).toBe('x'.repeat(40));
+  });
+
+  it('keeps the message short and printable for a 5 MB single line and for a binary file', () => {
+    const bytes = new Uint8Array(200_000);
+    let seed = 7;
+    for (let i = 0; i < bytes.length; i++) bytes[i] = (seed = (seed * 1103515245 + 12345) >>> 0) >>> 24;
+    const binary = new TextDecoder('utf-8').decode(bytes);
+    const cases = ['9'.repeat(5 * 1024 * 1024), `LUT_3D_SIZE 2\n${'z'.repeat(5 * 1024 * 1024)}`, binary, `LUT_3D_SIZE 2\n${binary}`];
+    for (const text of cases) {
+      const msg = refusal(text);
+      expect(msg.length, msg.slice(0, 80)).toBeLessThan(200);
+      expect(/[\p{Cc}\ufffd]/u.test(msg), JSON.stringify(msg)).toBe(false);
+    }
+  });
+
+  it('reads a TITLE containing # (comments are stripped only outside the quotes)', () => {
+    expect(parseCube(cube(2, identity(2), 'TITLE "Film #3"  # a comment\nLUT_3D_SIZE 2')).title).toBe('Film #3');
+    expect(parseCube(cube(2, identity(2), 'TITLE Plain name # note\nLUT_3D_SIZE 2')).title).toBe('Plain name');
+  });
+
+  it('says so when the size line comes after the colour rows', () => {
+    const rows = cube(2, identity(2)).split('\n');
+    expect(refusal([...rows.slice(1), rows[0]].join('\n'))).toBe('The LUT_3D_SIZE line must come before the colour rows.');
   });
 });

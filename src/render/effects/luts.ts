@@ -49,8 +49,14 @@ function upload(gl: WebGL2RenderingContext, lut: CubeLut): WebGLTexture {
     }
     gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, n, n, n, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
   }
+  const failed = gl.getError() !== gl.NO_ERROR;
   unpack.forEach((p, i) => gl.pixelStorei(p, saved[i] as number));
   gl.bindTexture(gl.TEXTURE_3D, null);
+  // Both uploads refused (e.g. out of memory): an empty texture would sample black and blank the clip (D8).
+  if (failed) {
+    gl.deleteTexture(tex);
+    throw new Error('Could not upload the LUT texture');
+  }
   return tex;
 }
 
@@ -77,19 +83,20 @@ export class LutTextures {
 
   /** As get, with the LUT's size and domain (what EffectContext.lut returns). */
   loaded(mediaId: Id): Promise<LoadedLut | null> {
-    let p = this.loading.get(mediaId);
-    if (!p) {
-      p = this.fetch(mediaId);
-      this.loading.set(mediaId, p);
-    }
+    const cached = this.loading.get(mediaId);
+    if (cached) return cached;
+    const p: Promise<LoadedLut | null> = this.fetch(mediaId, () => this.loading.get(mediaId) === p);
+    this.loading.set(mediaId, p);
     return p;
   }
 
   /**
    * Phase 1 of a frame: loads the LUT of every enabled lut effect of `clips` and returns them by media id. A ref to
-   * media that is not a LUT of `p` (or is flagged missing) is unavailable without touching storage.
+   * media that is not a LUT of `p` (or is flagged missing) is unavailable without touching storage. LUTs cached for
+   * media that has left `p` (not in its media table, not referenced by any of its effects) are freed.
    */
   async forFrame(p: Project, clips: Iterable<Clip>): Promise<Map<Id, LoadedLut>> {
+    this.evict(p);
     const out = new Map<Id, LoadedLut>();
     for (const id of lutRefs(clips)) {
       const m = p.media[id];
@@ -107,7 +114,21 @@ export class LutTextures {
     this.loading.clear();
   }
 
-  private async fetch(mediaId: Id): Promise<LoadedLut | null> {
+  private evict(p: Project): void {
+    if (this.loading.size === 0) return;
+    const refs = new Set(p.tracks.flatMap((t) => t.clips.flatMap((c) => (c.effects ?? []).map((e) => e.ref))));
+    for (const id of [...this.loading.keys()]) {
+      if (p.media[id] || refs.has(id)) continue;
+      const lut = this.ready.get(id);
+      if (lut) this.gl.deleteTexture(lut.texture);
+      this.ready.delete(id);
+      this.loading.delete(id);
+      this.reported.delete(id);
+    }
+  }
+
+  /** `current()` is false once this load was evicted (or the cache disposed): its result is then not kept. */
+  private async fetch(mediaId: Id, current: () => boolean): Promise<LoadedLut | null> {
     let lut: CubeLut;
     try {
       lut = parseCube(await this.load(mediaId));
@@ -115,8 +136,14 @@ export class LutTextures {
       return this.fail(mediaId, e);
     }
     // Disposed or lost meanwhile: nothing to upload into (not the LUT's fault, so not reported).
-    if (this.disposed || this.gl.isContextLost()) return null;
-    const loaded: LoadedLut = { texture: upload(this.gl, lut), size: lut.size, domainMin: lut.domainMin, domainMax: lut.domainMax };
+    if (this.disposed || this.gl.isContextLost() || !current()) return null;
+    let texture: WebGLTexture;
+    try {
+      texture = upload(this.gl, lut);
+    } catch (e) {
+      return this.gl.isContextLost() ? null : this.fail(mediaId, e);
+    }
+    const loaded: LoadedLut = { texture, size: lut.size, domainMin: lut.domainMin, domainMax: lut.domainMax };
     this.ready.set(mediaId, loaded);
     return loaded;
   }

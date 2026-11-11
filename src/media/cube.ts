@@ -35,6 +35,17 @@ export function assertCubeBytes(bytes: number): void {
   if (bytes > MAX_CUBE_BYTES) throw new CubeError('This .cube file is too large (over 40 MB) to be a LUT ClipForge can use.');
 }
 
+const QUOTE_MAX = 40;
+
+/**
+ * File text safe to put in a message: control and replacement characters removed, at most 40 characters (then '…'),
+ * so a binary or one-line 40 MB file never produces a huge or garbled toast.
+ */
+export function quoteLine(line: string): string {
+  const head = line.slice(0, QUOTE_MAX * 4).replace(/[\p{Cc}\ufffd]/gu, '');
+  return head.length > QUOTE_MAX ? `${head.slice(0, QUOTE_MAX)}…` : head;
+}
+
 const NUMBER = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/;
 const KEYWORD = /^[A-Z][A-Z0-9_]*$/;
 
@@ -75,6 +86,12 @@ export function parseCube(text: string): CubeLut {
   let rows = 0;
   const lines = text.split(/\r\n|\r|\n/);
   for (const [i, raw] of lines.entries()) {
+    // TITLE first: its quoted text may contain '#', which elsewhere starts a comment.
+    const title0 = rows === 0 ? /^\s*TITLE(?=\s|$)(?:\s+(?:"([^"]*)"|([^#]*)))?/.exec(raw) : null;
+    if (title0) {
+      title = (title0[1] ?? title0[2] ?? '').trim() || undefined;
+      continue;
+    }
     const hash = raw.indexOf('#');
     const line = (hash >= 0 ? raw.slice(0, hash) : raw).trim();
     if (line === '') continue;
@@ -84,7 +101,6 @@ export function parseCube(text: string): CubeLut {
       const rest = tokens.slice(1);
       if (head === 'LUT_1D_SIZE') throw new CubeError('This is a 1D LUT. ClipForge only supports 3D LUTs (.cube files with a LUT_3D_SIZE line).');
       if (head === 'LUT_3D_SIZE') size = sizeOf(rest);
-      else if (head === 'TITLE') title = line.slice(5).trim().replace(/^"(.*)"$/, '$1').trim() || undefined;
       else if (head === 'DOMAIN_MIN') domainMin = triple(head, rest);
       else if (head === 'DOMAIN_MAX') domainMax = triple(head, rest);
       else if (head === 'LUT_3D_INPUT_RANGE') {
@@ -96,8 +112,11 @@ export function parseCube(text: string): CubeLut {
       continue;
     }
     const v = tokens.length === 3 ? numbers(tokens) : null;
-    if (!v) throw new CubeError(`Line ${i + 1} of this .cube file is not three numbers: "${line}".`);
-    if (size === 0) break;
+    if (!v) throw new CubeError(`Line ${i + 1} of this .cube file is not three numbers: "${quoteLine(line)}".`);
+    if (size === 0) {
+      if (lines.some((l, j) => j > i && /^\s*LUT_3D_SIZE\b/.test(l))) throw new CubeError('The LUT_3D_SIZE line must come before the colour rows.');
+      break;
+    }
     data ??= new Float32Array(size ** 3 * 3);
     if (rows < size ** 3) data.set(v, rows * 3);
     rows++;

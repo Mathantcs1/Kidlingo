@@ -77,12 +77,18 @@ test('a LUT clip renders graded, survives reload with its file, cannot be remove
 test('a malformed .cube import shows the plain-English error and leaves no stored file', async ({ page }) => {
   await open(page);
   const before = await storedIds(page);
-  const done = await importLuts(page, [['flat.cube', 'LUT_1D_SIZE 1024\n0 0 0\n1 1 1'], ['huge.cube', 'LUT_3D_SIZE 128\n0 0 0']]);
+  const done = await page.evaluate(() => window.__clipforge!.importLutFiles([
+    new File(['LUT_1D_SIZE 1024\n0 0 0\n1 1 1'], 'flat.cube'),
+    new File(['LUT_3D_SIZE 128\n0 0 0'], 'huge.cube'),
+    // A one-line multi-megabyte (binary-like) file: the toast quotes 40 printable characters of it, no more.
+    new File([`LUT_3D_SIZE 2\n\u0001${'q'.repeat(3_000_000)}`], 'long.cube'),
+  ]));
   expect(done).toEqual([]);
-  await expect(toast(page)).toHaveCount(2);
+  await expect(toast(page)).toHaveCount(3);
   await expect(toast(page).locator('span')).toHaveText([
     'Could not import flat.cube: This is a 1D LUT. ClipForge only supports 3D LUTs (.cube files with a LUT_3D_SIZE line).',
     'Could not import huge.cube: This LUT has 128 points per side. ClipForge supports 3D LUTs with 2 to 65 points per side.',
+    `Could not import long.cube: Line 2 of this .cube file is not three numbers: "${'q'.repeat(40)}…".`,
   ]);
   expect(await storedIds(page)).toEqual(before);
   expect(await page.evaluate(() => Object.keys(window.__clipforge!.getState().history.present.media))).toEqual([]);
@@ -111,4 +117,21 @@ test('a LUT whose file is gone: one notice, the clip still renders ungraded', as
   await expect.poll(async () => (await pixelAt(page, 960, 540)).every((v, k) => Math.abs(v - plain[k]) <= 3)).toBe(true);
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => (window as unknown as { lutNotices: number }).lutNotices)).toBe(1);
+});
+
+test('a LUT import asks once for persistent storage, like the media bin', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { persistCalls: number };
+    w.persistCalls = 0;
+    navigator.storage.persist = () => {
+      w.persistCalls++;
+      return Promise.resolve(false);
+    };
+  });
+  await open(page);
+  const calls = (): Promise<number> => page.evaluate(() => (window as unknown as { persistCalls: number }).persistCalls);
+  await importLuts(page, [['bad.cube', 'LUT_1D_SIZE 2']]);
+  expect(await calls()).toBe(0);
+  await importLuts(page, [['a.cube', INVERT_CUBE], ['b.cube', INVERT_CUBE]]);
+  expect(await calls()).toBe(1);
 });

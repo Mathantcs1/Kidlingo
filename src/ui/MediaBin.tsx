@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type { DragEvent } from 'react';
 import type { MediaRef } from '../core/model';
-import { describeStorageError, isQuotaError } from '../media/storageErrors';
 import { useEditor } from '../state/store';
 import { addToTimeline } from './commands';
 import { addMedia } from './edits';
+import { askPersist, importMessage } from './importMessage';
 import { formatTime } from './layout';
 import { MEDIA_MIME, setDraggedMedia } from './mediaDrag';
 import { removeMediaItem } from './projectCommands';
@@ -20,20 +20,6 @@ const KIND_LABEL: Record<MediaRef['kind'], string> = { video: 'Video', audio: 'A
 const KIND_ICON: Record<MediaRef['kind'], string> = { video: '🎬', audio: '🎵', image: '🖼', lut: '🎨' };
 
 let pendingSeq = 0;
-let persistAsked = false;
-
-/** Asks once per page for persistent storage (fewer evictions of imported media); failures do not matter. */
-function askPersist(): void {
-  if (persistAsked) return;
-  persistAsked = true;
-  void navigator.storage?.persist?.().catch(() => false);
-}
-
-function importMessage(file: File, e: unknown): string {
-  if (e instanceof Error && (e.name === 'ImportError' || e instanceof ChunkLoadError)) return e.message;
-  if (isQuotaError(e)) return `Could not import ${file.name}: ${describeStorageError(e)}`;
-  return `Could not import ${file.name}: ${e instanceof Error ? e.message : String(e)}`;
-}
 
 function MediaItem({ m, editable }: { m: MediaRef; editable: boolean }) {
   return (

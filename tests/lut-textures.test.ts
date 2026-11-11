@@ -97,4 +97,37 @@ describe('LutTextures', () => {
     expect(await pending).toBeNull();
     expect(count('texImage3D')).toBe(0);
   });
+
+  it('a fallback upload that fails too (out of memory) deletes the texture: null, one notice, never black', async () => {
+    const { gl, count } = okGl((log) => log.at(-2)?.[0] === 'texImage3D');
+    const onUnavailable = vi.fn();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const luts = new LutTextures(gl, onUnavailable, async () => CUBE);
+    expect(await luts.get('L')).toBeNull();
+    expect(await luts.get('L')).toBeNull();
+    expect(count('texImage3D')).toBe(2);
+    expect(count('deleteTexture')).toBe(1);
+    expect(onUnavailable.mock.calls).toEqual([['L']]);
+    luts.dispose();
+    expect(count('deleteTexture')).toBe(1);
+    warn.mockRestore();
+  });
+
+  it('forFrame evicts LUTs no longer in the project (and reloads one that comes back)', async () => {
+    const { gl, count } = okGl();
+    const load = vi.fn(async () => CUBE);
+    const luts = new LutTextures(gl, vi.fn(), load);
+    const both = project([lutMedia('A'), lutMedia('B')]);
+    await luts.forFrame(both, [clip([fx('A'), fx('B')])]);
+    // B is still in the project's media (an undo away), only unused this frame: kept.
+    await luts.forFrame(both, [clip([fx('A')])]);
+    expect(count('deleteTexture')).toBe(0);
+    // A left the project: its texture is freed, even though nothing on screen uses it.
+    await luts.forFrame(project([lutMedia('B')]), []);
+    expect(count('deleteTexture')).toBe(1);
+    expect(load).toHaveBeenCalledTimes(2);
+    const back = await luts.forFrame(project([lutMedia('A'), lutMedia('B')]), [clip([fx('A')])]);
+    expect([...back.keys()]).toEqual(['A']);
+    expect(load).toHaveBeenCalledTimes(3);
+  });
 });
