@@ -12,6 +12,8 @@ export interface Draw {
   size: Size;
   /** Quad → texture coordinates (applies the source's display rotation). */
   uv: Mat3;
+  /** The texture's resolution in display orientation (an image may be decoded smaller than `size`). */
+  texels: Size;
 }
 
 /** What Phase 1 needs from the compositor. */
@@ -66,7 +68,7 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
       shownImages.add(clip.mediaId);
       // Transforms are in the image's own pixels, whatever resolution its texture was decoded at.
       const size = media.width && media.height ? { width: media.width, height: media.height } : slot;
-      if (slot && size) draws.push({ clip, slot, size, uv: UPRIGHT });
+      if (slot && size) draws.push({ clip, slot, size, uv: UPRIGHT, texels: { width: slot.width, height: slot.height } });
       continue;
     }
     const source = sources.get(clip.id) ?? sources.get(clip.mediaId);
@@ -84,7 +86,8 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
     // Frames arrive unrotated; draw them at their displayed size and turn the texture lookup instead.
     const { rotation, mirror } = frameOrientation(source, frame as { rotation?: unknown; flip?: unknown });
     const size = rotatedSize({ width, height }, rotation);
-    draws.push({ clip, slot, size, uv: uvMatrix(rotation, false, mirror) });
+    // The frame is uploaded at its display size, so the texels match `size` once rotated.
+    draws.push({ clip, slot, size, uv: uvMatrix(rotation, false, mirror), texels: size });
   }
   pruneVideoSlots(ctx, sources);
   ctx.images.prune(shownImages, p);

@@ -1,27 +1,26 @@
 // Runs a clip's effect stack as fullscreen passes over ping-pong targets, before the clip's transformed draw (D2).
-import type { VideoEffect } from '../../core/model';
+import type { VideoEffect, VideoEffectType } from '../../core/model';
 import type { Mat3, Size } from '../geometry';
 import type { TextureSlot } from '../gl';
-import { GlUnavailableError } from '../glErrors';
-import { RenderTarget } from '../renderTarget';
-import { disposePrograms, programFor, PASS_SHADERS } from './programs';
+import { cappedSize } from '../images';
+import { TargetPool, createUnitQuad } from './passResources';
+import { CONTEXT_LOST, PASS_SHADERS, assertNotLost, disposePrograms, markUnavailable, programFor } from './programs';
 import type { PassProgram } from './programs';
 import type { EffectContext, Uniforms } from './types';
 
 const IDENTITY: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
-/** `size` scaled down (aspect kept) so its long side is at most `cap`; integer, never empty, never upscaled. */
-export function capLongSide(size: Size, cap: number): Size {
-  const scale = Math.min(1, cap / Math.max(size.width, size.height));
-  return {
-    width: Math.max(1, Math.round(size.width * scale)),
-    height: Math.max(1, Math.round(size.height * scale)),
-  };
-}
-
 /** The effect working size: the clip's displayed source size, capped at 2x the format's long side (D2). */
 export function workingSize(display: Size, format: Size): Size {
-  return capLongSide(display, 2 * Math.max(format.width, format.height));
+  return cappedSize(display, 2 * Math.max(format.width, format.height));
+}
+
+/**
+ * The working size of a draw whose texture holds `texels` (its resolution in DISPLAY orientation, e.g. an image
+ * decoded at a capped size): the display size scaled down to no more texels than there are, then workingSize.
+ */
+export function effectWorkingSize(display: Size, texels: Size, format: Size): Size {
+  return workingSize(cappedSize(display, Math.max(texels.width, texels.height)), format);
 }
 
 /**
@@ -49,19 +48,21 @@ interface SavedState {
 export class EffectPipeline {
   /** Fullscreen passes drawn since creation (instrumentation for tests). */
   passes = 0;
-  private targets: [RenderTarget, RenderTarget] | null = null;
-  private vao: WebGLVertexArrayObject | null = null;
-  private buffer: WebGLBuffer | null = null;
+  private readonly pool: TargetPool;
+  private quad: { vao: WebGLVertexArrayObject; buffer: WebGLBuffer } | null = null;
   private maxSide = 0;
 
   /** GL objects are created on first use, so a project without effects never allocates (or calls GL) here. */
-  constructor(private readonly gl: WebGL2RenderingContext) {}
+  constructor(private readonly gl: WebGL2RenderingContext) {
+    this.pool = new TargetPool(gl);
+  }
 
   /**
    * Applies the enabled effects that have a working program to `input` (shown through `uv`) at `size` (the working
-   * size, see workingSize). Returns `input` itself, with no GL call, when nothing applies; otherwise a target slot
-   * whose texture holds the result premultiplied, upright and top row first (draw it with an identity uv). GL state
-   * it changes (framebuffer, viewport, blend, active texture) is restored.
+   * size, see effectWorkingSize). Returns `input` itself, with no GL call, when nothing applies; otherwise a target
+   * slot whose texture holds the result premultiplied, upright and top row first (draw it with an identity uv). GL
+   * state it changes (framebuffer, viewport, blend, active texture) is restored. An effect that throws is turned off
+   * for the session and skipped (D8); a lost context throws Error('WebGL context lost').
    */
   run(input: TextureSlot, size: Size, uv: Mat3, effects: readonly VideoEffect[] | undefined, ctx: EffectContext): TextureSlot {
     if (!effects || effects.length === 0) return input;
@@ -74,16 +75,19 @@ export class EffectPipeline {
     if (steps.length === 0) return input;
 
     const gl = this.gl;
+    assertNotLost(gl);
     const saved = this.save();
     try {
-      const targets = this.ensure();
       const work = this.clampToGpu(size);
+      const targets = this.pool.pair(work);
+      this.quad ??= createUnitQuad(gl);
       gl.disable(gl.BLEND);
-      gl.bindVertexArray(this.vao);
+      gl.bindVertexArray(this.quad.vao);
       let out = input;
       let srcUv = uv;
       let n = 0;
       for (const [effect, program] of steps) {
+        const before = { out, srcUv, n };
         const pass = (uniforms: Uniforms): void => {
           const target = targets[n++ % 2];
           target.bind(work.width, work.height);
@@ -93,61 +97,44 @@ export class EffectPipeline {
           srcUv = IDENTITY;
           this.passes++;
         };
-        const { shader } = program;
-        if (shader.run) shader.run({ draw: pass }, effect.params, ctx, work);
-        else pass(shader.uniforms(effect.params, ctx, work));
+        try {
+          const { shader } = program;
+          if (shader.run) shader.run({ draw: pass }, effect.params, ctx, work);
+          else pass(shader.uniforms(effect.params, ctx, work));
+        } catch (e) {
+          this.contain(effect.type, program, ctx, e);
+          ({ out, srcUv, n } = before);
+        }
       }
+      // A loss mid-stack makes every later GL call a no-op: the result is garbage, so report it.
+      assertNotLost(gl);
       return out;
     } finally {
-      this.restore(saved);
+      // On a lost context getParameter returned nulls: there is nothing to restore, and the error must not be masked.
+      if (!gl.isContextLost()) this.restore(saved);
     }
   }
 
   dispose(): void {
     const gl = this.gl;
-    for (const t of this.targets ?? []) t.dispose();
-    this.targets = null;
-    if (this.vao) gl.deleteVertexArray(this.vao);
-    if (this.buffer) gl.deleteBuffer(this.buffer);
-    this.vao = null;
-    this.buffer = null;
+    this.pool.dispose();
+    if (this.quad) {
+      gl.deleteVertexArray(this.quad.vao);
+      gl.deleteBuffer(this.quad.buffer);
+      this.quad = null;
+    }
     disposePrograms(gl);
+  }
+
+  /** A failed effect step: lost context propagates; anything else turns the type off for the session. */
+  private contain(type: VideoEffectType, program: PassProgram, ctx: EffectContext, e: unknown): void {
+    if (this.gl.isContextLost() || (e instanceof Error && e.message === CONTEXT_LOST)) throw new Error(CONTEXT_LOST);
+    markUnavailable(type, program.shader, ctx.onUnavailable, e);
   }
 
   private clampToGpu(size: Size): Size {
     if (!this.maxSide) this.maxSide = Number(this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE)) || 4096;
-    return capLongSide(size, this.maxSide);
-  }
-
-  private ensure(): [RenderTarget, RenderTarget] {
-    const gl = this.gl;
-    if (!this.vao) {
-      const vao = gl.createVertexArray() as WebGLVertexArrayObject | null;
-      const buffer = gl.createBuffer() as WebGLBuffer | null;
-      if (!vao || !buffer) {
-        if (vao) gl.deleteVertexArray(vao);
-        if (buffer) gl.deleteBuffer(buffer);
-        throw new GlUnavailableError('resource', 'Could not create the effect quad');
-      }
-      gl.bindVertexArray(vao);
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(0);
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-      gl.bindVertexArray(null);
-      this.vao = vao;
-      this.buffer = buffer;
-    }
-    if (!this.targets) {
-      const a = new RenderTarget(this.gl);
-      try {
-        this.targets = [a, new RenderTarget(this.gl)];
-      } catch (e) {
-        a.dispose();
-        throw e;
-      }
-    }
-    return this.targets;
+    return cappedSize(size, this.maxSide);
   }
 
   private save(): SavedState {

@@ -7,7 +7,7 @@ import { clipOf, expectNear, importPaths, openHarness, project, px, render } fro
 import type { Rgb } from './harness-helpers';
 import { fitTransform } from '../../src/core/merge';
 import type { MediaRef, Project, VideoEffect, VideoEffectType } from '../../src/core/model';
-import type { TestShader } from '../../src/harnessEffects';
+import type { TestShader } from '../../src/harnessShaders';
 
 const dir = ensureFixtures();
 const square = (n: number) => ({ width: n, height: n, fps: 30 });

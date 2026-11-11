@@ -14,6 +14,15 @@ export const PASS_SHADERS: Partial<Record<VideoEffectType, PassShader>> = {};
 export function registerPassShader(type: VideoEffectType, shader: PassShader | undefined): void {
   if (shader) PASS_SHADERS[type] = shader;
   else delete PASS_SHADERS[type];
+  failedTypes.delete(type);
+}
+
+/** The compositor's message for a lost context (the preview and exporter match it). */
+export const CONTEXT_LOST = 'WebGL context lost';
+
+/** Throws Error(CONTEXT_LOST) when `gl` is lost. */
+export function assertNotLost(gl: WebGL2RenderingContext): void {
+  if (gl.isContextLost()) throw new Error(CONTEXT_LOST);
 }
 
 /** The vertex shader of every pass: the unit quad over the whole target, unflipped, so v_uv.v = 0 is the top. */
@@ -86,6 +95,29 @@ class GlPassProgram implements PassProgram {
 /** Compiled programs per context; a shader that failed is off for the whole session (every context, D8). */
 const compiled = new WeakMap<WebGL2RenderingContext, Map<PassShader, PassProgram>>();
 const failed = new WeakSet<PassShader>();
+const failedTypes = new Set<VideoEffectType>();
+
+/** Every effect type turned off this session (compile/link or run-time failure), in failure order (D8). */
+export function unavailableTypes(): VideoEffectType[] {
+  return [...failedTypes];
+}
+
+/**
+ * Turns `type`'s current shader off for the session after a failure that is not a lost context, and calls
+ * `onUnavailable(type)` (only the first time that shader fails).
+ */
+export function markUnavailable(
+  type: VideoEffectType,
+  shader: PassShader,
+  onUnavailable: (type: VideoEffectType) => void,
+  error: unknown,
+): void {
+  if (failed.has(shader)) return;
+  failed.add(shader);
+  if (PASS_SHADERS[type] === shader) failedTypes.add(type);
+  console.warn(`Effect '${type}' is unavailable:`, error);
+  onUnavailable(type);
+}
 
 /**
  * The program of `type`'s registered shader, compiled on first use. Returns null when no shader is registered, or
@@ -106,10 +138,8 @@ export function programFor(
   try {
     program = createProgram(gl, PASS_VERTEX, shader.fragment);
   } catch (e) {
-    if (gl.isContextLost()) throw new Error('WebGL context lost');
-    failed.add(shader);
-    console.warn(`Effect '${type}' is unavailable:`, e);
-    onUnavailable(type);
+    assertNotLost(gl);
+    markUnavailable(type, shader, onUnavailable, e);
     return null;
   }
   if (!programs) {

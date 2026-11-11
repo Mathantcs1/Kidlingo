@@ -3,7 +3,8 @@ import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
 import { collectDraws } from './drawCollect';
 import type { Draw, DrawContext } from './drawCollect';
-import { EffectPipeline, frameIndex, snapToFrame, workingSize } from './effects/pipeline';
+import { EffectPipeline, effectWorkingSize, frameIndex, snapToFrame } from './effects/pipeline';
+import { unavailableTypes } from './effects/programs';
 import type { EffectContext } from './effects/types';
 import { QuadRenderer, clipMatrix, createContext, forceOpaque, letterbox, uvMatrix } from './gl';
 import type { Mat3, Size, TextureSlot } from './gl';
@@ -24,6 +25,8 @@ export interface Compositor {
   dispose(): void;
   /** Counts of live GL textures and the largest image texture side (instrumentation for tests). */
   stats(): CompositorStats;
+  /** Effect types turned off this session after a shader failure (every compositor shares this list; D8). */
+  unavailableTypes(): VideoEffectType[];
 }
 
 export interface CompositorStats {
@@ -120,6 +123,10 @@ class GlCompositor implements Compositor {
     };
   }
 
+  unavailableTypes(): VideoEffectType[] {
+    return unavailableTypes();
+  }
+
   private assertUsable(): void {
     if (this.disposed) throw new Error('Compositor is disposed');
     if (this.lost || this.gl.isContextLost()) {
@@ -166,7 +173,7 @@ class GlCompositor implements Compositor {
       lut: () => null,
       onUnavailable: this.onEffectUnavailable,
     };
-    const slot = this.effects.run(d.slot, workingSize(d.size, format), d.uv, d.clip.effects, ctx);
+    const slot = this.effects.run(d.slot, effectWorkingSize(d.size, d.texels, format), d.uv, d.clip.effects, ctx);
     // Effect results are upright and stored top row first, like an uploaded texture.
     return slot === d.slot ? d : { slot, uv: UPRIGHT };
   }

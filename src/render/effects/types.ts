@@ -38,7 +38,12 @@ export interface PassRunner {
  */
 export interface PassShader {
   fragment: string;
-  /** The effect's own uniforms for a single pass (params are already clamped by the data layer). */
+  /**
+   * The effect's own uniforms for a single pass (params are already clamped by the data layer). ONLY float and
+   * vec2/vec3/vec4 uniforms are supported (a number or an array of 2-4 numbers); no int, bool, matrix or sampler
+   * uniforms (an extra texture such as a LUT needs a pipeline hook, Task 6). Anything else, or a throw, turns the
+   * effect off for the session (D8). tests/effect-pipeline-run.test.ts checks the test shaders against this.
+   */
   uniforms(params: Record<string, number>, ctx: EffectContext, size: Size): Uniforms;
   /**
    * Multi-pass override (e.g. separable blur): call `pass.draw` once per pass. Without it the pipeline draws one

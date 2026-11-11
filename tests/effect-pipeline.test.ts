@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { EffectPipeline, capLongSide, frameIndex, snapToFrame, workingSize } from '../src/render/effects/pipeline';
-import { PASS_SHADERS, programFor, registerPassShader, uniformCall } from '../src/render/effects/programs';
+import { EffectPipeline, effectWorkingSize, frameIndex, snapToFrame, workingSize } from '../src/render/effects/pipeline';
+import { PASS_SHADERS, programFor, registerPassShader, uniformCall, unavailableTypes } from '../src/render/effects/programs';
+import { cappedSize } from '../src/render/images';
+import { fakeGl } from './fake-gl';
 import type { EffectContext, PassShader } from '../src/render/effects/types';
 import type { VideoEffect } from '../src/core/model';
 import type { TextureSlot } from '../src/render/gl';
@@ -32,9 +34,24 @@ describe('workingSize', () => {
     const s = workingSize({ width: 333.3, height: 99.6 }, fmt1080);
     expect(s).toEqual({ width: 333, height: 100 });
   });
-  it('capLongSide also honours a GPU texture limit', () => {
-    expect(capLongSide({ width: 8000, height: 4000 }, 4096)).toEqual({ width: 4096, height: 2048 });
-    expect(capLongSide({ width: 100, height: 50 }, 4096)).toEqual({ width: 100, height: 50 });
+  it('cappedSize (shared with images) also honours a GPU texture limit', () => {
+    expect(cappedSize({ width: 8000, height: 4000 }, 4096)).toEqual({ width: 4096, height: 2048 });
+    expect(cappedSize({ width: 100, height: 50 }, 4096)).toEqual({ width: 100, height: 50 });
+  });
+});
+
+describe('effectWorkingSize (bounded by the real texels)', () => {
+  const uhd = { width: 3840, height: 2160 };
+  it('never exceeds the decoded texture of a capped 48 MP photo', () => {
+    expect(effectWorkingSize({ width: 8064, height: 6048 }, { width: 3840, height: 2880 }, uhd)).toEqual({ width: 3840, height: 2880 });
+  });
+  it('is the plain working size when the texture holds the full display size', () => {
+    expect(effectWorkingSize({ width: 3840, height: 2160 }, { width: 3840, height: 2160 }, { width: 1280, height: 720 }))
+      .toEqual({ width: 2560, height: 1440 });
+    expect(effectWorkingSize({ width: 1080, height: 1920 }, { width: 1080, height: 1920 }, uhd)).toEqual({ width: 1080, height: 1920 });
+  });
+  it('keeps the display aspect when the texels are a rounded copy', () => {
+    expect(effectWorkingSize({ width: 6000, height: 4000 }, { width: 3840, height: 2561 }, uhd)).toEqual({ width: 3840, height: 2560 });
   });
 });
 
@@ -72,25 +89,6 @@ describe('uniformCall', () => {
   });
 });
 
-/** A fake WebGL2 context: constants are numbers, every method call is recorded and answered by `answers`. */
-function fakeGl(answers: Record<string, (...a: unknown[]) => unknown> = {}) {
-  const calls: string[] = [];
-  const gl = new Proxy({} as Record<string, unknown>, {
-    get(_t, prop: string) {
-      if (/^[A-Z0-9_]+$/.test(prop)) return prop.length;
-      return (...a: unknown[]) => {
-        calls.push(prop);
-        if (answers[prop]) return answers[prop](...a);
-        if (prop.startsWith('create')) return { kind: prop };
-        if (prop === 'getShaderParameter' || prop === 'getProgramParameter') return true;
-        if (prop === 'isContextLost') return false;
-        return null;
-      };
-    },
-  });
-  return { gl: gl as unknown as WebGL2RenderingContext, calls };
-}
-
 const ctx = (onUnavailable = vi.fn()): EffectContext => ({ time: 0, frame: 0, fps: 30, lut: () => null, onUnavailable });
 const effect = (type: VideoEffect['type'], enabled = true): VideoEffect => ({ id: `e-${type}`, type, enabled, params: { amount: 1 } });
 const slot = (): TextureSlot => ({ tex: {} as WebGLTexture, width: 8, height: 8 });
@@ -108,7 +106,7 @@ describe('EffectPipeline.run with nothing to apply', () => {
       for (const stack of [[], [effect('invert', false)], [effect('sepia')], [effect('bw', false), effect('vhs')]]) {
         expect(pipeline.run(input, { width: 8, height: 8 }, [...IDENTITY], stack, ctx())).toBe(input);
       }
-      expect(calls).toEqual([]);
+      expect(calls()).toEqual([]);
       expect(pipeline.passes).toBe(0);
     } finally {
       registerPassShader('invert', undefined);
@@ -125,22 +123,25 @@ describe('programFor failure policy', () => {
     const broken: PassShader = { fragment: 'not glsl', uniforms: () => ({}) };
     registerPassShader('sepia', broken);
     try {
-      const { gl, calls } = fakeGl({ getShaderParameter: () => false, getShaderInfoLog: () => 'bad' });
+      const { gl, count } = fakeGl({ getShaderParameter: () => false, getShaderInfoLog: () => 'bad' });
       const onUnavailable = vi.fn();
       expect(programFor(gl, 'sepia', onUnavailable)).toBeNull();
-      const compiles = calls.filter((c) => c === 'compileShader').length;
+      const compiles = count('compileShader');
       expect(compiles).toBeGreaterThan(0);
       expect(programFor(gl, 'sepia', onUnavailable)).toBeNull();
       // Another context (an export) does not retry or notify again: the type is off for the session.
       const other = fakeGl();
       expect(programFor(other.gl, 'sepia', onUnavailable)).toBeNull();
-      expect(other.calls).toEqual([]);
-      expect(calls.filter((c) => c === 'compileShader').length).toBe(compiles);
+      expect(other.calls()).toEqual([]);
+      expect(count('compileShader')).toBe(compiles);
       expect(onUnavailable).toHaveBeenCalledTimes(1);
       expect(onUnavailable).toHaveBeenCalledWith('sepia');
+      expect(unavailableTypes()).toContain('sepia');
     } finally {
       registerPassShader('sepia', undefined);
     }
+    // Registering again (a fixed or different shader) clears the memory for that type.
+    expect(unavailableTypes()).not.toContain('sepia');
   });
 
   it('a lost context is an error, not an unavailable effect (and is not cached)', () => {
@@ -165,6 +166,6 @@ describe('programFor failure policy', () => {
     const onUnavailable = vi.fn();
     expect(programFor(gl, 'glow', onUnavailable)).toBeNull();
     expect(onUnavailable).not.toHaveBeenCalled();
-    expect(calls).toEqual([]);
+    expect(calls()).toEqual([]);
   });
 });

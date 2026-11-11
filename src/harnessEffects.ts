@@ -4,40 +4,9 @@ import { openVideoSource } from './media/decode';
 import type { VideoSource } from './media/decode';
 import { createCompositor } from './render/compositor';
 import { registerPassShader } from './render/effects/programs';
-import { PASSTHROUGH } from './render/effects/shaders/passthrough';
-import type { PassShader } from './render/effects/types';
 import { readPixels } from './harnessPixels';
-
-const fragment = (body: string, decls = ''): string => `#version 300 es
-precision highp float;
-in vec2 v_uv;
-uniform sampler2D u_src;
-uniform float u_time;
-uniform float u_frame;
-${decls}
-out vec4 outColor;
-void main() {
-  vec4 c = texture(u_src, v_uv);
-  ${body}
-}`;
-
-/** Premultiplied invert: un-premultiplied 1 − rgb, times alpha, is alpha − rgb. */
-const INVERT: PassShader = { fragment: fragment('outColor = vec4(c.a - c.rgb, c.a);'), uniforms: () => ({}) };
-
-export const TEST_SHADERS = {
-  passthrough: PASSTHROUGH,
-  invert: INVERT,
-  /** Two passes of the invert program through the multi-pass hook: output = input, 2 passes. */
-  invertTwice: { ...INVERT, run: (pass) => { pass.draw({}); pass.draw({}); } } as PassShader,
-  /** Scales the picture by params.amount through a custom uniform. */
-  gain: { fragment: fragment('outColor = c * u_gain;', 'uniform float u_gain;'), uniforms: (p) => ({ u_gain: p.amount }) } as PassShader,
-  /** Writes the clip-relative frame index (red) and snapped time × 30 (green) in 1/255 steps. */
-  frame: { fragment: fragment('outColor = vec4(u_frame / 255.0, u_time * 30.0 / 255.0, 0.0, 1.0);'), uniforms: () => ({}) } as PassShader,
-  /** Does not compile. */
-  broken: { fragment: '#version 300 es\nthis is not glsl;', uniforms: () => ({}) } as PassShader,
-} satisfies Record<string, PassShader>;
-
-export type TestShader = keyof typeof TEST_SHADERS;
+import { TEST_SHADERS, setMidwayHook } from './harnessShaders';
+import type { TestShader } from './harnessShaders';
 
 export const effectsHarness = {
   /**
@@ -49,8 +18,9 @@ export const effectsHarness = {
   },
   /**
    * Renders `p` at each time into one compositor (p.format size) and returns each frame's pixels and the effect
-   * pass count after it, the onEffectUnavailable calls, and the error that stopped rendering (if any). With
-   * `loseAfter`, the context is lost after that many frames.
+   * pass count after it, the onEffectUnavailable calls, the compositor's unavailableTypes() at the end, and the
+   * error that stopped rendering (if any). With `loseAfter`, the context is lost after that many frames; the
+   * `loseMidway` test shader loses it between its two passes.
    */
   async renderEffects(p: Project, times: number[], opts: { loseAfter?: number } = {}) {
     const canvas = document.createElement('canvas');
@@ -60,13 +30,15 @@ export const effectsHarness = {
     const frames: { width: number; height: number; data: number[] }[] = [];
     const passes: number[] = [];
     let error: string | null = null;
+    const lose = (): void => void canvas.getContext('webgl2')?.getExtension('WEBGL_lose_context')?.loseContext();
+    setMidwayHook(lose);
     try {
       compositor.resize(p.format.width, p.format.height);
       for (const m of Object.values(p.media)) {
         if (m.kind === 'video' && !m.missing) sources.set(m.id, await openVideoSource(m.id));
       }
       for (const [i, t] of times.entries()) {
-        if (i === opts.loseAfter) canvas.getContext('webgl2')?.getExtension('WEBGL_lose_context')?.loseContext();
+        if (i === opts.loseAfter) lose();
         try {
           await compositor.renderFrame(p, t, sources);
         } catch (e) {
@@ -76,8 +48,9 @@ export const effectsHarness = {
         frames.push(readPixels(canvas));
         passes.push(compositor.stats().effectPasses);
       }
-      return { frames, passes, unavailable, error };
+      return { frames, passes, unavailable, unavailableTypes: compositor.unavailableTypes(), error };
     } finally {
+      setMidwayHook(() => undefined);
       compositor.dispose();
       for (const s of sources.values()) s.close();
     }
