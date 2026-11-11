@@ -1,8 +1,8 @@
 // Overlay clips (data v5): their size and default place in format pixels, placement on the timeline, spec edits. Pure.
 import { defaultClipAudio, newId } from './model';
 import type { Clip, Id, OverlaySpec, OverlayType, Project, Transform } from './model';
-import { MIN_CLIP, TimelineError, addClip, assertUnlocked, findClip, hasRoom } from './timeline';
-import { addTrack } from './tracks';
+import { placeOnVideoLayer } from './placement';
+import { MIN_CLIP, TimelineError, assertUnlocked, findClip } from './timeline';
 import {
   DEFAULT_OVERLAY_DURATION, OVERLAY_LABELS, STICKER_LABELS, cutText, hexColour, isOverlayType, isStickerKind, overlayDefaults,
 } from './overlaySpec';
@@ -61,16 +61,8 @@ export function addOverlayClip(p: Project, trackId: Id, type: OverlayType, start
   if (!isOverlayType(type)) throw new TimelineError(`Unknown overlay: ${type}`);
   if (!Number.isFinite(start)) throw new TimelineError('Invalid clip position');
   if (!Number.isFinite(duration) || duration < MIN_CLIP) throw new TimelineError('Invalid overlay duration');
-  const track = p.tracks.find((t) => t.id === trackId);
-  if (!track) throw new TimelineError(`Track not found: ${trackId}`);
-  if (track.kind !== 'video') throw new TimelineError('Overlays go on a video track');
-  assertUnlocked(p, trackId);
   const clip = newOverlayClip(type, Math.max(0, start), duration, p.format);
-  if (hasRoom(track, clip)) return addClip(p, trackId, clip);
-  const q = addTrack(p, 'video');
-  const added = q.tracks.find((t) => !p.tracks.some((o) => o.id === t.id));
-  if (!added) throw new TimelineError('Could not add a track');
-  return addClip(q, added.id, clip);
+  return placeOnVideoLayer(p, trackId, clip, 'Overlays go on a video track');
 }
 
 export type OverlayPatch = Partial<Pick<OverlaySpec, 'text' | 'subtext' | 'colour' | 'accent' | 'sticker'>>;

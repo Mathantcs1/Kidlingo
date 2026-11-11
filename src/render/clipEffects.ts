@@ -23,20 +23,34 @@ export function applyClipEffects(
 ): { slot: TextureSlot; uv: Mat3 } {
   // Overlays never run effects (D7; the core refuses them, this guards hand-made projects).
   if (d.clip.kind === 'overlay' || !d.clip.effects || d.clip.effects.length === 0) return d;
-  const fps = p.format.fps;
-  const ctx: EffectContext = {
-    time: snapToFrame(t - d.clip.start, fps),
-    frame: frameIndex(t - d.clip.start, fps),
-    fps,
-    lut: (ref) => luts.get(ref) ?? null,
-    onUnavailable,
-  };
+  const ctx = clipEffectContext(d.clip, p, t, luts, onUnavailable);
   const slot = effects.run(d.slot, effectWorkingSize(d.size, d.texels, format), d.uv, d.clip.effects, ctx);
   // Effect results are upright and stored top row first, like an uploaded texture.
   return slot === d.slot ? d : { slot, uv: UPRIGHT };
 }
 
-/** The mode a clip is composited with: overlays are always Normal (the core refuses a blend mode for them). */
+/** The effect context of `clip` at project time `t`: clip-relative time snapped to the project frame (D6). */
+export function clipEffectContext(
+  clip: Clip,
+  p: Project,
+  t: number,
+  luts: ReadonlyMap<Id, LoadedLut>,
+  onUnavailable: (type: VideoEffectType) => void,
+): EffectContext {
+  const fps = p.format.fps;
+  return {
+    time: snapToFrame(t - clip.start, fps),
+    frame: frameIndex(t - clip.start, fps),
+    fps,
+    lut: (ref) => luts.get(ref) ?? null,
+    onUnavailable,
+  };
+}
+
+/**
+ * The mode a clip is composited with: overlays are always Normal (the core refuses a blend mode for them); an
+ * adjustment clip's mode blends its processed composite over the unprocessed one.
+ */
 export function blendOf(clip: Clip): BlendMode {
   return clip.kind === 'overlay' ? 'normal' : clip.blend ?? 'normal';
 }

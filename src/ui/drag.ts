@@ -75,5 +75,6 @@ export function laneRejects(trackKind: TrackKind, mediaKind: MediaRef['kind'] | 
   const wanted: TrackKind = mediaKind === 'audio' ? 'audio' : 'video';
   if (wanted === trackKind) return null;
   if (mediaKind === 'overlay') return 'Overlays go on a video track';
+  if (mediaKind === 'adjustment') return 'Adjustment layers go on a video track';
   return mediaKind === 'audio' ? 'Audio goes on an audio track' : 'Video and images go on a video track';
 }

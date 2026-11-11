@@ -102,6 +102,7 @@ export function setClipFit(p: Project, clipId: Id, fit: Clip['fit']): Project {
   return updateClip(p, clipId, (c) => {
     if (c.kind === 'audio') throw new TimelineError('Audio clips have no picture to fit');
     if (c.kind === 'overlay') throw new TimelineError('Overlays have no frame to fit');
+    if (c.kind === 'adjustment') throw new TimelineError('Adjustment layers have no frame to fit');
     if (c.fit === fit) return c;
     const m = p.media[c.mediaId];
     const transform = m?.width && m.height

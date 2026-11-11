@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Clip, MediaRef, Project } from '../core/model';
+import { ADJUSTMENT_LABEL } from '../core/adjustment';
 import { overlayLabel } from '../core/overlays';
 import { findClip } from '../core/timeline';
 import { useEditor } from '../state/store';
@@ -16,6 +17,13 @@ const FIT_MODES: { mode: Clip['fit']; label: string; hint: string }[] = [
   { mode: 'fill', label: 'Fill', hint: 'Fill the frame, cropping the edges' },
   { mode: 'blur', label: 'Blur', hint: 'Show the whole picture over a blurred copy of itself' },
 ];
+
+const NO_SOUND: Partial<Record<Clip['kind'], string>> = {
+  image: 'Images have no sound.',
+  overlay: 'Overlays have no sound.',
+  adjustment: 'Adjustment layers have no sound.',
+};
+const OPACITY_ONLY = ['opacity'] as const;
 
 const apply = (fn: (p: Project) => Project): void => guard(() => useEditor.getState().apply(fn));
 
@@ -96,9 +104,11 @@ interface ControlsProps {
 
 function ClipControls({ clip, media, editable, locked }: ControlsProps) {
   const audible = clip.kind === 'audio' || (clip.kind === 'video' && media?.hasAudio !== false);
-  // Overlays take no fit, blend mode or effects (the core refuses them); they have their own inspector.
+  // Overlays take no fit, blend mode or effects (the core refuses them); they have their own inspector. Adjustment
+  // layers take effects, a blend mode and opacity, but no fit or position (full frame).
   const picture = clip.kind === 'video' || clip.kind === 'image';
-  const name = clip.kind === 'overlay' ? overlayLabel(clip) : media?.name;
+  const adjustment = clip.kind === 'adjustment';
+  const name = clip.kind === 'overlay' ? overlayLabel(clip) : adjustment ? ADJUSTMENT_LABEL : media?.name;
   return (
     <>
       <p className="inspector-clip" title={name}>
@@ -107,14 +117,14 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
       {audible ? (
         <VolumeControl clip={clip} disabled={!editable} />
       ) : (
-        <p className="inspector-hint">{clip.kind === 'image' ? 'Images have no sound.' : clip.kind === 'overlay' ? 'Overlays have no sound.' : 'This clip has no sound.'}</p>
+        <p className="inspector-hint">{NO_SOUND[clip.kind] ?? 'This clip has no sound.'}</p>
       )}
       {audible && <AudioInspector clip={clip} media={media} editable={editable} locked={locked} />}
       {picture && <FitControl clip={clip} disabled={!editable} />}
       {clip.kind === 'overlay' && <OverlayInspector clip={clip} editable={editable} locked={locked} />}
-      {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} />}
-      {picture && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
-      {picture && <EffectsInspector clip={clip} editable={editable} locked={locked} />}
+      {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} only={adjustment ? OPACITY_ONLY : undefined} />}
+      {(picture || adjustment) && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
+      {(picture || adjustment) && <EffectsInspector clip={clip} editable={editable} locked={locked} />}
     </>
   );
 }

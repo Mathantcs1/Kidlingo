@@ -1,11 +1,12 @@
 import './overlays.css';
 import { useEffect, useRef, useState } from 'react';
 import { OVERLAY_LABELS, OVERLAY_TYPES } from '../core/overlaySpec';
-import { addOverlayCmd } from './overlayCommands';
+import { ADJUSTMENT_LABEL } from '../core/adjustment';
+import { addAdjustmentCmd, addOverlayCmd } from './overlayCommands';
 
 /**
- * "Add overlay": a small menu of overlay types. Choosing one adds it at the playhead on the active video layer in
- * one undo step. Escape or a click elsewhere closes it; the button and items are keyboard operable.
+ * "Add overlay": a small menu of overlay types plus "Adjustment layer". Choosing one adds it at the playhead on the
+ * active video layer in one undo step. Escape or a click elsewhere closes it; the button and items are keyboard operable.
  */
 export default function OverlayMenu({ editable }: { editable: boolean }) {
   const [open, setOpen] = useState(false);
@@ -41,7 +42,7 @@ export default function OverlayMenu({ editable }: { editable: boolean }) {
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={!editable}
-        title="Add a lower third, subscribe button, progress bar or sticker at the playhead"
+        title="Add a lower third, subscribe button, progress bar, sticker or adjustment layer at the playhead"
         onClick={() => setOpen(!open)}
       >
         Add overlay
@@ -63,6 +64,21 @@ export default function OverlayMenu({ editable }: { editable: boolean }) {
               </button>
             </li>
           ))}
+          <li role="separator" className="overlay-menu-separator" />
+          <li role="none">
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="overlay-add-adjustment"
+              title="Effects, blend mode and opacity on this layer apply to every layer below it"
+              onClick={() => {
+                setOpen(false);
+                addAdjustmentCmd();
+              }}
+            >
+              {ADJUSTMENT_LABEL}
+            </button>
+          </li>
         </ul>
       )}
     </div>

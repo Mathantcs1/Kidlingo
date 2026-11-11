@@ -5,7 +5,8 @@ import { BlurBackground } from './blur';
 import { applyClipEffects, blendOf } from './clipEffects';
 import { CompositeBuffer } from './compositeBuffer';
 import type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
-import { collectDraws } from './drawCollect';
+import { applyAdjustment, needsComposite } from './adjustment';
+import { collectDraws, isAdjustmentDraw } from './drawCollect';
 import type { Draw, DrawContext } from './drawCollect';
 import { LutTextures } from './effects/luts';
 import { EffectPipeline } from './effects/pipeline';
@@ -26,7 +27,7 @@ class GlCompositor implements Compositor {
   private readonly gl: WebGL2RenderingContext;
   private readonly quad: QuadRenderer;
   private readonly blur: BlurBackground;
-  /** Frames with a non-normal blend mode composite here (Ruling P2); normal-only frames never touch it. */
+  /** Frames with a non-normal blend mode or an adjustment layer composite here (Ruling P2); others never touch it. */
   private readonly composite: CompositeBuffer;
   /** Textures per video source; a source used by several clips in one frame gets one texture per use. */
   private readonly videoSlots = new Map<VideoSource, TextureSlot[]>();
@@ -148,12 +149,17 @@ class GlCompositor implements Compositor {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    // Only a frame with a visible non-normal clip pays for the intermediate composite; the rest draw straight.
-    const composite = draws.some((d) => blendOf(d.clip) !== 'normal') && this.composite.begin(viewport);
+    // Only a frame with a visible non-normal clip or an active adjustment layer pays for the intermediate composite.
+    const composite = draws.some(needsComposite) && this.composite.begin(viewport);
     if (!composite) this.composite.idle();
     const bindOutput = composite ? () => this.composite.bindCurrent() : () => bindCanvas(gl, viewport);
     bindOutput();
     for (const d of draws) {
+      if (isAdjustmentDraw(d)) {
+        // Everything drawn so far is the composite (or no composite: blending unavailable, the adjustment is skipped).
+        if (composite) applyAdjustment(this.composite, this.effects, d.clip, p, t, format, this.frameLuts, this.onEffectUnavailable);
+        continue;
+      }
       // Effects first (working-size passes, no transform); the blur backdrop is made from the processed picture (D7).
       // A pipeline output is overwritten by the next clip's run of its size: it is drawn right here.
       const { slot, uv } = applyClipEffects(this.effects, d, p, t, format, this.frameLuts, this.onEffectUnavailable);

@@ -1,5 +1,6 @@
 import type { MouseEvent, PointerEvent } from 'react';
 import { clipDuration } from '../core/model';
+import { ADJUSTMENT_LABEL } from '../core/adjustment';
 import { overlayLabel } from '../core/overlays';
 import type { Clip, Id, MediaRef } from '../core/model';
 import { useEditor } from '../state/store';
@@ -24,8 +25,8 @@ interface ClipViewProps {
 /** A clip on a lane: click selects, the body drags to move, the edge handles drag to trim. */
 export default function ClipView({ clip, media, pps, selected, locked, dragging, onDragStart }: ClipViewProps) {
   const missing = media?.missing === true;
-  // Overlay clips have no media; the `clip-overlay` class gives them their own (striped) look.
-  const name = clip.kind === 'overlay' ? overlayLabel(clip) : media?.name ?? 'Unknown media';
+  // Overlay and adjustment clips have no media; `clip-overlay` / `clip-adjustment` give them their own look.
+  const name = clip.kind === 'overlay' ? overlayLabel(clip) : clip.kind === 'adjustment' ? ADJUSTMENT_LABEL : media?.name ?? 'Unknown media';
   const onClick = (e: MouseEvent): void => {
     e.stopPropagation();
     const { selection, select } = useEditor.getState();

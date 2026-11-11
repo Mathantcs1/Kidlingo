@@ -6,7 +6,7 @@ import type { BlendMode, Clip, Id, Project, VideoEffect, VideoEffectType } from 
 import { TimelineError, assertUnlocked, findClip } from './timeline';
 import { BLEND_MODES, MAX_VIDEO_EFFECTS, clampParams, defaultParams, isVideoEffectType } from './videoEffects';
 
-/** Finds a video/image clip on an unlocked track; audio clips have no picture and overlays take no effects (D7). */
+/** Finds a video/image/adjustment clip on an unlocked track; audio clips have no picture and overlays take no effects (D7). */
 function pictureClip(p: Project, clipId: Id, refusal = 'Overlays cannot have effects'): Clip {
   const { track, clip } = findClip(p, clipId);
   assertUnlocked(p, track.id);

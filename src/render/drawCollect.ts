@@ -17,6 +17,17 @@ export interface Draw {
   texels: Size;
 }
 
+/** An adjustment clip's place in the draw order: no picture of its own (see render/adjustment.ts). */
+export interface AdjustmentDraw {
+  clip: Clip;
+  adjustment: true;
+}
+
+/** One step of a frame, bottom first: a picture to draw, or an adjustment applied to everything below it. */
+export type FrameDraw = Draw | AdjustmentDraw;
+
+export const isAdjustmentDraw = (d: FrameDraw): d is AdjustmentDraw => 'adjustment' in d;
+
 /** What Phase 1 needs from the compositor. */
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -58,12 +69,17 @@ function pruneVideoSlots(ctx: DrawContext, sources: Map<Id, VideoSource>): void 
  * Phase 1 (async): fetch every frame/bitmap and upload it into its own texture. Nothing is drawn to the
  * canvas, so the browser can never present a half-composited frame while we wait on decoders.
  */
-export async function collectDraws(ctx: DrawContext, p: Project, t: number, sources: Map<Id, VideoSource>): Promise<Draw[]> {
-  const draws: Draw[] = [];
+export async function collectDraws(ctx: DrawContext, p: Project, t: number, sources: Map<Id, VideoSource>): Promise<FrameDraw[]> {
+  const draws: FrameDraw[] = [];
   const uses = new Map<VideoSource, number>();
   const shownImages = new Set<Id>();
   const shownOverlays = new Set<Id>();
   for (const clip of visualClipsAt(p, t)) {
+    if (clip.kind === 'adjustment') {
+      // No media and nothing to upload: the compositor applies it to the composite so far.
+      draws.push({ clip, adjustment: true });
+      continue;
+    }
     if (clip.kind === 'overlay') {
       // No media: drawn with Canvas2D (synchronous), never looked up in p.media or decoded.
       ctx.assertUsable();

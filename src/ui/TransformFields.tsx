@@ -52,19 +52,20 @@ const LOCKED_HINT = 'Track is locked';
 
 /**
  * Position (format px from the canvas centre), scale, rotation and opacity of one video/image clip, plus Reset to
- * the clip's fit framing. Each committed field is one `apply` (one undo step); see NumberField.
+ * the clip's fit framing. Each committed field is one `apply` (one undo step); see NumberField. `only` shows just those
+ * fields and no Reset (an adjustment layer is full frame: opacity only).
  */
-export default function TransformFields({ clip, editable, locked }: { clip: Clip; editable: boolean; locked: boolean }) {
+export default function TransformFields({ clip, editable, locked, only }: { clip: Clip; editable: boolean; locked: boolean; only?: readonly (keyof Transform)[] }) {
   const format = useEditor((s) => s.history.present.format);
   const disabled = !editable || locked;
   const title = locked ? LOCKED_HINT : undefined;
   return (
     <div className="inspector-field">
       <span className="inspector-label" id="inspector-transform-label">
-        Position and size
+        {only ? 'Layer' : 'Position and size'}
       </span>
       <div className="tf-grid" role="group" aria-labelledby="inspector-transform-label" data-testid="inspector-transform">
-        {FIELDS.map((f) => {
+        {FIELDS.filter((f) => !only || only.includes(f.key)).map((f) => {
           const [min, max] = f.range(format, clip.transform);
           return (
             <NumberField
@@ -83,7 +84,7 @@ export default function TransformFields({ clip, editable, locked }: { clip: Clip
             />
           );
         })}
-        <button
+        {!only && <button
           type="button"
           className="tf-reset"
           data-testid="inspector-transform-reset"
@@ -92,7 +93,7 @@ export default function TransformFields({ clip, editable, locked }: { clip: Clip
           onClick={() => apply((p) => resetClipTransform(p, clip.id))}
         >
           Reset
-        </button>
+        </button>}
       </div>
     </div>
   );

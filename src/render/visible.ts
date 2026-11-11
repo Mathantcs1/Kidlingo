@@ -12,10 +12,10 @@ export function shownClipIds(p: Project): Set<Id> {
 }
 
 /**
- * Active video/image/overlay clips on video tracks that are not hidden, bottom track first (array order is compositing
+ * Active video/image/overlay/adjustment clips on video tracks that are not hidden, bottom track first (array order is compositing
  * order). Hidden layers are neither drawn nor decoded; their audio is unaffected (see audio/plan.ts).
  */
 export function visualClipsAt(p: Project, t: number): Clip[] {
   const shown = shownClipIds(p);
-  return activeClipsAt(p, t).filter((c) => shown.has(c.id) && (c.kind === 'video' || c.kind === 'image' || c.kind === 'overlay'));
+  return activeClipsAt(p, t).filter((c) => shown.has(c.id) && (c.kind === 'video' || c.kind === 'image' || c.kind === 'overlay' || c.kind === 'adjustment'));
 }

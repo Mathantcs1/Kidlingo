@@ -54,7 +54,8 @@ export function toleranceInFormatPx(cssPx: number, box: Box, format: Size): numb
  */
 export function sourceSizeFor(clip: Clip, media: MediaRef | undefined, frameInfo?: Size, format?: Size): Size | null {
   if (clip.kind === 'overlay') return clip.overlay && format ? overlayBaseSize(clip.overlay.type, format) : null;
-  if (clip.kind === 'audio' || !media) return null;
+  // Adjustment layers are full frame (their transform is ignored): no on-canvas handles.
+  if (clip.kind === 'audio' || clip.kind === 'adjustment' || !media) return null;
   if (pos(media.width ?? NaN) && pos(media.height ?? NaN)) return { width: media.width!, height: media.height! };
   if (frameInfo && pos(frameInfo.width) && pos(frameInfo.height)) return { width: frameInfo.width, height: frameInfo.height };
   return null;

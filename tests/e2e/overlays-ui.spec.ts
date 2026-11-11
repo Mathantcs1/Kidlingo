@@ -31,11 +31,11 @@ async function addOverlay(page: Page, type: string): Promise<void> {
   await expect.poll(async () => (await overlays(page)).length).toBe(n + 1);
 }
 
-test('Add overlay: a menu of four types, one undo step, at the playhead, selected, drawn in the preview', async ({ page }) => {
+test('Add overlay: a menu of four types plus Adjustment layer, one undo step, at the playhead, selected, drawn in the preview', async ({ page }) => {
   const errors = trackErrors(page);
   await setup(page);
   await f(page, 'overlay-add').click();
-  await expect(page.getByRole('menuitem')).toHaveCount(4);
+  await expect(page.getByRole('menuitem')).toHaveCount(5);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('menuitem')).toHaveCount(0);
   const depth = await undoDepth(page);

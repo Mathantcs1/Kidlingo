@@ -75,8 +75,11 @@ export interface TrackDuck {
 export interface Clip {
   id: Id;
   mediaId: Id;
-  /** `overlay` clips (data v5) draw `overlay` and have no media: `mediaId` is '' and is never looked up. */
-  kind: 'video' | 'audio' | 'image' | 'overlay';
+  /**
+   * `overlay` clips (data v5) draw `overlay`; `adjustment` clips (data v5) apply their effects, blend mode and opacity
+   * to everything drawn below them, full frame. Neither has media: `mediaId` is '' and is never looked up.
+   */
+  kind: 'video' | 'audio' | 'image' | 'overlay' | 'adjustment';
   start: number;
   in: number;
   out: number;
@@ -84,7 +87,7 @@ export interface Clip {
   volume: number;
   fit: 'fit' | 'fill' | 'blur';
   audio: ClipAudio;
-  /** Picture effects, applied in order (video and image clips; always [] on audio clips). Max 8. */
+  /** Picture effects, applied in order (video, image and adjustment clips; always [] on audio clips). Max 8. */
   effects: VideoEffect[];
   blend: BlendMode;
   /** Overlay clips only (always `effects: []`, `blend: 'normal'`, `fit: 'fit'`). */
@@ -151,6 +154,11 @@ export function emptyProject(formatKey: FormatKey = 'youtube'): Project {
     tracks: [newTrack('video'), newTrack('audio')],
     media: {},
   };
+}
+
+/** Overlay and adjustment clips: no media, no source (`in` is unused, the start can be trimmed either way). */
+export function isSourceless(c: Clip): boolean {
+  return c.kind === 'overlay' || c.kind === 'adjustment';
 }
 
 export function clipDuration(c: Clip): number {

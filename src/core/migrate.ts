@@ -70,10 +70,17 @@ function toDuck(raw: unknown): TrackDuck | null {
 /**
  * One clip with its v2-v5 fields repaired. An overlay clip (v5) gets no media, effects, blend or fit (it keeps its
  * audio settings as stored); one whose spec cannot be understood, or that sits on an audio track, is dropped (null).
+ * An adjustment clip (v5) gets no media, fit 'fit' and no overlay spec, and keeps its repaired effects and blend;
+ * one on an audio track is dropped. Unknown extra keys are kept.
  */
 function toClip(c: Record<string, unknown>, trackKind: Track['kind']): Clip | null {
   const isAudio = c.kind === 'audio';
   const audio = toClipAudio(c.audio, clipSeconds(c));
+  if (c.kind === 'adjustment') {
+    if (trackKind !== 'video') return null;
+    const { overlay: _spec, ...rest } = c;
+    return { ...rest, mediaId: '', audio, effects: toClipEffects(c.effects, false), blend: toBlend(c.blend, false), fit: 'fit' } as unknown as Clip;
+  }
   if (c.kind !== 'overlay') {
     return { ...c, audio, effects: toClipEffects(c.effects, isAudio), blend: toBlend(c.blend, isAudio) } as unknown as Clip;
   }
@@ -104,7 +111,7 @@ function toTrack(raw: unknown): Track | null {
 
 /**
  * Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3-v5 are repaired per field (v4 → v5 adds nothing:
- * overlay clips are new in v5); newer versions are refused.
+ * overlay and adjustment clips are new in v5); newer versions are refused.
  */
 export function migrateProject(raw: unknown): MigrateResult {
   if (!isObject(raw)) return { ok: false, reason: 'malformed' };
