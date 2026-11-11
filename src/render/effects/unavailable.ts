@@ -27,7 +27,8 @@ export function skippedEffectTypes(p: Project, unavailable: readonly VideoEffect
   const used = new Set<VideoEffectType>();
   for (const t of p.tracks) {
     if (t.kind !== 'video' || t.hidden) continue;
-    for (const c of t.clips) for (const e of c.effects ?? []) if (e.enabled) used.add(e.type);
+    // Overlay clips never run effects (refused by the core, skipped by the compositor).
+    for (const c of t.clips) if (c.kind !== 'overlay') for (const e of c.effects ?? []) if (e.enabled) used.add(e.type);
   }
   return unavailable.filter((type) => used.has(type));
 }

@@ -28,7 +28,7 @@ function image(page: Page, w: number, h: number, rgb: Rgb, opts?: { right?: Rgb;
 /** One video track per clip (first clip at the bottom). */
 function layered(format: Project['format'], media: MediaRef[], clips: Clip[]): Project {
   const tracks = clips.map((c, i) => ({ ...newTrack('video'), id: `v${i}`, clips: [c] }));
-  return { version: 4, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 5, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 /** Non-overlapping clips over black: the combined frame is the per-channel maximum of the single-clip frames. */

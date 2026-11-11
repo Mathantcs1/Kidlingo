@@ -29,7 +29,7 @@ function stack(p: Pick<Project, 'format'>, video: MediaRef, audio: MediaRef): Pr
     ...Array.from({ length: LAYERS }, (_, i) => ({ ...flags, id: `v${i}`, kind: 'video' as const, clips: [clip(`vc${i}`, video, i)] })),
     ...Array.from({ length: LAYERS }, (_, i) => ({ ...flags, id: `a${i}`, kind: 'audio' as const, clips: [{ ...clip(`ac${i}`, audio, i), in: 0, out: 1 }] })),
   ];
-  return { version: 4, format: { ...p.format }, tracks, media: { [video.id]: video, [audio.id]: audio } };
+  return { version: 5, format: { ...p.format }, tracks, media: { [video.id]: video, [audio.id]: audio } };
 }
 
 async function renderedWithin(page: Page, t: number, ms: number): Promise<void> {

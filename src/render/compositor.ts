@@ -2,7 +2,7 @@
 import type { Id, Project, VideoEffectType } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
-import { applyClipEffects } from './clipEffects';
+import { applyClipEffects, blendOf } from './clipEffects';
 import { CompositeBuffer } from './compositeBuffer';
 import type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
 import { collectDraws } from './drawCollect';
@@ -15,6 +15,7 @@ import { QuadRenderer, clipMatrix, createContext, forceOpaque, letterbox } from 
 import type { Mat3, Rect, Size, TextureSlot } from './gl';
 import { withAttempts } from './glErrors';
 import { ImageTextures } from './images';
+import { OverlayTextures } from './overlays/textures';
 
 export type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
 
@@ -30,6 +31,7 @@ class GlCompositor implements Compositor {
   /** Textures per video source; a source used by several clips in one frame gets one texture per use. */
   private readonly videoSlots = new Map<VideoSource, TextureSlot[]>();
   private readonly images: ImageTextures;
+  private readonly overlays: OverlayTextures;
   private queue: Promise<unknown> = Promise.resolve();
   private disposed = false;
   private lost = false;
@@ -55,6 +57,7 @@ class GlCompositor implements Compositor {
     this.quad = withAttempts(attempts, () => new QuadRenderer(gl));
     this.blur = withAttempts(attempts, () => new BlurBackground(gl, this.quad), () => this.quad.dispose());
     this.images = new ImageTextures(gl);
+    this.overlays = new OverlayTextures(gl);
     this.composite = new CompositeBuffer(gl, this.quad, () => opts.onBlendUnavailable?.());
     this.effects = new EffectPipeline(gl);
     this.onEffectUnavailable = (type) => opts.onEffectUnavailable?.(type);
@@ -62,6 +65,8 @@ class GlCompositor implements Compositor {
     this.drawContext = {
       gl,
       images: this.images,
+      overlays: this.overlays,
+      pixelScale: (format) => letterbox(format, { width: this.canvas.width, height: this.canvas.height }).width / format.width,
       videoSlots: this.videoSlots,
       assertUsable: () => this.assertUsable(),
       isLive: () => !this.disposed && !this.lost,
@@ -88,6 +93,7 @@ class GlCompositor implements Compositor {
     for (const slots of this.videoSlots.values()) for (const s of slots) gl.deleteTexture(s.tex);
     this.videoSlots.clear();
     this.images.dispose();
+    this.overlays.dispose();
     this.luts.dispose();
     this.effects.dispose();
     this.composite.dispose();
@@ -102,6 +108,7 @@ class GlCompositor implements Compositor {
       videoTextures,
       imageTextures: this.images.count,
       maxImageSide: this.images.maxSide,
+      overlayTextures: { count: this.overlays.count, bytes: this.overlays.bytes },
       effectPasses: this.effects.passes,
       effectMemory: this.effects.memory(),
       blendPasses: this.composite.passes,
@@ -142,7 +149,7 @@ class GlCompositor implements Compositor {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     // Only a frame with a visible non-normal clip pays for the intermediate composite; the rest draw straight.
-    const composite = draws.some((d) => (d.clip.blend ?? 'normal') !== 'normal') && this.composite.begin(viewport);
+    const composite = draws.some((d) => blendOf(d.clip) !== 'normal') && this.composite.begin(viewport);
     if (!composite) this.composite.idle();
     const bindOutput = composite ? () => this.composite.bindCurrent() : () => bindCanvas(gl, viewport);
     bindOutput();
@@ -150,7 +157,7 @@ class GlCompositor implements Compositor {
       // Effects first (working-size passes, no transform); the blur backdrop is made from the processed picture (D7).
       // A pipeline output is overwritten by the next clip's run of its size: it is drawn right here.
       const { slot, uv } = applyClipEffects(this.effects, d, p, t, format, this.frameLuts, this.onEffectUnavailable);
-      const mode = d.clip.blend ?? 'normal';
+      const mode = blendOf(d.clip);
       if (!composite || mode === 'normal') {
         this.drawPicture(d, slot, uv, format, viewport, bindOutput);
         continue;
@@ -166,7 +173,7 @@ class GlCompositor implements Compositor {
   /** The clip's picture (blur backdrop first, for the 'blur' fit) into the output `bindOutput` binds. */
   private drawPicture(d: Draw, slot: TextureSlot, uv: Mat3, format: Size, viewport: Rect, bindOutput: () => void): void {
     const { opacity } = d.clip.transform;
-    if (d.clip.fit === 'blur') this.blur.draw(slot, d.size, uv, opacity, format, viewport, bindOutput);
+    if (d.clip.fit === 'blur' && d.clip.kind !== 'overlay') this.blur.draw(slot, d.size, uv, opacity, format, viewport, bindOutput);
     this.quad.draw(slot.tex, clipMatrix(d.size, d.clip.transform, format), opacity, uv);
   }
 }

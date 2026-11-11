@@ -1,6 +1,7 @@
 // Pure edits of a clip's transform (position, scale, rotation, opacity), behind the inspector fields and the
 // on-canvas overlay.
 import { fitTransform } from '../core/merge';
+import { overlayDefaultTransform } from '../core/overlays';
 import type { Clip, Id, Project, Transform } from '../core/model';
 import { TimelineError, assertUnlocked, findClip } from '../core/timeline';
 import { normaliseDegrees, scaleBounds } from '../render/overlayGeometry';
@@ -36,10 +37,12 @@ export function setClipTransform(p: Project, clipId: Id, patch: Partial<Transfor
  * Puts the clip back where its fit mode places it (`fitTransform` for its media and the project format), as one
  * edit; the same project when it is already there. The fitted scale is NOT clamped to 0.02..20 (a tiny image fits
  * a 4K frame at more than 20×, exactly as `setClipFit` and a format switch place it). Media without known
- * dimensions keeps its scale.
+ * dimensions keeps its scale. An overlay goes back to its type's default place (overlayDefaultTransform).
  */
 export function resetClipTransform(p: Project, clipId: Id): Project {
   return writeTransform(p, clipId, (cur, clip) => {
+    // An overlay has no media: it goes back to its type's default place.
+    if (clip.kind === 'overlay' && clip.overlay) return overlayDefaultTransform(clip.overlay.type, p.format);
     const m = p.media[clip.mediaId];
     return m?.width && m.height
       ? fitTransform({ width: m.width, height: m.height }, p.format, clip.fit)

@@ -1,5 +1,5 @@
 // A draw's picture after its clip's effect stack (the compositor's per-clip effect step).
-import type { Id, Project, VideoEffectType } from '../core/model';
+import type { BlendMode, Clip, Id, Project, VideoEffectType } from '../core/model';
 import type { Draw } from './drawCollect';
 import { EffectPipeline, effectWorkingSize, frameIndex, snapToFrame } from './effects/pipeline';
 import type { EffectContext, LoadedLut } from './effects/types';
@@ -21,7 +21,8 @@ export function applyClipEffects(
   luts: ReadonlyMap<Id, LoadedLut>,
   onUnavailable: (type: VideoEffectType) => void,
 ): { slot: TextureSlot; uv: Mat3 } {
-  if (!d.clip.effects || d.clip.effects.length === 0) return d;
+  // Overlays never run effects (D7; the core refuses them, this guards hand-made projects).
+  if (d.clip.kind === 'overlay' || !d.clip.effects || d.clip.effects.length === 0) return d;
   const fps = p.format.fps;
   const ctx: EffectContext = {
     time: snapToFrame(t - d.clip.start, fps),
@@ -33,4 +34,9 @@ export function applyClipEffects(
   const slot = effects.run(d.slot, effectWorkingSize(d.size, d.texels, format), d.uv, d.clip.effects, ctx);
   // Effect results are upright and stored top row first, like an uploaded texture.
   return slot === d.slot ? d : { slot, uv: UPRIGHT };
+}
+
+/** The mode a clip is composited with: overlays are always Normal (the core refuses a blend mode for them). */
+export function blendOf(clip: Clip): BlendMode {
+  return clip.kind === 'overlay' ? 'normal' : clip.blend ?? 'normal';
 }

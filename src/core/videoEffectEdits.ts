@@ -6,11 +6,12 @@ import type { BlendMode, Clip, Id, Project, VideoEffect, VideoEffectType } from 
 import { TimelineError, assertUnlocked, findClip } from './timeline';
 import { BLEND_MODES, MAX_VIDEO_EFFECTS, clampParams, defaultParams, isVideoEffectType } from './videoEffects';
 
-/** Finds a video/image clip on an unlocked track; audio clips have no picture. */
-function pictureClip(p: Project, clipId: Id): Clip {
+/** Finds a video/image clip on an unlocked track; audio clips have no picture and overlays take no effects (D7). */
+function pictureClip(p: Project, clipId: Id, refusal = 'Overlays cannot have effects'): Clip {
   const { track, clip } = findClip(p, clipId);
   assertUnlocked(p, track.id);
   if (clip.kind === 'audio') throw new TimelineError('Audio clips have no picture to apply effects to');
+  if (clip.kind === 'overlay') throw new TimelineError(refusal);
   return clip;
 }
 
@@ -92,7 +93,7 @@ export function applyLook(p: Project, clipId: Id, lookKey: LookKey): Project {
 }
 
 export function setClipBlend(p: Project, clipId: Id, mode: BlendMode): Project {
-  const clip = pictureClip(p, clipId);
+  const clip = pictureClip(p, clipId, 'Overlays cannot have a blend mode');
   if (!BLEND_MODES.includes(mode)) throw new TimelineError(`Unknown blend mode: ${mode}`);
   return clip.blend === mode ? p : withClip(p, clipId, (c) => ({ ...c, blend: mode }));
 }

@@ -55,7 +55,7 @@ function project(width: number, height: number, media: MediaRef[], clips: Clip[]
   const tracks: Track[] = clips.map((c, i) => ({ ...newTrack('video'), id: `track-${i}`, clips: [c] }));
   tracks.push({ ...newTrack('audio'), id: 'audio' });
   return {
-    version: 4,
+    version: 5,
     format: { width, height, fps: 30 },
     tracks,
     media: Object.fromEntries(media.map((m) => [m.id, m])),

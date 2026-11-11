@@ -19,7 +19,7 @@ const fx = (type: VideoEffectType, params: Record<string, number> = {}): VideoEf
 function blendProject(back: MediaRef, a: MediaRef, b: MediaRef, mid: BlendMode, top: BlendMode): Project {
   const track = (id: string, clip: ReturnType<typeof clipOf>) => ({ ...newTrack('video'), id, clips: [clip] });
   return {
-    version: 4,
+    version: 5,
     format: { width: 320, height: 180, fps: 25 },
     tracks: [
       track('back', clipOf(back, { out: 0.4 })),

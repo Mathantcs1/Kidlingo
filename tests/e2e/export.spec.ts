@@ -56,7 +56,7 @@ function project(
     { ...newTrack('video'), id: 'video', clips: video },
     { ...newTrack('audio'), id: 'audio', clips: audio },
   ];
-  return { version: 4, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 5, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 interface RunOpts {

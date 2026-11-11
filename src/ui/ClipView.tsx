@@ -1,5 +1,6 @@
 import type { MouseEvent, PointerEvent } from 'react';
 import { clipDuration } from '../core/model';
+import { overlayLabel } from '../core/overlays';
 import type { Clip, Id, MediaRef } from '../core/model';
 import { useEditor } from '../state/store';
 import './audio.css';
@@ -22,7 +23,8 @@ interface ClipViewProps {
 /** A clip on a lane: click selects, the body drags to move, the edge handles drag to trim. */
 export default function ClipView({ clip, media, pps, selected, locked, dragging, onDragStart }: ClipViewProps) {
   const missing = media?.missing === true;
-  const name = media?.name ?? 'Unknown media';
+  // Overlay clips have no media (Task 13 gives them their own look).
+  const name = clip.kind === 'overlay' ? overlayLabel(clip) : media?.name ?? 'Unknown media';
   const onClick = (e: MouseEvent): void => {
     e.stopPropagation();
     const { selection, select } = useEditor.getState();

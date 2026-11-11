@@ -70,9 +70,10 @@ export function dropStart(p: Project, x: number, pps: number, duration: number):
 }
 
 /** Why a lane of `trackKind` refuses media of `mediaKind`, or null when it accepts it. */
-export function laneRejects(trackKind: TrackKind, mediaKind: MediaRef['kind']): string | null {
+export function laneRejects(trackKind: TrackKind, mediaKind: MediaRef['kind'] | Clip['kind']): string | null {
   if (mediaKind === 'lut') return 'LUT files are used from the Effects panel';
   const wanted: TrackKind = mediaKind === 'audio' ? 'audio' : 'video';
   if (wanted === trackKind) return null;
+  if (mediaKind === 'overlay') return 'Overlays go on a video track';
   return mediaKind === 'audio' ? 'Audio goes on an audio track' : 'Video and images go on a video track';
 }

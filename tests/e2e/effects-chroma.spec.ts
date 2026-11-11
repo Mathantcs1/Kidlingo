@@ -27,7 +27,7 @@ function keyedProject(video: MediaRef, blue: MediaRef | null, effects: VideoEffe
   const fg = { ...newTrack('video'), id: 'fg', clips: [clipOf(video, { out: 1, effects, transform })] };
   const bg = { ...newTrack('video'), id: 'bg', clips: blue ? [clipOf(blue, { out: 1, transform })] : [] };
   const media = { [video.id]: video, ...(blue ? { [blue.id]: blue } : {}) };
-  return { version: 4, format: { ...size, fps: 30 }, tracks: [bg, fg, { ...newTrack('audio'), id: 'audio' }], media };
+  return { version: 5, format: { ...size, fps: 30 }, tracks: [bg, fg, { ...newTrack('audio'), id: 'audio' }], media };
 }
 
 async function greenScreen(page: Page): Promise<{ video: MediaRef; blue: MediaRef }> {

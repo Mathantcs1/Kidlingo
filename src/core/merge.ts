@@ -2,6 +2,7 @@ import { FORMATS } from './formats';
 import type { FormatKey } from './formats';
 import { clipDuration, clipEnd } from './model';
 import type { Clip, Id, Project, Transform } from './model';
+import { overlayDefaultTransform, reframeOverlay } from './overlays';
 import { TimelineError, assertUnlocked, findClip } from './timeline';
 
 const EPS = 1e-9;
@@ -92,7 +93,8 @@ function atFit(t: Transform, fit: Transform): boolean {
  * ratios), never clamped (Ruling K; a non-finite or non-positive result keeps the old scale). That makes a round
  * trip A → B → A exactly invertible for every customised clip, and untouched clips refit back to the same fit. Rotation and opacity
  * are always kept, so a faded or rotated full-frame clip still refits. An unusable old canvas size (non-positive or
- * non-finite) refits every clip. Audio clips and media without a known size are left alone. Intentionally ignores
+ * non-finite) refits every clip. Audio clips and media without a known size are left alone; overlay clips follow
+ * reframeOverlay (their size already follows the format). Intentionally ignores
  * track locks: the format is a sequence-level setting and every clip, locked or not, must follow it. Returns `p`
  * itself when the canvas size does not change (no undo step).
  */
@@ -105,6 +107,11 @@ export function reframeProject(p: Project, key: FormatKey): Project {
   const rx = width / old.width;
   const ry = height / old.height;
   const reframe = (c: Clip): Clip => {
+    if (c.kind === 'overlay' && c.overlay) {
+      if (oldUsable) return reframeOverlay(c, old, canvas);
+      const { x, y, scale } = overlayDefaultTransform(c.overlay.type, canvas);
+      return { ...c, transform: { ...c.transform, x, y, scale } };
+    }
     const m = p.media[c.mediaId];
     if (c.kind === 'audio' || !m || !m.width || !m.height) return { ...c };
     const dims = { width: m.width, height: m.height };

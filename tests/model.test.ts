@@ -32,7 +32,7 @@ describe('model', () => {
 
   it('emptyProject defaults to youtube with one video and one audio track', () => {
     const p = emptyProject();
-    expect(p.version).toBe(4);
+    expect(p.version).toBe(5);
     expect(p.format).toEqual({ width: 1920, height: 1080, fps: 30 });
     expect(p.tracks.filter((t) => t.kind === 'video')).toHaveLength(1);
     expect(p.tracks.filter((t) => t.kind === 'audio')).toHaveLength(1);

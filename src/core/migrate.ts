@@ -1,11 +1,12 @@
 import { fitFades } from './clipAudio';
 import { toBlend, toClipEffects } from './migrateEffects';
+import { toOverlaySpec } from './overlaySpec';
 import { defaultClipAudio, newId } from './model';
 import type { AudioEffect, AudioEffectType, Clip, ClipAudio, Project, Track, TrackDuck } from './model';
 
 export type MigrateResult = { ok: true; project: Project } | { ok: false; reason: 'newer' | 'malformed' };
 
-const CURRENT = 4;
+const CURRENT = 5;
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const num = (v: unknown, fallback: number, min: number, max: number): number =>
@@ -66,7 +67,22 @@ function toDuck(raw: unknown): TrackDuck | null {
   };
 }
 
-/** Validates a track's outline and fills/repairs the v2-v4 fields. Clips only need to be objects. */
+/**
+ * One clip with its v2-v5 fields repaired. An overlay clip (v5) gets no media, effects, blend or fit (it keeps its
+ * audio settings as stored); one whose spec cannot be understood, or that sits on an audio track, is dropped (null).
+ */
+function toClip(c: Record<string, unknown>, trackKind: Track['kind']): Clip | null {
+  const isAudio = c.kind === 'audio';
+  const audio = toClipAudio(c.audio, clipSeconds(c));
+  if (c.kind !== 'overlay') {
+    return { ...c, audio, effects: toClipEffects(c.effects, isAudio), blend: toBlend(c.blend, isAudio) } as unknown as Clip;
+  }
+  const overlay = toOverlaySpec(c.overlay);
+  if (!overlay || trackKind !== 'video') return null;
+  return { ...c, mediaId: '', audio, effects: [], blend: 'normal', fit: 'fit', overlay } as unknown as Clip;
+}
+
+/** Validates a track's outline and fills/repairs the v2-v5 fields. Clips only need to be objects. */
 function toTrack(raw: unknown): Track | null {
   if (!isObject(raw)) return null;
   if (typeof raw.id !== 'string' || (raw.kind !== 'video' && raw.kind !== 'audio')) return null;
@@ -82,19 +98,19 @@ function toTrack(raw: unknown): Track | null {
     locked: raw.locked === true,
     volume: num(raw.volume, 1, 0, 2),
     duck: toDuck(raw.duck),
-    clips: raw.clips.map((c) => {
-      const isAudio = c.kind === 'audio';
-      return { ...c, audio: toClipAudio(c.audio, clipSeconds(c)), effects: toClipEffects(c.effects, isAudio), blend: toBlend(c.blend, isAudio) } as unknown as Clip;
-    }),
+    clips: raw.clips.map((c) => toClip(c, raw.kind as Track['kind'])).filter((c): c is Clip => c !== null),
   };
 }
 
-/** Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3/v4 are repaired per field; newer versions are refused. */
+/**
+ * Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3-v5 are repaired per field (v4 → v5 adds nothing:
+ * overlay clips are new in v5); newer versions are refused.
+ */
 export function migrateProject(raw: unknown): MigrateResult {
   if (!isObject(raw)) return { ok: false, reason: 'malformed' };
   const { version } = raw;
   if (typeof version === 'number' && version > CURRENT) return { ok: false, reason: 'newer' };
-  if (version !== 1 && version !== 2 && version !== 3 && version !== CURRENT) return { ok: false, reason: 'malformed' };
+  if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== CURRENT) return { ok: false, reason: 'malformed' };
   if (!isObject(raw.format) || !Array.isArray(raw.tracks) || !isObject(raw.media)) return { ok: false, reason: 'malformed' };
   const tracks: Track[] = [];
   for (const t of raw.tracks) {

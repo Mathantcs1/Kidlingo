@@ -3,6 +3,7 @@ import type { VideoSource } from '../media/decode';
 import { createTexture, frameOrientation, rotatedSize, uploadTexture, uvMatrix } from './gl';
 import type { Mat3, Size, TextureSlot } from './gl';
 import type { ImageTextures } from './images';
+import type { OverlayTextures } from './overlays/textures';
 import { visualClipsAt } from './visible';
 
 export interface Draw {
@@ -20,6 +21,9 @@ export interface Draw {
 export interface DrawContext {
   gl: WebGL2RenderingContext;
   images: ImageTextures;
+  overlays: OverlayTextures;
+  /** Output px per format px for the current canvas (overlays are drawn at the size they are shown at). */
+  pixelScale(format: Size): number;
   /** Textures per video source; a source used by several clips in one frame gets one texture per use. */
   videoSlots: Map<VideoSource, TextureSlot[]>;
   /** Throws when the compositor is disposed or the context is lost. */
@@ -58,7 +62,16 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
   const draws: Draw[] = [];
   const uses = new Map<VideoSource, number>();
   const shownImages = new Set<Id>();
+  const shownOverlays = new Set<Id>();
   for (const clip of visualClipsAt(p, t)) {
+    if (clip.kind === 'overlay') {
+      // No media: drawn with Canvas2D (synchronous), never looked up in p.media or decoded.
+      ctx.assertUsable();
+      const o = ctx.overlays.get(clip, p.format, t, p.format.fps, ctx.pixelScale(p.format));
+      if (o) draws.push({ clip, ...o, uv: UPRIGHT });
+      shownOverlays.add(clip.id);
+      continue;
+    }
     const media = p.media[clip.mediaId];
     // Clips of unknown or missing media are skipped.
     if (!media || media.missing) continue;
@@ -91,5 +104,6 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
   }
   pruneVideoSlots(ctx, sources);
   ctx.images.prune(shownImages, p);
+  ctx.overlays.prune(shownOverlays);
   return draws;
 }

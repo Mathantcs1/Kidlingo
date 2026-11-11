@@ -50,7 +50,7 @@ export function project(format: Project['format'], media: MediaRef[], video: Cli
     { ...newTrack('video'), id: 'video', clips: video },
     { ...newTrack('audio'), id: 'audio' },
   ];
-  return { version: 4, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 5, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 export function render(

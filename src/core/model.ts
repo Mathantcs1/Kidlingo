@@ -75,7 +75,8 @@ export interface TrackDuck {
 export interface Clip {
   id: Id;
   mediaId: Id;
-  kind: 'video' | 'audio' | 'image';
+  /** `overlay` clips (data v5) draw `overlay` and have no media: `mediaId` is '' and is never looked up. */
+  kind: 'video' | 'audio' | 'image' | 'overlay';
   start: number;
   in: number;
   out: number;
@@ -86,6 +87,8 @@ export interface Clip {
   /** Picture effects, applied in order (video and image clips; always [] on audio clips). Max 8. */
   effects: VideoEffect[];
   blend: BlendMode;
+  /** Overlay clips only (always `effects: []`, `blend: 'normal'`, `fit: 'fit'`). */
+  overlay?: OverlaySpec;
 }
 
 export interface Track {
@@ -119,7 +122,7 @@ export interface MediaRef {
 }
 
 export interface Project {
-  version: 4;
+  version: 5;
   format: { width: number; height: number; fps: number };
   tracks: Track[];
   media: Record<Id, MediaRef>;
@@ -143,7 +146,7 @@ export function newTrack(kind: TrackKind, name = ''): Track {
 
 export function emptyProject(formatKey: FormatKey = 'youtube'): Project {
   return {
-    version: 4,
+    version: 5,
     format: { ...FORMATS[formatKey], fps: 30 },
     tracks: [newTrack('video'), newTrack('audio')],
     media: {},

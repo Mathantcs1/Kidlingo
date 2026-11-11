@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Clip, MediaRef, Project } from '../core/model';
+import { overlayLabel } from '../core/overlays';
 import { findClip } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { liveSelection, setClipFit, setClipVolume } from './edits';
@@ -94,21 +95,24 @@ interface ControlsProps {
 
 function ClipControls({ clip, media, editable, locked }: ControlsProps) {
   const audible = clip.kind === 'audio' || (clip.kind === 'video' && media?.hasAudio !== false);
+  // Overlays take no fit, blend mode or effects (the core refuses them); their own inspector is Task 13's.
+  const picture = clip.kind === 'video' || clip.kind === 'image';
+  const name = clip.kind === 'overlay' ? overlayLabel(clip) : media?.name;
   return (
     <>
-      <p className="inspector-clip" title={media?.name}>
-        {media?.name ?? 'Unknown media'}
+      <p className="inspector-clip" title={name}>
+        {name ?? 'Unknown media'}
       </p>
       {audible ? (
         <VolumeControl clip={clip} disabled={!editable} />
       ) : (
-        <p className="inspector-hint">{clip.kind === 'image' ? 'Images have no sound.' : 'This clip has no sound.'}</p>
+        <p className="inspector-hint">{clip.kind === 'image' ? 'Images have no sound.' : clip.kind === 'overlay' ? 'Overlays have no sound.' : 'This clip has no sound.'}</p>
       )}
       {audible && <AudioInspector clip={clip} media={media} editable={editable} locked={locked} />}
-      {clip.kind !== 'audio' && <FitControl clip={clip} disabled={!editable} />}
+      {picture && <FitControl clip={clip} disabled={!editable} />}
       {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} />}
-      {clip.kind !== 'audio' && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
-      {clip.kind !== 'audio' && <EffectsInspector clip={clip} editable={editable} locked={locked} />}
+      {picture && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
+      {picture && <EffectsInspector clip={clip} editable={editable} locked={locked} />}
     </>
   );
 }

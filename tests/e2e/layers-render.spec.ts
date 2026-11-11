@@ -28,7 +28,7 @@ function track(kind: Track['kind'], id: string, clips: Clip[], over: Partial<Tra
 }
 
 function projectOf(tracks: Track[], media: MediaRef[], format = FMT): Project {
-  return { version: 4, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 5, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 /** Red 48×48 on the bottom video track, green 32×32 on the top one, both centred in a 64×64 frame. */

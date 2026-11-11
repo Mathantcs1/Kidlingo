@@ -24,6 +24,8 @@ export interface CompositorStats {
   videoTextures: number;
   imageTextures: number;
   maxImageSide: number;
+  /** Overlay clip textures alive now (only overlays drawn in the last frame keep one) and their RGBA8 bytes. */
+  overlayTextures: { count: number; bytes: number };
   /** Effect passes drawn since creation (0 while no clip has an enabled, available effect). */
   effectPasses: number;
   /** Effect targets allocated now and their RGBA8 bytes (bounded: see TargetPool). */

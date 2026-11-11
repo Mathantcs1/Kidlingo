@@ -69,8 +69,8 @@ export function overBackdrops(m: MediaRef, white: MediaRef, effects: VideoEffect
   const audio = { ...newTrack('audio'), id: 'audio' };
   const media = { [m.id]: m, [white.id]: white };
   return [
-    { version: 4, format, tracks: [fg, audio], media },
-    { version: 4, format, tracks: [bg, fg, audio], media },
+    { version: 5, format, tracks: [fg, audio], media },
+    { version: 5, format, tracks: [bg, fg, audio], media },
   ];
 }
 

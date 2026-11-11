@@ -4,6 +4,8 @@ import { TimelineError } from '../core/timeline';
 
 /** Number of clips that use `mediaId`: as their picture/sound, or (a LUT file) in any effect of their stack. */
 export function clipsUsingMedia(p: Project, mediaId: Id): number {
+  // Overlay clips have no media (mediaId ''), so '' is never "in use".
+  if (mediaId === '') return 0;
   const uses = (c: Clip): boolean => c.mediaId === mediaId || (c.effects ?? []).some((e) => e.ref === mediaId);
   return p.tracks.reduce((n, t) => n + t.clips.filter(uses).length, 0);
 }
