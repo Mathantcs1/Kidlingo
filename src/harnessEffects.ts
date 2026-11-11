@@ -22,10 +22,11 @@ export const effectsHarness = {
     return importLut(new File([text], name, { type: 'application/octet-stream' }));
   },
   /**
-   * Renders `p` at each time into one compositor (p.format size) and returns each frame's pixels and the effect
-   * pass count after it, the onEffectUnavailable calls, the compositor's unavailableTypes() at the end, and the
-   * error that stopped rendering (if any), and the onLutUnavailable calls ([media id, name]). With `loseAfter`, the context is lost after that many frames; the
-   * `loseMidway` test shader loses it between its two passes.
+   * Renders `p` at each time into one compositor (p.format size) and returns each frame's pixels, the effect pass
+   * count and effect target memory after it, the onEffectUnavailable calls, the compositor's unavailableTypes() at
+   * the end, the error that stopped rendering (if any), and the onLutUnavailable calls ([media id, name]). With
+   * `loseAfter`, the context is lost after that many frames; the `loseMidway` test shader loses it between its two
+   * passes.
    */
   async renderEffects(p: Project, times: number[], opts: { loseAfter?: number } = {}) {
     const canvas = document.createElement('canvas');
@@ -39,6 +40,7 @@ export const effectsHarness = {
     const sources = new Map<Id, VideoSource>();
     const frames: { width: number; height: number; data: number[] }[] = [];
     const passes: number[] = [];
+    const memory: { targets: number; bytes: number }[] = [];
     let error: string | null = null;
     const lose = (): void => void canvas.getContext('webgl2')?.getExtension('WEBGL_lose_context')?.loseContext();
     setMidwayHook(lose);
@@ -57,8 +59,9 @@ export const effectsHarness = {
         }
         frames.push(readPixels(canvas));
         passes.push(compositor.stats().effectPasses);
+        memory.push(compositor.stats().effectMemory);
       }
-      return { frames, passes, unavailable, unavailableTypes: compositor.unavailableTypes(), error, lutUnavailable };
+      return { frames, passes, memory, unavailable, unavailableTypes: compositor.unavailableTypes(), error, lutUnavailable };
     } finally {
       setMidwayHook(() => undefined);
       compositor.dispose();

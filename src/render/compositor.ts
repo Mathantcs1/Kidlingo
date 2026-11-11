@@ -36,6 +36,8 @@ export interface CompositorStats {
   maxImageSide: number;
   /** Effect passes drawn since creation (0 while no clip has an enabled, available effect). */
   effectPasses: number;
+  /** Effect targets allocated now and their RGBA8 bytes (bounded: see TargetPool). */
+  effectMemory: { targets: number; bytes: number };
 }
 
 export interface CompositorOptions {
@@ -132,6 +134,7 @@ class GlCompositor implements Compositor {
       imageTextures: this.images.count,
       maxImageSide: this.images.maxSide,
       effectPasses: this.effects.passes,
+      effectMemory: this.effects.memory(),
     };
   }
 

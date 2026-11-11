@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EffectPipeline } from '../src/render/effects/pipeline';
 import { registerPassShader, uniformCall, unavailableTypes } from '../src/render/effects/programs';
-import type { EffectContext, PassShader } from '../src/render/effects/types';
+import type { EffectContext, PassShader, Uniforms } from '../src/render/effects/types';
 import type { VideoEffect, VideoEffectType } from '../src/core/model';
 import type { Mat3, TextureSlot } from '../src/render/gl';
 import { TEST_SHADERS } from '../src/harnessShaders';
@@ -137,7 +137,7 @@ describe('test-only shaders use only float/vec uniforms', () => {
         if (uniform === 'u_src') expect(type).toBe('sampler2D');
         else expect(Object.keys(TYPES), `${uniform}: ${type}`).toContain(type);
       }
-      let values: Record<string, number | number[]> = {};
+      let values: Uniforms = {};
       try {
         values = shader.uniforms({ amount: 0.5 }, ctx(), { width: 8, height: 8 });
       } catch {

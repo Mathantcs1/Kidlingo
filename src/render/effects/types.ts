@@ -38,17 +38,30 @@ export interface PassInputs {
   uniforms?: Uniforms;
 }
 
-/** A uniform value: a float, or a vec2/vec3/vec4. */
-export type UniformValue = number | number[];
+/** A uniform value: a float, a vec2/vec3/vec4 (2-4 numbers), or a float ARRAY (`uniform float u_x[N]`, ≤ N values). */
+export type UniformValue = number | number[] | Float32Array;
 export type Uniforms = Record<string, UniformValue>;
+
+/** Options of one pass of a multi-pass effect. */
+export interface PassOptions {
+  /**
+   * Also bind the effect's INPUT (the picture before its first pass) as `uniform sampler2D u_input`, with
+   * `uniform vec3 u_inputX, u_inputY`: the rows of its uv matrix, so that in a later pass (whose u_src is a working
+   * target, sampled at v_uv) the input at the same picture point is
+   * `texture(u_input, vec2(dot(u_inputX, vec3(v_uv, 1.0)), dot(u_inputY, vec3(v_uv, 1.0))))` (unsharp mask, glow).
+   */
+  input?: boolean;
+}
 
 /** Runs extra passes of the same program (multi-pass effects, see PassShader.run). */
 export interface PassRunner {
   /**
    * Draws one fullscreen pass of the effect's program with `uniforms` (plus the standard ones), sampling the current
-   * source and writing the next ping-pong target, which then becomes the source.
+   * source and writing a pool target, which then becomes the source. A pass never writes the texture it samples nor
+   * the effect's input (which therefore stays readable, see PassOptions.input, and is what a failure rolls back to):
+   * a multi-pass effect after another effect uses a third, scratch target of the pool.
    */
-  draw(uniforms: Uniforms): void;
+  draw(uniforms: Uniforms, opts?: PassOptions): void;
 }
 
 /**
@@ -57,14 +70,16 @@ export interface PassRunner {
  *   uniform sampler2D u_src; the source (premultiplied alpha; un-premultiply before colour maths)
  *   uniform vec2 u_size;     the working size in pixels (texel = 1.0 / u_size)
  *   uniform float u_time;    EffectContext.time;  uniform float u_frame: EffectContext.frame
+ *   uniform mat3 u_uv;       (optional) the uv matrix of u_src: identity except in an effect's first pass
  * and writes `out vec4 outColor` (premultiplied). gl_FragCoord.y also grows downwards in the picture.
  */
 export interface PassShader {
   fragment: string;
   /**
-   * The effect's own uniforms for a single pass (params are already clamped by the data layer). ONLY float and
-   * vec2/vec3/vec4 uniforms are supported (a number or an array of 2-4 numbers); no int, bool or matrix uniforms,
-   * and samplers only through `inputs`. Anything else, or a throw, turns the effect off for the session (D8).
+   * The effect's own uniforms for a single pass (params are already clamped by the data layer). ONLY float,
+   * vec2/vec3/vec4 (a number or an array of 2-4 numbers) and float-array (a Float32Array) uniforms are supported; no
+   * int, bool or matrix uniforms, and samplers only through `inputs`. A fragment may also declare the vertex stage's
+   * `uniform mat3 u_uv` (the source's uv matrix: its linear part maps working-pixel steps to source uv steps). Anything else, or a throw, turns the effect off for the session (D8).
    * tests/effect-pipeline-run.test.ts checks the test shaders against this.
    */
   uniforms(params: Record<string, number>, ctx: EffectContext, size: Size): Uniforms;

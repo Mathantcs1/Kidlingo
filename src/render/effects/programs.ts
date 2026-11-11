@@ -2,6 +2,7 @@
 import type { VideoEffectType } from '../../core/model';
 import type { Mat3, Size } from '../geometry';
 import { createProgram } from '../gl';
+import { BLUR, GLOW, PIXELATE, SHARPEN } from './shaders/blurFamily';
 import { COLOUR } from './shaders/colour';
 import { BW, GRAIN, SEPIA, SPLIT_TONE, VIGNETTE } from './shaders/look';
 import { LUT } from './shaders/lut';
@@ -19,6 +20,10 @@ export const PASS_SHADERS: Partial<Record<VideoEffectType, PassShader>> = {
   vignette: VIGNETTE,
   grain: GRAIN,
   lut: LUT,
+  blur: BLUR,
+  sharpen: SHARPEN,
+  glow: GLOW,
+  pixelate: PIXELATE,
 };
 
 /** Registers (or, with undefined, removes) a type's shader. Used by tests and the dev harness's test-only effects. */
@@ -56,11 +61,12 @@ export interface PassProgram {
   dispose(): void;
 }
 
-type UniformSetter = 'uniform1f' | 'uniform2fv' | 'uniform3fv' | 'uniform4fv';
+type UniformSetter = 'uniform1f' | 'uniform1fv' | 'uniform2fv' | 'uniform3fv' | 'uniform4fv';
 
-/** The setter for a uniform value (pure; exported for tests). */
+/** The setter for a uniform value (pure; exported for tests): a Float32Array is a float array. */
 export function uniformCall(v: UniformValue): [UniformSetter, UniformValue] {
   if (typeof v === 'number') return ['uniform1f', v];
+  if (v instanceof Float32Array) return ['uniform1fv', v];
   const setters: Record<number, UniformSetter> = { 2: 'uniform2fv', 3: 'uniform3fv', 4: 'uniform4fv' };
   const setter = setters[v.length];
   if (!setter) throw new Error(`Unsupported uniform of length ${v.length}`);
@@ -102,7 +108,7 @@ class GlPassProgram implements PassProgram {
     for (const [name, value] of Object.entries(uniforms)) {
       const [setter, v] = uniformCall(value);
       if (setter === 'uniform1f') gl.uniform1f(this.at(name), v as number);
-      else gl[setter](this.at(name), v as number[]);
+      else gl[setter](this.at(name), v as Float32Array);
     }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     if (extra.length === 0) return;

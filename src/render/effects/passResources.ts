@@ -1,4 +1,4 @@
-// GL resources of the effect passes: ping-pong target pairs pooled by size, and the fullscreen unit quad.
+// GL resources of the effect passes: ping-pong targets (plus a scratch) pooled by size, and the fullscreen unit quad.
 import type { Size } from '../geometry';
 import { GlUnavailableError } from '../glErrors';
 import { RenderTarget } from '../renderTarget';
@@ -6,37 +6,77 @@ import { assertNotLost } from './programs';
 
 export type TargetPair = [RenderTarget, RenderTarget];
 
-/** Pairs of ping-pong targets keyed by working size, least recently used evicted beyond `max` (default 3). */
+interface PoolEntry {
+  pair: TargetPair;
+  /** The third target, created only when a multi-pass effect needs it (see `target`). */
+  scratch?: RenderTarget;
+}
+
+/**
+ * Effect targets keyed by working size: a ping-pong pair per size plus, on demand, a scratch target; the least
+ * recently used size is evicted beyond `max` (default 3). Memory bound: ≤ 3 RGBA8 targets per size, ≤ `max` sizes,
+ * so at most 3 × max × (working width × height × 4) bytes, the working size being capped at 2× the format's long
+ * side and MAX_TEXTURE_SIZE (pipeline.ts workingSize).
+ */
 export class TargetPool {
-  private readonly pairs = new Map<string, TargetPair>();
+  private readonly entries = new Map<string, PoolEntry>();
 
   constructor(
     private readonly gl: WebGL2RenderingContext,
     private readonly max = 3,
   ) {}
 
-  /** The pair for `size` (a clip's working size): each target reallocates only when first bound at that size. */
-  pair(size: Size): TargetPair {
-    const key = `${size.width}x${size.height}`;
-    const hit = this.pairs.get(key);
-    if (hit) {
-      this.pairs.delete(key);
-      this.pairs.set(key, hit);
-      return hit;
+  /**
+   * A target of `size` whose texture is none of `avoid` (the source a pass samples and the effect's input): the
+   * first of the pair that qualifies, else the scratch target (created on first need). Each target reallocates only
+   * when first bound at that size. With two distinct textures to avoid there is always one left.
+   */
+  target(size: Size, avoid: readonly WebGLTexture[]): RenderTarget {
+    const entry = this.entry(size);
+    for (const t of entry.pair) if (!avoid.includes(t.slot.tex)) return t;
+    if (!entry.scratch) {
+      try {
+        entry.scratch = new RenderTarget(this.gl);
+      } catch (e) {
+        assertNotLost(this.gl);
+        throw e;
+      }
     }
-    const pair = this.create();
-    this.pairs.set(key, pair);
-    for (const [k, old] of this.pairs) {
-      if (this.pairs.size <= this.max) break;
-      for (const t of old) t.dispose();
-      this.pairs.delete(k);
+    return entry.scratch;
+  }
+
+  /** Allocated GL targets and their texture bytes (RGBA8), for tests and the memory bound. */
+  stats(): { targets: number; bytes: number } {
+    let targets = 0;
+    let bytes = 0;
+    for (const t of [...this.entries.values()].flatMap(all)) {
+      targets++;
+      bytes += t.slot.width * t.slot.height * 4;
     }
-    return pair;
+    return { targets, bytes };
   }
 
   dispose(): void {
-    for (const pair of this.pairs.values()) for (const t of pair) t.dispose();
-    this.pairs.clear();
+    for (const e of this.entries.values()) for (const t of all(e)) t.dispose();
+    this.entries.clear();
+  }
+
+  private entry(size: Size): PoolEntry {
+    const key = `${size.width}x${size.height}`;
+    const hit = this.entries.get(key);
+    if (hit) {
+      this.entries.delete(key);
+      this.entries.set(key, hit);
+      return hit;
+    }
+    const entry = { pair: this.create() };
+    this.entries.set(key, entry);
+    for (const [k, old] of this.entries) {
+      if (this.entries.size <= this.max) break;
+      for (const t of all(old)) t.dispose();
+      this.entries.delete(k);
+    }
+    return entry;
   }
 
   private create(): TargetPair {
@@ -51,6 +91,8 @@ export class TargetPool {
     }
   }
 }
+
+const all = (e: PoolEntry): RenderTarget[] => (e.scratch ? [...e.pair, e.scratch] : [...e.pair]);
 
 /** A VAO over the unit square [0, 1]² as a triangle strip, attribute location 0 (see PASS_VERTEX). */
 export function createUnitQuad(gl: WebGL2RenderingContext): { vao: WebGLVertexArrayObject; buffer: WebGLBuffer } {

@@ -6,7 +6,7 @@ import { cappedSize } from '../images';
 import { TargetPool, createUnitQuad } from './passResources';
 import { CONTEXT_LOST, PASS_SHADERS, assertNotLost, disposePrograms, markUnavailable, programFor } from './programs';
 import type { PassProgram } from './programs';
-import type { EffectContext, PassInputs, Uniforms } from './types';
+import type { EffectContext, PassInputs, PassOptions, PassTexture, Uniforms } from './types';
 
 const IDENTITY: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
@@ -36,6 +36,11 @@ export function frameIndex(t: number, fps: number): number {
 export function snapToFrame(t: number, fps: number): number {
   const n = frameIndex(t, fps);
   return n === 0 ? 0 : n / fps;
+}
+
+/** The rows of a uv matrix (column-major mat3) as the u_inputX / u_inputY uniforms of PassOptions.input. */
+function inputRows(m: Mat3): Uniforms {
+  return { u_inputX: [m[0], m[3], m[6]], u_inputY: [m[1], m[4], m[7]] };
 }
 
 interface SavedState {
@@ -79,20 +84,26 @@ export class EffectPipeline {
     const saved = this.save();
     try {
       const work = this.clampToGpu(size);
-      const targets = this.pool.pair(work);
       this.quad ??= createUnitQuad(gl);
       gl.disable(gl.BLEND);
       gl.bindVertexArray(this.quad.vao);
       let out = input;
       let srcUv = uv;
-      let n = 0;
       for (const [effect, program] of steps) {
-        const before = { out, srcUv, n };
+        // The effect's input is never written during its passes (pool.target), so a failure rolls back to it and
+        // PassOptions.input can read it in any pass.
+        const before = { out, srcUv };
         let inputs: PassInputs | null = { textures: {} };
-        const pass = (uniforms: Uniforms): void => {
-          const target = targets[n++ % 2];
+        const pass = (uniforms: Uniforms, opts?: PassOptions): void => {
+          const target = this.pool.target(work, [out.tex, before.out.tex]);
           target.bind(work.width, work.height);
-          program.draw(out.tex, srcUv, { ...uniforms, ...inputs?.uniforms }, work, ctx, inputs?.textures);
+          let textures: Record<string, PassTexture> | undefined = inputs?.textures;
+          let all: Uniforms = { ...uniforms, ...inputs?.uniforms };
+          if (opts?.input) {
+            textures = { ...textures, u_input: { target: 'TEXTURE_2D', texture: before.out.tex } };
+            all = { ...all, ...inputRows(before.srcUv) };
+          }
+          program.draw(out.tex, srcUv, all, work, ctx, textures);
           target.slot.mipmapped = false;
           out = target.slot;
           srcUv = IDENTITY;
@@ -107,7 +118,7 @@ export class EffectPipeline {
           else pass(shader.uniforms(effect.params, ctx, work));
         } catch (e) {
           this.contain(effect.type, program, ctx, e);
-          ({ out, srcUv, n } = before);
+          ({ out, srcUv } = before);
         }
       }
       // A loss mid-stack makes every later GL call a no-op: the result is garbage, so report it.
@@ -117,6 +128,11 @@ export class EffectPipeline {
       // On a lost context getParameter returned nulls: there is nothing to restore, and the error must not be masked.
       if (!gl.isContextLost()) this.restore(saved);
     }
+  }
+
+  /** The effect targets currently allocated and their bytes (see TargetPool for the bound). */
+  memory(): { targets: number; bytes: number } {
+    return this.pool.stats();
   }
 
   dispose(): void {
