@@ -99,7 +99,7 @@ function JobActions(props: { running: boolean; merge: boolean; idle: boolean; on
 
 /** Modal for exporting the timeline to MP4 and for showing merge-all progress. */
 export default function ExportDialog() {
-  const { open, phase, progress, error, url, filename, confirm } = useExportUi();
+  const { open, phase, progress, error, url, filename, confirm, notice } = useExportUi();
   const [quality, setQuality] = useState<ExportQuality>('1080p');
   const [name, setName] = useState(DEFAULT_EXPORT_NAME);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -160,6 +160,11 @@ export default function ExportDialog() {
         {phase === 'error' && (
           <p className="modal-error" role="alert" data-testid="export-error">
             {merge ? 'Merge failed' : 'Export failed'}: {error}
+          </p>
+        )}
+        {phase === 'done' && notice && (
+          <p className="modal-note" role="status" data-testid="export-notice">
+            {notice}
           </p>
         )}
         {phase === 'done' && url && filename && (

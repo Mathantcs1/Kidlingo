@@ -2,6 +2,7 @@
 // lives in exportJobState.ts, merge-all in mergeJob.ts).
 import { exportProject, exportTempName } from '../export/exporter';
 import type { ExportQuality } from '../export/exporter';
+import { exportSkipNotice } from '../render/effects/unavailable';
 import { safeFilename } from './exportName';
 import { keepDownloaded } from './exportTemp';
 import { begin, closed, editor, endJob, fail, lastResult, set, setLastResult, ui } from './exportJobState';
@@ -90,6 +91,7 @@ async function runExport(quality: ExportQuality, name: string): Promise<void> {
       quality,
       signal,
       onProgress: (f) => set({ progress: f }),
+      onSkipped: (skips) => set({ notice: exportSkipNotice(skips) }),
     });
     const url = URL.createObjectURL(blob);
     setLastResult({ url, temp: exportTempName(blob) });

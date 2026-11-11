@@ -1,40 +1,11 @@
 import { useEffect } from 'react';
-import { create } from 'zustand';
 import { useEditor } from '../state/store';
+import { showError, showInfo, useToasts } from './toastStore';
+import type { ToastItem } from './toastStore';
+
+export { showError, showInfo, useToasts } from './toastStore';
 
 const DISMISS_MS = 5000;
-
-interface ToastItem {
-  id: number;
-  message: string;
-  kind: 'error' | 'info';
-}
-
-interface ToastState {
-  toasts: ToastItem[];
-  push(message: string, kind?: ToastItem['kind']): void;
-  dismiss(id: number): void;
-}
-
-let seq = 0;
-
-export const useToasts = create<ToastState>()((set) => ({
-  toasts: [],
-  push(message, kind = 'error') {
-    set((s) => ({ toasts: [...s.toasts.slice(-3), { id: ++seq, message, kind }] }));
-  },
-  dismiss(id) {
-    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
-  },
-}));
-
-export function showError(message: string): void {
-  useToasts.getState().push(message);
-}
-
-export function showInfo(message: string): void {
-  useToasts.getState().push(message, 'info');
-}
 
 /** Runs a UI action; any error it throws becomes a toast instead of an uncaught exception. */
 export function guard(fn: () => void): void {

@@ -1,5 +1,5 @@
 // Drives the preview compositor: latest-wins render scheduling and one VideoSource per active video clip.
-import type { Id, Project } from '../core/model';
+import type { Id, Project, VideoEffectType } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
 import { shownClipIds, visualClipsAt } from '../render/visible';
@@ -12,6 +12,8 @@ export interface PreviewCallbacks {
   onFatal(message: string): void;
   /** A clip's LUT file cannot be used (its effect is skipped); called once per LUT media. */
   onLutUnavailable?(name: string): void;
+  /** An effect type's shader cannot run here (its effect is skipped); called once per type per session. */
+  onEffectUnavailable?(type: VideoEffectType): void;
 }
 
 const LOST = 'WebGL context lost';
@@ -49,7 +51,9 @@ export class PreviewRenderer {
     // Shares the lazily loaded chunk the exporter uses for the compositor.
     const { createCompositor } = await loadChunk(() => import('../render/compositor'));
     const onLutUnavailable = (_id: Id, name: string): void => callbacks.onLutUnavailable?.(name);
-    return new PreviewRenderer(canvas, createCompositor(canvas, { preserveDrawingBuffer: true, onLutUnavailable }), callbacks);
+    const onEffectUnavailable = (type: VideoEffectType): void => callbacks.onEffectUnavailable?.(type);
+    const compositor = createCompositor(canvas, { preserveDrawingBuffer: true, onLutUnavailable, onEffectUnavailable });
+    return new PreviewRenderer(canvas, compositor, callbacks);
   }
 
   resize(width: number, height: number): void {

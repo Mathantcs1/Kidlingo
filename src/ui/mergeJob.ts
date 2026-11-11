@@ -6,6 +6,8 @@ import { loadChunk } from '../loadChunk';
 import { askConfirm } from './Confirm';
 import { NO_VIDEO_TRACK, hiddenLayerClipCount, mergeRefusal, replaceWithMedia } from './edits';
 import { cleanTemp } from './exportTemp';
+import { exportSkipNotice } from '../render/effects/unavailable';
+import { showInfo } from './toastStore';
 import { begin, closed, editor, endJob, fail, messageOf, set, ui } from './exportJobState';
 
 /**
@@ -40,7 +42,13 @@ export async function startMerge(): Promise<void> {
   }
   try {
     const signal = await begin();
-    const blob = await exportProject(p, { quality: '1080p', signal, onProgress: (f) => set({ progress: f * 0.9 }) });
+    const skipped: { notice: string | null } = { notice: null };
+    const blob = await exportProject(p, {
+      quality: '1080p',
+      signal,
+      onProgress: (f) => set({ progress: f * 0.9 }),
+      onSkipped: (skips) => (skipped.notice = exportSkipNotice(skips, 'Merged')),
+    });
     const { importFile } = await loadChunk(() => import('../media/import'));
     const media = await importFile(new File([blob], 'merged.mp4', { type: 'video/mp4' }));
     const stale = editor().history.present !== p;
@@ -61,6 +69,8 @@ export async function startMerge(): Promise<void> {
       throw new Error(`Could not place the merged clip: ${error ? messageOf(error) : (editor().lastError ?? 'unknown error')}`);
     }
     set(closed);
+    // The merged clip bakes in what was rendered: say what it left out (Undo brings the original clips back).
+    if (skipped.notice) showInfo(`${skipped.notice} Undo brings the original clips back.`);
   } catch (e) {
     fail(e, 'merge');
   } finally {

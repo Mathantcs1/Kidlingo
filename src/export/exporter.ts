@@ -9,6 +9,8 @@ import { createExportCompositor } from './exportCompositor';
 import { syncExportSources } from './exportSources';
 import { exportSize } from './exportSize';
 import type { ExportQuality } from './exportSize';
+import { skippedEffectTypes } from '../render/effects/unavailable';
+import type { ExportSkips } from '../render/effects/unavailable';
 import { discardTempFile, hasOpfs, openTempFile, rememberTempName } from './exportTemp';
 import type { TempFile } from './exportTemp';
 
@@ -30,6 +32,12 @@ export interface ExportOptions {
    * software renderer. The bitrate still follows `quality`. Leave unset in the app.
    */
   maxLongSide?: number;
+  /**
+   * Called once, when the export finished, if it left anything out (D8): effect types turned off this session after a
+   * shader failure (Compositor.unavailableTypes(), used by a visible clip; read at the end because a failure noticed
+   * by the preview is not reported again to the export's compositor) and the names of LUTs that would not load.
+   */
+  onSkipped?(skips: ExportSkips): void;
 }
 
 const VIDEO_BITRATE: Record<ExportQuality, number> = { '1080p': 12_000_000, '4k': 40_000_000 };
@@ -109,7 +117,9 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
     if (mix.audible) await ensureAacEncoder(mb, audioQuality, AUDIO_SAMPLE_RATE);
     checkAbort();
 
-    compositor = createExportCompositor(createCompositor, width, height);
+    const lutsSkipped = new Set<string>();
+    const onLutUnavailable = (_id: Id, name: string): void => void lutsSkipped.add(name);
+    compositor = createExportCompositor((c, o) => createCompositor(c, { ...o, onLutUnavailable }), width, height);
     const syncSources = (t: number): Promise<void> => syncExportSources(p, t, sources, openVideoSource, checkAbort);
 
     let target: InstanceType<typeof mb.StreamTarget> | InstanceType<typeof mb.BufferTarget>;
@@ -174,6 +184,8 @@ export async function exportProject(p: Project, opts: ExportOptions): Promise<Bl
       if (!buffer) throw new ExportError('Export produced no data');
       blob = new Blob([buffer], { type: 'video/mp4' });
     }
+    const skips: ExportSkips = { effects: skippedEffectTypes(p, compositor.unavailableTypes()), luts: [...lutsSkipped] };
+    if (skips.effects.length > 0 || skips.luts.length > 0) opts.onSkipped?.(skips);
     progress(1);
     return blob;
   } catch (e) {

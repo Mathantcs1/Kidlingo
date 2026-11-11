@@ -21,6 +21,8 @@ export interface ExportUiState {
   downloaded: boolean;
   /** A pending "Discard the finished export?" question: asked by Close/Escape or by Export again. */
   confirm: 'close' | 'again' | null;
+  /** What the finished export left out (effects or LUTs that could not be used; see exportSkipNotice), or null. */
+  notice: string | null;
 }
 
 export const closed: ExportUiState = {
@@ -32,6 +34,7 @@ export const closed: ExportUiState = {
   filename: null,
   downloaded: false,
   confirm: null,
+  notice: null,
 };
 export const useExportUi = create<ExportUiState>()(() => closed);
 
@@ -68,7 +71,7 @@ export function cancelJob(): void {
 /** Starts a fresh job: releases the previous result and waits for temp cleanup. */
 export async function begin(): Promise<AbortSignal> {
   controller = new AbortController();
-  set({ phase: 'running', progress: 0, error: null, url: null, filename: null, downloaded: false, confirm: null });
+  set({ phase: 'running', progress: 0, error: null, url: null, filename: null, downloaded: false, confirm: null, notice: null });
   await releasePrevious();
   return controller.signal;
 }
