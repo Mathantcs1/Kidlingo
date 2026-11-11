@@ -15,6 +15,32 @@ function rms(b: AudioBuffer, c: number, from: number, to: number): number {
 }
 
 export const audioHarness = {
+  /**
+   * Window-seam check (D7): the mix rendered in windows of `windowSeconds` versus in one pass. Returns the RMS and
+   * the largest absolute value of the sample-wise difference (both channels), and the one-pass RMS and peak.
+   */
+  async mixdownSeam(p: Project, sampleRate: number, windowSeconds: number) {
+    const cut = await renderMixdown(p, sampleRate, { windowSeconds });
+    const whole = await renderMixdown(p, sampleRate, { windowSeconds: Infinity });
+    if (!cut || !whole) return null;
+    let sq = 0;
+    let ref = 0;
+    let maxDiff = 0;
+    let peak = 0;
+    for (let c = 0; c < 2; c++) {
+      const a = cut.getChannelData(c);
+      const b = whole.getChannelData(c);
+      for (let i = 0; i < b.length; i++) {
+        const d = a[i] - b[i];
+        sq += d * d;
+        ref += b[i] * b[i];
+        maxDiff = Math.max(maxDiff, Math.abs(d));
+        peak = Math.max(peak, Math.abs(b[i]));
+      }
+    }
+    const n = 2 * whole.length;
+    return { lengths: [cut.length, whole.length], rmsDiff: Math.sqrt(sq / n), maxDiff, rms: Math.sqrt(ref / n), peak };
+  },
   /** Renders the export mixdown and returns [left, right] RMS for each [from, to) window (seconds). */
   async mixdownChannelRms(p: Project, sampleRate: number, windows: [number, number][]) {
     const b = await renderMixdown(p, sampleRate);

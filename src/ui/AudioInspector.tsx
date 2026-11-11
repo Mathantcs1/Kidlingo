@@ -4,6 +4,7 @@ import { findDetachedTwin, formatPan } from '../core/audioQueries';
 import { useEditor } from '../state/store';
 import './audio.css';
 import { attachSelectedAudio, setSelectedClipAudio } from './audioCommands';
+import EffectList from './EffectList';
 import NumberField from './NumberField';
 
 interface Props {
@@ -73,6 +74,7 @@ export default function AudioInspector({ clip, media, editable, locked }: Props)
       <span className="audio-pan-label" data-testid="audio-pan-label">
         Pan {formatPan(clip.audio.pan)}
       </span>
+      <EffectList clip={clip} disabled={disabled} title={title} />
       {detached && (
         <div className="audio-actions">
           <span>{media?.name ?? 'Clip'}: audio detached</span>

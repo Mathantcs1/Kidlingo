@@ -1,16 +1,13 @@
+// The core's view of effect parameters: delegates to the DOM-free registry schema (src/audio/effects/params.ts).
+import { clampParams, defaultParams } from '../audio/effects/params';
 import type { AudioEffectType } from './model';
 
-/**
- * Stub until the effect registry (Plan 3 Task 6) replaces this file: keeps only finite numbers and has no defaults.
- * The signature is the contract: `clampEffectParams(type, params)` returns a clean, clamped copy.
- */
-export function clampEffectParams(_type: AudioEffectType, params: Record<string, number>): Record<string, number> {
-  const out: Record<string, number> = {};
-  for (const [k, v] of Object.entries(params)) if (Number.isFinite(v)) out[k] = v;
-  return out;
+/** A clean copy: every key of the effect's schema present and clamped; non-finite ⇒ default; unknown keys dropped. */
+export function clampEffectParams(type: AudioEffectType, params: Record<string, number>): Record<string, number> {
+  return clampParams(type, params);
 }
 
-/** Default parameters of a freshly added effect (stub: none). */
-export function defaultEffectParams(_type: AudioEffectType): Record<string, number> {
-  return {};
+/** Default parameters of a freshly added effect. */
+export function defaultEffectParams(type: AudioEffectType): Record<string, number> {
+  return defaultParams(type);
 }

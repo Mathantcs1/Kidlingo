@@ -129,7 +129,7 @@ export function attachAudio(p: Project, videoClipId: Id, audioClipId: Id): Proje
   };
 }
 
-function editEffects(p: Project, clipId: Id, fn: (list: AudioEffect[]) => AudioEffect[]): Project {
+export function editEffects(p: Project, clipId: Id, fn: (list: AudioEffect[]) => AudioEffect[]): Project {
   const { track } = findClip(p, clipId);
   assertUnlocked(p, track.id);
   return mapClip(p, clipId, (c) => {

@@ -4,6 +4,7 @@ import { timelineDuration } from '../core/timeline';
 import { ExportError } from '../export/errors';
 import { decodeAudioRange } from '../media/audioDecode';
 import { buildClipChain } from './chain';
+import { chainMargins } from './effects/params';
 import { audibleClips, planWindow, trackVolumes } from './plan';
 import type { Segment } from './plan';
 import { noteAudioBuffer, noteWindow } from './stats';
@@ -15,6 +16,8 @@ export const EXPORT_WINDOW_SECONDS = 30;
  * in/out), so resampling at the cut sees the same samples as an uncut render and windows join seamlessly.
  */
 const CUT_MARGIN = 0.05;
+/** Web Audio's render quantum; the pre-roll is a whole number of them so every window keeps the same block phase. */
+const QUANTUM = 128;
 
 const abortError = (): DOMException => new DOMException('Aborted', 'AbortError');
 const isAbort = (e: unknown): boolean => e instanceof DOMException && e.name === 'AbortError';
@@ -66,15 +69,20 @@ export class MixdownStream {
     if (from >= this.length) return null;
     const to = Math.min(this.length, from + this.windowLength);
     const t0 = from / this.sampleRate;
-    const ctx = new OfflineAudioContext(2, to - from, this.sampleRate);
-    for (const seg of planWindow(this.clips, t0, to / this.sampleRate, this.trackVolumes)) {
+    const segs = planWindow(this.clips, t0, to / this.sampleRate, this.trackVolumes);
+    // Effects need earlier audio (D7): the context starts `pre` frames before the window and that part is dropped.
+    const preMax = Math.max(0, ...segs.map((s) => chainMargins(s.clip.audio.effects).pre));
+    const pre = Math.ceil((preMax * this.sampleRate) / QUANTUM) * QUANTUM;
+    const ctx = new OfflineAudioContext(2, pre + to - from, this.sampleRate);
+    for (const seg of segs) {
       this.checkAbort();
-      if (await this.schedule(ctx, seg, t0)) this.decoded++;
+      if (await this.schedule(ctx, seg, t0 - pre / this.sampleRate)) this.decoded++;
     }
     this.checkAbort();
-    const out = await ctx.startRendering();
+    const rendered = await ctx.startRendering();
     this.checkAbort();
-    noteAudioBuffer(out);
+    noteAudioBuffer(rendered);
+    const out = pre ? sliceBuffer(rendered, pre, rendered.length) : rendered;
     noteWindow();
     this.rendered = to;
     return out;
@@ -84,11 +92,16 @@ export class MixdownStream {
     if (this.opts.signal?.aborted) throw abortError();
   }
 
-  /** Decodes one segment (plus cut margins) and starts it at its window-relative time; false if silent. */
+  /**
+   * Decodes one segment (plus cut margins and its effects' pre-roll / post-roll, never past the clip's in/out) and
+   * starts it so source time srcFrom plays at timeline seg.when; `t0` is the timeline time of context time 0.
+   * With effects the pre-roll plays too (the chain's seam gate keeps it silent); false if silent.
+   */
   private async schedule(ctx: OfflineAudioContext, seg: Segment, t0: number): Promise<boolean> {
     const { clip } = seg;
-    const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN);
-    const to = Math.min(clip.out, seg.srcTo + CUT_MARGIN);
+    const margins = chainMargins(clip.audio.effects);
+    const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN - margins.pre);
+    const to = Math.min(clip.out, seg.srcTo + CUT_MARGIN + margins.post);
     let decoded;
     try {
       decoded = await decodeAudioRange(seg.mediaId, from, to, ctx, this.opts.signal);
@@ -107,7 +120,12 @@ export class MixdownStream {
     // Buffer time `lead` is source time seg.srcFrom, which plays at timeline time seg.when.
     const when = seg.when - t0;
     const lead = seg.srcFrom - decoded.start;
-    if (lead >= 0) source.start(when, lead);
+    if (margins.pre > 0) {
+      // Play the whole decoded history: buffer time 0 sounds at context time when - lead (clipped at 0).
+      const at = when - lead;
+      if (at >= 0) source.start(at);
+      else source.start(0, -at);
+    } else if (lead >= 0) source.start(when, lead);
     else source.start(when - lead);
     return true;
   }

@@ -212,8 +212,10 @@ describe('effects', () => {
     const [e1, e2] = get(p, 'v1').audio.effects;
     expect(e1.id).not.toBe(e2.id);
     expect(e1.enabled).toBe(true);
-    p = updateEffect(p, 'v1', e1.id, { enabled: false, params: { gainDb: 3, bad: NaN } });
-    expect(get(p, 'v1').audio.effects[0]).toMatchObject({ enabled: false, params: { gainDb: 3 } });
+    p = updateEffect(p, 'v1', e1.id, { enabled: false, params: { high: 3, gainDb: 3, bad: NaN } });
+    expect(get(p, 'v1').audio.effects[0]).toMatchObject({ enabled: false, params: { low: 0, mid: 0, high: 3 } });
+    // Keys of another effect type and non-finite values are dropped by the registry's clampParams.
+    expect('gainDb' in get(p, 'v1').audio.effects[0].params).toBe(false);
     expect('bad' in get(p, 'v1').audio.effects[0].params).toBe(false);
     expect(updateEffect(p, 'v1', e1.id, { enabled: false })).toBe(p);
     p = moveEffect(p, 'v1', e1.id, 1);

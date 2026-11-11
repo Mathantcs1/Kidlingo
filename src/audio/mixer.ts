@@ -3,6 +3,7 @@ import { timelineDuration } from '../core/timeline';
 import { decodeAudioRange } from '../media/audioDecode';
 import type { DecodedAudio } from '../media/audioDecode';
 import { buildClipChain } from './chain';
+import { chainMargins } from './effects/params';
 import { audibleClips, planWindow, trackVolumes, windowBounds } from './plan';
 import type { Segment } from './plan';
 import type { Mixer, MixerOptions, Session } from './mixerTypes';
@@ -136,8 +137,9 @@ class LiveMixer implements Mixer {
       const { clip } = seg;
       let decoded: DecodedAudio | null;
       try {
-        const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN);
-        const to = Math.min(clip.out, seg.srcTo + CUT_MARGIN);
+        const m = chainMargins(clip.audio.effects);
+        const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN - m.pre);
+        const to = Math.min(clip.out, seg.srcTo + CUT_MARGIN + m.post);
         decoded = await decodeAudioRange(seg.mediaId, from, to, s.ctx, s.abort.signal);
       } catch (e) {
         if (s.gen !== this.generation) return [];
@@ -156,20 +158,29 @@ class LiveMixer implements Mixer {
     for (const [seg, decoded] of pieces) this.schedule(s, seg, decoded);
   }
 
-  /** Plays source [srcFrom, srcTo) of the decoded buffer at its exact clock time (sub-sample offsets). */
+  /**
+   * Plays source [srcFrom, srcTo) of the decoded buffer at its exact clock time (sub-sample offsets). A clip with
+   * effects also plays its pre-roll before and post-roll after (D7; the chain's seam gate silences both) so its
+   * effects enter the segment warmed up. Pre-roll that is already in the past (the first window after Play) is
+   * skipped: effects then start cold at the play position, exactly like a clip that begins there.
+   */
   private schedule(s: Session, seg: Segment, decoded: DecodedAudio): void {
     const { ctx } = s;
     const start = s.ctxStart + (seg.when - s.from);
     const end = start + (seg.srcTo - seg.srcFrom);
+    const m = chainMargins(seg.clip.audio.effects);
     // Buffer time of srcFrom / srcTo (decoded.start is within half a sample of the requested start).
     const lead = seg.srcFrom - decoded.start;
-    let offset = Math.max(0, lead);
-    let when = start + (offset - lead);
+    // Seconds played before srcFrom: all decoded pre-roll with effects (negative if the buffer starts after srcFrom).
+    const roll = lead < 0 || m.pre > 0 ? lead : 0;
+    let offset = lead - roll;
+    let when = start - roll;
     const late = Math.max(0, ctx.currentTime - when);
     when += late;
     offset += late;
-    const duration = lead + (seg.srcTo - seg.srcFrom) - offset;
-    this.opts.onSchedule?.({ clipId: seg.clipId, srcFrom: seg.srcFrom, srcTo: seg.srcTo, start, end, late });
+    const duration = lead + (seg.srcTo - seg.srcFrom) + m.post - offset;
+    const segLate = Math.max(0, late - Math.max(0, roll));
+    this.opts.onSchedule?.({ clipId: seg.clipId, srcFrom: seg.srcFrom, srcTo: seg.srcTo, start, end, late: segLate });
     if (!(duration > 0) || !s.master) return;
     const node = ctx.createBufferSource();
     node.buffer = decoded.buffer;

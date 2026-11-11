@@ -85,3 +85,55 @@
   position: relative;
   z-index: 1;
 }
+
+/* Effect chain in the inspector (EffectList / EffectRow). */
+.effect-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.effect-tools select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.effect-rows {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.effect-row {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.effect-row.effect-off .effect-param {
+  opacity: 0.5;
+}
+
+.effect-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.effect-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.effect-param {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  color: var(--muted);
+}

@@ -1,5 +1,6 @@
 // The one per-segment audio graph, shared by live playback (mixer.ts) and the offline mixdown (mixdown.ts).
 import type { Clip } from '../core/model';
+import { buildEffects } from './effects/registry';
 import { fadePoints, windowPoints } from './fade';
 import type { GainPoint } from './fade';
 import type { Segment } from './plan';
@@ -52,7 +53,22 @@ export function balanceGains(pan: number): [number, number] {
 }
 
 /**
- * Builds the graph of one segment: input → [effects, Task 6] → clip gain (clip.volume × fade automation) →
+ * Window-seam gate (D7) after the effects: 0 before timeline `from`, 1 over [from, to), 0 from `to` on. The
+ * engines feed a chain with effects some extra earlier source audio (chainMargins pre-roll) so stateful effects
+ * (filters, compressor, reverb, echo) enter the segment in the state an uncut render would have; the gate keeps
+ * that pre-roll, and every tail past the segment end, silent. Adjacent segments switch at the same number, so
+ * back-to-back windows sum to the uncut output. Tails therefore never sound past the clip end (live and export).
+ */
+function gate(ctx: BaseAudioContext, from: number, to: number, ctxStart: number): GainNode {
+  const g = ctx.createGain();
+  g.gain.value = 0;
+  g.gain.setValueAtTime(1, Math.max(0, ctxStart + from));
+  g.gain.setValueAtTime(0, Math.max(0, ctxStart + to));
+  return g;
+}
+
+/**
+ * Builds the graph of one segment: input → [enabled effects → seam gate] → clip gain (clip.volume × fade automation) →
  * balance (splitter → left / right GainNodes → merger) → track gain (trackVolume) → duck gain (automation) → output.
  *
  * The clip gain outputs exactly two channels (a mono source is duplicated to L = R), so pan 0 is unity for mono and
@@ -66,7 +82,8 @@ export function buildClipChain(spec: ChainSpec): ClipChain {
   const to = seg.whenEnd;
 
   const input = ctx.createGain();
-  // ---- Effects stage (Task 6) inserts here: input → effects → clipGain. ----
+  const effects = buildEffects(ctx, clip.audio.effects);
+  const seam = effects ? gate(ctx, from, to, ctxStart) : null;
   const clipGain = ctx.createGain();
   clipGain.channelCount = 2;
   clipGain.channelCountMode = 'explicit';
@@ -87,13 +104,19 @@ export function buildClipChain(spec: ChainSpec): ClipChain {
   const duckPoints = spec.duckPoints ?? seg.duckPoints;
   if (duckPoints?.length) scheduleGain(duck.gain, windowPoints(duckPoints, from, to), 1, ctxStart);
 
-  input.connect(clipGain).connect(split);
+  if (effects && seam) {
+    input.connect(effects.input);
+    effects.output.connect(seam).connect(clipGain);
+  } else {
+    input.connect(clipGain);
+  }
+  clipGain.connect(split);
   split.connect(left, 0);
   split.connect(right, 1);
   left.connect(merge, 0, 0);
   right.connect(merge, 0, 1);
   merge.connect(track).connect(duck);
-  const nodes: AudioNode[] = [input, clipGain, split, left, right, merge, track, duck];
+  const nodes: AudioNode[] = [input, ...(effects?.all ?? []), ...(seam ? [seam] : []), clipGain, split, left, right, merge, track, duck];
   return {
     input,
     output: duck,
