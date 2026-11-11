@@ -3,14 +3,15 @@ import { exportProject } from '../export/exporter';
 import { removeMedia } from '../media/storage';
 import { useEditor } from '../state/store';
 import { loadChunk } from '../loadChunk';
-import { NO_VIDEO_TRACK, mergeRefusal, replaceWithMedia } from './edits';
+import { askConfirm } from './Confirm';
+import { NO_VIDEO_TRACK, hiddenLayerClipCount, mergeRefusal, replaceWithMedia } from './edits';
 import { cleanTemp } from './exportTemp';
 import { begin, closed, editor, endJob, fail, messageOf, set, ui } from './exportJobState';
 
 /**
  * Renders the whole timeline at 1080p, imports the result as new media and replaces every clip with one clip
  * of it: ONE undoable apply. On failure or cancel the project is left untouched and the imported media removed.
- * A locked track holding clips refuses up front with a toast (no dialog, no export).
+ * A locked track holding clips refuses up front with a toast (no dialog, no export). Clips on hidden layers need a confirmation.
  */
 export async function startMerge(): Promise<void> {
   if (ui().open) return;
@@ -21,6 +22,16 @@ export async function startMerge(): Promise<void> {
     // A locked track holding clips: say so the way every other locked edit does, before any export work.
     useEditor.setState({ lastError: refusal });
     return;
+  }
+  const hidden = refusal ? 0 : hiddenLayerClipCount(p);
+  if (hidden > 0) {
+    // Hidden layers are not drawn into the merged clip, yet merging removes their clips: say so first.
+    const ok = await askConfirm({
+      title: 'Merge without the hidden layers?',
+      message: `${hidden === 1 ? '1 clip sits' : `${hidden} clips sit`} on hidden layers. The merged clip leaves ${hidden === 1 ? 'it' : 'them'} out and ${hidden === 1 ? 'it is' : 'they are'} removed from the timeline. Undo brings everything back.`,
+      confirmLabel: 'Merge',
+    });
+    if (!ok || editor().history.present !== p) return;
   }
   set({ ...closed, open: 'merge' });
   if (refusal) {

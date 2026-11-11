@@ -9,6 +9,7 @@ import { commit, createHistory, undo } from '../src/state/history';
 import {
   appendMedia,
   clipsUsingMedia,
+  hiddenLayerClipCount,
   deleteClips,
   dropMedia,
   mergeClips,
@@ -513,5 +514,16 @@ describe('replaceWithMedia with layers (merge all)', () => {
     const snap = JSON.parse(JSON.stringify(p));
     replaceWithMedia(p, other);
     expect(p).toEqual(snap);
+  });
+});
+
+describe('hiddenLayerClipCount', () => {
+  it('counts the clips on hidden video layers only (audio tracks: hidden does not affect sound)', () => {
+    const p = project();
+    expect(hiddenLayerClipCount(p)).toBe(0);
+    const hidden = { ...p, tracks: p.tracks.map((t) => ({ ...t, hidden: true })) };
+    expect(hiddenLayerClipCount(hidden)).toBe(4);
+    const hiddenEmpty = { ...p, tracks: p.tracks.map((t, i) => (i === 0 ? { ...t, hidden: true, clips: [] } : t)) };
+    expect(hiddenLayerClipCount(hiddenEmpty)).toBe(0);
   });
 });

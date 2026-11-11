@@ -45,7 +45,7 @@ It is a static site built with React, TypeScript and Vite.
   panel can still be scaled and rotated with the inspector's numeric fields.
 - **Merge** joins the selected clips back to back with no gaps. **Merge all into one clip** renders the whole
   timeline into a single new video in the media bin and replaces the timeline with it (one undo step; it can be
-  cancelled). With layers, the new video is the composite of the visible layers (hidden layers are left out) with
+  cancelled). With layers, the new video is the composite of the visible layers (hidden layers are left out; if any hold clips you are asked to confirm first, because those clips are removed) with
   the sound of the audible tracks (muted ones, or those silenced by a solo elsewhere, are left out); it lands on the
   lowest video layer, which is unhidden, unmuted and unlocked so the result is seen and heard. Every solo is
   cleared (the merged video already holds the mix); otherwise tracks keep their names, and the other (now empty)

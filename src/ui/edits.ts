@@ -165,6 +165,11 @@ export function mergeRefusal(p: Project): string | null {
   return null;
 }
 
+/** Number of clips on hidden video layers (merge-all leaves them out of the picture, then removes them). */
+export function hiddenLayerClipCount(p: Project): number {
+  return p.tracks.reduce((n, t) => n + (t.kind === 'video' && t.hidden ? t.clips.length : 0), 0);
+}
+
 /**
  * Registers `m` and replaces every clip on every track with one full-length clip of it at 0 on the lowest (first)
  * video track. Tracks keep their names, and the other (now empty) tracks keep their mute/hide flags. The target is

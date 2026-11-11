@@ -87,6 +87,8 @@ function rgbAt(f: { width: number; rgb: Buffer }, x: number, y: number): number[
 
 async function mergeAll(page: Page): Promise<string> {
   await page.getByTestId('btn-merge-all').click();
+  // A hidden layer holding clips asks first (the merge leaves it out and removes it).
+  if (await page.getByTestId('confirm-dialog').isVisible()) await page.getByTestId('btn-confirm-ok').click();
   await expect(page.getByTestId('export-dialog')).toHaveCount(0, { timeout: 200_000 });
   const tracks = await tracksOf(page);
   const clips = tracks.flatMap((t) => t.clips);
@@ -135,5 +137,32 @@ test('merge all on three layers (middle hidden) and two audio tracks (one muted)
   const silentId = await mergeAll(page);
   const silent = await mediaFile(page, silentId, 'merged-silent.mp4');
   expect(audioPeak(silent) ?? 0).toBeLessThan(50);
+  expect(errors).toEqual([]);
+});
+
+test('merge all asks before dropping clips on a hidden layer; Cancel changes nothing, no export starts', async ({ page }) => {
+  const errors = trackErrors(page);
+  await setup(page);
+  const before = await tracksOf(page);
+  const depth = (await playerState(page)).undoDepth;
+
+  await page.getByTestId('btn-merge-all').click();
+  const dialog = page.getByTestId('confirm-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('1 clip sits on hidden layers');
+  await page.getByTestId('btn-confirm-cancel').click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByTestId('export-dialog')).toHaveCount(0);
+  expect(await tracksOf(page)).toEqual(before);
+  expect((await playerState(page)).undoDepth).toBe(depth);
+
+  // Unhide the layer: nothing to warn about, the merge starts straight away.
+  await page.evaluate(() =>
+    window.__clipforge!.getState().apply((p) => ({ ...p, tracks: p.tracks.map((t) => ({ ...t, hidden: false })) })),
+  );
+  await page.getByTestId('btn-merge-all').click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByTestId('export-dialog')).toHaveCount(0, { timeout: 200_000 });
+  expect((await tracksOf(page)).flatMap((t) => t.clips)).toHaveLength(1);
   expect(errors).toEqual([]);
 });
