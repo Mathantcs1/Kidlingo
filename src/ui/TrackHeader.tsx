@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import type { Track } from '../core/model';
 import { useEditor } from '../state/store';
+import './audio.css';
+import TrackVolume from './TrackVolume';
 import { lastInputWasKeyboard } from './inputModality';
 import { ArrowIcon, CloseIcon, EyeIcon, LockIcon } from './TrackIcons';
 import TrackName from './TrackName';
@@ -107,6 +109,7 @@ export default function TrackHeader({ track, label, active, canMoveUp, canMoveDo
         <Btn id="lock" label={`Lock ${label}`} pressed={track.locked} className="is-lock" onClick={flag('locked')}>
           <LockIcon locked={track.locked} />
         </Btn>
+        <TrackVolume trackId={id} volume={track.volume} label={label} />
         {track.kind === 'video' && (
           <Btn id="hide" label={`Hide ${label}`} pressed={track.hidden} className="is-hide" onClick={flag('hidden')}>
             <EyeIcon hidden={track.hidden} />

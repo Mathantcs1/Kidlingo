@@ -4,6 +4,7 @@ import { findClip } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { liveSelection, setClipFit, setClipVolume } from './edits';
 import { guard } from './Toast';
+import AudioInspector from './AudioInspector';
 import TransformFields from './TransformFields';
 
 const FIT_MODES: { mode: Clip['fit']; label: string; hint: string }[] = [
@@ -101,6 +102,7 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
       ) : (
         <p className="inspector-hint">{clip.kind === 'image' ? 'Images have no sound.' : 'This clip has no sound.'}</p>
       )}
+      {audible && <AudioInspector clip={clip} media={media} editable={editable} locked={locked} />}
       {clip.kind !== 'audio' && <FitControl clip={clip} disabled={!editable} />}
       {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} />}
     </>

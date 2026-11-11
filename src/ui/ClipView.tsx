@@ -2,6 +2,7 @@ import type { MouseEvent, PointerEvent } from 'react';
 import { clipDuration } from '../core/model';
 import type { Clip, Id, MediaRef } from '../core/model';
 import { useEditor } from '../state/store';
+import './audio.css';
 import { toggleSelection } from './edits';
 import { timeToPx } from './layout';
 import type { DragKind } from './useClipDrag';
@@ -47,6 +48,11 @@ export default function ClipView({ clip, media, pps, selected, locked, dragging,
     >
       <span className="clip-name">{name}</span>
       {missing && <span className="clip-missing">missing media</span>}
+      {clip.kind === 'video' && clip.audio.silent && (
+        <span className="clip-detached-badge" data-testid="clip-detached-badge">
+          audio detached
+        </span>
+      )}
       <span
         className="trim-handle trim-start"
         data-testid="trim-start"
