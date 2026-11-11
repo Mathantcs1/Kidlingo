@@ -121,6 +121,41 @@ for (const [name, effects] of SEAM_CASES) {
   });
 }
 
+test('compressor seams hold after a long recovery (threshold -60, ratio 20, release 1 s)', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.loudThenQuiet]);
+  // Loud until 2 s, then quiet: the cuts at 3, 4, 5 s fall 1-3 s into the gain recovery (Chromium: about 1.25 s;
+  // the specified 10 dB per release time would be about 6 s).
+  const p = withEffects(m, [effect('compressor', { threshold: -60, ratio: 20, release: 1 })]);
+  const r = await page.evaluate(({ p, sr }) => window.cf.mixdownSeam(p, sr, 1), { p, sr: SR });
+  expect(r).not.toBeNull();
+  if (!r) return;
+  console.log(`seam compressor recovery: rmsDiff ${r.rmsDiff.toExponential(2)} maxDiff ${r.maxDiff.toExponential(2)} rms ${r.rms.toFixed(3)}`);
+  expect(r.rmsDiff).toBeLessThan(1e-3);
+  // The recovery is short next to 8 s of audio, so the RMS dilutes a seam jump; the largest difference does not
+  // (a 0.5 s pre-roll gives maxDiff 8e-3 here).
+  expect(r.maxDiff).toBeLessThan(1e-4);
+});
+
+test('a reverb tail is ramped out at the clip end (no click), identically in windows and in one pass', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.tone100]);
+  // The clip ends at 1.0025 s, a peak of the 100 Hz tone, with the reverb ringing; a later clip extends the mix.
+  const clip = clipOf(m, { out: 1.0025, audio: { ...defaultClipAudio(), effects: [effect('reverb', { seconds: 1, mix: 0.5 })] } });
+  const later = clipOf(m, { start: 2, out: 0.5 });
+  const base = project({ width: 64, height: 36, fps: 10 }, [m], []);
+  const p = { ...base, tracks: base.tracks.map((t) => (t.kind === 'audio' ? { ...t, clips: [clip, later] } : t)) };
+  const step = await page.evaluate(({ p, sr }) => window.cf.mixdownMaxStep(p, sr, 1.0025 - 0.02, 1.0025 + 0.005), { p, sr: SR });
+  const body = await page.evaluate(({ p, sr }) => window.cf.mixdownMaxStep(p, sr, 0.5, 0.9), { p, sr: SR });
+  console.log(`clip-end step ${step} (steady-state step ${body})`);
+  expect(step).not.toBeNull();
+  expect(step!).toBeLessThan(0.02);
+  // The 1 s cut falls inside the 8 ms ramp (0.9945..1.0025 s): both renders follow the same line.
+  const r = await page.evaluate(({ p, sr }) => window.cf.mixdownSeam(p, sr, 1), { p, sr: SR });
+  console.log(`seam clip-end ramp: rmsDiff ${r!.rmsDiff.toExponential(2)} maxDiff ${r!.maxDiff.toExponential(2)}`);
+  expect(r!.rmsDiff).toBeLessThan(1e-3);
+});
+
 test('live playback with effects matches the export and joins its live windows', async ({ page }) => {
   await openHarness(page);
   const [m] = await importPaths(page, [fx.noisy]);
@@ -135,6 +170,17 @@ test('live playback with effects matches the export and joins its live windows',
   expect(r.schedule.every((s) => s.late === 0)).toBe(true);
 });
 
+test('live Play mid-clip decodes the first window without pre-roll (it would be in the past)', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.noisy]);
+  // Echo 1 s × 0.9 wants 30 s of pre-roll (clamped to the clip's in point: 4 s of history before the play point).
+  const p = withEffects(m, [effect('echo', { delay: 1, feedback: 0.9 })]);
+  const r = await page.evaluate(({ p }) => window.cf.liveMixerRun(p, 4, { windowSeconds: 1, ms: 0 }), { p });
+  // Cold: [3.95, 5] s decoded, about 1.05 s; warm would have been the whole 5 s.
+  expect(r.during.largestBuffer).toBeLessThan(48000 * 1.2 * 2);
+  expect(r.schedule.length).toBe(1);
+});
+
 const present = (page: Page): Promise<Project> => page.evaluate(() => window.__clipforge!.getState().history.present);
 const depth = async (page: Page): Promise<number> => (await playerState(page)).undoDepth;
 
@@ -146,8 +192,13 @@ test('effect list: add EQ and change a parameter (one undo step each); disabling
   await clipEl(page, c.id).click();
 
   let d = await depth(page);
+  await expect(page.getByTestId('effect-add-button')).toBeDisabled();
   await page.getByTestId('effect-add').selectOption('eq');
+  // Choosing a type only stages it (a <select> changes per arrow key); the button adds it.
+  expect(await depth(page)).toBe(d);
+  await page.getByTestId('effect-add-button').click();
   expect(await depth(page)).toBe(d + 1);
+  await expect(page.getByTestId('effect-add-button')).toBeDisabled();
   const clipOfP = (p: Project) => p.tracks.flatMap((t) => t.clips).find((x) => x.id === c.id)!;
   const [eq] = clipOfP(await present(page)).audio.effects;
   expect(eq).toMatchObject({ type: 'eq', enabled: true, params: { low: 0, mid: 0, high: 0 } });

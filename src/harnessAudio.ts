@@ -15,6 +15,19 @@ function rms(b: AudioBuffer, c: number, from: number, to: number): number {
 }
 
 export const audioHarness = {
+  /** Largest sample-to-sample step of the export mix over [from, to) seconds (both channels): clicks show up here. */
+  async mixdownMaxStep(p: Project, sampleRate: number, from: number, to: number) {
+    const b = await renderMixdown(p, sampleRate);
+    if (!b) return null;
+    const a = Math.max(1, Math.round(from * sampleRate));
+    const e = Math.min(b.length, Math.round(to * sampleRate));
+    let step = 0;
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c);
+      for (let i = a; i < e; i++) step = Math.max(step, Math.abs(d[i] - d[i - 1]));
+    }
+    return step;
+  },
   /**
    * Window-seam check (D7): the mix rendered in windows of `windowSeconds` versus in one pass. Returns the RMS and
    * the largest absolute value of the sample-wise difference (both channels), and the one-pass RMS and peak.

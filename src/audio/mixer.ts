@@ -1,11 +1,9 @@
 import type { Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
-import { decodeAudioRange } from '../media/audioDecode';
-import type { DecodedAudio } from '../media/audioDecode';
 import { buildClipChain } from './chain';
-import { chainMargins } from './effects/params';
-import { audibleClips, planWindow, trackVolumes, windowBounds } from './plan';
-import type { Segment } from './plan';
+import { decodePieces, pieceTiming } from './mixerSchedule';
+import type { Piece } from './mixerSchedule';
+import { audibleClips, trackVolumes, windowBounds } from './plan';
 import type { Mixer, MixerOptions, Session } from './mixerTypes';
 import { noteLiveNodes, noteWindow } from './stats';
 
@@ -16,8 +14,6 @@ export type { Mixer, MixerOptions, ScheduledPiece } from './mixerTypes';
 export const LIVE_WINDOW_SECONDS = 20;
 /** Clock lead before the first window starts, so every node of it starts on the same tick. */
 const START_LEAD = 0.05;
-/** Real source audio decoded past each window cut, so resampling at the cut sees its true neighbours. */
-const CUT_MARGIN = 0.05;
 /** Shortest wait between checks of whether the next window is due. */
 const MIN_WAIT_MS = 50;
 
@@ -67,9 +63,9 @@ class LiveMixer implements Mixer {
       wake: null,
     };
     this.session = s;
-    let first: [Segment, DecodedAudio][] = [];
+    let first: Piece[] = [];
     try {
-      if (s.windows.length) first = await this.decodeWindow(s, s.windows[0]);
+      if (s.windows.length) first = await decodePieces(s, s.windows[0], false, () => gen === this.generation);
     } catch (e) {
       if (gen !== this.generation) return;
       throw e;
@@ -119,7 +115,7 @@ class LiveMixer implements Mixer {
           });
           continue;
         }
-        const pieces = await this.decodeWindow(s, s.windows[s.next]);
+        const pieces = await decodePieces(s, s.windows[s.next], true, () => s.gen === this.generation);
         if (s.gen !== this.generation) return;
         this.scheduleWindow(s, pieces);
       }
@@ -130,57 +126,18 @@ class LiveMixer implements Mixer {
     }
   }
 
-  /** Decodes the window's segments (plus cut margins); stops early once superseded. */
-  private async decodeWindow(s: Session, [a, b]: [number, number]): Promise<[Segment, DecodedAudio][]> {
-    const out: [Segment, DecodedAudio][] = [];
-    for (const seg of planWindow(s.clips, a, b, s.trackVolumes)) {
-      const { clip } = seg;
-      let decoded: DecodedAudio | null;
-      try {
-        const m = chainMargins(clip.audio.effects);
-        const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN - m.pre);
-        const to = Math.min(clip.out, seg.srcTo + CUT_MARGIN + m.post);
-        decoded = await decodeAudioRange(seg.mediaId, from, to, s.ctx, s.abort.signal);
-      } catch (e) {
-        if (s.gen !== this.generation) return [];
-        const name = s.names.get(seg.mediaId) ?? seg.mediaId;
-        throw new Error(`Could not read the audio of "${name}": ${e instanceof Error ? e.message : String(e)}`);
-      }
-      if (s.gen !== this.generation) return [];
-      if (decoded) out.push([seg, decoded]);
-    }
-    return out;
-  }
-
-  private scheduleWindow(s: Session, pieces: [Segment, DecodedAudio][]): void {
+  private scheduleWindow(s: Session, pieces: Piece[]): void {
     s.next++;
     noteWindow();
-    for (const [seg, decoded] of pieces) this.schedule(s, seg, decoded);
+    for (const piece of pieces) this.schedule(s, piece);
   }
 
-  /**
-   * Plays source [srcFrom, srcTo) of the decoded buffer at its exact clock time (sub-sample offsets). A clip with
-   * effects also plays its pre-roll before and post-roll after (D7; the chain's seam gate silences both) so its
-   * effects enter the segment warmed up. Pre-roll that is already in the past (the first window after Play) is
-   * skipped: effects then start cold at the play position, exactly like a clip that begins there.
-   */
-  private schedule(s: Session, seg: Segment, decoded: DecodedAudio): void {
+  /** Plays one piece through its clip chain at the clock time pieceTiming gives (see mixerSchedule.ts). */
+  private schedule(s: Session, piece: Piece): void {
     const { ctx } = s;
-    const start = s.ctxStart + (seg.when - s.from);
-    const end = start + (seg.srcTo - seg.srcFrom);
-    const m = chainMargins(seg.clip.audio.effects);
-    // Buffer time of srcFrom / srcTo (decoded.start is within half a sample of the requested start).
-    const lead = seg.srcFrom - decoded.start;
-    // Seconds played before srcFrom: all decoded pre-roll with effects (negative if the buffer starts after srcFrom).
-    const roll = lead < 0 || m.pre > 0 ? lead : 0;
-    let offset = lead - roll;
-    let when = start - roll;
-    const late = Math.max(0, ctx.currentTime - when);
-    when += late;
-    offset += late;
-    const duration = lead + (seg.srcTo - seg.srcFrom) + m.post - offset;
-    const segLate = Math.max(0, late - Math.max(0, roll));
-    this.opts.onSchedule?.({ clipId: seg.clipId, srcFrom: seg.srcFrom, srcTo: seg.srcTo, start, end, late: segLate });
+    const { seg, decoded } = piece;
+    const { start, end, when, offset, duration, late } = pieceTiming(s, piece, ctx.currentTime);
+    this.opts.onSchedule?.({ clipId: seg.clipId, srcFrom: seg.srcFrom, srcTo: seg.srcTo, start, end, late });
     if (!(duration > 0) || !s.master) return;
     const node = ctx.createBufferSource();
     node.buffer = decoded.buffer;

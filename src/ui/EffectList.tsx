@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { EFFECT_SCHEMAS } from '../audio/effects/params';
 import { PRESET_LABELS, availablePresets } from '../audio/presets';
 import type { PresetKey } from '../audio/presets';
@@ -20,6 +21,8 @@ interface Props {
  */
 export default function EffectList({ clip, disabled, title }: Props) {
   const effects = clip.audio.effects;
+  // A native <select> fires `change` on every arrow key on some platforms, so choosing a type only stages it.
+  const [chosen, setChosen] = useState<AudioEffectType | ''>('');
   return (
     <div className="inspector-field effect-list" data-testid="effect-list" title={title}>
       <span className="inspector-label" id="effect-list-label">
@@ -28,21 +31,30 @@ export default function EffectList({ clip, disabled, title }: Props) {
       <div className="effect-tools" role="group" aria-labelledby="effect-list-label">
         <select
           data-testid="effect-add"
-          aria-label="Add effect"
-          value=""
+          aria-label="Effect to add"
+          value={chosen}
           disabled={disabled}
-          onChange={(e) => {
-            const type = e.target.value as AudioEffectType;
-            if (type) addClipEffect(clip.id, type);
-          }}
+          onChange={(e) => setChosen(e.target.value as AudioEffectType | '')}
         >
-          <option value="">Add effect…</option>
+          <option value="">Effect…</option>
           {ADDABLE.map((t) => (
             <option key={t} value={t}>
               {EFFECT_SCHEMAS[t].label}
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          data-testid="effect-add-button"
+          disabled={disabled || !chosen}
+          onClick={() => {
+            if (!chosen) return;
+            addClipEffect(clip.id, chosen);
+            setChosen('');
+          }}
+        >
+          Add
+        </button>
         <select
           data-testid="audio-preset"
           aria-label="Apply a preset (replaces the effects)"
@@ -64,7 +76,8 @@ export default function EffectList({ clip, disabled, title }: Props) {
           type="button"
           data-testid="audio-normalise"
           disabled={disabled}
-          title="Set a gain effect so the loudest peak of this clip reaches -1 dBFS"
+          title="Sets a gain effect so the clip's loudest SOURCE peak reaches -1 dBFS (ignores the clip volume and other effects)"
+          aria-label="Normalise: gain effect bringing the clip's source peak to -1 dBFS, ignoring volume and other effects"
           onClick={() => void normaliseClip(clip.id, clip.mediaId)}
         >
           Normalise

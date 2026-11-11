@@ -48,6 +48,26 @@ function echoPre(params: Record<string, number>): number {
   return Math.min(ECHO_MAX_PRE, delay * repeats);
 }
 
+/** Fixed knee of the compressor (dB); also used by its builder. */
+export const COMPRESSOR_KNEE = 6;
+
+/**
+ * Compressor history: Web Audio specifies `release` as the time to raise the gain by 10 dB, so recovering from the
+ * worst-case reduction (the whole range above threshold, -threshold × (1 - 1/ratio), plus the knee) takes that many
+ * release times; one more for the detector, plus the warm-up. At most 0.5 + 7 + 1 = 8.5 s (-60 dB, 20:1, 1 s).
+ * Chromium recovers faster than this (measured ≈ 1.25 s from ≈ 57 dB at release 1 s), so it is an upper bound.
+ */
+function compressorPre(q: Record<string, number>): number {
+  const reductionDb = -q.threshold * (1 - 1 / q.ratio) + COMPRESSOR_KNEE;
+  return WARM_UP + q.release * Math.ceil(reductionDb / 10) + q.release;
+}
+
+/**
+ * Cap on a whole chain's pre-roll (seconds decoded before each segment). Beyond it seams are approximate: state
+ * older than this is not reproduced at a window cut (e.g. long high-feedback echoes, several stacked echoes).
+ */
+export const MAX_PRE_ROLL = 30;
+
 const warm = (): Margins => ({ pre: WARM_UP, post: 0 });
 
 export const EFFECT_SCHEMAS: Record<AudioEffectType, EffectSchema> = {
@@ -71,8 +91,7 @@ export const EFFECT_SCHEMAS: Record<AudioEffectType, EffectSchema> = {
       p('release', 'Release', 0.01, 1, 0.01, 0.25, 's'),
       p('makeup', 'Makeup', 0, 24, 0.5, 0, 'dB'),
     ],
-    // The detector's memory is a few release times.
-    margins: (q) => ({ pre: WARM_UP + 2 * q.release, post: 0 }),
+    margins: (q) => ({ pre: compressorPre(q), post: 0 }),
   },
   reverb: {
     type: 'reverb',
@@ -120,7 +139,11 @@ export function clampParams(type: AudioEffectType, params: Record<string, number
   return out;
 }
 
-/** Margins of a whole chain: the sum over its enabled effects (each effect delays the next one's history). */
+/**
+ * Margins of a whole chain: the sum over its enabled effects (each effect delays the next one's history), with the
+ * pre-roll capped at MAX_PRE_ROLL. Tails stop at the clip end (they are ramped out over a few ms, see chain.ts) and
+ * a split restarts effects cold on the second half: each clip only ever hears its own source range [in, out).
+ */
 export function chainMargins(effects: readonly AudioEffect[]): Margins {
   let pre = 0;
   let post = 0;
@@ -130,5 +153,5 @@ export function chainMargins(effects: readonly AudioEffect[]): Margins {
     pre += m.pre;
     post += m.post;
   }
-  return { pre, post };
+  return { pre: Math.min(MAX_PRE_ROLL, pre), post };
 }

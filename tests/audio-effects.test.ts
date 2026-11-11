@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EFFECT_SCHEMAS, chainMargins, clampParams, defaultParams } from '../src/audio/effects/params';
+import { EFFECT_SCHEMAS, MAX_PRE_ROLL, chainMargins, clampParams, defaultParams } from '../src/audio/effects/params';
 import { reverbImpulse } from '../src/audio/effects/impulse';
 import { normaliseGainDb } from '../src/audio/effects/normalise';
 import { PRESETS, availablePresets } from '../src/audio/presets';
@@ -76,6 +76,17 @@ describe('chainMargins', () => {
     expect(chainMargins([fx('echo', { delay: 0.25, feedback: 0 })]).pre).toBeCloseTo(0.25, 9);
     // Long, high-feedback echoes are capped.
     expect(chainMargins([fx('echo', { delay: 1, feedback: 0.9 })]).pre).toBe(30);
+  });
+  it('compressor pre-roll covers recovery from its worst-case gain reduction (10 dB per release time)', () => {
+    // Defaults: threshold -24, ratio 4, knee 6 => ceil((18 + 6) / 10) = 3 releases, plus one, plus warm-up.
+    expect(chainMargins([fx('compressor')]).pre).toBeCloseTo(0.5 + 0.25 * 3 + 0.25, 9);
+    // -60 dB, 20:1 => ceil((57 + 6) / 10) = 7 releases of 1 s.
+    expect(chainMargins([fx('compressor', { threshold: -60, ratio: 20, release: 1 })]).pre).toBeCloseTo(0.5 + 7 + 1, 9);
+  });
+  it('caps the total pre-roll at MAX_PRE_ROLL', () => {
+    const long = fx('echo', { delay: 1, feedback: 0.9 });
+    expect(chainMargins([long, { ...long, id: 'b' }, fx('compressor', { threshold: -60, ratio: 20, release: 1 })]).pre).toBe(MAX_PRE_ROLL);
+    expect(MAX_PRE_ROLL).toBe(30);
   });
   it('sums enabled effects and ignores disabled ones', () => {
     const list = [fx('eq'), fx('reverb', { seconds: 1 }), fx('lowpass', {}, false), fx('pitch'), fx('denoise', {}, false)];
