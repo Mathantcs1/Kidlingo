@@ -118,6 +118,8 @@ export function migrateProject(raw: unknown): MigrateResult {
     if (!track) return { ok: false, reason: 'malformed' };
     tracks.push(track);
   }
-  const project = { ...raw, version: CURRENT, tracks } as unknown as Project;
+  // '' is the overlay clips' "no media" id, so a media entry under it is corrupt: dropped.
+  const { '': _noMedia, ...media } = raw.media;
+  const project = { ...raw, version: CURRENT, tracks, media } as unknown as Project;
   return { ok: true, project };
 }

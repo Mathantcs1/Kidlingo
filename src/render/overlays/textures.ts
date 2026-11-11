@@ -1,7 +1,8 @@
 // Overlay clip textures for the compositor: each visible overlay is drawn with Canvas2D at about the pixel size it is
 // shown at and uploaded; re-drawn only when its spec, its texture size or its animated state changes (the progress
 // bar every frame, a lower third while it slides). Textures of overlays not drawn in a frame are deleted at once, so
-// memory is bounded by the overlays on screen (at most MAX_OVERLAY_SIDE² × 4 bytes each).
+// memory is bounded by the overlays on screen (at most MAX_OVERLAY_SIDE² × 4 bytes each for the texture plus the same
+// for the overlay's own scratch canvas, which is kept so two overlays of different sizes never resize each other's).
 import { clipDuration } from '../../core/model';
 import type { Clip, Id } from '../../core/model';
 import { overlayBaseSize } from '../../core/overlays';
@@ -19,6 +20,25 @@ type Scratch = OffscreenCanvas | HTMLCanvasElement;
 interface Entry {
   slot: TextureSlot;
   key: string;
+  scratch: Scratch;
+  ctx: OverlayContext;
+}
+
+/** A 2D-capable scratch canvas and its context: OffscreenCanvas when it gives a context, else a <canvas>; null if neither. */
+export function createScratch(): { canvas: Scratch; ctx: OverlayContext } | null {
+  const tries: Array<() => Scratch> = [];
+  if (typeof OffscreenCanvas !== 'undefined') tries.push(() => new OffscreenCanvas(1, 1));
+  if (typeof document !== 'undefined') tries.push(() => document.createElement('canvas'));
+  for (const make of tries) {
+    try {
+      const canvas = make();
+      const ctx = canvas.getContext('2d') as OverlayContext | null;
+      if (ctx) return { canvas, ctx };
+    } catch {
+      // try the next kind of canvas
+    }
+  }
+  return null;
 }
 
 /** What the compositor draws for an overlay: its texture, its size in format px at scale 1, and the texture's size. */
@@ -41,8 +61,6 @@ export function overlayTextureSize(base: Size, scale: number, pixelScale: number
 export class OverlayTextures {
   private readonly entries = new Map<Id, Entry>();
   private readonly cap: number;
-  private scratch: Scratch | null = null;
-  private ctx2d: OverlayContext | null = null;
   private warned = false;
 
   constructor(private readonly gl: WebGL2RenderingContext) {
@@ -74,11 +92,15 @@ export class OverlayTextures {
     const key = `${JSON.stringify(spec)}|${tex.width}x${tex.height}|${anim.slide}|${anim.fill}|${duration}`;
     let entry = this.entries.get(clip.id);
     if (entry?.key !== key) {
-      const ctx = this.context(tex);
-      if (!ctx || !this.scratch) return null;
-      drawOverlay(ctx, spec, tex, progress, duration);
-      entry ??= { slot: { tex: createTexture(this.gl), width: 0, height: 0 }, key };
-      uploadTexture(this.gl, entry.slot, this.scratch, tex.width, tex.height);
+      if (!entry) {
+        const made = this.scratchFor();
+        if (!made) return null;
+        entry = { slot: { tex: createTexture(this.gl), width: 0, height: 0 }, key, scratch: made.canvas, ctx: made.ctx };
+      }
+      if (entry.scratch.width !== tex.width) entry.scratch.width = tex.width;
+      if (entry.scratch.height !== tex.height) entry.scratch.height = tex.height;
+      drawOverlay(entry.ctx, spec, tex, progress, duration);
+      uploadTexture(this.gl, entry.slot, entry.scratch, tex.width, tex.height);
       entry.key = key;
       this.entries.set(clip.id, entry);
     }
@@ -89,33 +111,27 @@ export class OverlayTextures {
   prune(drawn: ReadonlySet<Id>): void {
     for (const [id, e] of this.entries) {
       if (drawn.has(id)) continue;
-      this.gl.deleteTexture(e.slot.tex);
+      this.release(e);
       this.entries.delete(id);
     }
   }
 
   dispose(): void {
     this.prune(new Set());
-    if (this.scratch) {
-      this.scratch.width = 1;
-      this.scratch.height = 1;
-    }
-    this.scratch = null;
-    this.ctx2d = null;
   }
 
-  /** The shared scratch canvas sized to `size` (resizing clears it), and its 2D context; null when unavailable. */
-  private context(size: Size): OverlayContext | null {
-    if (!this.scratch) {
-      this.scratch = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(1, 1) : document.createElement('canvas');
-      this.ctx2d = (this.scratch.getContext('2d') as OverlayContext | null) ?? null;
-      if (!this.ctx2d && !this.warned) {
-        this.warned = true;
-        console.warn('clipforge: 2D canvas drawing is unavailable; overlays are not drawn');
-      }
+  private release(e: Entry): void {
+    this.gl.deleteTexture(e.slot.tex);
+    e.scratch.width = 1;
+    e.scratch.height = 1;
+  }
+
+  private scratchFor(): ReturnType<typeof createScratch> {
+    const made = createScratch();
+    if (!made && !this.warned) {
+      this.warned = true;
+      console.warn('clipforge: 2D canvas drawing is unavailable; overlays are not drawn');
     }
-    if (this.scratch.width !== size.width) this.scratch.width = size.width;
-    if (this.scratch.height !== size.height) this.scratch.height = size.height;
-    return this.ctx2d;
+    return made;
   }
 }

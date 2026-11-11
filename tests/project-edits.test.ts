@@ -83,6 +83,19 @@ describe('rippleDeleteClips', () => {
 });
 
 describe('removeMediaFromProject', () => {
+  it("never treats mediaId '' as media: a stray '' entry is removable but overlay clips stay", () => {
+    const base = project();
+    const ov = { ...clip('ov', 0, 2, '', 'overlay') };
+    const withOv: Project = {
+      ...base,
+      media: { ...base.media, '': { ...video, id: '' } },
+      tracks: base.tracks.map((t, i) => (i === 0 ? { ...t, clips: [...t.clips, ov] } : t)),
+    };
+    const p = removeMediaFromProject(withOv, '');
+    expect(p.tracks.flatMap((t) => t.clips).some((c) => c.id === 'ov')).toBe(true);
+    expect(clipsUsingMedia(withOv, '')).toBe(0);
+  });
+
   it('removes the media entry and every clip that uses it', () => {
     const p = removeMediaFromProject(project(), 'v');
     expect(p.media.v).toBeUndefined();

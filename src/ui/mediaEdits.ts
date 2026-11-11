@@ -26,7 +26,9 @@ export function removeMediaFromProject(p: Project, mediaId: Id): Project {
   // A LUT's users are clips of OTHER media: removing them with it would lose footage, so it is refused instead.
   const used = m.kind === 'lut' ? clipsUsingMedia(p, mediaId) : 0;
   if (used > 0) throw new TimelineError(`Cannot remove ${m.name}. ${usedByText(used)}`);
-  if (p.tracks.some((t) => t.locked && t.clips.some((c) => c.mediaId === mediaId))) throw new TimelineError('Track is locked');
+  // Overlay clips have mediaId '': a (corrupt) '' media entry must never take them with it.
+  const uses = (c: Clip): boolean => mediaId !== '' && c.mediaId === mediaId;
+  if (p.tracks.some((t) => t.locked && t.clips.some(uses))) throw new TimelineError('Track is locked');
   const { [mediaId]: _removed, ...media } = p.media;
-  return { ...p, media, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.filter((c) => c.mediaId !== mediaId) })) };
+  return { ...p, media, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.filter((c) => !uses(c)) })) };
 }

@@ -67,4 +67,9 @@ describe('migrate to v5', () => {
     const p = ok(raw);
     expect(clipsOf(p).map((c) => c.id)).toEqual(['c1']);
   });
+  it("drops a media entry keyed '' (overlay clips have no media)", () => {
+    const raw = v4([vclip('c1')]);
+    const withEmpty = { ...raw, media: { ...raw.media, '': { id: '', name: 'x', kind: 'video', duration: 1, hasAudio: false } } };
+    expect(Object.keys(ok(withEmpty).media)).toEqual(['m1']);
+  });
 });
