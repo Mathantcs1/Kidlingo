@@ -41,6 +41,19 @@ export type BlendMode =
   | 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten' | 'colourDodge' | 'colourBurn'
   | 'hardLight' | 'softLight' | 'difference' | 'exclusion';
 
+export type OverlayType = 'lowerThird' | 'subscribe' | 'progressBar' | 'sticker';
+export type StickerKind = 'heart' | 'star' | 'arrow' | 'like' | 'bell' | 'fire' | 'check' | 'sparkle';
+
+/** What an overlay clip draws (data v5). Colours are `#rrggbb`; `sticker` is set on sticker overlays only. */
+export interface OverlaySpec {
+  type: OverlayType;
+  text: string;
+  subtext: string;
+  colour: string;
+  accent: string;
+  sticker?: StickerKind;
+}
+
 /** Per-clip audio settings: fades in seconds, pan -1..1. */
 export interface ClipAudio {
   fadeIn: number;
