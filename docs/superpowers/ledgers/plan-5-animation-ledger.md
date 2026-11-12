@@ -1,6 +1,6 @@
 # Plan 5 (animation and motion): decision ledger
 
-**Status (2026-11-12): plan DRAFTED, awaiting the user's approval and answers to its "Open decisions for the user" (O1-O16). No implementation has started.**
+**Status (2026-11-12): plan APPROVED by the user ("approved as recommended"); implementation of Part 5A starting at Task 1.**
 
 ## Links
 - Plan (draft): `docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md` (Part 5A detailed: Tasks 1-12, decisions D1-D12; Parts 5B/5E/5D/5C as roadmap outlines; open decisions O1-O16).
@@ -24,10 +24,11 @@
 - Commit trailers (blank line before): `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01AdHhRshxczG1gZJFbxhPyP` (use the current session's URL).
 
 ## User answers to the open decisions
-(none yet)
+User (genuine message, 2026-11-12): "approved as recommended. deploy in product on phase by phase after it is tested and passed". => every open decision O1-O16 takes the plan's recommendation (the plan's 'Open decisions' section is authoritative).
 
 ## Rulings
-(none yet)
+Ruling: P5-1 - Plan 5 (Part 5A detailed; 5B/5E/5D/5C outlined) approved with all recommendations O1-O16 - cost if wrong: rework of the affected part.
+Ruling: P5-2 - STANDING DEPLOY AUTHORISATION (user, this session): each Plan 5 PART (5A, 5B, 5E, 5D, 5C) may be deployed to production (fast-forward push of the feature branch HEAD to claude/macos-video-editor-lzye6c) once the part is 'tested and passed': all tasks complete with clean review/fix loops, final whole-part review clean (0 Important), `npm test && npm run typecheck && npm run build`, `grep -rl __clipforge dist` empty, a FRESH full `npm run e2e -- --trace off` all green (a known flake must pass when re-run alone), `npm run e2e:preview` green, and the production branch is an ancestor of HEAD (fast-forward only). Anything failing => do NOT deploy; report. Plan-5 parts bump the data version (v6..v10): after each deploy older open tabs refuse the new saves (accepted by the user). Manual QA on a real Mac is NOT automatable here: record that it is unrun in each deploy note. Never touch the Vercel projects `kidlingo` or `gtm-engineer`; never force-push. The authorisation covers Plan 5 parts only, not other work - cost if wrong: a deployed part with a manual-QA-only defect.
 
 ## Task log
 (none yet)
