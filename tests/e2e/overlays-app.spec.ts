@@ -1,6 +1,6 @@
 // Overlay clips in the app (Plan 4 Task 12; the overlay menu and inspector are Task 13): the inspector offers no fit,
 // blend mode or effects for them, the preview draws them, media GC leaves real media alone, a project with overlays
-// survives reload (saved as data v5; a v4 save opens and is re-saved as v5), and Merge all keeps them in the picture.
+// survives reload (saved at the current data version; a v4 save opens and is re-saved at it), and Merge all keeps them in the picture.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test, expect } from '@playwright/test';
@@ -12,6 +12,7 @@ import { hex, near, previewPixel, savedProject, writeSaved } from './overlay-hel
 import { newTrack } from '../../src/core/model';
 import type { Clip, Project, Track } from '../../src/core/model';
 import { newOverlayClip, overlayBaseSize, overlayDefaultTransform } from '../../src/core/overlays';
+import { CURRENT_VERSION } from '../helpers/project';
 
 test.setTimeout(240_000);
 
@@ -64,20 +65,20 @@ test('the inspector offers no fit, blend mode or effects for an overlay; the pre
   expect(errors).toEqual([]);
 });
 
-test('a project with overlays reloads exactly and is saved as v5; a v4 save opens and is re-saved as v5', async ({ page }) => {
+test('a project with overlays reloads exactly and is saved at the current version; a v4 save opens and is re-saved at the current version', async ({ page }) => {
   const errors = trackErrors(page);
   await setup(page);
   await page.evaluate(() => window.__clipforge!.flushAutosave());
   const before = await present(page);
   const saved = await savedProject(page);
-  expect(saved?.version).toBe(5);
+  expect(saved?.version).toBe(CURRENT_VERSION);
   expect(saved?.tracks).toEqual(before.tracks);
   await page.reload();
   await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
   await expect(page.getByTestId('timeline-clip')).toHaveCount(3);
   expect((await present(page)).tracks).toEqual(before.tracks);
 
-  // A v4 save (Part A, no overlays) opens with no notice and is saved back as v5 after an edit.
+  // A v4 save (Part A, no overlays) opens with no notice and is saved back at the current version after an edit.
   const v4 = { ...saved!, version: 4, tracks: saved!.tracks.map((t) => ({ ...t, clips: t.clips.filter((c) => c.kind !== 'overlay') })) };
   await writeSaved(page, v4);
   await page.reload();
@@ -87,7 +88,7 @@ test('a project with overlays reloads exactly and is saved as v5; a v4 save open
   expect((await present(page)).tracks).toEqual(v4.tracks);
   await page.getByTestId('btn-add-video-layer').click();
   await page.evaluate(() => window.__clipforge!.flushAutosave());
-  expect((await savedProject(page))?.version).toBe(5);
+  expect((await savedProject(page))?.version).toBe(CURRENT_VERSION);
   expect(errors).toEqual([]);
 });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { migrateProject } from '../src/core/migrate';
 import { defaultClipAudio, emptyProject, newTrack } from '../src/core/model';
+import { CURRENT_VERSION } from './helpers/project';
 
 const clip = (id: string, extra: Record<string, unknown> = {}) => ({
   id,
@@ -29,12 +30,12 @@ const defaults = { name: '', hidden: false, muted: false, solo: false, locked: f
 const withAudio = <T extends object>(c: T) => ({ ...c, audio: defaultClipAudio(), effects: [], blend: 'normal' });
 
 describe('migrateProject', () => {
-  it('migrates v1 to v5, adding track and clip defaults and keeping clips and media intact', () => {
+  it('migrates v1 to the current version, adding track and clip defaults and keeping clips and media intact', () => {
     const raw = v1();
     const r = migrateProject(raw);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.project.version).toBe(5);
+    expect(r.project.version).toBe(CURRENT_VERSION);
     expect(r.project.format).toEqual(raw.format);
     expect(r.project.media).toEqual(raw.media);
     r.project.tracks.forEach((t, i) => {
@@ -81,7 +82,7 @@ describe('migrateProject', () => {
     expect(raw).toEqual(copy);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.project.version).toBe(5);
+    expect(r.project.version).toBe(CURRENT_VERSION);
     for (const t of r.project.tracks) {
       expect(t).toMatchObject({ volume: 1, duck: null });
       for (const c of t.clips) expect(c.audio).toEqual(defaultClipAudio());
@@ -151,7 +152,7 @@ describe('migrateProject', () => {
   });
 
   it('reports a newer version', () => {
-    expect(migrateProject({ version: 6 })).toEqual({ ok: false, reason: 'newer' });
+    expect(migrateProject({ version: CURRENT_VERSION + 1 })).toEqual({ ok: false, reason: 'newer' });
     expect(migrateProject({ ...emptyProject(), version: 99 })).toEqual({ ok: false, reason: 'newer' });
   });
 
@@ -180,14 +181,14 @@ const mk4 = (kind: 'video' | 'audio', extra: Record<string, unknown>) =>
   migrateProject({ ...v1(), version: 4, tracks: [{ id: 't', kind, clips: [clip('c1', { kind, ...extra })] }] });
 
 describe('migrateProject: video effects (v4)', () => {
-  it('migrates v1, v2 and v3 in one call to v5 with empty stacks and normal blend, idempotently', () => {
+  it('migrates v1, v2 and v3 in one call to the current version with empty stacks and normal blend, idempotently', () => {
     for (const version of [1, 2, 3]) {
       const raw = { ...v1(), version };
       const copy = structuredClone(raw);
       const r = migrateProject(raw);
       expect(raw).toEqual(copy);
       if (!r.ok) throw new Error('expected ok');
-      expect(r.project.version).toBe(5);
+      expect(r.project.version).toBe(CURRENT_VERSION);
       for (const c of r.project.tracks.flatMap((t) => t.clips)) {
         expect(c.effects).toEqual([]);
         expect(c.blend).toBe('normal');

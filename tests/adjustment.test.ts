@@ -150,7 +150,7 @@ describe('adjustment clips are not media', () => {
   });
 });
 
-describe('migration (data stays v5)', () => {
+describe('migration (current data version)', () => {
   const saved = (clip: Record<string, unknown>, kind = 'video'): unknown => ({
     version: CURRENT_VERSION, format: { width: 1920, height: 1080, fps: 30 }, media: {},
     tracks: [{ id: 't', kind, name: '', hidden: false, muted: false, solo: false, locked: false, volume: 1, duck: null, clips: [clip] }],
@@ -161,10 +161,10 @@ describe('migration (data stays v5)', () => {
     effects: [{ id: 'e1', type: 'bw', enabled: true, params: {} }, { id: 'e2', type: 'nope', enabled: true, params: {} }],
     overlay: { type: 'sticker' },
   };
-  it('keeps an adjustment clip with repaired fields and unknown extra keys; v5 stays v5', () => {
+  it('keeps an adjustment clip with repaired fields and unknown extra keys; the current version stays current', () => {
     const r = migrateProject(saved(raw));
     if (!r.ok) throw new Error('refused');
-    expect(r.project.version).toBe(5);
+    expect(r.project.version).toBe(CURRENT_VERSION);
     const [c] = r.project.tracks[0].clips;
     expect(c).toMatchObject({ kind: 'adjustment', mediaId: '', fit: 'fit', blend: 'screen', future: 7 });
     expect(c.effects.map((e) => e.type)).toEqual(['bw']);

@@ -5,6 +5,7 @@ vi.mock('idb-keyval', () => kv);
 
 import { emptyProject } from '../src/core/model';
 import { loadProject, saveProject } from '../src/state/persist';
+import { CURRENT_VERSION } from './helpers/project';
 
 beforeEach(() => {
   kv.get.mockReset();
@@ -27,7 +28,7 @@ describe('persist', () => {
   });
 
   it('loadProject reports a newer version as unsupported, never as absent', async () => {
-    kv.get.mockResolvedValue({ ...emptyProject(), version: 6 });
+    kv.get.mockResolvedValue({ ...emptyProject(), version: CURRENT_VERSION + 1 });
     expect(await loadProject()).toEqual({ status: 'unsupported', reason: expect.stringContaining('newer version') });
   });
 
@@ -39,13 +40,13 @@ describe('persist', () => {
     },
   );
 
-  it('loadProject migrates a stored v1 project to v5', async () => {
+  it('loadProject migrates a stored v1 project to the current version', async () => {
     const v1 = { version: 1, format: { width: 1, height: 1, fps: 30 }, tracks: [{ id: 't', kind: 'video', clips: [] }], media: {} };
     kv.get.mockResolvedValue(v1);
     const r = await loadProject();
     expect(r.status).toBe('ok');
     if (r.status === 'ok') {
-      expect(r.project.version).toBe(5);
+      expect(r.project.version).toBe(CURRENT_VERSION);
       expect(r.project.tracks[0]).toMatchObject({ id: 't', name: '', hidden: false, muted: false, solo: false, locked: false });
     }
   });

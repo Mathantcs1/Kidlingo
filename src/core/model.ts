@@ -1,5 +1,8 @@
 import { FORMATS } from './formats';
 import type { FormatKey } from './formats';
+import type { Keyframe, PositionKeyframe, TransformKeys } from './keyTypes';
+
+export type { Keyframe, PositionKeyframe, TransformKeys };
 
 export type Id = string;
 export type TrackKind = 'video' | 'audio';
@@ -35,6 +38,8 @@ export interface VideoEffect {
   enabled: boolean;
   params: Record<string, number>;
   ref?: Id;
+  /** Data v6: keys per animatable param (absent/empty = static `params` value). */
+  keys?: Record<string, Keyframe[]>;
 }
 
 export type BlendMode =
@@ -92,6 +97,8 @@ export interface Clip {
   blend: BlendMode;
   /** Overlay clips only (always `effects: []`, `blend: 'normal'`, `fit: 'fit'`). */
   overlay?: OverlaySpec;
+  /** Data v6: transform keys (absent = static). Never on audio clips; adjustment clips only animate opacity. */
+  keys?: TransformKeys;
 }
 
 export interface Track {
@@ -125,7 +132,7 @@ export interface MediaRef {
 }
 
 /** The project data version this build writes (see src/core/migrate.ts). */
-export const CURRENT_VERSION = 5;
+export const CURRENT_VERSION = 6;
 
 export interface Project {
   version: typeof CURRENT_VERSION;

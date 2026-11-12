@@ -1,8 +1,12 @@
-// Review focus #1: a project saved by the previous version (v1, tracks without names or flags) opens unchanged, with
-// no restore notice, and is saved back as v5 once edited; v2 and v3 saves gain audio and picture-effect defaults; a project from a newer version (v6) stays unsupported.
+// Review focus #1: a project saved by an older version (v1, tracks without names or flags) opens unchanged, with
+// no restore notice, and is saved back at the current version (v6) once edited; v2 and v3 saves gain audio and
+// picture-effect defaults; a v5 save (Plan 4) opens with the same picture and is re-saved as v6 without keys; a
+// project from a newer version (v7) stays unsupported and is never overwritten.
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { addToTimeline, clipStates, importFiles, open, trackErrors, withAudio } from './helpers';
+import { isGreen, isYellow, pixelAt, setupPip } from './pip-helpers';
+import { CURRENT_VERSION } from '../helpers/project';
 
 test.setTimeout(60_000);
 
@@ -59,11 +63,11 @@ async function savedWithClip(page: Page): Promise<Saved> {
   await addToTimeline(page, 'with-audio.mp4', 1);
   await page.evaluate(() => window.__clipforge!.flushAutosave());
   const saved = await savedProject(page);
-  expect(saved?.version).toBe(5);
+  expect(saved?.version).toBe(CURRENT_VERSION);
   return saved!;
 }
 
-test('a v1 save opens unchanged (no notice), gains default track flags and is saved back as v5', async ({ page }) => {
+test('a v1 save opens unchanged (no notice), gains default track flags and is saved back at the current version', async ({ page }) => {
   const errors = trackErrors(page);
   const v2 = await savedWithClip(page);
   const ids = await storedIds(page);
@@ -86,7 +90,7 @@ test('a v1 save opens unchanged (no notice), gains default track flags and is sa
   await expect(page.getByTestId('timeline-clip')).not.toHaveAttribute('data-missing', 'true');
   expect(await clipStates(page)).toEqual(before);
   const p = await page.evaluate(() => window.__clipforge!.getState().history.present);
-  expect(p.version).toBe(5);
+  expect(p.version).toBe(CURRENT_VERSION);
   expect(p.format).toEqual(v2.format);
   expect(p.media).toEqual(v2.media);
   expect(p.tracks.map((t) => ({ ...t, clips: t.clips.length }))).toEqual(
@@ -102,14 +106,14 @@ test('a v1 save opens unchanged (no notice), gains default track flags and is sa
   await expect(page.getByTestId('track-header')).toHaveCount(3);
   await page.evaluate(() => window.__clipforge!.flushAutosave());
   const after = await savedProject(page);
-  expect(after?.version).toBe(5);
+  expect(after?.version).toBe(CURRENT_VERSION);
   expect(after?.tracks).toHaveLength(3);
   expect(after?.tracks.every((t) => t.hidden === false && t.locked === false && typeof t.name === 'string')).toBe(true);
   expect(await storedIds(page)).toEqual(ids);
   expect(errors).toEqual([]);
 });
 
-test('a v2 save opens with every clip, gains default audio settings and is saved back as v5', async ({ page }) => {
+test('a v2 save opens with every clip, gains default audio settings and is saved back at the current version', async ({ page }) => {
   const errors = trackErrors(page);
   const cur = await savedWithClip(page);
   const ids = await storedIds(page);
@@ -131,7 +135,7 @@ test('a v2 save opens with every clip, gains default audio settings and is saved
   await expect(page.getByTestId('restore-failed')).toHaveCount(0);
   expect(await clipStates(page)).toEqual(before);
   const p = await page.evaluate(() => window.__clipforge!.getState().history.present);
-  expect(p.version).toBe(5);
+  expect(p.version).toBe(CURRENT_VERSION);
   for (const t of p.tracks) {
     expect(t).toMatchObject({ volume: 1, duck: null });
     for (const c of t.clips) expect(c).toMatchObject({ audio: DEFAULT_AUDIO, ...DEFAULT_PICTURE });
@@ -141,14 +145,14 @@ test('a v2 save opens with every clip, gains default audio settings and is saved
   await expect(page.getByTestId('track-header')).toHaveCount(3);
   await page.evaluate(() => window.__clipforge!.flushAutosave());
   const after = await savedProject(page);
-  expect(after?.version).toBe(5);
+  expect(after?.version).toBe(CURRENT_VERSION);
   expect(after?.tracks.every((t) => t.volume === 1 && t.duck === null)).toBe(true);
   expect(after?.tracks[0].clips).toEqual(p.tracks[0].clips);
   expect(await storedIds(page)).toEqual(ids);
   expect(errors).toEqual([]);
 });
 
-test('a v3 save opens with every clip, gains empty effect stacks and normal blend, and is saved back as v5', async ({ page }) => {
+test('a v3 save opens with every clip, gains empty effect stacks and normal blend, and is saved back at the current version', async ({ page }) => {
   const errors = trackErrors(page);
   const cur = await savedWithClip(page);
   const ids = await storedIds(page);
@@ -170,7 +174,7 @@ test('a v3 save opens with every clip, gains empty effect stacks and normal blen
   await expect(page.getByTestId('restore-failed')).toHaveCount(0);
   expect(await clipStates(page)).toEqual(before);
   const p = await page.evaluate(() => window.__clipforge!.getState().history.present);
-  expect(p.version).toBe(5);
+  expect(p.version).toBe(CURRENT_VERSION);
   expect(p.tracks.flatMap((t) => t.clips)).toHaveLength(1);
   for (const c of p.tracks.flatMap((t) => t.clips)) expect(c).toMatchObject(DEFAULT_PICTURE);
 
@@ -178,17 +182,64 @@ test('a v3 save opens with every clip, gains empty effect stacks and normal blen
   await expect(page.getByTestId('track-header')).toHaveCount(3);
   await page.evaluate(() => window.__clipforge!.flushAutosave());
   const after = await savedProject(page);
-  expect(after?.version).toBe(5);
+  expect(after?.version).toBe(CURRENT_VERSION);
   expect(after?.tracks[0].clips).toEqual(p.tracks[0].clips);
   expect(await storedIds(page)).toEqual(ids);
   expect(errors).toEqual([]);
 });
 
-test('a v6 save is still unsupported: notice shown, the stored project and its media are left alone', async ({ page }) => {
+test('a v5 save (Plan 4) opens with the same picture and is re-saved as v6 without keys', async ({ page }) => {
+  const errors = trackErrors(page);
+  // Blue background (inverted to yellow by a picture effect) under a lime square, plus a tone: video, image effects, audio.
+  await setupPip(page);
+  await page.evaluate(() =>
+    window.__clipforge!.getState().apply((p) => ({
+      ...p,
+      tracks: p.tracks.map((t) =>
+        t.id === 'v1' ? { ...t, clips: t.clips.map((c) => ({ ...c, effects: [{ id: 'fx1', type: 'invert' as const, enabled: true, params: { amount: 1 } }] })) } : t,
+      ),
+    })),
+  );
+  const grid: [number, number][] = [[960, 540], [900, 500], [1020, 600], [100, 100], [1800, 1000], [400, 900]];
+  const sample = (): Promise<number[][]> => Promise.all(grid.map(([x, y]) => pixelAt(page, x, y)));
+  await expect.poll(async () => isGreen(await pixelAt(page, 960, 540)) && isYellow(await pixelAt(page, 100, 100))).toBe(true);
+  const before = await sample();
+  await page.evaluate(() => window.__clipforge!.flushAutosave());
+  const cur = await savedProject(page);
+  expect(cur?.version).toBe(CURRENT_VERSION);
+  const v5 = { ...cur!, version: 5 };
+  await writeSaved(page, v5);
+
+  await page.reload();
+  await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
+  await expect(page.getByTestId('restore-failed')).toHaveCount(0);
+  await expect(page.getByTestId('timeline-clip')).toHaveCount(3);
+  await page.evaluate(() => window.__clipforge!.getState().setPlayhead(1));
+  await expect.poll(sample).toEqual(before);
+  const p = await page.evaluate(() => window.__clipforge!.getState().history.present);
+  expect(p.version).toBe(CURRENT_VERSION);
+  expect(p.tracks).toEqual(v5.tracks);
+  for (const c of p.tracks.flatMap((t) => t.clips)) {
+    expect('keys' in c).toBe(false);
+    for (const e of c.effects) expect('keys' in e).toBe(false);
+  }
+
+  // The next save is v6 with the same clips.
+  await page.getByTestId('btn-add-video-layer').click();
+  await page.evaluate(() => window.__clipforge!.flushAutosave());
+  const after = await savedProject(page);
+  expect(after?.version).toBe(CURRENT_VERSION);
+  expect(after?.tracks.flatMap((t) => t.clips)).toEqual(v5.tracks.flatMap((t) => t.clips));
+  expect(await sample()).toEqual(before);
+  expect(errors).toEqual([]);
+});
+
+test('a save from the next version (v7) is unsupported: notice shown, the stored project and its media are left alone', async ({ page }) => {
   const v2 = await savedWithClip(page);
   const ids = await storedIds(page);
-  const v6 = { ...v2, version: 6 };
-  await writeSaved(page, v6);
+  const v7 = { ...v2, version: CURRENT_VERSION + 1 };
+  expect(v7.version).toBe(7);
+  await writeSaved(page, v7);
 
   await page.reload();
   await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
@@ -198,6 +249,6 @@ test('a v6 save is still unsupported: notice shown, the stored project and its m
   await page.getByTestId('btn-add-video-layer').click();
   await expect(page.getByTestId('track-header')).toHaveCount(3);
   await page.waitForTimeout(1500);
-  expect(await savedProject(page)).toEqual(v6);
+  expect(await savedProject(page)).toEqual(v7);
   expect(await storedIds(page)).toEqual(ids);
 });

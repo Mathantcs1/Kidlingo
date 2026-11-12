@@ -1,9 +1,11 @@
-// Data v5 (Plan 4 Task 12): v4 saves open unchanged as v5; overlay clips are repaired per field; v6 is refused.
+// Data v5 (Plan 4 Task 12): v4 saves open unchanged at the current version; overlay clips are repaired per field;
+// a version newer than the current one is refused.
 import { describe, it, expect } from 'vitest';
 import { migrateProject } from '../src/core/migrate';
 import { defaultClipAudio, emptyProject } from '../src/core/model';
 import type { Clip, Project } from '../src/core/model';
 import { overlayDefaults } from '../src/core/overlaySpec';
+import { CURRENT_VERSION } from './helpers/project';
 
 const vclip = (id: string, extra: Record<string, unknown> = {}) => ({
   id, mediaId: 'm1', kind: 'video', start: 0, in: 0, out: 2, volume: 1, fit: 'fit',
@@ -30,25 +32,25 @@ const ok = (raw: unknown): Project => {
   return r.project;
 };
 
-describe('migrate to v5', () => {
+describe('migrate v4/v5 saves', () => {
   it('opens a v4 save unchanged apart from the version, without mutating it; idempotent', () => {
     const raw = v4([vclip('c1')]);
     const snap = JSON.stringify(raw);
     const p = ok(raw);
     expect(JSON.stringify(raw)).toBe(snap);
-    expect(p.version).toBe(5);
+    expect(p.version).toBe(CURRENT_VERSION);
     expect({ ...p, version: 4 }).toEqual(raw);
     expect(ok(p)).toEqual(p);
-    expect(emptyProject().version).toBe(5);
+    expect(emptyProject().version).toBe(CURRENT_VERSION);
   });
-  it('refuses newer versions (v6 and later)', () => {
-    expect(migrateProject({ ...v4([]), version: 6 })).toEqual({ ok: false, reason: 'newer' });
-    expect(migrateProject({ version: 6 })).toEqual({ ok: false, reason: 'newer' });
+  it('refuses newer versions (current + 1 and later)', () => {
+    expect(migrateProject({ ...v4([]), version: CURRENT_VERSION + 1 })).toEqual({ ok: false, reason: 'newer' });
+    expect(migrateProject({ version: CURRENT_VERSION + 1 })).toEqual({ ok: false, reason: 'newer' });
   });
   it('keeps a valid overlay clip exactly', () => {
     const spec = { ...overlayDefaults('sticker'), sticker: 'fire' };
     const raw = { ...v4([overlay('o1', spec)]), version: 5 };
-    expect(ok(raw)).toEqual(raw);
+    expect(ok(raw)).toEqual({ ...raw, version: CURRENT_VERSION });
   });
   it('repairs overlay fields one by one', () => {
     const spec = { type: 'lowerThird', text: 42, subtext: 'x'.repeat(200), colour: 'red', accent: '#ABCDEF', sticker: 'star', extra: 1 };

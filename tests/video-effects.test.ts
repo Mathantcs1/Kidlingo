@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AVAILABLE_VIDEO_EFFECTS, MAX_VIDEO_EFFECTS, VIDEO_EFFECTS, clampParams, defaultParams } from '../src/core/videoEffects';
+import { AVAILABLE_VIDEO_EFFECTS, MAX_VIDEO_EFFECTS, VIDEO_EFFECTS, animatableParam, clampParams, defaultParams } from '../src/core/videoEffects';
 import type { VideoEffectType } from '../src/core/model';
 
 const TYPES = Object.keys(VIDEO_EFFECTS) as VideoEffectType[];
@@ -66,5 +66,16 @@ describe('defaultParams / clampParams', () => {
     expect(clampParams(t, { [first.key]: -1e9 })[first.key]).toBe(first.min);
     expect(clampParams(t, { [first.key]: Infinity })[first.key]).toBe(first.def);
     expect(clampParams(t, {})).toEqual(defaultParams(t));
+  });
+});
+
+describe('animatable params (Plan 5 D1)', () => {
+  it('every numeric param is animatable except mirror.mode', () => {
+    const fixed = TYPES.flatMap((t) => VIDEO_EFFECTS[t].params.filter((d) => d.animatable === false).map((d) => `${t}.${d.key}`));
+    expect(fixed).toEqual(['mirror.mode']);
+    for (const t of TYPES) {
+      for (const d of VIDEO_EFFECTS[t].params) expect(animatableParam(t, d.key)).toBe(d.animatable === false ? undefined : d);
+    }
+    expect(animatableParam('colour', 'nope')).toBeUndefined();
   });
 });

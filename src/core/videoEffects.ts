@@ -1,8 +1,11 @@
 // DOM-free schema of the picture effects: params, ranges, defaults and clamping. Shaders live in src/render/effects.
 import type { BlendMode, VideoEffectType } from './model';
-import type { ParamDef } from '../audio/effects/params';
+import type { ParamDef as BaseParamDef } from '../audio/effects/params';
 
-export type { ParamDef };
+/** A picture effect param; `animatable: false` marks the few that cannot be keyframed (Plan 5 D1: mirror.mode). */
+export interface ParamDef extends BaseParamDef {
+  animatable?: false;
+}
 export type EffectGroup = 'colour' | 'look' | 'blur' | 'stylise' | 'key';
 
 export interface EffectSchema {
@@ -72,7 +75,7 @@ export const VIDEO_EFFECTS: Record<VideoEffectType, EffectSchema> = {
     p('scanlines', 'Scanlines', 0, 1, 0.01, 0.4), p('bleed', 'Colour bleed', 0, 1, 0.01, 0.4),
     p('noise', 'Noise', 0, 1, 0.01, 0.2), p('wobble', 'Wobble', 0, 1, 0.01, 0.2),
   ], true),
-  mirror: fx('mirror', 'Mirror', 'stylise', [p('mode', 'Mode', 0, 3, 1, 0)]),
+  mirror: fx('mirror', 'Mirror', 'stylise', [{ ...p('mode', 'Mode', 0, 3, 1, 0), animatable: false }]),
   invert: fx('invert', 'Invert', 'stylise', [amount(1)]),
   chromaKey: fx('chromaKey', 'Chroma key', 'key', [
     p('keyR', 'Key red', 0, 1, 0.01, 0), p('keyG', 'Key green', 0, 1, 0.01, 1), p('keyB', 'Key blue', 0, 1, 0.01, 0),
@@ -85,6 +88,12 @@ export const isVideoEffectType = (v: unknown): v is VideoEffectType =>
 
 export function defaultParams(type: VideoEffectType): Record<string, number> {
   return Object.fromEntries(VIDEO_EFFECTS[type].params.map((d) => [d.key, d.def]));
+}
+
+/** The schema of `type`'s param `key` when it can be keyframed; undefined for unknown or non-animatable params. */
+export function animatableParam(type: VideoEffectType, key: string): ParamDef | undefined {
+  const d = VIDEO_EFFECTS[type].params.find((q) => q.key === key);
+  return d && d.animatable !== false ? d : undefined;
 }
 
 /** A clean copy: every schema key present and clamped; non-finite ⇒ default; unknown keys dropped. */

@@ -1,5 +1,6 @@
 import { fitFades } from './clipAudio';
 import { toBlend, toClipEffects } from './migrateEffects';
+import { repairClipKeys, withKeys } from './migrateKeys';
 import { toOverlaySpec } from './overlaySpec';
 import { CURRENT_VERSION, defaultClipAudio, newId } from './model';
 import type { AudioEffect, AudioEffectType, Clip, ClipAudio, Project, Track, TrackDuck } from './model';
@@ -68,25 +69,31 @@ function toDuck(raw: unknown): TrackDuck | null {
 }
 
 /**
- * One clip with its v2-v5 fields repaired. An overlay clip (v5) gets no media, effects, blend or fit (it keeps its
+ * One clip with its v2-v6 fields repaired. An overlay clip (v5) gets no media, effects, blend or fit (it keeps its
  * audio settings as stored); one whose spec cannot be understood, or that sits on an audio track, is dropped (null).
  * An adjustment clip (v5) gets no media, fit 'fit' and no overlay spec, and keeps its repaired effects and blend;
- * one on an audio track is dropped. Unknown extra keys are kept.
+ * one on an audio track is dropped. Transform keys (v6) are repaired per kind (migrateKeys.ts); a clip without
+ * valid keys has no `keys` field. Unknown extra keys are kept.
  */
 function toClip(c: Record<string, unknown>, trackKind: Track['kind']): Clip | null {
+  const fixed = toClipFields(c, trackKind);
+  return fixed && (withKeys(fixed, repairClipKeys(c.keys, c.kind)) as unknown as Clip);
+}
+
+function toClipFields(c: Record<string, unknown>, trackKind: Track['kind']): Record<string, unknown> | null {
   const isAudio = c.kind === 'audio';
   const audio = toClipAudio(c.audio, clipSeconds(c));
   if (c.kind === 'adjustment') {
     if (trackKind !== 'video') return null;
     const { overlay: _spec, ...rest } = c;
-    return { ...rest, mediaId: '', audio, effects: toClipEffects(c.effects, false), blend: toBlend(c.blend, false), fit: 'fit' } as unknown as Clip;
+    return { ...rest, mediaId: '', audio, effects: toClipEffects(c.effects, false), blend: toBlend(c.blend, false), fit: 'fit' };
   }
   if (c.kind !== 'overlay') {
-    return { ...c, audio, effects: toClipEffects(c.effects, isAudio), blend: toBlend(c.blend, isAudio) } as unknown as Clip;
+    return { ...c, audio, effects: toClipEffects(c.effects, isAudio), blend: toBlend(c.blend, isAudio) };
   }
   const overlay = toOverlaySpec(c.overlay);
   if (!overlay || trackKind !== 'video') return null;
-  return { ...c, mediaId: '', audio, effects: [], blend: 'normal', fit: 'fit', overlay } as unknown as Clip;
+  return { ...c, mediaId: '', audio, effects: [], blend: 'normal', fit: 'fit', overlay };
 }
 
 /** Validates a track's outline and fills/repairs the v2-v5 fields. Clips only need to be objects. */
@@ -110,14 +117,15 @@ function toTrack(raw: unknown): Track | null {
 }
 
 /**
- * Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3-v5 are repaired per field (v4 → v5 adds nothing:
- * overlay and adjustment clips are new in v5); newer versions are refused.
+ * Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3-v6 are repaired per field (v4 → v5 adds nothing:
+ * overlay and adjustment clips are new in v5; v5 → v6 adds nothing: keyframes are new in v6 and only repaired when
+ * present); newer versions are refused ('newer', so the save is never overwritten).
  */
 export function migrateProject(raw: unknown): MigrateResult {
   if (!isObject(raw)) return { ok: false, reason: 'malformed' };
   const { version } = raw;
   if (typeof version === 'number' && version > CURRENT) return { ok: false, reason: 'newer' };
-  if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== CURRENT) return { ok: false, reason: 'malformed' };
+  if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) return { ok: false, reason: 'malformed' };
   if (!isObject(raw.format) || !Array.isArray(raw.tracks) || !isObject(raw.media)) return { ok: false, reason: 'malformed' };
   const tracks: Track[] = [];
   for (const t of raw.tracks) {

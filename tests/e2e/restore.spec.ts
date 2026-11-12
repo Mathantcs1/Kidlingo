@@ -3,6 +3,7 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { addToTimeline, importFiles, open, toast, withAudio } from './helpers';
+import { CURRENT_VERSION } from '../helpers/project';
 
 const storedIds = (page: Page): Promise<string[]> => page.evaluate(() => window.__clipforge!.listMediaIds());
 
@@ -169,14 +170,14 @@ test('an edit made before the restore finished never autosaves over the saved pr
 test('a project saved by a newer version is never overwritten or garbage-collected; Start new replaces it on request', async ({ page }) => {
   const ids = await savedClip(page);
   const saved = await savedProject(page);
-  await writeSaved(page, { ...saved, version: 6 });
+  await writeSaved(page, { ...saved, version: CURRENT_VERSION + 1 });
   await page.reload();
   await expect(page.getByTestId('app')).toHaveAttribute('data-session', 'ready');
   await expect(page.getByTestId('restore-failed')).toContainText('newer version');
   // Editing does not autosave over the newer project, and its media survives.
   await importFiles(page, [withAudio], 1);
   await page.waitForTimeout(1200);
-  expect((await savedProject(page))?.version).toBe(6);
+  expect((await savedProject(page))?.version).toBe(CURRENT_VERSION + 1);
   expect((await storedIds(page)).length).toBeGreaterThanOrEqual(ids.length);
   for (const id of ids) expect(await storedIds(page)).toContain(id);
   await expect(toast(page)).toHaveCount(0);
@@ -186,7 +187,7 @@ test('a project saved by a newer version is never overwritten or garbage-collect
   await expect(page.getByTestId('confirm-dialog')).toContainText('replaces the saved project');
   await page.getByTestId('btn-confirm-ok').click();
   await expect(page.getByTestId('restore-failed')).toHaveCount(0);
-  await expect.poll(async () => (await savedProject(page))?.version).toBe(5);
+  await expect.poll(async () => (await savedProject(page))?.version).toBe(CURRENT_VERSION);
   await expect.poll(() => storedIds(page)).toEqual([]);
 });
 
