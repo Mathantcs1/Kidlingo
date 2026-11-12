@@ -9,6 +9,8 @@ import { formatToCss, overlayTarget, toleranceInFormatPx } from './overlayMath';
 import type { Box } from './overlayMath';
 import { HANDLE_PX, ROTATE_PX, handleAt } from './overlayHit';
 import type { DragTarget, LiveTransform } from './overlayHit';
+import MotionPath from './MotionPath';
+import { motionPathTarget } from './motionPathMath';
 import { useTransformDrag } from './useTransformDrag';
 
 const CORNERS = ['tl', 'tr', 'br', 'bl'] as const;
@@ -41,12 +43,22 @@ function cursorFor(handle: Handle | null, corners: Point[], centre: Point, dragg
 export default function TransformOverlay(props: Props) {
   const selection = useEditor((s) => s.selection);
   const target = overlayTarget(props.project, selection, props.playhead);
-  if (!target) return null;
+  // The selected clip's motion path (read-only; also on a locked layer, where there are no handles).
+  const pathClip = motionPathTarget(props.project, selection);
+  if (!target && !pathClip) return null;
   // Handles sit on the picture as drawn at the playhead (keys resolved there), or on the live drag.
-  const live = props.live?.clipId === target.clip.id ? props.live : null;
-  const transform = live ? live.transform : resolvedTransform(target.clip, props.playhead, props.project.format.fps);
-  // Keyed by clip: selecting another clip (or this one going away) unmounts the quad and ends its drag.
-  return <OverlayQuad key={target.clip.id} {...props} target={{ clipId: target.clip.id, size: target.size, transform }} />;
+  let quad = null;
+  if (target) {
+    const live = props.live?.clipId === target.clip.id ? props.live : null;
+    const transform = live ? live.transform : resolvedTransform(target.clip, props.playhead, props.project.format.fps);
+    // Keyed by clip: selecting another clip (or this one going away) unmounts the quad and ends its drag.
+    quad = <OverlayQuad key={target.clip.id} {...props} target={{ clipId: target.clip.id, size: target.size, transform }} />;
+  }
+  return (
+    <MotionPath project={props.project} clip={pathClip} playhead={props.playhead} box={props.box}>
+      {quad}
+    </MotionPath>
+  );
 }
 
 function OverlayQuad({ project, box, canvasRef, onLive, target }: Props & { target: DragTarget }) {

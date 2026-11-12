@@ -35,6 +35,14 @@ export function localRange(clip: Clip): [number, number] {
   return [lo, lo + clipDuration(clip)];
 }
 
+const EDGE = 1e-9;
+
+/** Whether local key time `k` shows on the clip: its visible local range, end exclusive (the end is off the clip). The ONE rule for the strip, previous/next and the motion path. */
+export function keyVisible(clip: Clip, k: number): boolean {
+  const [lo, hi] = localRange(clip);
+  return k >= lo - EDGE && k < hi - EDGE;
+}
+
 /** Index of the last key with `t <= u` (binary search); −1 when `u` is before the first key. */
 function segmentIndex(keys: readonly { t: number }[], u: number): number {
   let lo = 0;

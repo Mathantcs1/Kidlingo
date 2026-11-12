@@ -1,6 +1,7 @@
 // Store-bound keyframe commands (Plan 5 Task 6): each edit is ONE `apply` (one undo step) at the playhead; refusals
 // (locked track, playhead off the clip) become toasts through `guard`. Jumps move the playhead only (no history).
-import { localRange, localTime, tooClose } from '../core/keyframes';
+import { keyVisible, localRange, localTime, tooClose } from '../core/keyframes';
+export { keyVisible };
 import { OUTSIDE_REFUSAL, keyTimes, removeKeys, setKeyEase, setValueAt, targetKeys, targetValueAt } from '../core/keyframeEdits';
 import type { AnimTarget, AnimValue, KeyRef } from '../core/keyframeEdits';
 import type { Ease } from '../core/easing';
@@ -18,12 +19,6 @@ const EDGE = 1e-9;
 
 /** Whether timeline time `t` is on the clip (the same rule the keyed edits use). */
 export const onClip = (clip: Clip, t: number): boolean => t >= clip.start - EDGE && t < clipEnd(clip) - EDGE;
-
-/** Whether local key time `k` shows on the clip: the clip's visible range, end exclusive (the end is off the clip). The ONE rule for the strip and for previous/next. */
-export function keyVisible(clip: Clip, k: number): boolean {
-  const [lo, hi] = localRange(clip);
-  return k >= lo - EDGE && k < hi - EDGE;
-}
 
 /** The key of `target` under the playhead (within KEY_EPS of the playhead's local frame time), or null. */
 export function keyAtPlayhead(clip: Clip, target: AnimTarget, t: number, fps: number): KeyRef | null {

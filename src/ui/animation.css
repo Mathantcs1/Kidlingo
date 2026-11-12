@@ -161,3 +161,52 @@
   right: 1px;
   border-left: 5px solid #fff;
 }
+
+/* Motion path (Plan 5 Task 10): the line sits under the transform handles, the key dots above them. Only the dots take the pointer. */
+.motion-path-layer,
+.motion-keys-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.mp-line,
+.mp-shadow {
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.mp-shadow {
+  stroke: rgb(0 0 0 / 0.6);
+  stroke-width: 4;
+}
+
+.mp-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.motion-key {
+  fill: #fff;
+  stroke: var(--accent);
+  stroke-width: 2;
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.8));
+}
+
+/* The key under the playhead sits under the clip's own centre: let a press through to the move handle there. */
+.motion-key[data-current='true'] {
+  fill: var(--accent);
+  pointer-events: none;
+}
+
+.motion-key:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
