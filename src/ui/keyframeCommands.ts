@@ -1,8 +1,9 @@
 // Store-bound keyframe commands (Plan 5 Task 6): each edit is ONE `apply` (one undo step) at the playhead; refusals
 // (locked track, playhead off the clip) become toasts through `guard`. Jumps move the playhead only (no history).
 import { localRange, localTime, tooClose } from '../core/keyframes';
-import { OUTSIDE_REFUSAL, keyTimes, removeKeys, setValueAt, targetKeys, targetValueAt } from '../core/keyframeEdits';
+import { OUTSIDE_REFUSAL, keyTimes, removeKeys, setKeyEase, setValueAt, targetKeys, targetValueAt } from '../core/keyframeEdits';
 import type { AnimTarget, AnimValue, KeyRef } from '../core/keyframeEdits';
+import type { Ease } from '../core/easing';
 import { clipEnd } from '../core/model';
 import type { Clip, Id, Project, Transform } from '../core/model';
 import { TimelineError, findClip } from '../core/timeline';
@@ -114,5 +115,16 @@ export function seekToKeyCmd(clipId: Id, u: number): void {
     const { history, playing, setPlaying, setPlayhead } = editor();
     if (playing) setPlaying(false);
     setPlayhead(keyTimelineTime(findClip(history.present, clipId).clip, u));
+  });
+}
+
+/** Sets the ease of the segment starting at every key in `refs` (all selected times, every property) in ONE step; a no-op adds no step. */
+export const setEaseCmd = (clipId: Id, refs: readonly KeyRef[], ease: Ease): void => apply((p) => setKeyEase(p, clipId, refs, ease));
+
+/** The refs of `group`'s keys at local time `u` (one per target), for opening the ease editor from a property row. */
+export function groupRefsAt(clip: Clip, group: readonly AnimTarget[], u: number): KeyRef[] {
+  return group.flatMap((target) => {
+    const k = (targetKeys(clip, target) ?? []).find((x) => tooClose(x.t, u));
+    return k ? [{ target, t: k.t }] : [];
   });
 }

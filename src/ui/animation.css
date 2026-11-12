@@ -8,7 +8,7 @@
 
 .kf-row {
   display: grid;
-  grid-template-columns: minmax(56px, auto) repeat(4, 24px) minmax(0, 1fr);
+  grid-template-columns: minmax(56px, auto) repeat(5, 24px) minmax(0, 1fr);
   align-items: center;
   gap: 2px;
   font-size: 12px;
@@ -42,6 +42,10 @@
 .kf-toggle[aria-pressed='true'] {
   background: var(--panel-2);
   border-color: var(--border);
+}
+
+.kf-btn[aria-disabled='true'] {
+  opacity: 0.4;
 }
 
 .kf-key {

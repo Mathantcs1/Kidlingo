@@ -1,0 +1,125 @@
+/* Ease editor (Plan 5 Task 9): a floating panel with presets, the curve plot and four numeric fields. */
+.ease-editor {
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 232px;
+  max-height: calc(100vh - 16px);
+  padding: 10px;
+  overflow: auto;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+.ease-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.ease-close {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  line-height: 1;
+  background: transparent;
+  border-color: transparent;
+}
+
+.ease-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ease-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.ease-preset {
+  padding: 3px 2px;
+  font-size: 11px;
+}
+
+.ease-preset[aria-pressed='true'] {
+  background: var(--accent-2);
+  border-color: var(--accent);
+}
+
+.ease-plot {
+  align-self: center;
+  max-width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  touch-action: none;
+}
+
+.ease-unit {
+  fill: var(--panel-2);
+  stroke: var(--border);
+}
+
+.ease-diagonal,
+.ease-stem {
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+
+.ease-curve {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.ease-end {
+  fill: var(--muted);
+}
+
+.ease-handle {
+  fill: var(--warn);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+  cursor: grab;
+}
+
+.ease-handle:focus-visible {
+  outline: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+
+.ease-handle[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.ease-fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.ease-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--muted);
+}
+
+.ease-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 2px 3px;
+  font-size: 11px;
+}

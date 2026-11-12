@@ -10,6 +10,7 @@ import Preview from './ui/Preview';
 import RestoreNotice from './ui/RestoreNotice';
 import { startSessionOnce, useSessionState } from './ui/session';
 import Timeline from './ui/Timeline';
+import EaseEditor from './ui/EaseEditor';
 import Toasts from './ui/Toast';
 import Toolbar from './ui/Toolbar';
 import TopBar from './ui/TopBar';
@@ -58,6 +59,7 @@ export default function App() {
       </div>
       {dialogOpen && <ExportDialog />}
       {confirmOpen && <ConfirmDialog />}
+      <EaseEditor />
       <Toasts />
     </>
   );

@@ -96,12 +96,17 @@ test('click selects and seeks, Shift adds, Tab + Enter selects, clicking the cli
   await page.mouse.click(box.x + box.width / 2, box.y + 6);
   await expect(page.locator('[data-testid="keyframe-diamond"][aria-pressed="true"]')).toHaveCount(0);
   await expect(clipEl(page, 'pip')).toHaveAttribute('data-selected', 'true');
-  // Keyboard: a focused diamond takes Enter (the ease editor hook; for now it selects and seeks).
+  // Keyboard: a focused diamond takes Enter: it selects, seeks and opens the ease editor.
   await diamond(page, 1).focus();
   await page.keyboard.press('Enter');
   await expect(diamond(page, 1)).toHaveAttribute('aria-pressed', 'true');
   expect((await playerState(page)).playhead).toBeCloseTo(1, 6);
-  // Escape (no drag) drops the key selection.
+  await expect(page.getByTestId('ease-editor')).toBeVisible();
+  // The first Escape closes the editor (selection kept, focus back on the diamond); the next one (no drag) drops the key selection.
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('ease-editor')).toHaveCount(0);
+  await expect(diamond(page, 1)).toHaveAttribute('aria-pressed', 'true');
+  await expect(diamond(page, 1)).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(diamond(page, 1)).toHaveAttribute('aria-pressed', 'false');
   expect(await undoDepth(page)).toBe(depth);

@@ -2,11 +2,14 @@ import { localRange } from '../core/keyframes';
 import { targetKeys } from '../core/keyframeEdits';
 import type { AnimTarget } from '../core/keyframeEdits';
 import type { Clip } from '../core/model';
-import { keyAtPlayhead, keyTimelineTime, keyVisible, onClip, seekToKeyCmd } from './keyframeCommands';
+import { openEase } from './easeEditorStore';
+import { groupRefsAt, keyAtPlayhead, keyTimelineTime, keyVisible, onClip, seekToKeyCmd } from './keyframeCommands';
 
 interface Props {
   clip: Clip;
   target: AnimTarget;
+  /** Targets that key together with `target` (the chroma key colour): the ease editor opens on all of them. */
+  group?: readonly AnimTarget[];
   label: string;
   testId: string;
   playhead: number;
@@ -17,11 +20,11 @@ const pct = (v: number): string => `${Math.min(100, Math.max(0, v * 100))}%`;
 
 /**
  * A mini timeline of one property's keys over the clip's visible range: one diamond button per key (Tab-reachable,
- * "Keyframe at 1.20 s"; a click moves the playhead there, no history) and a playhead marker while it is on the clip.
+ * "Keyframe at 1.20 s"; a click moves the playhead there, no history; a double-click opens the ease editor) and a playhead marker while it is on the clip.
  * Keys beyond the clip's edges (kept by trims, D9) and a key exactly at the clip end are not shown, the same rule as
  * previous/next, so a click never seeks off the clip.
  */
-export default function KeyframeStrip({ clip, target, label, testId, playhead, fps }: Props) {
+export default function KeyframeStrip({ clip, target, group, label, testId, playhead, fps }: Props) {
   const [lo, hi] = localRange(clip);
   const span = hi - lo;
   const keys = (targetKeys(clip, target) ?? []).filter((k) => keyVisible(clip, k.t));
@@ -47,6 +50,7 @@ export default function KeyframeStrip({ clip, target, label, testId, playhead, f
             title={`${label} keyframe at ${time.toFixed(2)} s`}
             style={{ left: pct(span > 0 ? (k.t - lo) / span : 0) }}
             onClick={() => seekToKeyCmd(clip.id, k.t)}
+            onDoubleClick={() => openEase(clip.id, groupRefsAt(clip, group ?? [target], k.t))}
           />
         );
       })}

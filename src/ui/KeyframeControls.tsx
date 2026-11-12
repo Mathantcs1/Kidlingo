@@ -3,7 +3,8 @@ import type { AnimTarget, TransformProp } from '../core/keyframeEdits';
 import type { Clip } from '../core/model';
 import { useEditor } from '../state/store';
 import KeyframeStrip from './KeyframeStrip';
-import { jumpToKeyCmd, keyAtPlayhead, keyJumpTime, toggleAnimatedCmd, toggleKeyAtPlayheadCmd } from './keyframeCommands';
+import { openEase } from './easeEditorStore';
+import { groupRefsAt, jumpToKeyCmd, keyAtPlayhead, keyJumpTime, toggleAnimatedCmd, toggleKeyAtPlayheadCmd } from './keyframeCommands';
 import './animation.css';
 
 /** Test ids of one row's controls (Plan 5 §3.5). */
@@ -53,7 +54,8 @@ export default function KeyframeControls({ clip, target, group, label, ids, disa
   const animated = targetKeys(clip, target) !== undefined;
   const playhead = useEditor((s) => (animated ? s.playhead : 0));
   const fps = useEditor((s) => s.history.present.format.fps);
-  const atKey = animated && keyAtPlayhead(clip, target, playhead, fps) !== null;
+  const here = animated ? keyAtPlayhead(clip, target, playhead, fps) : null;
+  const atKey = here !== null;
   const prev = animated ? keyJumpTime(clip, target, playhead, fps, -1) : null;
   const next = animated ? keyJumpTime(clip, target, playhead, fps, 1) : null;
   return (
@@ -105,7 +107,18 @@ export default function KeyframeControls({ clip, target, group, label, ids, disa
       >
         <span aria-hidden="true">▶</span>
       </button>
-      {animated && <KeyframeStrip clip={clip} target={target} label={label} testId={ids.strip} playhead={playhead} fps={fps} />}
+      <button
+        type="button"
+        className="kf-btn kf-ease"
+        data-testid="kf-ease-open"
+        aria-label={`Ease of the ${label} keyframe at the playhead`}
+        title={atKey ? `Edit the ease of the ${label} keyframe here` : `Move the playhead onto a ${label} keyframe to edit its ease`}
+        aria-disabled={!atKey || undefined}
+        onClick={() => here && openEase(clip.id, groupRefsAt(clip, group ?? [target], here.t))}
+      >
+        <span aria-hidden="true">∿</span>
+      </button>
+      {animated && <KeyframeStrip clip={clip} target={target} group={group} label={label} testId={ids.strip} playhead={playhead} fps={fps} />}
     </div>
   );
 }
