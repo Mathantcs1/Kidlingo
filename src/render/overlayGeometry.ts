@@ -4,6 +4,7 @@
 // whose quad `clipCorners` reproduces exactly (see tests/overlay-geometry.test.ts).
 import type { Transform } from '../core/model';
 import { scaleBounds } from '../core/scale';
+import { normaliseDegrees } from '../core/transformLimits';
 import type { Size } from './geometry';
 
 export type Point = { x: number; y: number };
@@ -12,6 +13,7 @@ export type Corners = [Point, Point, Point, Point];
 export type Handle = 'move' | 'scale-tl' | 'scale-tr' | 'scale-br' | 'scale-bl' | 'rotate';
 
 export { MAX_SCALE, MIN_SCALE, scaleBounds } from '../core/scale';
+export { normaliseDegrees } from '../core/transformLimits';
 /**
  * Distance of the rotate handle beyond the top edge when the caller gives none, in FORMAT pixels (not CSS px: the
  * overlay should pass its own CSS offset converted to format px).
@@ -22,12 +24,6 @@ const CORNER_HANDLES: Handle[] = ['scale-tl', 'scale-tr', 'scale-br', 'scale-bl'
 const fin = (...v: number[]): boolean => v.every(Number.isFinite);
 const dist = (a: Point, b: Point): number => Math.hypot(a.x - b.x, a.y - b.y);
 
-/** Degrees normalised to (−180, 180] (never −0). */
-export function normaliseDegrees(deg: number): number {
-  let r = ((deg % 360) + 360) % 360;
-  if (r > 180) r -= 360;
-  return r === 0 ? 0 : r;
-}
 
 /** The clip centre: (format.width/2 + t.x, format.height/2 + t.y); the canvas centre for a non-finite offset. */
 export function clipCentre(t: Transform, format: Size): Point {

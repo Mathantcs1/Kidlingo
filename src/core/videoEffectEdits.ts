@@ -1,4 +1,5 @@
 // Pure edits of a clip's picture effect stack and blend mode. Locked tracks refuse; no-ops return the same project.
+import { ANIMATED_REFUSAL } from './animTargets';
 import { LOOKS } from './looks';
 import type { LookKey } from './looks';
 import { newId } from './model';
@@ -50,6 +51,8 @@ export function updateVideoEffect(
   const i = find(clip, effectId);
   const cur = clip.effects[i];
   if (patch.params && !Object.values(patch.params).every(Number.isFinite)) throw new TimelineError('Invalid effect setting');
+  // Plan 5 D8: an animated param is changed at the playhead (setValueAt), never silently here.
+  if (patch.params && Object.keys(patch.params).some((k) => (cur.keys?.[k]?.length ?? 0) > 0)) throw new TimelineError(ANIMATED_REFUSAL);
   const params = patch.params ? clampParams(cur.type, { ...cur.params, ...patch.params }) : cur.params;
   const enabled = patch.enabled ?? cur.enabled;
   const same = enabled === cur.enabled && Object.keys(params).every((k) => params[k] === cur.params[k]);
@@ -76,10 +79,11 @@ export function moveVideoEffect(p: Project, clipId: Id, effectId: Id, toIndex: n
   return withEffects(p, clipId, list);
 }
 
+/** Same effects and params, and no keys (a keyed stack is never "already the look": applying it drops the keys). */
 const sameShape = (a: VideoEffect[], b: Omit<VideoEffect, 'id'>[]): boolean =>
   a.length === b.length &&
   a.every((e, i) =>
-    e.type === b[i].type && e.enabled === b[i].enabled && e.ref === b[i].ref &&
+    e.keys === undefined && e.type === b[i].type && e.enabled === b[i].enabled && e.ref === b[i].ref &&
     Object.keys(e.params).every((k) => e.params[k] === b[i].params[k]));
 
 /** Replaces the whole stack with the look's effects (fresh ids, params filled and clamped) in ONE edit. */

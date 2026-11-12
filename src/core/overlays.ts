@@ -2,6 +2,7 @@
 import { defaultClipAudio, newId } from './model';
 import type { Clip, Id, OverlaySpec, OverlayType, Project, Transform } from './model';
 import { placeOnVideoLayer } from './placement';
+import { hasFramingKeys, scaleFramingKeys } from './reframeKeys';
 import { MIN_CLIP, TimelineError, assertUnlocked, findClip } from './timeline';
 import {
   DEFAULT_OVERLAY_DURATION, OVERLAY_LABELS, STICKER_LABELS, cutText, hexColour, isOverlayType, isStickerKind, overlayDefaults,
@@ -100,16 +101,19 @@ const SAME = 1e-6;
 /**
  * An overlay clip after a format change from `old` to `next`: one still at its type's default place (x, y, scale within
  * 1e-6) moves to the new default; a customised one keeps its relative position (x·w′/w, y·h′/h) and its scale (its size
- * already follows the format). Rotation and opacity are kept.
+ * already follows the format). Rotation and opacity are kept. Position or scale keys make it customised (Plan 5 D9):
+ * position keys scale like x/y, scale keys are kept.
  */
 export function reframeOverlay(c: Clip, old: Format, next: Format): Clip {
   if (!c.overlay) return { ...c };
   const t = c.transform;
   const d = overlayDefaultTransform(c.overlay.type, old);
-  const atDefault = (['x', 'y', 'scale'] as const).every((k) => Math.abs(t[k] - d[k]) <= SAME);
+  const atDefault = !hasFramingKeys(c) && (['x', 'y', 'scale'] as const).every((k) => Math.abs(t[k] - d[k]) <= SAME);
   if (atDefault) {
     const { x, y, scale } = overlayDefaultTransform(c.overlay.type, next);
     return { ...c, transform: { ...t, x, y, scale } };
   }
-  return { ...c, transform: { ...t, x: t.x * (next.width / old.width), y: t.y * (next.height / old.height) } };
+  const rx = next.width / old.width;
+  const ry = next.height / old.height;
+  return { ...scaleFramingKeys(c, rx, ry), transform: { ...t, x: t.x * rx, y: t.y * ry } };
 }

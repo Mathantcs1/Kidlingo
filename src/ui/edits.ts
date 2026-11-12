@@ -3,6 +3,7 @@ import { fitTransform, joinClips } from '../core/merge';
 import { clipEnd } from '../core/model';
 import type { Clip, Id, MediaRef, Project, Track } from '../core/model';
 import { MIN_CLIP, TimelineError, addClip, assertUnlocked, deleteClip, findClip, splitClip } from '../core/timeline';
+import { withoutTransformKeys } from '../core/transformEdits';
 import { clipFromMedia } from '../media/clip';
 import { laneRejects } from './drag';
 
@@ -95,7 +96,8 @@ export function setClipVolume(p: Project, clipId: Id, volume: number): Project {
 
 /**
  * Sets a video/image clip's fit mode and resets its position and scale to `fitTransform` for the project canvas (the
- * modes are defined by how the whole clip covers the canvas); rotation and opacity are kept. Returns `p` itself when
+ * modes are defined by how the whole clip covers the canvas) and removes its position and scale keys; rotation and
+ * opacity (and their keys) are kept. Media without known dimensions only changes the mode. Returns `p` itself when
  * the clip already has that mode.
  */
 export function setClipFit(p: Project, clipId: Id, fit: Clip['fit']): Project {
@@ -105,10 +107,12 @@ export function setClipFit(p: Project, clipId: Id, fit: Clip['fit']): Project {
     if (c.kind === 'adjustment') throw new TimelineError('Adjustment layers have no frame to fit');
     if (c.fit === fit) return c;
     const m = p.media[c.mediaId];
-    const transform = m?.width && m.height
-      ? { ...fitTransform({ width: m.width, height: m.height }, p.format, fit), rotation: c.transform.rotation, opacity: c.transform.opacity }
-      : c.transform;
-    return { ...c, fit, transform };
+    if (!m?.width || !m.height) return { ...c, fit };
+    const transform = { ...fitTransform({ width: m.width, height: m.height }, p.format, fit), rotation: c.transform.rotation, opacity: c.transform.opacity };
+    // The fit defines the framing: position and scale keys go (Plan 5 D9); rotation and opacity keys stay.
+    const { keys: _keys, ...rest } = c;
+    const keys = withoutTransformKeys(c.keys, ['position', 'scale']);
+    return keys ? { ...rest, fit, transform, keys } : { ...rest, fit, transform };
   });
 }
 

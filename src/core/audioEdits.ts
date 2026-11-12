@@ -98,8 +98,9 @@ export function detachAudio(p: Project, clipId: Id): Project {
   if (clip.kind !== 'video') throw new TimelineError('Only video clips have audio to detach');
   if (!p.media[clip.mediaId]?.hasAudio) throw new TimelineError('This clip has no audio');
   if (clip.audio.silent) throw new TimelineError('Audio is already detached');
+  const { keys: _keys, ...sound } = clip; // the twin is sound only: no keys (Plan 5 D9), no picture effects
   const copy: Clip = {
-    ...clip,
+    ...sound,
     id: newId(),
     kind: 'audio',
     transform: defaultTransform(),

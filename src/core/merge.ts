@@ -3,6 +3,7 @@ import type { FormatKey } from './formats';
 import { clipDuration, clipEnd } from './model';
 import type { Clip, Id, Project, Transform } from './model';
 import { overlayDefaultTransform, reframeOverlay } from './overlays';
+import { hasFramingKeys, scaleFramingKeys } from './reframeKeys';
 import { TimelineError, assertUnlocked, findClip } from './timeline';
 
 const EPS = 1e-9;
@@ -92,7 +93,8 @@ function atFit(t: Transform, fit: Transform): boolean {
  * keeps its relative placement: x·w′/w, y·h′/h, and scale·√((w′·h′)/(w·h)) (the geometric mean of the axis
  * ratios), never clamped (Ruling K; a non-finite or non-positive result keeps the old scale). That makes a round
  * trip A → B → A exactly invertible for every customised clip, and untouched clips refit back to the same fit. Rotation and opacity
- * are always kept, so a faded or rotated full-frame clip still refits. An unusable old canvas size (non-positive or
+ * are always kept, so a faded or rotated full-frame clip still refits. A clip with position or scale keys always
+ * counts as customised and its keys scale like the static fields (Plan 5 D9). An unusable old canvas size (non-positive or
  * non-finite) refits every clip. Audio clips and media without a known size are left alone; overlay clips follow
  * reframeOverlay (their size already follows the format). Intentionally ignores
  * track locks: the format is a sequence-level setting and every clip, locked or not, must follow it. Returns `p`
@@ -116,14 +118,15 @@ export function reframeProject(p: Project, key: FormatKey): Project {
     if (c.kind === 'audio' || !m || !m.width || !m.height) return { ...c };
     const dims = { width: m.width, height: m.height };
     const t = c.transform;
-    if (!oldUsable || atFit(t, fitTransform(dims, old, c.fit))) {
+    if (!oldUsable || (!hasFramingKeys(c) && atFit(t, fitTransform(dims, old, c.fit)))) {
       const { x, y, scale } = fitTransform(dims, canvas, c.fit);
       return { ...c, transform: { ...t, x, y, scale } };
     }
     // Ruling K: no clamp, so clips outside 0.02..20 round-trip exactly; only an unusable result keeps the old scale.
-    const next = t.scale * Math.sqrt(rx * ry);
+    const k = Math.sqrt(rx * ry);
+    const next = t.scale * k;
     const scale = Number.isFinite(next) && next > 0 ? next : t.scale;
-    return { ...c, transform: { ...t, x: t.x * rx, y: t.y * ry, scale } };
+    return { ...scaleFramingKeys(c, rx, ry, k), transform: { ...t, x: t.x * rx, y: t.y * ry, scale } };
   };
   return {
     ...p,

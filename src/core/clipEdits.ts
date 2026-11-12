@@ -1,8 +1,28 @@
 import { cloneEffects, fitFades, withAudio } from './clipAudio';
 import { cloneVideoEffects } from './clipEffects';
+import { mapEffectKeys, mapTransformKeys, shiftKeys, splitKeys } from './keyLists';
+import type { AnyKey } from './keyLists';
 import { clipDuration, clipEnd, isSourceless, newId } from './model';
-import type { Clip, Id, Project } from './model';
+import type { Clip, Id, Project, TransformKeys } from './model';
 import { EPS, MIN_CLIP, TimelineError, assertFinite, assertFree, assertUnlocked, findClip, mapClips, replaceClip } from './timeline';
+
+/** `clip` with its transform keys set to `keys` (no `keys` field when undefined). */
+const withClipKeys = (clip: Clip, keys: TransformKeys | undefined): Clip => {
+  const { keys: _old, ...rest } = clip;
+  return keys ? { ...rest, keys } : rest;
+};
+
+/** A key list mapper: the keys deciding local range [lo, hi] (splitKeys), moved by `d` seconds. Fresh copies. */
+const part = (lo: number, hi: number, d: number) => <K extends AnyKey>(l: K[]): K[] => {
+  const kept = splitKeys(l, lo, hi);
+  return d === 0 ? kept : shiftKeys(kept, d);
+};
+
+/** Every key of the clip (transform and effect params) moved by `d` seconds; effect ids kept. */
+function shiftClipKeys(clip: Clip, d: number): Clip {
+  const move = <K extends AnyKey>(l: K[]): K[] => shiftKeys(l, d);
+  return { ...withClipKeys(clip, mapTransformKeys(clip.keys, move, move)), effects: clip.effects.map((e) => mapEffectKeys(e, move)) };
+}
 
 export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: number): Project {
   assertFinite('trim time', time);
@@ -12,9 +32,10 @@ export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: nu
   if (edge === 'start') {
     const delta = time - clip.start;
     // An overlay or adjustment clip has no source: its start can move either way; `in` stays 0 (an overlay's
-    // animation runs from `start`).
+    // animation runs from `start`). Its keys shift by −Δ so they stay put in timeline time (Plan 5 D3); a sourced
+    // clip's keys stay on their footage frame unchanged.
     next = isSourceless(clip)
-      ? { ...clip, start: time, in: 0, out: clipDuration(clip) - delta }
+      ? { ...shiftClipKeys(clip, -delta), start: time, in: 0, out: clipDuration(clip) - delta }
       : { ...clip, start: time, in: clip.in + delta };
     if (next.in < -EPS || next.start < -EPS) throw new TimelineError('Trim extends beyond source');
   } else {
@@ -35,14 +56,23 @@ export function splitClip(p: Project, clipId: Id, time: number): Project {
     throw new TimelineError('Split point too close to clip edge');
   }
   const cut = clip.in + (time - clip.start);
+  // Keys (Plan 5 D9): each half keeps the keys that decide its own local range; a sourceless right half's keys
+  // shift by −(time − start) because its local time restarts at 0.
+  const d = time - clip.start;
+  const [lo, hi] = isSourceless(clip) ? [0, clipDuration(clip)] : [clip.in, clip.out];
+  const mid = lo + d;
+  const shift = isSourceless(clip) ? -d : 0;
+  const leftKeys = part(lo, mid, 0);
+  const rightKeys = part(mid, hi, shift);
   // The left half keeps the fade-in, the right half the fade-out; effects are copied with new ids to both.
   // Each half's fade is re-clamped to the half's own duration.
   const left: Clip = {
-    ...clip, out: cut, effects: cloneVideoEffects(clip.effects),
+    ...withClipKeys(clip, mapTransformKeys(clip.keys, leftKeys, leftKeys)), out: cut, effects: cloneVideoEffects(clip.effects, leftKeys),
     audio: fitFades({ ...clip.audio, fadeOut: 0, effects: cloneEffects(clip.audio.effects) }, cut - clip.in),
   };
   const right: Clip = {
-    ...clip, id: newId(), start: time, in: cut, effects: cloneVideoEffects(clip.effects),
+    ...withClipKeys(clip, mapTransformKeys(clip.keys, rightKeys, rightKeys)), id: newId(), start: time, in: cut,
+    effects: cloneVideoEffects(clip.effects, rightKeys),
     audio: fitFades({ ...clip.audio, fadeIn: 0, effects: cloneEffects(clip.audio.effects) }, clip.out - cut),
   };
   return mapClips(p, (t) =>

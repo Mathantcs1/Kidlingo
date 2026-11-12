@@ -2,7 +2,7 @@
 // except for positionAt's result.
 import { easeAt } from './easing';
 import { snapToFrame } from './fps';
-import { isSourceless } from './model';
+import { clipDuration, isSourceless } from './model';
 import type { Clip, Keyframe, PositionKeyframe } from './model';
 
 /** Two keys of one property closer than this (seconds) are the same key. */
@@ -27,6 +27,12 @@ export function tooClose(a: number, b: number): boolean {
  */
 export function localTime(clip: Clip, t: number, fps: number): number {
   return (isSourceless(clip) ? 0 : clip.in) + snapToFrame(t - clip.start, fps);
+}
+
+/** The clip's visible local range [lo, hi] (D3): `[in, out]` for sourced clips, `[0, duration]` for sourceless ones. */
+export function localRange(clip: Clip): [number, number] {
+  const lo = isSourceless(clip) ? 0 : clip.in;
+  return [lo, lo + clipDuration(clip)];
 }
 
 /** Index of the last key with `t <= u` (binary search); −1 when `u` is before the first key. */
