@@ -181,11 +181,12 @@ test('a hold segment draws a gap, not a line', async ({ page }) => {
       tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.map((c) => (c.id === 'pip' ? { ...c, keys: { position: c.keys!.position!.map((k, i) => (i === 0 ? { ...k, ease: { kind: 'hold' as const } } : k)) } } : c)) })),
     }));
   });
-  await expect(path(page)).toHaveAttribute('data-runs', '2');
+  // Key 0 holds until key 1, then jumps: the held position is a lone point (no line), so ONE run remains, starting at key 1.
+  await expect(path(page)).toHaveAttribute('data-runs', '1');
   const b = await canvasBox(page);
-  const [held, rest] = await pathPoints(page);
-  expect(held.every((p) => near(p, toPage(b, { x: C.x - 400, y: C.y - 200 })))).toBe(true);
+  const [rest] = await pathPoints(page);
   expect(near(rest[0], toPage(b, { x: C.x, y: C.y + 200 }))).toBe(true);
+  expect(near(rest[rest.length - 1], toPage(b, { x: C.x + 400, y: C.y - 200 }))).toBe(true);
   await expect(dots(page)).toHaveCount(3);
 });
 

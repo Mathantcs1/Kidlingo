@@ -46,7 +46,6 @@ const ALLOWED: Allowed[] = [
   ['src/ui/useTransformDrag.ts', 'now.transform !== g.storeTransform', 'reads stored value on purpose: detects an external store change'],
   ['src/ui/TransformOverlay.tsx', 'live ? live.transform : resolvedTransform(target.clip', 'handles at the live drag transform, else the resolved transform at the playhead'],
   ['src/ui/TransformOverlay.tsx', 'clipCorners(target.size, target.transform, format)', 'handles at the target transform (resolved at the playhead, or the live drag)'],
-  ['src/ui/TransformOverlay.tsx', 'clipCentre(target.transform, format)', 'handles at the target transform (resolved at the playhead, or the live drag)'],
   ['src/ui/edits.ts', 'rotation: c.transform.rotation, opacity: c.transform.opacity', 'reads stored value on purpose: setClipFit keeps the static rotation/opacity'],
   ['src/ui/mediaEdits.ts', '(c.effects ?? []).some((e) => e.ref === mediaId)', 'reads stored value on purpose: LUT media in use (not animated)'],
 ];

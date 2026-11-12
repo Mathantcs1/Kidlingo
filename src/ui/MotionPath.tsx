@@ -7,14 +7,13 @@ import { tooClose } from '../core/keyframes';
 import type { Clip, Project } from '../core/model';
 import type { Point } from '../render/overlayGeometry';
 import { keyAtPlayhead, keyTimelineTime, seekToKeyCmd } from './keyframeCommands';
-import { cachedMotionPath } from './motionPathMath';
+import { DOT_R, cachedMotionPath, dotPassesThrough } from './motionPathMath';
 import type { MotionPathData } from './motionPathMath';
 import { formatToCss } from './overlayMath';
 import type { Box } from './overlayMath';
 import './animation.css';
 
 const POSITION = { kind: 'transform', prop: 'position' } as const;
-const DOT_R = 5;
 
 interface Props {
   project: Project;
@@ -23,6 +22,8 @@ interface Props {
   playhead: number;
   /** The displayed canvas content box in the overlay layer's CSS px (same box the handles use). */
   box: Box;
+  /** The displayed clip centre in the same CSS px (from the handles), or null without handles: dots near it let presses through. */
+  centre: Point | null;
   /** The transform handles: rendered between the path line and the key dots. */
   children?: ReactNode;
 }
@@ -48,27 +49,28 @@ const Line = memo(function Line({ data, box, format }: { data: MotionPathData; b
   );
 });
 
-export default function MotionPath({ project, clip, playhead, box, children }: Props) {
+export default function MotionPath({ project, clip, playhead, box, centre, children }: Props) {
   const format = project.format;
   const fps = format.fps;
   const data = useMemo(() => (clip ? cachedMotionPath(clip, fps, format) : null), [clip, fps, format]);
-  if (!clip || !data) return <>{children}</>;
-  const here = keyAtPlayhead(clip, POSITION, playhead, fps);
-  const seek = (u: number): void => seekToKeyCmd(clip.id, u);
+  const here = clip ? keyAtPlayhead(clip, POSITION, playhead, fps) : null;
+  const seek = (u: number): void => { if (clip) seekToKeyCmd(clip.id, u); };
   const onKey = (e: KeyboardEvent, u: number): void => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     e.preventDefault();
     e.stopPropagation();
     seek(u);
   };
+  // Fixed slots (line, children, dots) whether or not a path shows, so the handles keep their tree position (the quad's explicit key={clip.id} in TransformOverlay also keeps it mounted).
   return (
     <>
-      <Line data={data} box={box} format={format} />
+      {clip && data ? <Line data={data} box={box} format={format} /> : null}
       {children}
-      {data.keys.length > 0 && (
+      {clip && data && data.keys.length > 0 && (
         <svg className="motion-keys-layer" role="group" aria-label="Position keyframes">
           {data.keys.map((k) => {
             const c = formatToCss(k, box, format);
+            const through = dotPassesThrough(c, centre);
             const label = `Position keyframe at ${secondsLabel(keyTimelineTime(clip, k.u))}`;
             return (
               <circle
@@ -76,6 +78,7 @@ export default function MotionPath({ project, clip, playhead, box, children }: P
                 className="motion-key"
                 data-testid="motion-key"
                 data-time={keyTimelineTime(clip, k.u)}
+                data-through={through ? 'true' : undefined}
                 data-current={here !== null && tooClose(here.t, k.u) ? 'true' : undefined}
                 role="button"
                 tabIndex={0}

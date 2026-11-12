@@ -48,27 +48,28 @@ export default function TransformOverlay(props: Props) {
   if (!target && !pathClip) return null;
   // Handles sit on the picture as drawn at the playhead (keys resolved there), or on the live drag.
   let quad = null;
+  let centre: Point | null = null;
   if (target) {
     const live = props.live?.clipId === target.clip.id ? props.live : null;
     const transform = live ? live.transform : resolvedTransform(target.clip, props.playhead, props.project.format.fps);
     // Keyed by clip: selecting another clip (or this one going away) unmounts the quad and ends its drag.
-    quad = <OverlayQuad key={target.clip.id} {...props} target={{ clipId: target.clip.id, size: target.size, transform }} />;
+    centre = formatToCss(clipCentre(transform, props.project.format), props.box, props.project.format);
+    quad = <OverlayQuad key={target.clip.id} {...props} centre={centre} target={{ clipId: target.clip.id, size: target.size, transform }} />;
   }
   return (
-    <MotionPath project={props.project} clip={pathClip} playhead={props.playhead} box={props.box}>
+    <MotionPath project={props.project} clip={pathClip} playhead={props.playhead} box={props.box} centre={centre}>
       {quad}
     </MotionPath>
   );
 }
 
-function OverlayQuad({ project, box, canvasRef, onLive, target }: Props & { target: DragTarget }) {
+function OverlayQuad({ project, box, canvasRef, onLive, target, centre }: Props & { target: DragTarget; centre: Point }) {
   const { begin, dragging } = useTransformDrag(canvasRef, onLive);
   const [hover, setHover] = useState<Handle | null>(null);
   const format = project.format;
   const toCss = (p: Point): Point => formatToCss(p, box, format);
   const corners = clipCorners(target.size, target.transform, format);
   const css = corners.map(toCss);
-  const centre = toCss(clipCentre(target.transform, format));
   const rot = toCss(rotateHandlePoint(corners, toleranceInFormatPx(ROTATE_PX, box, format)));
   const topMid = { x: (css[0].x + css[1].x) / 2, y: (css[0].y + css[1].y) / 2 };
   const h = HANDLE_PX / 2;

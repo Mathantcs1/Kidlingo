@@ -11,6 +11,14 @@ import { liveSelection } from './edits';
 /** At most this many points per path (a long clip is sampled every few frames instead of every frame). */
 export const MAX_PATH_SAMPLES = 2000;
 const EDGE = 1e-9;
+/** Radius of a key dot in CSS px, and how far from the displayed clip centre a dot lets a press through to the move handle. */
+export const DOT_R = 5;
+export const PASS_THROUGH_PX = DOT_R + 4;
+
+/** Whether the key dot at `dot` (CSS px) must ignore the pointer because it sits on the clip centre (a press there drags the clip). */
+export function dotPassesThrough(dot: Point, centre: Point | null): boolean {
+  return centre !== null && Math.hypot(dot.x - centre.x, dot.y - centre.y) <= PASS_THROUGH_PX;
+}
 const ZERO = { scale: 1, rotation: 0, opacity: 1 };
 
 /** A position key as drawn: local time `u` and its position in format px. */
@@ -33,7 +41,7 @@ export function sampleMotionPath(clip: Clip, fps: number, format: Size): MotionP
   for (const k of list) if (keyVisible(clip, k.t)) out.keys.push({ u: k.t, ...toFormat(k, format) });
   const [lo, hi] = localRange(clip);
   const a = Math.max(list[0].t, lo);
-  const b = Math.min(list[list.length - 1].t, hi);
+  const b = Math.min(list[list.length - 1].t, hi - 1 / fps); // end exclusive: the last visible frame
   if (!(b - a > EDGE)) return out;
 
   const inner = list.filter((k) => k.t > a + EDGE && k.t < b - EDGE);
@@ -60,6 +68,7 @@ export function sampleMotionPath(clip: Clip, fps: number, format: Size): MotionP
     run.push(at(e));
   }
   out.runs.push(run);
+  out.runs = out.runs.filter((r) => r.length >= 2); // a lone point is no line
   return out;
 }
 

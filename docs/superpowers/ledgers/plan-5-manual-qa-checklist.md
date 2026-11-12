@@ -17,3 +17,10 @@ Run in real desktop Chrome on a Mac (note Chrome/macOS/GPU). Everything here was
 - [ ] Tab order inside the ease editor: there is no focus trap (Tab leaves the panel); handles lack an `aria-valuenow` range for y; the 12px handle target is below the WCAG 2.5.8 24px guideline. Decide whether to enlarge/trap.
 - [ ] The CSS opacity change affects the existing disabled prev/next keyframe buttons: confirm they still look right.
 - [ ] The 5-button preset row may clip in a narrow inspector: check at the minimum inspector width.
+
+## Part 5A, Task 10 (motion path)
+
+- [ ] Every position key dot is a tab stop (`tabIndex=0`): with 500 keys that is 500 Tab presses to pass the preview. Consider a roving tabindex and judge it.
+- [ ] Key dots are 10 px discs (r = 5): check they are comfortable to click with a mouse and trackpad (and that dots within ~9 px of the clip centre, which let the press through to the move handle, feel right).
+- [ ] With ~500 position keys, all dots re-render on every playback frame: play a clip with that many keys and check the preview stays smooth.
+
