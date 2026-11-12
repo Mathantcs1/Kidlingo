@@ -131,9 +131,10 @@ It is a static site built with React, TypeScript and Vite.
 ## Roadmap (planned, not implemented yet)
 
 The multi-layer timeline (Plan 2), audio editing (Plan 3), visual effects (Plan 4) and the keyframe engine (Plan 5,
-Part 5A) are implemented. Production runs `1379e01`: Plans 2 and 3 and all of Plan 4 (Part B overlays and adjustment
-layers included; data v5). Plan 5 Part 5A is implemented on `feature/plan-5-animation` and not deployed yet (it deploys
-per ruling P5-2 once its gate passes). The rest of Plan 5 is outlined in
+Part 5A) are implemented. Production runs `c9caebe` (deployed 2026-11-12): Plans 2 and 3, all of Plan 4 (Part B overlays and adjustment
+layers included) and Plan 5 Part 5A (keyframes; data v6). The previous deployment (`1379e01`, Plan 4 complete, data v5)
+is the rollback candidate; saves from v6 are one-way (an older tab shows "saved by a newer version" and leaves the data
+untouched). The manual QA checklists of Plans 4 and 5A are still unrun on a real GPU/Mac/Safari/QuickTime. The rest of Plan 5 is outlined in
 [docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md](docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md):
 
 - **5B presets and motion**: entrance/emphasis/exit animation presets, springs, loops, spatial Bezier paths with
