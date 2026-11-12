@@ -53,7 +53,7 @@ test('10 s, 8 clips with every property and two effects keyed: the 1080p export 
   expect(Math.abs(Number(info.format.duration) - LEN)).toBeLessThanOrEqual(1 / 30 + 1e-3);
 
   // The 1080p render is exact run to run (two fresh compositors) and the file carries it (codec error only).
-  const frames = [1, 75, 150, 299];
+  const frames = [1, 22, 45, 75, 110, 150, 190, 225, 262, 299]; // ten frames incl. mid-ease ones (Task 11 review)
   const render = async () => (await page.evaluate(({ p, t }) => window.cf.renderRgb(p, t), { p, t: frames.map((f) => f / 30) })).frames;
   const [r1, r2] = [await render(), await render()];
   expect(r2).toEqual(r1);
