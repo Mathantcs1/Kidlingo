@@ -3,7 +3,7 @@
 ## Counts
 | | Before | After |
 |---|---|---|
-| `npm test` | 1346 (99 files incl. 1 new baseline file count 97+) | 1364 (99 files; +7 `target-groups`, +11 `effect-keyframe-commands`; `transform-readers` allowlist updated) |
+| `npm test` | 1346 (97 files) | 1364 (99 files; +7 `target-groups`, +11 `effect-keyframe-commands`; `transform-readers` allowlist updated) |
 | typecheck, build | green | green; `grep -rl __clipforge dist` empty |
 | new e2e | n/a | `keyframes-effects-ui` 9/9 |
 
@@ -44,8 +44,7 @@ Commit: `feat(ui): keyframes for effect parameters` (+ this report).
 - T7-3 - Held arrow keys on a slider: same as Plan 4/Plan 3 (`change` fires per key press in Chromium), i.e. each press is one commit
   = one step; on an animated param a press at a playhead that already has a key replaces that key (still one key, one step per press).
   No new coalescing was added (it would change the static Plan 4 behaviour; the lead's "one step per release" is met per press-release).
-- T7-4 - Effect keyframe controls follow the slider's disabled state (locked track, project not ready, or effect switched off); prev/next/strip stay
-  enabled except... they are enabled whenever the param is animated (same rule as T6-3), but a switched-off effect disables only edits.
+- T7-4 - Effect keyframe edits (stopwatch, diamond) follow the slider's disabled state (locked track, project not ready, or the effect switched off); previous/next/strip stay available whenever the param is animated (same rule as T6-3).
 
 ## Tests and mutation checks
 - `tests/target-groups.test.ts` (7), `tests/effect-keyframe-commands.test.ts` (11: static/animated/off-clip/mirror param commands, chroma
