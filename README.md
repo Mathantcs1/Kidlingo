@@ -43,7 +43,7 @@ It is a static site built with React, TypeScript and Vite.
     export use the same chain, so what you hear is what is exported.
   - **Auto-ducking**: the **D** button in an audio track header makes that track (say, music) dip under the clips of
     another audio track (say, a voice) by an amount you set, with attack and release. One undo step per change.
-- **Picture effects** (the Inspector's Effects section for one selected video or image clip; Plan 4, effect stacks run in
+- **Picture effects** (the Inspector's Effects section for one selected video, image or adjustment clip; Plan 4, effect stacks run in
   list order, up to 8 per clip, each add/edit/toggle/reorder/remove is one undo step, and the preview and the export use the same shaders):
   - **Colour** (brightness, contrast, saturation, exposure, temperature, tint, hue, shadows, highlights), **LUT**,
     looks (**Black & white**, **Sepia**, **Split tone**, **Vignette**, **Film grain**), **Blur**, **Sharpen**, **Glow**,
@@ -60,7 +60,7 @@ It is a static site built with React, TypeScript and Vite.
   - **Overlays** (Add overlay menu): lower third, subscribe button, progress bar and stickers (heart, star, arrow, like,
     bell, fire, check, sparkle). They are clips on a video layer (text, subtext, colour, accent and sticker in the
     Inspector; position, scale, rotation and opacity like any clip) and are drawn with the system font stack.
-- **Numeric position/scale/rotation/opacity fields** in the inspector for a video or image clip: X and Y in
+- **Numeric position/scale/rotation/opacity fields** in the inspector for a video, image or overlay clip (adjustment clips get opacity only): X and Y in
   pixels from the frame centre (0 = centred), scale and opacity in percent, rotation in degrees clockwise. Type a
   value and press Enter (or leave the field) to apply it as one undo step; Up/Down step the value (Shift ×10) and
   Escape reverts what you typed. **Reset** puts the clip back where its Fit/Fill/Blur mode places it. The fields

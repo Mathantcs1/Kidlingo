@@ -217,7 +217,7 @@ Plan 4 (visual effects) known limits and deferred items (full text in the Plan 4
 - Film grain is weaker in exports after the first frames (12 Mbit/s H.264 cannot hold per-pixel noise; Ruling T11-1); the bitrate decision waits for the manual QA.
 - Blend modes and adjustment layers need the blend shader; if it fails, they are skipped with a toast and an export notice.
 - Overlay text uses the system font stack (looks differ per machine); effects are refused on overlay clips; there are no keyframes.
-- The heavy-stack time guard is deferred (Ruling T11-3): 8 x blur 100 at 1080p took ~17 s/frame on SwiftShader; a watchdog reset ends an export as "WebGL context lost". Preview and export pools coexist during an export (about 1.3 GB worst case at 4K); the effect pool has a 640 MiB byte budget, the composite buffer 128 MiB per compositor.
+- The heavy-stack time guard is deferred (Ruling T11-3): 8 x blur 100 at 1080p took ~17 s/frame on SwiftShader; a watchdog reset ends an export as "WebGL context lost". Preview and export pools coexist during an export (about 1.6 GB worst case at 4K: 2 x (640 + 128) MiB plus overlay textures); the effect pool has a 640 MiB byte budget, the composite buffer 128 MiB per compositor.
 - ALL Plan 4 measurements (14x perf threshold, 3/255 GPU-vs-CPU drift guards, memory) are SwiftShader-only; recheck on a real GPU. RGBA8 working targets (8-bit quantisation per pass).
 - A known e2e flake: `audio-denoise.spec.ts:57` once failed with "Execution context was destroyed" in the full run and passes alone.
 

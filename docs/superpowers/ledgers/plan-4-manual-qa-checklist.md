@@ -62,7 +62,7 @@ background clip or still for the hair test, and QuickTime Player.
 - [ ] Merge all into one clip with effects, overlays and an adjustment layer: the merged clip equals the preview.
 
 ## 11. Memory during export
-- [ ] During a 4K export of a heavily effected clip, watch the Chrome tab and GPU process memory in Activity Monitor or `chrome://gpu` / Task Manager: the preview and export compositors both hold effect pools (about 1.3 GB worst case at 4K per ledger notes). Note the peak, whether anything is lost and whether dropping the preview pool during export is needed.
+- [ ] During a 4K export of a heavily effected clip, watch the Chrome tab and GPU process memory in Activity Monitor or `chrome://gpu` / Task Manager: the preview and export compositors both hold effect pools (about 1.6 GB worst case at 4K: 2 x (640 + 128) MiB plus overlay textures). Note the peak, whether anything is lost and whether dropping the preview pool during export is needed.
 
 ## 12. Not covered
 - [ ] Safari: not verified. If you try it, record what happens but do not treat it as supported.
