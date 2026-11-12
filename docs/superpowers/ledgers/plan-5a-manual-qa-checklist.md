@@ -16,8 +16,8 @@ This file merges the former `plan-5-manual-qa-checklist.md` (Tasks 8-10 items, n
 It is the source for Part 5A; later parts (5B/5E/5D/5C) get their own sections.
 
 ## 1. Animation smoothness and correctness on real footage
-- [ ] Ken Burns on a still: scale 100% -> 130% and a slow pan with easeInOut over 5 s. Play it at 30 fps and 60 fps projects (Format menu): no visible stepping, judder or shimmer; the motion eases in and out.
-- [ ] Animate a video clip's position, scale, rotation and opacity together (fade-in 0 -> 100% over 1 s, a slide, a spin) on real 1080p footage at 30 and at 60 fps: playback keeps up, the picture is smooth and does not stutter when keys start or end.
+- [ ] Ken Burns on a still: scale 100% -> 130% and a slow pan with easeInOut over 5 s. Play it in a 30 fps project and in a 60 fps one (the Format menu has no frame-rate setting: a project takes its fps from the first video clip dropped on an empty timeline, so start a new project with a 60 fps clip): no visible stepping, judder or shimmer; the motion eases in and out.
+- [ ] Animate a video clip's position, scale, rotation and opacity together (fade-in 0 -> 100% over 1 s, a slide, a spin) on real 1080p footage in a 30 fps project and in a 60 fps one (start a new project with a 60 fps clip): playback keeps up, the picture is smooth and does not stutter when keys start or end.
 - [ ] Animate a Colour effect (saturation, brightness) and a Blur radius across a clip: no flicker, no banding, no black frames. A keyed blur radius changes the pass count per frame: check it stays smooth.
 - [ ] Every ease preset (Linear, Hold, Ease in, Ease out, Ease in-out, Back, Elastic, Bounce, Custom) on a scale and an opacity key: the motion looks like its name; Elastic and Bounce overshoot and settle; scale never shows a flash or a glitch at 0%.
 - [ ] Scrub the playhead back and forth through an animated clip: the picture follows with no lag or stale frame; park the playhead between two frames' times and compare with the exported frame.
@@ -26,8 +26,8 @@ It is the source for Part 5A; later parts (5B/5E/5D/5C) get their own sections.
 
 ## 2. Export against the preview
 - [ ] Export 1080p of an animated project (several animated clips, an animated effect, an overlay): open the MP4 in **QuickTime Player** and in Chrome. The motion, easing and colour changes match the preview at the start, middle and end of each move; the length is right; audio is in sync.
-- [ ] Split and trim animated clips (including decoded video) at a whole frame and at a mid-frame time, then export: no jump in the animation at the cut (a cut that is not a whole number of frames from the clip start may shift the grid by under one frame, Ruling P5-5).
-- [ ] Export a 60 fps project with keys: the exported motion is as smooth as the preview. 4K export of one animated clip completes.
+- [ ] Split and trim animated clips (including decoded video) at a whole frame and at a mid-frame time; on the mid-frame cut, `[` / `]` and the inspector Next/Previous reach every key, typing at a key replaces it and the key diamond removes it (Ruling P5-6). Then export: no jump in the animation at the cut (a cut that is not a whole number of frames from the clip start may shift the grid by under one frame, Ruling P5-5).
+- [ ] Export a 60 fps project with keys (start a new project with a 60 fps clip): the exported motion is as smooth as the preview. 4K export of one animated clip completes.
 - [ ] Merge all of an animated project: the merged clip shows the animation, and Undo restores every key.
 
 ## 3. Timeline diamonds and keyboard (Task 8)
@@ -37,6 +37,7 @@ It is the source for Part 5A; later parts (5B/5E/5D/5C) get their own sections.
 - [ ] Delete-key behaviour (T8-3): with key diamonds selected Delete/Backspace AND Shift+Delete/Backspace remove the keys (one undo step) and never delete or ripple-delete a clip; with no key selected Delete removes the selected clips as before; the toolbar Delete buttons still delete clips. After undo or a selection change, no stale key selection remains.
 - [ ] Drag a diamond: the picture follows live, one undo step on release, Escape cancels. Multi-select with Shift-click and drag/delete several keys at once: one step each.
 - [ ] With several clips selected each shows its diamond row but `[` / `]` do nothing unless keys are selected (T8-2): judge whether that surprises. `[` / `]` jump to the previous/next key. They are unreachable on AltGr layouts (e.g. some European keyboards): confirm and decide on an alternative binding.
+- [ ] Escape priority while recording: with key diamonds selected during a recording, the first Escape drops the key selection only (the take keeps recording); a second Escape discards the take.
 
 ## 4. Inspector keyframe rows (Tasks 6-7)
 - [ ] The four keyframe rows (position, scale, rotation, opacity) are always visible: judge whether they are too noisy or crowded, especially in a narrow inspector, and whether a collapsed "Animate" disclosure is wanted.
@@ -60,7 +61,7 @@ It is the source for Part 5A; later parts (5B/5E/5D/5C) get their own sections.
 
 ## 7. Overlay text and rendering detail
 - [ ] Overlay text shows aliasing at small scale (no mipmaps): check visually at 25-50% scale, and while the scale animates down. Judge whether mipmaps or a supersampled texture are wanted.
-- [ ] Animated rotation of a text overlay and of a photo: edges look clean (no shimmer) at 60 fps.
+- [ ] Animated rotation of a text overlay and of a photo: edges look clean (no shimmer) in a 60 fps project (start a new project with a 60 fps clip).
 
 ## 8. Data and persistence
 - [ ] Open a project saved before 5A (v5): it loads, plays and exports identically. Save one animated project, reload the tab: every key and ease is back.
