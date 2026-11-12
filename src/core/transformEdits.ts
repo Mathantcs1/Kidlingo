@@ -24,7 +24,10 @@ export function setClipTransform(p: Project, clipId: Id, patch: Partial<Transfor
     const v = patch[k];
     if (v !== undefined && (typeof v !== 'number' || !Number.isFinite(v))) throw new TimelineError('Invalid transform value');
   }
-  const keys = findClip(p, clipId).clip.keys;
+  // The lock is reported before the animated refusal (a locked clip cannot be edited either way).
+  const { track, clip } = findClip(p, clipId);
+  assertUnlocked(p, track.id);
+  const keys = clip.keys;
   if (KEYS.some((k) => patch[k] !== undefined && (keys?.[PROP_OF[k]]?.length ?? 0) > 0)) throw new TimelineError(ANIMATED_REFUSAL);
   const { width, height } = p.format;
   return writeTransform(p, clipId, (cur) => ({

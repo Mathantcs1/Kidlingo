@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import { resolvedTransform } from '../core/animate';
 import type { Project } from '../core/model';
 import { clipCentre, clipCorners, rotateHandlePoint } from '../render/overlayGeometry';
 import type { Handle, Point } from '../render/overlayGeometry';
@@ -41,7 +42,9 @@ export default function TransformOverlay(props: Props) {
   const selection = useEditor((s) => s.selection);
   const target = overlayTarget(props.project, selection, props.playhead);
   if (!target) return null;
-  const transform = props.live?.clipId === target.clip.id ? props.live.transform : target.clip.transform;
+  // Handles sit on the picture as drawn at the playhead (keys resolved there), or on the live drag.
+  const live = props.live?.clipId === target.clip.id ? props.live : null;
+  const transform = live ? live.transform : resolvedTransform(target.clip, props.playhead, props.project.format.fps);
   // Keyed by clip: selecting another clip (or this one going away) unmounts the quad and ends its drag.
   return <OverlayQuad key={target.clip.id} {...props} target={{ clipId: target.clip.id, size: target.size, transform }} />;
 }

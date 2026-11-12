@@ -2,7 +2,10 @@
 // transform for a pointer position (all geometry itself lives in render/overlayGeometry.ts, in format px).
 import type { Id, Transform } from '../core/model';
 import type { Size } from '../render/geometry';
-import { clipCentre, clipCorners, dragMove, dragRotate, dragScale, hitTest, snapToCanvas } from '../render/overlayGeometry';
+import { scaleBounds } from '../core/scale';
+import {
+  clipCentre, clipCorners, dragMove, dragRotate, dragScale, hitTest, normaliseDegrees, snapToCanvas,
+} from '../render/overlayGeometry';
 import type { Handle, Point } from '../render/overlayGeometry';
 import { cssToFormat, toleranceInFormatPx } from './overlayMath';
 import type { Box } from './overlayMath';
@@ -14,10 +17,15 @@ export const ROTATE_PX = 28;
 const SNAP_PX = 8;
 const ROTATE_SNAP_DEG = 15;
 
-/** A clip being edited live: drawn by the overlay and the preview at `transform` until the drag ends. */
+/**
+ * A clip being edited live: the overlay draws it at `transform`; the preview shows `patch` written at timeline time
+ * `t` (withLiveValue: exactly what the release commits) until the drag ends.
+ */
 export interface LiveTransform {
   clipId: Id;
   transform: Transform;
+  patch: Partial<Transform>;
+  t: number;
 }
 
 export interface DragTarget {
@@ -64,5 +72,33 @@ export function transformFor(g: DragInput, canvas: HTMLCanvasElement): Transform
     const snap = g.last.shift ? ROTATE_SNAP_DEG : undefined;
     return dragRotate(g.start, clipCentre(g.start, g.format), g.startPointer, p, snap);
   }
+  if (!(g.start.scale > 0)) return scaleFromZero(g.start, g.size, p, g.format);
   return dragScale(g.start, g.size, g.handle, g.startPointer, p, g.format);
+}
+
+/**
+ * A corner drag of a clip shown at scale 0 (a keyed scale at 0, or a static 0 written back by the stopwatch): a ratio
+ * of distances would stay 0, so the grabbed corner follows the pointer instead (scale = distance from the centre /
+ * the source's half-diagonal), within the edit bounds.
+ */
+export function scaleFromZero(start: Transform, size: Size, pointer: Point, format: Size): Transform {
+  const c = clipCentre(start, format);
+  const half = Math.hypot(size.width, size.height) / 2;
+  const raw = half > 0 ? Math.hypot(pointer.x - c.x, pointer.y - c.y) / half : 0;
+  const [lo, hi] = scaleBounds(0);
+  return { ...start, scale: Number.isFinite(raw) ? Math.min(hi, Math.max(lo, raw)) : lo };
+}
+
+/**
+ * The fields a drag changed, as the patch the release commits (setTransformAt) and the live preview shows. Unchanged
+ * fields are left out (an animated property the drag did not touch gets no key). The rotation is the start plus the
+ * drag's turn: dragRotate normalises to (−180, 180], which would turn a keyed 400° into 40° (Plan 5 ruling M-drag).
+ */
+export function dragPatch(start: Transform, current: Transform): Partial<Transform> {
+  const patch: Partial<Transform> = {};
+  if (current.x !== start.x) patch.x = current.x;
+  if (current.y !== start.y) patch.y = current.y;
+  if (current.scale !== start.scale) patch.scale = current.scale;
+  if (current.rotation !== start.rotation) patch.rotation = start.rotation + normaliseDegrees(current.rotation - start.rotation);
+  return patch;
 }

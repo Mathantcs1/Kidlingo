@@ -1,0 +1,96 @@
+/* Keyframe controls (Plan 5): inspector rows with a stopwatch, previous/key/next buttons and a mini key strip. */
+.kf-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.kf-row {
+  display: grid;
+  grid-template-columns: minmax(56px, auto) repeat(4, 24px) minmax(0, 1fr);
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.kf-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+.kf-btn[aria-pressed='true'] {
+  color: var(--warn);
+}
+
+.kf-toggle[aria-pressed='true'] {
+  background: var(--panel-2);
+  border-color: var(--border);
+}
+
+.kf-key {
+  font-size: 12px;
+}
+
+.kf-strip {
+  position: relative;
+  height: 18px;
+  margin-left: 4px;
+  min-width: 40px;
+}
+
+.kf-strip-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--border);
+  border-radius: 1px;
+}
+
+.kf-strip-playhead {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  width: 1px;
+  background: var(--playhead);
+  pointer-events: none;
+}
+
+.kf-strip-key {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  background: var(--muted);
+  border: 1px solid var(--bg);
+  border-radius: 1px;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.kf-strip-key[aria-current='true'] {
+  background: var(--warn);
+}
+
+.kf-strip-key:hover:not(:disabled) {
+  background: var(--accent);
+}

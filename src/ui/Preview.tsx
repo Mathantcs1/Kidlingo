@@ -11,7 +11,7 @@ import { buildDetailsText, describeGlFailure, probeRenderer } from './previewFai
 import { PreviewFailure } from './PreviewFailure';
 import type { GlFailureView } from './PreviewFailure';
 import TransformOverlay from './TransformOverlay';
-import { withClipTransform } from './transformEdits';
+import { withLiveValue } from './transformEdits';
 import { useElementSize } from './useElementSize';
 import type { LiveTransform } from './overlayHit';
 
@@ -48,7 +48,8 @@ export default function Preview({ editable }: { editable: boolean }) {
   const [generation, setGeneration] = useState(0);
 
   const [live, setLive] = useState<LiveTransform | null>(null);
-  const shown = useMemo(() => (live ? withClipTransform(project, live.clipId, live.transform) : project), [project, live]);
+  // The drag's patch written at its playhead exactly as the release commits it (a key when animated), unguarded.
+  const shown = useMemo(() => (live ? withLiveValue(project, live.clipId, live.patch, live.t) : project), [project, live]);
 
   const room = { width: Math.max(0, size.width - 2 * HANDLE_ROOM), height: Math.max(0, size.height - 2 * HANDLE_ROOM) };
   const box = fitBox(room, project.format);

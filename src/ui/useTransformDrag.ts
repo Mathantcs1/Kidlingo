@@ -1,14 +1,15 @@
 import { useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import { resolvedTransform } from '../core/animate';
 import type { Clip, Project, Transform } from '../core/model';
 import type { Handle } from '../render/overlayGeometry';
 import { useEditor } from '../state/store';
 import { pastThreshold } from './drag';
-import { canvasBoxOf, handleAt, transformFor } from './overlayHit';
+import { canvasBoxOf, dragPatch, handleAt, transformFor } from './overlayHit';
 import type { DragInput, DragTarget, LiveTransform } from './overlayHit';
 import { cssToFormat } from './overlayMath';
 import { guard } from './Toast';
-import { setClipTransform } from './transformEdits';
+import { setTransformAt } from './transformEdits';
 
 /** Class on <html> while a transform drag runs: no text selection, and Space does not toggle playback. */
 export const TRANSFORMING_CLASS = 'is-transforming';
@@ -16,8 +17,11 @@ export const TRANSFORMING_CLASS = 'is-transforming';
 interface Gesture extends DragInput {
   pointerId: number;
   clipId: string;
-  /** The store's transform object at the press: if anything else replaces it, the drag's start is stale. */
+  /** The store's transform and keys objects at the press: if anything else replaces them, the drag's start is stale. */
   storeTransform: Transform;
+  storeKeys: Clip['keys'];
+  /** The playhead at the press: the drag edits the clip as seen then, and commits there (a key when animated). */
+  at: number;
   /** Press position (viewport CSS px); the gesture stays a click until the pointer is past the drag threshold. */
   down: { x: number; y: number };
   active: boolean;
@@ -26,16 +30,17 @@ interface Gesture extends DragInput {
 
 const editor = () => useEditor.getState();
 const clipIn = (p: Project, id: string): Clip | undefined => p.tracks.flatMap((t) => t.clips).find((c) => c.id === id);
-const changed = (a: Transform, b: Transform): boolean => a.x !== b.x || a.y !== b.y || a.scale !== b.scale || a.rotation !== b.rotation;
 
 /**
  * Pointer dragging on the transform overlay. A press on a handle or the body starts a gesture with the clip's
- * transform and the pointer (format px); it stays a click until the pointer moves past the drag threshold (4 CSS px),
- * then moves update `onLive` (the overlay and the preview follow at once, the store is untouched) and release
- * commits ONE `setClipTransform` when the transform changed. Escape cancels. Only the pointer that started counts;
+ * transform AS SEEN AT THE PLAYHEAD (resolved keys) and the pointer (format px); it stays a click until the pointer
+ * moves past the drag threshold (4 CSS px), then moves update `onLive` (the overlay and the preview follow at once,
+ * the store is untouched) and release commits ONE `setTransformAt` of the changed fields at the press's playhead
+ * (keys for animated properties, static values otherwise). Escape cancels. Only the pointer that started counts;
  * pointercancel, lost capture, a mouse move with the button no longer down, and the window losing focus end it
- * without committing; so does any edit that removes the clip, replaces its transform or changes the format (a
- * hidden, locked or deselected clip unmounts the overlay, which ends it too). Unrelated edits leave it running.
+ * without committing; so does any edit that removes the clip, replaces its transform or keys, changes the format, or a
+ * playhead move (a hidden, locked or deselected clip unmounts the overlay, which ends it too). Unrelated edits leave
+ * it running.
  */
 export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>, onLive: (l: LiveTransform | null) => void) {
   const active = useRef<Gesture | null>(null);
@@ -63,19 +68,23 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
       // Capture can fail for a pointer that is already up; the window listeners still see the gesture.
     }
     if (editor().playing) editor().setPlaying(false);
+    const at = editor().playhead;
+    const start = resolvedTransform(clip, at, present.format.fps);
     const g: Gesture = {
       clipId: target.clipId,
       size: target.size,
       handle,
       format,
-      start: clip.transform,
+      start,
       storeTransform: clip.transform,
+      storeKeys: clip.keys,
+      at,
       startPointer: cssToFormat({ x: e.clientX, y: e.clientY }, canvasBoxOf(canvas), format),
       last: { x: e.clientX, y: e.clientY, alt: e.altKey, shift: e.shiftKey },
       pointerId,
       down: { x: e.clientX, y: e.clientY },
       active: false,
-      current: clip.transform,
+      current: start,
     };
     active.current = g;
     document.documentElement.classList.add(TRANSFORMING_CLASS);
@@ -84,7 +93,7 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
       const c = canvasRef.current;
       if (!c || active.current !== g || !g.active) return;
       g.current = transformFor(g, c);
-      onLiveRef.current({ clipId: g.clipId, transform: g.current });
+      onLiveRef.current({ clipId: g.clipId, transform: g.current, patch: dragPatch(g.start, g.current), t: g.at });
     };
     const mine = (ev: PointerEvent): boolean => ev.pointerId === pointerId;
     const onMove = (ev: PointerEvent): void => {
@@ -102,11 +111,8 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
     const onUp = (ev: PointerEvent): void => {
       if (!mine(ev)) return;
       unsubscribe();
-      const final = g.current;
-      if (g.active && changed(final, g.start)) {
-        const patch = { x: final.x, y: final.y, scale: final.scale, rotation: final.rotation };
-        guard(() => editor().apply((p) => setClipTransform(p, g.clipId, patch)));
-      }
+      const patch = dragPatch(g.start, g.current);
+      if (g.active && Object.keys(patch).length > 0) guard(() => editor().apply((p) => setTransformAt(p, g.clipId, patch, g.at)));
       end();
     };
     const onCancel = (ev: PointerEvent): void => {
@@ -126,10 +132,12 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
       }
     };
     const unsubscribe = useEditor.subscribe((s, prev) => {
+      if (s.playhead !== g.at) return end();
       const p = s.history.present;
       if (p === prev.history.present) return;
       const now = clipIn(p, g.clipId);
-      if (!now || now.transform !== g.storeTransform || p.format.width !== g.format.width || p.format.height !== g.format.height) end();
+      const stale = !now || now.transform !== g.storeTransform || now.keys !== g.storeKeys;
+      if (stale || p.format.width !== g.format.width || p.format.height !== g.format.height || p.format.fps !== prev.history.present.format.fps) end();
     });
     const listeners: [string, EventListener, boolean][] = [
       ['pointermove', onMove as EventListener, false],
