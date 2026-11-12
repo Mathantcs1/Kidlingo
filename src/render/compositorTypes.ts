@@ -26,6 +26,8 @@ export interface CompositorStats {
   maxImageSide: number;
   /** Overlay clip textures alive now (only overlays drawn in the last frame keep one) and their RGBA8 bytes. */
   overlayTextures: { count: number; bytes: number };
+  /** Overlay texture uploads since creation (a still or scale-animated overlay uploads once while shown). */
+  overlayUploads: number;
   /** Effect passes drawn since creation (0 while no clip has an enabled, available effect). */
   effectPasses: number;
   /** Effect targets allocated now and their RGBA8 bytes (bounded: see TargetPool). */

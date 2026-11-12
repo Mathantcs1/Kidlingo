@@ -62,6 +62,7 @@ export class OverlayTextures {
   private readonly entries = new Map<Id, Entry>();
   private readonly cap: number;
   private warned = false;
+  private uploadCount = 0;
 
   constructor(private readonly gl: WebGL2RenderingContext) {
     this.cap = Math.min(MAX_OVERLAY_SIDE, gl.getParameter(gl.MAX_TEXTURE_SIZE) as number);
@@ -77,15 +78,22 @@ export class OverlayTextures {
     return n;
   }
 
+  /** Texture uploads since creation (instrumentation: an animated scale must not re-upload every frame). */
+  get uploads(): number {
+    return this.uploadCount;
+  }
+
   /**
    * The overlay clip's picture at timeline time `t` (clip time snapped to the project frame, like effects), drawn at
-   * `pixelScale` output px per format px; null when it has no spec or 2D canvas drawing is unavailable.
+   * `pixelScale` output px per format px; null when it has no spec or 2D canvas drawing is unavailable. The texture
+   * is sized for `textureScale` (the compositor passes the clip's maximum scale over its keys, Plan 5 Task 5), so it
+   * is independent of the scale at `t`: an animated scale reuses one texture, sharp at its largest size.
    */
-  get(clip: Clip, format: Size, t: number, fps: number, pixelScale: number): OverlayDraw | null {
+  get(clip: Clip, format: Size, t: number, fps: number, pixelScale: number, textureScale = clip.transform.scale): OverlayDraw | null {
     const spec = clip.overlay;
     if (!spec) return null;
     const size = overlayBaseSize(spec.type, format);
-    const tex = overlayTextureSize(size, clip.transform.scale, pixelScale, this.cap);
+    const tex = overlayTextureSize(size, textureScale, pixelScale, this.cap);
     const duration = clipDuration(clip);
     const progress = duration > 0 ? snapToFrame(t - clip.start, fps) / duration : 0;
     const anim = animationAt(spec.type, progress, duration);
@@ -101,6 +109,7 @@ export class OverlayTextures {
       if (entry.scratch.height !== tex.height) entry.scratch.height = tex.height;
       drawOverlay(entry.ctx, spec, tex, progress, duration);
       uploadTexture(this.gl, entry.slot, entry.scratch, tex.width, tex.height);
+      this.uploadCount++;
       entry.key = key;
       this.entries.set(clip.id, entry);
     }

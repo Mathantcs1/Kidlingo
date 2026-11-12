@@ -109,7 +109,7 @@ class GlCompositor implements Compositor {
       videoTextures,
       imageTextures: this.images.count,
       maxImageSide: this.images.maxSide,
-      overlayTextures: { count: this.overlays.count, bytes: this.overlays.bytes },
+      overlayTextures: { count: this.overlays.count, bytes: this.overlays.bytes }, overlayUploads: this.overlays.uploads,
       effectPasses: this.effects.passes,
       effectMemory: this.effects.memory(),
       blendPasses: this.composite.passes,

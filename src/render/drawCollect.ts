@@ -1,3 +1,5 @@
+import { resolveClip } from '../core/animate';
+import { maxScale } from '../core/keyframes';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { createTexture, frameOrientation, rotatedSize, uploadTexture, uvMatrix } from './gl';
@@ -7,6 +9,7 @@ import type { OverlayTextures } from './overlays/textures';
 import { visualClipsAt } from './visible';
 
 export interface Draw {
+  /** The clip as seen at the frame's time (resolveClip): evaluated transform and effect params, no keys. */
   clip: Clip;
   slot: TextureSlot;
   /** Displayed (rotated) size in source pixels. */
@@ -19,6 +22,7 @@ export interface Draw {
 
 /** An adjustment clip's place in the draw order: no picture of its own (see render/adjustment.ts). */
 export interface AdjustmentDraw {
+  /** Resolved like Draw.clip. */
   clip: Clip;
   adjustment: true;
 }
@@ -67,23 +71,27 @@ function pruneVideoSlots(ctx: DrawContext, sources: Map<Id, VideoSource>): void 
 
 /**
  * Phase 1 (async): fetch every frame/bitmap and upload it into its own texture. Nothing is drawn to the
- * canvas, so the browser can never present a half-composited frame while we wait on decoders.
+ * canvas, so the browser can never present a half-composited frame while we wait on decoders. Each visible clip is
+ * resolved ONCE here (Plan 5 D7): every draw carries the clip as seen at `t` (static clips: the stored object itself),
+ * so nothing after this reads keys. Hidden tracks are filtered out before resolution.
  */
 export async function collectDraws(ctx: DrawContext, p: Project, t: number, sources: Map<Id, VideoSource>): Promise<FrameDraw[]> {
   const draws: FrameDraw[] = [];
   const uses = new Map<VideoSource, number>();
   const shownImages = new Set<Id>();
   const shownOverlays = new Set<Id>();
-  for (const clip of visualClipsAt(p, t)) {
+  for (const raw of visualClipsAt(p, t)) {
+    const clip = resolveClip(raw, t, p.format.fps);
     if (clip.kind === 'adjustment') {
       // No media and nothing to upload: the compositor applies it to the composite so far.
       draws.push({ clip, adjustment: true });
       continue;
     }
     if (clip.kind === 'overlay') {
-      // No media: drawn with Canvas2D (synchronous), never looked up in p.media or decoded.
+      // No media: drawn with Canvas2D (synchronous), never looked up in p.media or decoded. The texture is sized for
+      // the largest scale the clip ever reaches, so an animated scale neither re-draws it per frame nor blurs it.
       ctx.assertUsable();
-      const o = ctx.overlays.get(clip, p.format, t, p.format.fps, ctx.pixelScale(p.format));
+      const o = ctx.overlays.get(clip, p.format, t, p.format.fps, ctx.pixelScale(p.format), maxScale(raw));
       if (o) draws.push({ clip, ...o, uv: UPRIGHT });
       shownOverlays.add(clip.id);
       continue;

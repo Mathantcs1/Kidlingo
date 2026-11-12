@@ -20,7 +20,7 @@ export const blendHarness = {
     const out: {
       width: number; height: number; data: number[]; glError: number;
       blendPasses: number; compositeMemory: { targets: number; bytes: number }; effectPasses: number;
-      overlayTextures: { count: number; bytes: number };
+      overlayTextures: { count: number; bytes: number }; overlayUploads: number;
     }[] = [];
     let error: string | null = null;
     try {
@@ -39,7 +39,7 @@ export const blendHarness = {
         out.push({
           ...readPixels(canvas), glError: gl?.getError() ?? -1,
           blendPasses: s.blendPasses, compositeMemory: s.compositeMemory, effectPasses: s.effectPasses,
-          overlayTextures: s.overlayTextures,
+          overlayTextures: s.overlayTextures, overlayUploads: s.overlayUploads,
         });
       }
       return { frames: out, error };
