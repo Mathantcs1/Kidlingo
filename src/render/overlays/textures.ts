@@ -86,10 +86,10 @@ export class OverlayTextures {
   /**
    * The overlay clip's picture at timeline time `t` (clip time snapped to the project frame, like effects), drawn at
    * `pixelScale` output px per format px; null when it has no spec or 2D canvas drawing is unavailable. The texture
-   * is sized for `textureScale` (the compositor passes the clip's maximum scale over its keys, Plan 5 Task 5), so it
+   * is sized for `textureScale` (REQUIRED: the compositor passes the clip's maximum scale over its keys, Plan 5 Task 5), so it
    * is independent of the scale at `t`: an animated scale reuses one texture, sharp at its largest size.
    */
-  get(clip: Clip, format: Size, t: number, fps: number, pixelScale: number, textureScale = clip.transform.scale): OverlayDraw | null {
+  get(clip: Clip, format: Size, t: number, fps: number, pixelScale: number, textureScale: number): OverlayDraw | null {
     const spec = clip.overlay;
     if (!spec) return null;
     const size = overlayBaseSize(spec.type, format);

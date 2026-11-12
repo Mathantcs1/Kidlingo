@@ -1,7 +1,7 @@
 // Keyframed effect params, adjustment layers and overlays through the real compositor (Plan 5 Task 5): an animated
 // param renders like the static render of its evaluated value; overlay textures stay put while their scale animates;
 // static projects are byte-identical to before; a playhead between frames shows the frame's start.
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { valueAt } from '../../src/core/keyframes';
 import { defaultParams } from '../../src/core/videoEffects';
 import type { Clip, Keyframe, VideoEffect, VideoEffectType } from '../../src/core/model';
@@ -87,7 +87,21 @@ function constantKeys(c: Clip): Clip {
 }
 
 // Recorded with the Plan 4 compositor (before Task 5) on this machine's SwiftShader: a static project must not change.
+// Rasteriser output is machine-dependent, so the literals are only asserted when the GL renderer/version matches the
+// one they were recorded on; elsewhere that assertion is skipped (the constant-keys byte equality below and the Plan 4
+// pixel specs stay the machine-independent oracle).
 const STATIC_HASHES = ['4f10cb1ca94d7347', 'f9c4a2b2dc2466c4'];
+const STATIC_HASHES_GL = 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver) | WebGL 2.0 (OpenGL ES 3.0 Chromium)';
+
+async function glIdentity(page: Page): Promise<string> {
+  return page.evaluate(() => {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    if (!gl) return 'no webgl2';
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+    return `${renderer} | ${String(gl.getParameter(gl.VERSION))}`;
+  });
+}
 
 test('a static project renders byte-identically to before (hash), and constant single keys change nothing', async ({ page }) => {
   await openHarness(page);
@@ -97,7 +111,10 @@ test('a static project renders byte-identically to before (hash), and constant s
   const got = await frames(page, [still, still, keyed, keyed], [0.2, 1.2, 0.2, 1.2]);
   console.log(`static hashes ${JSON.stringify(got.slice(0, 2).map(hash))}`);
   for (const f of got) expect(f.glError).toBe(0);
-  expect(got.slice(0, 2).map(hash)).toEqual(STATIC_HASHES);
+  const gl = await glIdentity(page);
+  console.log(`static hashes GL: ${gl}`);
+  if (gl === STATIC_HASHES_GL) expect(got.slice(0, 2).map(hash)).toEqual(STATIC_HASHES);
+  else console.warn(`static hash literal check skipped: recorded on "${STATIC_HASHES_GL}", running on "${gl}"`);
   expect(samePixels(got[0], got[2])).toBe(true);
   expect(samePixels(got[1], got[3])).toBe(true);
 });
