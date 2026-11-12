@@ -14,6 +14,7 @@ import { newTrack } from '../../src/core/model';
 import type { MediaRef, Project, VideoEffect } from '../../src/core/model';
 import { VIDEO_EFFECTS, defaultParams } from '../../src/core/videoEffects';
 import { chromaKeyRef, keyAlpha } from '../../src/render/effects/keyMath';
+import { CURRENT_VERSION } from '../helpers/project';
 
 const dir = ensureFixtures();
 let n = 0;
@@ -27,7 +28,7 @@ function keyedProject(video: MediaRef, blue: MediaRef | null, effects: VideoEffe
   const fg = { ...newTrack('video'), id: 'fg', clips: [clipOf(video, { out: 1, effects, transform })] };
   const bg = { ...newTrack('video'), id: 'bg', clips: blue ? [clipOf(blue, { out: 1, transform })] : [] };
   const media = { [video.id]: video, ...(blue ? { [blue.id]: blue } : {}) };
-  return { version: 5, format: { ...size, fps: 30 }, tracks: [bg, fg, { ...newTrack('audio'), id: 'audio' }], media };
+  return { version: CURRENT_VERSION, format: { ...size, fps: 30 }, tracks: [bg, fg, { ...newTrack('audio'), id: 'audio' }], media };
 }
 
 async function greenScreen(page: Page): Promise<{ video: MediaRef; blue: MediaRef }> {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultClipAudio, newTrack } from '../src/core/model';
 import type { Clip, MediaRef, Project, Track } from '../src/core/model';
 import { cssPerFormat, cssToFormat, formatToCss, overlayTarget, sourceSizeFor, toleranceInFormatPx } from '../src/ui/overlayMath';
+import { CURRENT_VERSION } from './helpers/project';
 
 const FHD = { width: 1920, height: 1080 };
 
@@ -89,7 +90,7 @@ describe('sourceSizeFor', () => {
 describe('overlayTarget', () => {
   const v = (id: string, clips: Clip[], over: Partial<Track> = {}): Track => ({ ...newTrack('video'), id, clips, ...over });
   const build = (over: Partial<Track> = {}, extraMedia: Partial<MediaRef> = {}): Project => ({
-    version: 5,
+    version: CURRENT_VERSION,
     format: { ...FHD, fps: 30 },
     tracks: [
       v('bottom', [clip({ id: 'bg', kind: 'image', mediaId: 'img', out: 5 })]),

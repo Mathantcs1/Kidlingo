@@ -5,6 +5,7 @@ import { newTrack } from '../../src/core/model';
 import type { MediaRef, Project, VideoEffect } from '../../src/core/model';
 import { VIDEO_EFFECTS, defaultParams } from '../../src/core/videoEffects';
 import { colourPixel } from '../../src/render/effects/colourMath';
+import { CURRENT_VERSION } from '../helpers/project';
 
 export type Rgb = [number, number, number];
 export type Pixels = { width: number; data: number[] };
@@ -69,8 +70,8 @@ export function overBackdrops(m: MediaRef, white: MediaRef, effects: VideoEffect
   const audio = { ...newTrack('audio'), id: 'audio' };
   const media = { [m.id]: m, [white.id]: white };
   return [
-    { version: 5, format, tracks: [fg, audio], media },
-    { version: 5, format, tracks: [bg, fg, audio], media },
+    { version: CURRENT_VERSION, format, tracks: [fg, audio], media },
+    { version: CURRENT_VERSION, format, tracks: [bg, fg, audio], media },
   ];
 }
 

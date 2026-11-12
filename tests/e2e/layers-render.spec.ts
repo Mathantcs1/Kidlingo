@@ -9,6 +9,7 @@ import { importFiles, open } from './helpers';
 import { clipOf, expectNear, importPaths, openHarness, px, render } from './harness-helpers';
 import { newTrack } from '../../src/core/model';
 import type { Clip, MediaRef, Project, Track } from '../../src/core/model';
+import { CURRENT_VERSION } from '../helpers/project';
 
 test.setTimeout(120_000);
 
@@ -28,7 +29,7 @@ function track(kind: Track['kind'], id: string, clips: Clip[], over: Partial<Tra
 }
 
 function projectOf(tracks: Track[], media: MediaRef[], format = FMT): Project {
-  return { version: 5, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: CURRENT_VERSION, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 /** Red 48×48 on the bottom video track, green 32×32 on the top one, both centred in a 64×64 frame. */

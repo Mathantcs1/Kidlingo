@@ -8,6 +8,9 @@ import { CONTEXT_LOST, PASS_SHADERS, assertNotLost, disposePrograms, markUnavail
 import type { PassProgram } from './programs';
 import type { EffectContext, PassInputs, PassOptions, PassTexture, Uniforms } from './types';
 
+/** Moved to core (Plan 5 Task 1): re-exported so render code keeps importing them from here. */
+export { frameIndex, snapToFrame } from '../../core/fps';
+
 const IDENTITY: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
 /** The effect working size: the clip's displayed source size, capped at 2x the format's long side (D2). */
@@ -23,20 +26,6 @@ export function effectWorkingSize(display: Size, texels: Size, format: Size): Si
   return workingSize(cappedSize(display, Math.max(texels.width, texels.height)), format);
 }
 
-/**
- * The frame index of clip-relative time `t`: floor(t·fps), with a 1e-6 frame tolerance so t = N / fps (as computed
- * by the exporter or the playhead) is frame N despite floating-point error. 0 for t < 0, non-finite t or fps ≤ 0.
- */
-export function frameIndex(t: number, fps: number): number {
-  if (!Number.isFinite(t) || !Number.isFinite(fps) || fps <= 0 || t <= 0) return 0;
-  return Math.floor(t * fps + 1e-6);
-}
-
-/** Clip-relative time snapped to its frame's start: frameIndex(t, fps) / fps (D6: preview frame N = export frame N). */
-export function snapToFrame(t: number, fps: number): number {
-  const n = frameIndex(t, fps);
-  return n === 0 ? 0 : n / fps;
-}
 
 /** The rows of a uv matrix (column-major mat3) as the u_inputX / u_inputY uniforms of PassOptions.input. */
 function inputRows(m: Mat3): Uniforms {

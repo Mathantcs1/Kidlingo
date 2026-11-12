@@ -11,6 +11,7 @@ import type { BlendMode, Clip, MediaRef, Project, VideoEffect, VideoEffectType }
 import { defaultParams } from '../../src/core/videoEffects';
 import { adjustPixel } from '../../src/render/blend';
 import type { Rgba } from '../../src/render/blend';
+import { CURRENT_VERSION } from '../helpers/project';
 
 const FMT = { width: 64, height: 64, fps: 30 };
 let n = 0;
@@ -24,7 +25,7 @@ const adjustment = (effects: VideoEffect[], blend: BlendMode = 'normal', opacity
 /** `layer` (with `over`) alone on the bottom track (nothing below it: black canvas), `adj` on the track above. */
 function scene(m: MediaRef, over: Partial<Omit<Clip, 'transform'>> & { transform?: { opacity: number } }, adj: Clip | null): Project {
   return {
-    version: 5, format: FMT,
+    version: CURRENT_VERSION, format: FMT,
     tracks: [
       { ...newTrack('video'), id: 'v', clips: [clipOf(m, { id: 'l', out: 1, ...over })] },
       { ...newTrack('video'), id: 'a', clips: adj ? [adj] : [] },

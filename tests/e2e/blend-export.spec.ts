@@ -8,6 +8,7 @@ import { clipOf, openHarness } from './harness-helpers';
 import { newTrack } from '../../src/core/model';
 import type { BlendMode, MediaRef, Project, VideoEffect, VideoEffectType } from '../../src/core/model';
 import { defaultParams } from '../../src/core/videoEffects';
+import { CURRENT_VERSION } from '../helpers/project';
 
 test.setTimeout(180_000);
 
@@ -19,7 +20,7 @@ const fx = (type: VideoEffectType, params: Record<string, number> = {}): VideoEf
 function blendProject(back: MediaRef, a: MediaRef, b: MediaRef, mid: BlendMode, top: BlendMode): Project {
   const track = (id: string, clip: ReturnType<typeof clipOf>) => ({ ...newTrack('video'), id, clips: [clip] });
   return {
-    version: 5,
+    version: CURRENT_VERSION,
     format: { width: 320, height: 180, fps: 25 },
     tracks: [
       track('back', clipOf(back, { out: 0.4 })),

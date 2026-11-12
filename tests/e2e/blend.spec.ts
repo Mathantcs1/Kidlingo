@@ -11,6 +11,7 @@ import { BLEND_MODES, defaultParams } from '../../src/core/videoEffects';
 import { blendPixel } from '../../src/render/blend';
 import type { Rgba } from '../../src/render/blend';
 import { COMPOSITE_IDLE_FRAMES } from '../../src/render/compositeBuffer';
+import { CURRENT_VERSION } from '../helpers/project';
 
 type Rgb = [number, number, number];
 const FMT = { width: 64, height: 64, fps: 30 };
@@ -20,7 +21,7 @@ function layered(bottom: MediaRef, top: MediaRef, over: Partial<Clip> = {}, hidd
   const bg = { ...newTrack('video'), id: 'bg', clips: [clipOf(bottom, { id: 'bg-clip', out: 1 })] };
   const fg = { ...newTrack('video'), id: 'fg', hidden, clips: [clipOf(top, { id: 'fg-clip', out: 1, ...over })] };
   return {
-    version: 5, format: FMT, tracks: [bg, fg, { ...newTrack('audio'), id: 'audio' }],
+    version: CURRENT_VERSION, format: FMT, tracks: [bg, fg, { ...newTrack('audio'), id: 'audio' }],
     media: { [bottom.id]: bottom, [top.id]: top },
   };
 }
@@ -168,12 +169,12 @@ test('a lone Multiply clip, and one with uncovered area, look like Normal (trans
   await openHarness(page);
   const [bottom, small] = await Promise.all([solid(page, 64, 64, [51, 153, 230]), solid(page, 32, 32, [153, 64, 200])]);
   const lone = (blend: BlendMode): Project => ({
-    version: 5, format: FMT, media: { [bottom.id]: bottom },
+    version: CURRENT_VERSION, format: FMT, media: { [bottom.id]: bottom },
     tracks: [{ ...newTrack('video'), id: 'v', clips: [clipOf(bottom, { id: 'c', out: 1, blend })] }, { ...newTrack('audio'), id: 'audio' }],
   });
   // A 32x32 Multiply clip alone on a 64x64 format: its surroundings are uncovered.
   const partial = (blend: BlendMode): Project => ({
-    version: 5, format: FMT, media: { [small.id]: small },
+    version: CURRENT_VERSION, format: FMT, media: { [small.id]: small },
     tracks: [{ ...newTrack('video'), id: 'v', clips: [clipOf(small, { id: 'c', out: 1, blend })] }, { ...newTrack('audio'), id: 'audio' }],
   });
   const r = await renderBlend(page, [lone('normal'), lone('multiply'), partial('normal'), partial('multiply')], [0.5, 0.5, 0.5, 0.5]);

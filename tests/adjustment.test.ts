@@ -22,6 +22,7 @@ import { addAdjustmentCmd } from '../src/ui/overlayCommands';
 import { sourceSizeFor } from '../src/ui/overlayMath';
 import { useToasts } from '../src/ui/Toast';
 import { all, base, video } from './overlay-fixtures';
+import { CURRENT_VERSION } from './helpers/project';
 
 const adjustments = (p: Project): Clip[] => all(p).filter((c) => c.kind === 'adjustment');
 const withAdj = (): Project => addAdjustmentClip(base(), 'v', 6);
@@ -151,7 +152,7 @@ describe('adjustment clips are not media', () => {
 
 describe('migration (data stays v5)', () => {
   const saved = (clip: Record<string, unknown>, kind = 'video'): unknown => ({
-    version: 5, format: { width: 1920, height: 1080, fps: 30 }, media: {},
+    version: CURRENT_VERSION, format: { width: 1920, height: 1080, fps: 30 }, media: {},
     tracks: [{ id: 't', kind, name: '', hidden: false, muted: false, solo: false, locked: false, volume: 1, duck: null, clips: [clip] }],
   });
   const raw = {

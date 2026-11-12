@@ -3,6 +3,7 @@ import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { defaultClipAudio, newTrack } from '../../src/core/model';
 import type { Clip, MediaRef, Project, Track, Transform } from '../../src/core/model';
+import { CURRENT_VERSION } from '../helpers/project';
 
 export type Rgb = [number, number, number];
 
@@ -50,7 +51,7 @@ export function project(format: Project['format'], media: MediaRef[], video: Cli
     { ...newTrack('video'), id: 'video', clips: video },
     { ...newTrack('audio'), id: 'audio' },
   ];
-  return { version: 5, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: CURRENT_VERSION, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 export function render(

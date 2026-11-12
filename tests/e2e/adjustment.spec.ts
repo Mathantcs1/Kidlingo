@@ -10,6 +10,7 @@ import { defaultClipAudio, defaultTransform, newTrack } from '../../src/core/mod
 import type { Clip, MediaRef, Project, VideoEffect, VideoEffectType } from '../../src/core/model';
 import { defaultParams } from '../../src/core/videoEffects';
 import { blendPixel } from '../../src/render/blend';
+import { CURRENT_VERSION } from '../helpers/project';
 
 const FMT = { width: 64, height: 64, fps: 30 };
 let n = 0;
@@ -32,7 +33,7 @@ function scene(m: Media, adj: Clip | null, opts: { layerFx?: VideoEffect[]; hidd
   const track = (id: string, clips: Clip[], hidden = false) => ({ ...newTrack('video'), id, hidden, clips });
   const layerFx = opts.layerFx ?? [];
   return {
-    version: 5, format: FMT,
+    version: CURRENT_VERSION, format: FMT,
     tracks: [
       track('bottom', [clipOf(m.bottom, { id: 'b', out: 1, effects: layerFx })]),
       track('mid', [clipOf(m.mid, { id: 'm', out: 1, effects: layerFx })]),
@@ -135,7 +136,7 @@ test('the composite is read upright: a top-to-bottom mirror adjustment copies th
   const bottom: Rgb = [30, 90, 200];
   const back = await page.evaluate(({ top, bottom }) => window.cf.putImageMedia(64, 64, top, { bottom }), { top, bottom });
   const p: Project = {
-    version: 5, format: FMT,
+    version: CURRENT_VERSION, format: FMT,
     tracks: [
       { ...newTrack('video'), id: 'v', clips: [clipOf(back, { id: 'b', out: 1 })] },
       { ...newTrack('video'), id: 'a', clips: [adjustmentClip([fx('mirror', { mode: 2 })])] },

@@ -124,8 +124,11 @@ export interface MediaRef {
   fileName?: string;
 }
 
+/** The project data version this build writes (see src/core/migrate.ts). */
+export const CURRENT_VERSION = 5;
+
 export interface Project {
-  version: 5;
+  version: typeof CURRENT_VERSION;
   format: { width: number; height: number; fps: number };
   tracks: Track[];
   media: Record<Id, MediaRef>;
@@ -149,7 +152,7 @@ export function newTrack(kind: TrackKind, name = ''): Track {
 
 export function emptyProject(formatKey: FormatKey = 'youtube'): Project {
   return {
-    version: 5,
+    version: CURRENT_VERSION,
     format: { ...FORMATS[formatKey], fps: 30 },
     tracks: [newTrack('video'), newTrack('audio')],
     media: {},

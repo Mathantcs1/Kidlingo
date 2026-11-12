@@ -6,6 +6,7 @@ import { joinClips } from '../../src/core/merge';
 import { moveClip, splitClip } from '../../src/core/timeline';
 import { defaultClipAudio, newTrack } from '../../src/core/model';
 import type { Clip, MediaRef, Project, Track } from '../../src/core/model';
+import { CURRENT_VERSION } from '../helpers/project';
 
 test.setTimeout(120_000);
 
@@ -56,7 +57,7 @@ function project(
     { ...newTrack('video'), id: 'video', clips: video },
     { ...newTrack('audio'), id: 'audio', clips: audio },
   ];
-  return { version: 5, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: CURRENT_VERSION, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 interface RunOpts {

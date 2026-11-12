@@ -14,6 +14,7 @@ import { defaultClipAudio, defaultTransform, newTrack } from '../../src/core/mod
 import type { Clip, MediaRef, Project, VideoEffect, VideoEffectType } from '../../src/core/model';
 import { defaultParams } from '../../src/core/videoEffects';
 import { exportSkipNotice } from '../../src/render/effects/unavailable';
+import { CURRENT_VERSION } from '../helpers/project';
 
 test.setTimeout(240_000);
 
@@ -111,7 +112,7 @@ test('Merge all keeps the adjustment layer\'s effect in the merged picture', asy
 function exportProject(back: MediaRef, mid: MediaRef, top: MediaRef, effects: VideoEffect[] | null): Project {
   const track = (id: string, c: Clip[]) => ({ ...newTrack('video'), id, clips: c });
   return {
-    version: 5,
+    version: CURRENT_VERSION,
     format: { width: 320, height: 180, fps: 25 },
     tracks: [
       track('back', [clipOf(back, { out: 0.4 })]),

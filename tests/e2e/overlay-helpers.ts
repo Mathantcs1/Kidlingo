@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test';
 import { newTrack } from '../../src/core/model';
 import type { Clip, MediaRef, OverlaySpec, OverlayType, Project, Track } from '../../src/core/model';
 import { newOverlayClip, overlayBaseSize } from '../../src/core/overlays';
+import { CURRENT_VERSION } from '../helpers/project';
 
 export type Rgb = [number, number, number];
 export const FMT = { width: 320, height: 180, fps: 30 };
@@ -18,7 +19,7 @@ export function overlayClip(type: OverlayType, start = 0, duration = 5, over: Pa
 /** One video track per entry of `layers` (bottom first) plus an audio track. */
 export function layered(layers: Clip[][], media: MediaRef[] = [], hidden: number[] = []): Project {
   const tracks: Track[] = layers.map((clips, i) => ({ ...newTrack('video'), id: `v${i}`, hidden: hidden.includes(i), clips }));
-  return { version: 5, format: FMT, tracks: [...tracks, { ...newTrack('audio'), id: 'audio' }], media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: CURRENT_VERSION, format: FMT, tracks: [...tracks, { ...newTrack('audio'), id: 'audio' }], media: Object.fromEntries(media.map((m) => [m.id, m])) };
 }
 
 /** The overlay's box on a FMT-sized canvas, in canvas pixels (from its transform at scale 1, no rotation). */

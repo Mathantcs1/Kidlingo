@@ -5,6 +5,7 @@ import { ensureFixtures } from './fixtures';
 import { fitTransform } from '../../src/core/merge';
 import { defaultClipAudio, newTrack } from '../../src/core/model';
 import type { Clip, MediaRef, Project, Track, Transform } from '../../src/core/model';
+import { CURRENT_VERSION } from '../helpers/project';
 
 const dir = ensureFixtures();
 const withAudio = join(dir, 'with-audio.mp4');
@@ -55,7 +56,7 @@ function project(width: number, height: number, media: MediaRef[], clips: Clip[]
   const tracks: Track[] = clips.map((c, i) => ({ ...newTrack('video'), id: `track-${i}`, clips: [c] }));
   tracks.push({ ...newTrack('audio'), id: 'audio' });
   return {
-    version: 5,
+    version: CURRENT_VERSION,
     format: { width, height, fps: 30 },
     tracks,
     media: Object.fromEntries(media.map((m) => [m.id, m])),

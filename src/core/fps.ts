@@ -30,3 +30,18 @@ export function adoptFirstClipFps(p: Project, clip: Clip): Project {
   const next = snapFps(fps);
   return next === p.format.fps ? p : { ...p, format: { ...p.format, fps: next } };
 }
+
+/**
+ * The frame index of clip-relative time `t`: floor(t·fps), with a 1e-6 frame tolerance so t = N / fps (as computed
+ * by the exporter or the playhead) is frame N despite floating-point error. 0 for t < 0, non-finite t or fps ≤ 0.
+ */
+export function frameIndex(t: number, fps: number): number {
+  if (!Number.isFinite(t) || !Number.isFinite(fps) || fps <= 0 || t <= 0) return 0;
+  return Math.floor(t * fps + 1e-6);
+}
+
+/** Clip-relative time snapped to its frame's start: frameIndex(t, fps) / fps (D6: preview frame N = export frame N). */
+export function snapToFrame(t: number, fps: number): number {
+  const n = frameIndex(t, fps);
+  return n === 0 ? 0 : n / fps;
+}
