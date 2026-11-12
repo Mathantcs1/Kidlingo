@@ -99,6 +99,6 @@ export function dragPatch(start: Transform, current: Transform): Partial<Transfo
   if (current.x !== start.x) patch.x = current.x;
   if (current.y !== start.y) patch.y = current.y;
   if (current.scale !== start.scale) patch.scale = current.scale;
-  if (current.rotation !== start.rotation) patch.rotation = start.rotation + normaliseDegrees(current.rotation - start.rotation);
+  if (normaliseDegrees(current.rotation) !== normaliseDegrees(start.rotation)) patch.rotation = start.rotation + normaliseDegrees(current.rotation - start.rotation);
   return patch;
 }

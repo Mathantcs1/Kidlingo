@@ -17,6 +17,12 @@ const EDGE = 1e-9;
 /** Whether timeline time `t` is on the clip (the same rule the keyed edits use). */
 export const onClip = (clip: Clip, t: number): boolean => t >= clip.start - EDGE && t < clipEnd(clip) - EDGE;
 
+/** Whether local key time `k` shows on the clip: the clip's visible range, end exclusive (the end is off the clip). The ONE rule for the strip and for previous/next. */
+export function keyVisible(clip: Clip, k: number): boolean {
+  const [lo, hi] = localRange(clip);
+  return k >= lo - EDGE && k < hi - EDGE;
+}
+
 /** The key of `target` under the playhead (within KEY_EPS of the playhead's local frame time), or null. */
 export function keyAtPlayhead(clip: Clip, target: AnimTarget, t: number, fps: number): KeyRef | null {
   const list = targetKeys(clip, target);
@@ -37,10 +43,14 @@ export const keyTimelineTime = (clip: Clip, u: number): number => clip.start + (
  */
 export function keyJumpTime(clip: Clip, target: AnimTarget | null, t: number, fps: number, dir: -1 | 1): number | null {
   const times = target ? (targetKeys(clip, target) ?? []).map((k) => k.t) : keyTimes(clip);
-  const [lo, hi] = localRange(clip);
+  const before = t < clip.start - EDGE;
   const u = localTime(clip, Math.min(Math.max(t, clip.start), clipEnd(clip)), fps);
-  const visible = times.filter((k) => k >= lo - EDGE && k < hi - EDGE && !tooClose(k, u));
-  const pick = dir > 0 ? visible.filter((k) => k > u).sort((a, b) => a - b)[0] : visible.filter((k) => k < u).sort((a, b) => b - a)[0];
+  // The key under the playhead is neither previous nor next, but only when the playhead is on the clip: from before
+  // the clip (clamped to its start) a key at the first frame is still ahead.
+  const visible = times.filter((k) => keyVisible(clip, k) && !(onClip(clip, t) && tooClose(k, u)));
+  const pick = dir > 0
+    ? visible.filter((k) => (before ? k >= u - EDGE : k > u)).sort((a, b) => a - b)[0]
+    : visible.filter((k) => k < u).sort((a, b) => b - a)[0];
   return pick === undefined ? null : keyTimelineTime(clip, pick);
 }
 

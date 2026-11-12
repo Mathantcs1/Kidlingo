@@ -6,7 +6,7 @@ import type { Clip, Project } from '../src/core/model';
 import { useEditor } from '../src/state/store';
 import { useToasts } from '../src/ui/Toast';
 import {
-  jumpToKeyCmd, keyAtPlayhead, keyJumpTime, setTransformAtCmd, setValueAtCmd, toggleAnimatedCmd, toggleKeyAtPlayheadCmd,
+  jumpToKeyCmd, keyAtPlayhead, keyJumpTime, keyVisible, setTransformAtCmd, setValueAtCmd, toggleAnimatedCmd, toggleKeyAtPlayheadCmd,
 } from '../src/ui/keyframeCommands';
 import { dragPatch, scaleFromZero, transformFor } from '../src/ui/overlayHit';
 import { base, video } from './overlay-fixtures';
@@ -158,6 +158,24 @@ describe('jumpToKeyCmd and keyJumpTime', () => {
     expect(keyJumpTime(clip(), SCALE, 3, 30, 1)).toBeCloseTo(4, 9);
   });
 
+  it('reaches a key at the clip first frame from a playhead before the clip, and excludes a key at the clip end everywhere', () => {
+    load({ keys: { scale: [{ t: 1, v: 1, ease: lin }, { t: 3, v: 2, ease: lin }, { t: 5, v: 3, ease: lin }] } });
+    const c = clip(); // timeline 2..6, local 1..5
+    expect(keyJumpTime(c, SCALE, 0, 30, 1)).toBeCloseTo(2, 9);
+    expect(keyJumpTime(c, SCALE, 2, 30, 1)).toBeCloseTo(4, 9); // on the first key: it is not "next"
+    expect(keyJumpTime(c, SCALE, 4, 30, 1)).toBeNull(); // the key at the clip end (local 5) is off the clip
+    expect(keyJumpTime(c, SCALE, 9, 30, -1)).toBeCloseTo(4, 9);
+    expect(keyVisible(c, 1)).toBe(true);
+    expect(keyVisible(c, 5)).toBe(false);
+    expect(keyVisible(c, 5 - 1e-3)).toBe(true);
+    expect(keyVisible(c, 0.5)).toBe(false);
+  });
+
+  it('keyAtPlayhead matches a key within KEY_EPS (the exact-equality mutation fails)', () => {
+    load({ keys: { scale: [{ t: 2 + 5e-5, v: 1, ease: lin }, { t: 3, v: 2, ease: lin }] } });
+    expect(keyAtPlayhead(clip(), SCALE, 3, 30)).toEqual({ target: SCALE, t: 2 + 5e-5 });
+  });
+
   it('pauses playback before moving the playhead', () => {
     load({ keys });
     state().setPlayhead(3);
@@ -175,6 +193,10 @@ describe('drag helpers', () => {
     expect(dragPatch(start, { ...start, scale: 2, x: 11, y: 21 })).toEqual({ x: 11, y: 21, scale: 2 });
     // dragRotate normalises: 45° shown for a keyed 400° + 5°.
     expect(dragPatch(start, { ...start, rotation: 45 })).toEqual({ rotation: 405 });
+    // A rotate that ends exactly at its start angle (also via a full turn) is a no-op: an empty patch.
+    expect(dragPatch(start, { ...start, rotation: 400 })).toEqual({});
+    expect(dragPatch(start, { ...start, rotation: 40 })).toEqual({});
+    expect(dragPatch(start, { ...start, rotation: 760 })).toEqual({});
     expect(dragPatch(start, { ...start, rotation: -170 })).toEqual({ rotation: 550 });
     expect(dragPatch({ ...start, rotation: 170 }, { ...start, rotation: -170 })).toEqual({ rotation: 190 });
     expect(dragPatch(start, start)).toEqual({});

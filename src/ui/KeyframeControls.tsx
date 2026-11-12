@@ -75,8 +75,8 @@ export default function KeyframeControls({ clip, target, label, ids, disabled, t
         data-testid={ids.prev}
         aria-label={`Previous ${label} keyframe`}
         title={`Previous ${label} keyframe`}
-        disabled={prev === null}
-        onClick={() => jumpToKeyCmd(clip.id, target, -1)}
+        aria-disabled={prev === null || undefined}
+        onClick={() => prev !== null && jumpToKeyCmd(clip.id, target, -1)}
       >
         <span aria-hidden="true">◀</span>
       </button>
@@ -85,7 +85,7 @@ export default function KeyframeControls({ clip, target, label, ids, disabled, t
         className="kf-btn kf-key"
         data-testid={ids.key}
         aria-pressed={atKey}
-        aria-label={atKey ? `Remove the ${label} keyframe at the playhead` : `Add a ${label} keyframe at the playhead`}
+        aria-label={`${label} keyframe at the playhead`}
         title={title ?? (atKey ? `Remove the ${label} keyframe here` : `Add a ${label} keyframe here`)}
         disabled={disabled}
         onClick={() => toggleKeyAtPlayheadCmd(clip.id, target)}
@@ -98,8 +98,8 @@ export default function KeyframeControls({ clip, target, label, ids, disabled, t
         data-testid={ids.next}
         aria-label={`Next ${label} keyframe`}
         title={`Next ${label} keyframe`}
-        disabled={next === null}
-        onClick={() => jumpToKeyCmd(clip.id, target, 1)}
+        aria-disabled={next === null || undefined}
+        onClick={() => next !== null && jumpToKeyCmd(clip.id, target, 1)}
       >
         <span aria-hidden="true">▶</span>
       </button>

@@ -136,10 +136,10 @@ test('prev/next, the key toggle and the strip move between keys; Escape cancels 
   await page.getByTestId('kf-next-scale').click();
   await expect.poll(async () => (await playerState(page)).playhead).toBeCloseTo(1.5, 6);
   await expect(page.getByTestId('kf-key-scale')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('kf-next-scale')).toBeDisabled();
+  await expect(page.getByTestId('kf-next-scale')).toHaveAttribute('aria-disabled', 'true');
   await page.getByTestId('kf-prev-scale').click();
   await expect.poll(async () => (await playerState(page)).playhead).toBeCloseTo(0.5, 6);
-  await expect(page.getByTestId('kf-prev-scale')).toBeDisabled();
+  await expect(page.getByTestId('kf-prev-scale')).toHaveAttribute('aria-disabled', 'true');
   const strip = page.getByTestId('kf-strip-scale').getByTestId('kf-strip-key');
   await expect(strip).toHaveCount(2);
   await strip.nth(1).click();

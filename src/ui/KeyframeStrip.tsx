@@ -2,7 +2,7 @@ import { localRange } from '../core/keyframes';
 import { targetKeys } from '../core/keyframeEdits';
 import type { AnimTarget } from '../core/keyframeEdits';
 import type { Clip } from '../core/model';
-import { keyAtPlayhead, keyTimelineTime, onClip, seekToKeyCmd } from './keyframeCommands';
+import { keyAtPlayhead, keyTimelineTime, keyVisible, onClip, seekToKeyCmd } from './keyframeCommands';
 
 interface Props {
   clip: Clip;
@@ -18,12 +18,13 @@ const pct = (v: number): string => `${Math.min(100, Math.max(0, v * 100))}%`;
 /**
  * A mini timeline of one property's keys over the clip's visible range: one diamond button per key (Tab-reachable,
  * "Keyframe at 1.20 s"; a click moves the playhead there, no history) and a playhead marker while it is on the clip.
- * Keys beyond the clip's edges (kept by trims, D9) are not shown.
+ * Keys beyond the clip's edges (kept by trims, D9) and a key exactly at the clip end are not shown, the same rule as
+ * previous/next, so a click never seeks off the clip.
  */
 export default function KeyframeStrip({ clip, target, label, testId, playhead, fps }: Props) {
   const [lo, hi] = localRange(clip);
   const span = hi - lo;
-  const keys = (targetKeys(clip, target) ?? []).filter((k) => k.t >= lo - 1e-9 && k.t <= hi + 1e-9);
+  const keys = (targetKeys(clip, target) ?? []).filter((k) => keyVisible(clip, k.t));
   const current = keyAtPlayhead(clip, target, playhead, fps);
   return (
     <div className="kf-strip" data-testid={testId} role="group" aria-label={`${label} keyframes on the clip`}>
