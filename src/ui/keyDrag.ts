@@ -1,6 +1,7 @@
 // DOM-free maths of the timeline keyframe row (Plan 5 Task 8): the summary diamonds of a clip, where they sit, and
 // the retiming drag (whole frames, playhead snap, kept on the clip) with a preview of the core's refusal.
-import { localRange } from '../core/keyframes';
+import { keyFrame, localRange } from '../core/keyframes';
+import { frameIndex } from '../core/fps';
 import { keyTimes, moveKeys } from '../core/keyframeEdits';
 import type { KeyRef } from '../core/keyframeEdits';
 import { clipDuration } from '../core/model';
@@ -42,12 +43,12 @@ export function clampDelta(clip: Clip, times: readonly number[], delta: number, 
   return n === 0 ? 0 : n / fps;
 }
 
-/** Snaps the grabbed key (local `grabbed`) onto the playhead when it lands within SNAP_PX of it (whole frames kept). */
+/** Snaps the grabbed key (local `grabbed`) into the playhead's frame when it lands within SNAP_PX of it (whole frames kept; P5-6). */
 export function snapDeltaToPlayhead(clip: Clip, grabbed: number, delta: number, playhead: number, pps: number, fps: number): number {
   if (!(pps > 0) || !(fps > 0)) return delta;
   const at = clip.start + (grabbed - localRange(clip)[0]);
   if (Math.abs(at + delta - playhead) * pps > SNAP_PX) return delta;
-  return Math.round((playhead - at) * fps) / fps;
+  return (frameIndex(playhead - clip.start, fps) - keyFrame(clip, grabbed, fps)) / fps;
 }
 
 export interface DragInput {

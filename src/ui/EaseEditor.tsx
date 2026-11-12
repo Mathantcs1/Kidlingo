@@ -143,7 +143,6 @@ function EasePanel({ open }: { open: EaseOpen }) {
     if (next.every((v, j) => round3(v) === round3(handles[j])) && !mixed) return;
     commit({ kind: 'bezier', bezier: next });
   };
-
   return (
     <div ref={panel} className="ease-editor" data-testid="ease-editor" role="dialog" aria-modal="false" aria-label="Ease editor" onKeyDown={keepShortcuts}>
       <div className="ease-head">
@@ -199,4 +198,3 @@ function EasePanel({ open }: { open: EaseOpen }) {
     </div>
   );
 }
-

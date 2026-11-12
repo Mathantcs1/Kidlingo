@@ -1,8 +1,8 @@
 // Keyframe evaluation (Plan 5 D3/D4): clip-local time and value interpolation. Pure, DOM-free, allocation-free
 // except for positionAt's result.
 import { easeAt } from './easing';
-import { snapToFrame } from './fps';
-import { clipDuration, isSourceless } from './model';
+import { frameIndex, snapToFrame } from './fps';
+import { clipDuration, clipEnd, isSourceless } from './model';
 import type { Clip, Keyframe, PositionKeyframe } from './model';
 
 /** Two keys of one property closer than this (seconds) are the same key. */
@@ -41,6 +41,29 @@ const EDGE = 1e-9;
 export function keyVisible(clip: Clip, k: number): boolean {
   const [lo, hi] = localRange(clip);
   return k >= lo - EDGE && k < hi - EDGE;
+}
+
+/**
+ * The frame of the clip's own grid that local key time `k` falls in (P5-6): frame N holds local [lo + N/fps,
+ * lo + (N+1)/fps), the 1e-6-frame tolerance of frameIndex included, so a seek to the key's timeline time shows frame N;
+ * −1 before the visible range.
+ */
+export function keyFrame(clip: Clip, k: number, fps: number): number {
+  const d = k - localRange(clip)[0];
+  return d * fps + 1e-6 < 0 ? -1 : frameIndex(d, fps);
+}
+
+/**
+ * Ruling P5-6: the index of the key of `list` (sorted) under the playhead at timeline time `t`: the earliest visible key
+ * whose local time lies in the playhead's frame window [u, u + 1/fps), u = localTime(clip, t, fps). Keys of an
+ * off-frame cut sit inside a window, not on its start, so KEY_EPS cannot find them. −1 when none or off the clip.
+ * The ONE rule wherever the playhead meets keys (presence, value edits, the key toggle, previous/next).
+ */
+export function keyIndexAtPlayhead(clip: Clip, list: readonly { t: number }[], t: number, fps: number): number {
+  if (!(t >= clip.start - EDGE && t < clipEnd(clip) - EDGE)) return -1;
+  const f = frameIndex(t - clip.start, fps);
+  for (let i = 0; i < list.length; i++) if (keyVisible(clip, list[i].t) && keyFrame(clip, list[i].t, fps) === f) return i;
+  return -1;
 }
 
 /** Index of the last key with `t <= u` (binary search); −1 when `u` is before the first key. */

@@ -9,7 +9,8 @@ import type { Ease } from './easing';
 import { nearestKey, upsertKey } from './keyLists';
 import type { AnyKey, KeyValue } from './keyLists';
 import {
-  KEYED_POSITION_LIMIT, KEYED_ROTATION_LIMIT, KEYED_SCALE_LIMIT, MAX_KEYS, localRange, localTime, tooClose,
+  KEYED_POSITION_LIMIT, KEYED_ROTATION_LIMIT, KEYED_SCALE_LIMIT, MAX_KEYS, keyFrame, keyIndexAtPlayhead, keyVisible, localRange,
+  localTime, tooClose,
 } from './keyframes';
 import { clipEnd } from './model';
 import type { Clip, Id, Project } from './model';
@@ -97,7 +98,8 @@ function assertValue(target: AnimTarget, v: AnimValue): void {
 /**
  * Sets `target` to `value` at timeline time `t` (D8). Static target: exactly the static edit (setClipTransform /
  * updateVideoEffect, same clamps; the playhead may be anywhere). Animated target: the playhead must be on the clip;
- * the value (clamped as the static edit would) is upserted as a key at the local time. Same project when unchanged.
+ * the value (clamped as the static edit would) replaces the key under the playhead (its frame window, P5-6) or is
+ * inserted as a key at the local time. Same project when unchanged.
  */
 export function setValueAt(p: Project, clipId: Id, target: AnimTarget, value: AnimValue, t: number): Project {
   assertFinite('playhead time', t);
@@ -110,7 +112,8 @@ export function setValueAt(p: Project, clipId: Id, target: AnimTarget, value: An
   }
   assertInside(clip, t);
   const u = localTime(clip, t, p.format.fps);
-  const next = upsertKey(list, u, keyValue(p, clip, target, value, valueAtLocal(clip, target, u)));
+  const hit = keyIndexAtPlayhead(clip, list, t, p.format.fps);
+  const next = upsertKey(list, u, keyValue(p, clip, target, value, valueAtLocal(clip, target, u)), true, hit);
   if (!next) throw new TimelineError(`At most ${MAX_KEYS} keyframes per setting`);
   return next === list ? p : commitClip(p, clipId, withTargetKeys(clip, target, next));
 }
@@ -148,7 +151,8 @@ export function removeKeys(p: Project, clipId: Id, refs: readonly KeyRef[]): Pro
 
 /**
  * Retimes the referenced keys by `delta` seconds (D10), keeping their order. Refused when a moved key lands within
- * KEY_EPS of an unmoved key of the same target ('Keyframes would overlap') or outside the clip's local range.
+ * KEY_EPS of an unmoved key of the same target, or in the same frame of the clip's grid as one (P5-6: one key per
+ * frame window), ('Keyframes would overlap') or outside the clip's local range.
  */
 export function moveKeys(p: Project, clipId: Id, refs: readonly KeyRef[], delta: number): Project {
   assertFinite('keyframe move', delta);
@@ -160,11 +164,15 @@ export function moveKeys(p: Project, clipId: Id, refs: readonly KeyRef[], delta:
     const moved = list.filter((_, i) => picked.has(i)).map((k) => ({ ...k, t: k.t + delta }));
     const still = list.filter((_, i) => !picked.has(i));
     if (moved.some((k) => k.t < lo - EPS || k.t > hi + EPS)) throw new TimelineError('Keyframes must stay on the clip');
-    if (moved.some((m) => still.some((s) => tooClose(m.t, s.t)))) throw new TimelineError('Keyframes would overlap');
+    if (moved.some((m) => still.some((s) => tooClose(m.t, s.t) || sameFrame(clip, m.t, s.t, p.format.fps)))) throw new TimelineError('Keyframes would overlap');
     next = withTargetKeys(next, target, [...still, ...moved].sort((a, b) => a.t - b.t));
   }
   return next === clip ? p : commitClip(p, clipId, next);
 }
+
+/** Whether two visible local key times fall in the same frame of the clip's grid (P5-6). */
+const sameFrame = (clip: Clip, a: number, b: number, fps: number): boolean =>
+  keyVisible(clip, a) && keyVisible(clip, b) && keyFrame(clip, a, fps) === keyFrame(clip, b, fps);
 
 /** Sets the ease of the referenced keys (the segment each one starts, D4). Same project when nothing changes. */
 export function setKeyEase(p: Project, clipId: Id, refs: readonly KeyRef[], ease: Ease): Project {

@@ -66,13 +66,13 @@ const sameValue = (k: AnyKey, val: KeyValue): boolean =>
   'v' in val ? (k as Keyframe).v === val.v : (k as PositionKeyframe).x === val.x && (k as PositionKeyframe).y === val.y;
 
 /**
- * `list` with a key at local time `u` holding `val` (D8): a key within KEY_EPS of `u` (the nearest) gets the value and
- * keeps its time and ease (`list` itself when the value is already equal); otherwise a new key is inserted with a
+ * `list` with a key at local time `u` holding `val` (D8): key `hit` (the key under the playhead, P5-6) or else the
+ * nearest within KEY_EPS of `u` (so no two keys are ever closer than KEY_EPS) gets the value and keeps its time and ease (`list` itself when the value is already equal); otherwise a new key is inserted with a
  * copy of the ease of the segment it splits, or `linear` at either end. With `limit`, inserting into a full list
  * (MAX_KEYS) gives null (the caller refuses).
  */
-export function upsertKey(list: readonly AnyKey[], u: number, val: KeyValue, limit = true): readonly AnyKey[] | null {
-  const i = nearestKey(list, u);
+export function upsertKey(list: readonly AnyKey[], u: number, val: KeyValue, limit = true, hit = -1): readonly AnyKey[] | null {
+  const i = hit >= 0 ? hit : nearestKey(list, u);
   if (i >= 0) {
     if (sameValue(list[i], val)) return list;
     const out = list.slice();

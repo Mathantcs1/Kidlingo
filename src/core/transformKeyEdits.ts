@@ -4,7 +4,7 @@ import { targetKeys, valueAtLocal, withTargetKeys } from './animTargets';
 import type { AnimTarget, AnimValue } from './animTargets';
 import { commitClip, setValueAt } from './keyframeEdits';
 import { upsertKey } from './keyLists';
-import { localTime } from './keyframes';
+import { keyIndexAtPlayhead, localTime } from './keyframes';
 import type { Clip, Id, Project, Transform } from './model';
 import { findClip } from './timeline';
 import { setClipTransform } from './transformEdits';
@@ -60,7 +60,7 @@ export function withLiveValue(p: Project, clipId: Id, patch: Partial<Transform>,
   for (const [target, v] of keyed) {
     const list = targetKeys(next, target)!;
     const val = typeof v === 'number' ? { v } : { x: v.x, y: v.y };
-    next = withTargetKeys(next, target, upsertKey(list, u, val, false)!);
+    next = withTargetKeys(next, target, upsertKey(list, u, val, false, keyIndexAtPlayhead(next, list, t, p.format.fps))!);
   }
   return next === clip ? p : commitClip(p, clipId, next);
 }

@@ -1,6 +1,7 @@
 // Store-bound keyframe commands (Plan 5 Task 6): each edit is ONE `apply` (one undo step) at the playhead; refusals
 // (locked track, playhead off the clip) become toasts through `guard`. Jumps move the playhead only (no history).
-import { keyVisible, localRange, localTime, tooClose } from '../core/keyframes';
+import { keyFrame, keyIndexAtPlayhead, keyVisible, localRange, tooClose } from '../core/keyframes';
+import { frameIndex } from '../core/fps';
 export { keyVisible };
 import { OUTSIDE_REFUSAL, keyTimes, removeKeys, setKeyEase, setValueAt, targetKeys, targetValueAt } from '../core/keyframeEdits';
 import type { AnimTarget, AnimValue, KeyRef } from '../core/keyframeEdits';
@@ -20,14 +21,11 @@ const EDGE = 1e-9;
 /** Whether timeline time `t` is on the clip (the same rule the keyed edits use). */
 export const onClip = (clip: Clip, t: number): boolean => t >= clip.start - EDGE && t < clipEnd(clip) - EDGE;
 
-/** The key of `target` under the playhead (within KEY_EPS of the playhead's local frame time), or null. */
+/** The key of `target` under the playhead (in the playhead's frame window, P5-6: keyIndexAtPlayhead), or null. */
 export function keyAtPlayhead(clip: Clip, target: AnimTarget, t: number, fps: number): KeyRef | null {
   const list = targetKeys(clip, target);
-  if (!list || !onClip(clip, t)) return null;
-  const u = localTime(clip, t, fps);
-  let best: number | null = null;
-  for (const k of list) if (tooClose(k.t, u) && (best === null || Math.abs(k.t - u) < Math.abs(best - u))) best = k.t;
-  return best === null ? null : { target, t: best };
+  const i = list ? keyIndexAtPlayhead(clip, list, t, fps) : -1;
+  return i < 0 ? null : { target, t: list![i].t };
 }
 
 /** The timeline time of local key time `u` on `clip`. */
@@ -35,19 +33,22 @@ export const keyTimelineTime = (clip: Clip, u: number): number => clip.start + (
 
 /**
  * The timeline time of the previous (`dir` −1) or next (+1) key of `target` (any animated target when null) from
- * playhead `t`, among the keys on the visible part of the clip; null when there is none. A playhead between frames
- * counts as its frame's start, so the key it sits on is neither previous nor next.
+ * playhead `t`, among the keys on the visible part of the clip; null when there is none. Keys are compared by FRAME of
+ * the clip's grid (P5-6): the key in the playhead's frame window is neither previous nor next, so a jump always moves,
+ * and it lands on the earliest key of the chosen frame, where keyAtPlayhead reports it.
  */
 export function keyJumpTime(clip: Clip, target: AnimTarget | null, t: number, fps: number, dir: -1 | 1): number | null {
   const times = target ? (targetKeys(clip, target) ?? []).map((k) => k.t) : keyTimes(clip);
-  const before = t < clip.start - EDGE;
-  const u = localTime(clip, Math.min(Math.max(t, clip.start), clipEnd(clip)), fps);
-  // The key under the playhead is neither previous nor next, but only when the playhead is on the clip: from before
-  // the clip (clamped to its start) a key at the first frame is still ahead.
-  const visible = times.filter((k) => keyVisible(clip, k) && !(onClip(clip, t) && tooClose(k, u)));
-  const pick = dir > 0
-    ? visible.filter((k) => (before ? k >= u - EDGE : k > u)).sort((a, b) => a - b)[0]
-    : visible.filter((k) => k < u).sort((a, b) => b - a)[0];
+  // Before the clip every key is ahead; after it every key is behind.
+  const cur = t < clip.start - EDGE ? -Infinity : onClip(clip, t) ? frameIndex(t - clip.start, fps) : Infinity;
+  let pick: number | undefined;
+  let best = dir > 0 ? Infinity : -Infinity;
+  for (const k of times) {
+    if (!keyVisible(clip, k)) continue;
+    const f = keyFrame(clip, k, fps);
+    const ahead = dir > 0 ? f > cur && f <= best : f < cur && f >= best;
+    if (ahead && (f !== best || pick === undefined || k < pick)) { pick = k; best = f; }
+  }
   return pick === undefined ? null : keyTimelineTime(clip, pick);
 }
 
