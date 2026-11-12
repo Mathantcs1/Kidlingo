@@ -2,30 +2,33 @@
 // its own frame grid. Wherever the playhead meets keys they are matched by FRAME WINDOW [u, u + 1/fps), not KEY_EPS.
 import { beforeEach, describe, expect, it } from 'vitest';
 import { trimClip, splitClip } from '../src/core/clipEdits';
-import { moveKeys, setValueAt, targetKeys } from '../src/core/keyframeEdits';
+import { moveKeys, setValueAt, targetKeys, targetValueAt } from '../src/core/keyframeEdits';
 import type { AnimTarget } from '../src/core/keyframeEdits';
-import { keyIndexAtPlayhead } from '../src/core/keyframes';
+import { resolvedTransform } from '../src/core/animate';
+import type { Ease } from '../src/core/easing';
+import { KEY_EPS, keyIndexAtPlayhead, localTime } from '../src/core/keyframes';
 import type { Clip, Project } from '../src/core/model';
 import { useEditor } from '../src/state/store';
 import { setTransformAt, withLiveValue } from '../src/core/transformKeyEdits';
 import { snapDeltaToPlayhead } from '../src/ui/keyDrag';
 import { keyAtPlayhead, keyJumpTime, keyTimelineTime, toggleKeyAtPlayheadCmd } from '../src/ui/keyframeCommands';
-import { k, project } from './keyframe-fixtures';
+import { k, lin, project } from './keyframe-fixtures';
 
 const SCALE: AnimTarget = { kind: 'transform', prop: 'scale' };
 const FPS = 30;
-const scaleKeys = { scale: [k(2.5, 1), k(4, 2), k(5, 3)] };
-const overlayKeys = { scale: [k(0.5, 1), k(2, 2), k(3, 3)] };
+const HOLD: Ease = { kind: 'hold' };
+const scaleKeys = (e: Ease = lin) => ({ scale: [k(2.5, 1, e), k(4, 2, e), k(5, 3, e)] });
+const overlayKeys = (e: Ease = lin) => ({ scale: [k(0.5, 1, e), k(2, 2, e), k(3, 3, e)] });
 
 const clipAt = (p: Project, start: number): Clip => p.tracks.flatMap((t) => t.clips).find((c) => Math.abs(c.start - start) < 1e-9)!;
 const withKeys = (p: Project, id: string, keys: Clip['keys']): Project =>
   ({ ...p, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.map((c) => (c.id === id ? { ...c, keys } : c)) })) });
 
-/** Three off-frame cases; each clip starts at a cut 0.71 s (21.3 frames) after the original start. */
-const CASES: { name: string; build: () => Project; start: number }[] = [
-  { name: 'sourced split', build: () => splitClip(project({ keys: scaleKeys }), 'c', 10.71), start: 10.71 },
-  { name: 'sourced start trim', build: () => trimClip(project({ keys: scaleKeys }), 'c', 'start', 10.71), start: 10.71 },
-  { name: 'sourceless (overlay) split', build: () => splitClip(withKeys(project(), 'o', overlayKeys), 'o', 20.71), start: 20.71 },
+/** Three off-frame cases; each clip starts at a cut 0.71 s (21.3 frames) after the original start. `e`: every key's ease. */
+const CASES: { name: string; build: (e?: Ease) => Project; start: number }[] = [
+  { name: 'sourced split', build: (e) => splitClip(project({ keys: scaleKeys(e) }), 'c', 10.71), start: 10.71 },
+  { name: 'sourced start trim', build: (e) => trimClip(project({ keys: scaleKeys(e) }), 'c', 'start', 10.71), start: 10.71 },
+  { name: 'sourceless (overlay) split', build: (e) => splitClip(withKeys(project(), 'o', overlayKeys(e)), 'o', 20.71), start: 20.71 },
 ];
 
 /** The visible keys' diamond (timeline) times. */
@@ -79,26 +82,85 @@ describe.each(CASES)('off-frame keys after a $name (P5-6)', ({ build, start }) =
     expect(keyJumpTime(c, SCALE, inFrame, FPS, 1)).toBeCloseTo(d[1], 9);
   });
 
-  it('setValueAt at the diamond time (and in its frame) replaces that key: count, time and ease kept', () => {
-    const before = targetKeys(c, SCALE)!;
-    for (const [i, t] of diamonds(c).entries()) {
-      const q = setValueAt(p, c.id, SCALE, 7 + i, i === 0 ? t : t - 0.3 / FPS);
+  it.each([['linear', lin], ['hold', HOLD]] as const)(
+    'P5-7: setValueAt at the diamond (and in its frame) replaces that key and moves it to the frame start (%s segments)',
+    (_, ease) => {
+      const p0 = build(ease);
+      const c0 = clipAt(p0, start);
+      const before = targetKeys(c0, SCALE)!;
+      for (const [i, t] of diamonds(c0).entries()) {
+        const at = i === 0 ? t : t - 0.3 / FPS;
+        const q = setValueAt(p0, c0.id, SCALE, 7 + i, at);
+        const now = clipAt(q, start);
+        const after = targetKeys(now, SCALE)!;
+        const j = before.findIndex((x) => Math.abs(keyTimelineTime(c0, x.t) - t) < 1e-9);
+        const u = localTime(c0, at, FPS);
+        expect(after.length).toBe(before.length);
+        expect(after.map((x) => x.t)).toEqual(before.map((x, n) => (n === j ? u : x.t)));
+        expect(Math.abs(before[j].t - u) * FPS).toBeGreaterThan(0.1); // really moved, by less than one frame
+        expect(Math.abs(before[j].t - u) * FPS).toBeLessThan(1);
+        expect((after[j] as { v: number }).v).toBe(7 + i);
+        expect(after[j].ease).toEqual(before[j].ease);
+        // The field and the rendered frame show exactly what was typed; the key is still the one under the playhead.
+        expect(targetValueAt(now, SCALE, at, FPS)).toBe(7 + i);
+        expect(resolvedTransform(now, at, FPS).scale).toBe(7 + i);
+        expect(keyIndexAtPlayhead(now, after, at, FPS)).toBe(j);
+        // The next frame starts from the typed key: held on it (hold, or after the last key), else moving toward the next.
+        const next = targetValueAt(now, SCALE, at + 1 / FPS, FPS) as number;
+        if (ease.kind === 'hold' || j === after.length - 1) expect(next).toBe(7 + i);
+        else expect((next - (7 + i)) * ((after[j + 1] as { v: number }).v - (7 + i))).toBeGreaterThan(0);
+      }
+    },
+  );
+
+  it('P5-7: retyping the key value at the playhead also moves it (so the frame shows it); a second edit is a no-op', () => {
+    const [d0] = diamonds(c);
+    const list = targetKeys(c, SCALE)!;
+    const j = keyIndexAtPlayhead(c, list, d0, FPS);
+    const v = (list[j] as { v: number }).v;
+    const q = setValueAt(p, c.id, SCALE, v, d0);
+    expect(q).not.toBe(p);
+    expect(targetKeys(clipAt(q, start), SCALE)![j].t).toBe(localTime(c, d0, FPS));
+    expect(setValueAt(q, c.id, SCALE, v, d0)).toBe(q);
+  });
+
+  it('P5-7: the key keeps its time when the frame start is within KEY_EPS of another key (never two keys that close)', () => {
+    const [d0] = diamonds(c);
+    const list = c.keys!.scale!;
+    const j = keyIndexAtPlayhead(c, list, d0, FPS);
+    const u = localTime(c, d0, FPS);
+    // A key just before the frame start (the previous frame's window), KEY_EPS / 2 from u.
+    const crowded = withKeys(p, c.id, { scale: [...list.slice(0, j), k(u - KEY_EPS / 2, 5), ...list.slice(j)] });
+    const c1 = clipAt(crowded, start);
+    expect(keyIndexAtPlayhead(c1, targetKeys(c1, SCALE)!, d0, FPS)).toBe(j + 1);
+    for (const q of [setValueAt(crowded, c.id, SCALE, 9, d0), withLiveValue(crowded, c.id, { scale: 9 }, d0)]) {
       const after = targetKeys(clipAt(q, start), SCALE)!;
-      expect(after.length).toBe(before.length);
-      expect(after.map((x) => x.t)).toEqual(before.map((x) => x.t));
-      const at = after.findIndex((x) => Math.abs(keyTimelineTime(c, x.t) - t) < 1e-9);
-      expect((after[at] as { v: number }).v).toBe(7 + i);
-      expect(after[at].ease).toEqual(before[at].ease);
+      expect(after.length).toBe(list.length + 1);
+      expect(after[j + 1].t).toBe(list[j].t);
+      expect((after[j + 1] as { v: number }).v).toBe(9);
+      for (let n = 1; n < after.length; n++) expect(after[n].t - after[n - 1].t).toBeGreaterThanOrEqual(KEY_EPS);
     }
   });
 
-  it('the transform field commit and the live drag preview at a diamond time replace that key too', () => {
-    const [d0] = diamonds(c);
-    const n = targetKeys(c, SCALE)!.length;
-    for (const q of [setTransformAt(p, c.id, { scale: 9 }, d0), withLiveValue(p, c.id, { scale: 9 }, d0)]) {
-      const now = clipAt(q, start);
-      expect(targetKeys(now, SCALE)!.length).toBe(n);
-      expect((targetKeys(now, SCALE)![keyIndexAtPlayhead(now, targetKeys(now, SCALE)!, d0, FPS)] as { v: number }).v).toBe(9);
+  it('the nearest-key rule is unchanged: a key KEY_EPS / 2 before a keyless frame gets the value and keeps its time (M-2)', () => {
+    const t = c.start + 0.1;
+    const u = localTime(c, t, FPS);
+    const list = c.keys!.scale!;
+    const near = withKeys(p, c.id, { scale: [...list, k(u - KEY_EPS / 2, 5)].sort((a, b) => a.t - b.t) });
+    const after = targetKeys(clipAt(setValueAt(near, c.id, SCALE, 9, t), start), SCALE)!;
+    expect(after.length).toBe(list.length + 1);
+    expect(after.find((x) => (x as { v: number }).v === 9)!.t).toBe(u - KEY_EPS / 2);
+  });
+
+  it('the transform field commit and the live drag preview at a diamond time give exactly the setValueAt result', () => {
+    const [d0, d1] = diamonds(c);
+    for (const t of [d0, d1 - 0.3 / FPS]) {
+      const want = targetKeys(clipAt(setValueAt(p, c.id, SCALE, 9, t), start), SCALE);
+      for (const q of [setTransformAt(p, c.id, { scale: 9 }, t), withLiveValue(p, c.id, { scale: 9 }, t)]) {
+        const now = clipAt(q, start);
+        expect(targetKeys(now, SCALE)).toEqual(want);
+        expect(resolvedTransform(now, t, FPS).scale).toBe(9);
+      }
     }
   });
 
@@ -136,5 +198,14 @@ describe.each(CASES)('off-frame keys after a $name (P5-6)', ({ build, start }) =
     const delta = snapDeltaToPlayhead(c, grabbed, 10 / FPS - 0.01, playhead, 60, FPS);
     const moved: Clip = { ...c, keys: { scale: (c.keys!.scale!).map((x) => (x.t === grabbed ? { ...x, t: x.t + delta } : x)) } };
     expect(keyAtPlayhead(moved, SCALE, playhead, FPS)?.t).toBeCloseTo(grabbed + delta, 9);
+  });
+});
+
+describe('frame-aligned keys (P5-7 changes nothing there)', () => {
+  it('the key under the playhead keeps its exact time and only its value changes', () => {
+    const p = project({ keys: scaleKeys() });
+    const q = setValueAt(p, 'c', SCALE, 9, 10 + (4 - 2));
+    expect(targetKeys(clipAt(q, 10), SCALE)).toEqual([k(2.5, 1), k(4, 9), k(5, 3)]);
+    expect(setValueAt(q, 'c', SCALE, 9, 10 + (4 - 2))).toBe(q);
   });
 });

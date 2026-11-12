@@ -98,8 +98,9 @@ function assertValue(target: AnimTarget, v: AnimValue): void {
 /**
  * Sets `target` to `value` at timeline time `t` (D8). Static target: exactly the static edit (setClipTransform /
  * updateVideoEffect, same clamps; the playhead may be anywhere). Animated target: the playhead must be on the clip;
- * the value (clamped as the static edit would) replaces the key under the playhead (its frame window, P5-6) or is
- * inserted as a key at the local time. Same project when unchanged.
+ * the value (clamped as the static edit would) replaces the key under the playhead (its frame window, P5-6), which
+ * moves to the frame start so that frame shows the value (P5-7), or is inserted as a key at the local time. Same
+ * project when unchanged.
  */
 export function setValueAt(p: Project, clipId: Id, target: AnimTarget, value: AnimValue, t: number): Project {
   assertFinite('playhead time', t);

@@ -66,17 +66,31 @@ const sameValue = (k: AnyKey, val: KeyValue): boolean =>
   'v' in val ? (k as Keyframe).v === val.v : (k as PositionKeyframe).x === val.x && (k as PositionKeyframe).y === val.y;
 
 /**
- * `list` with a key at local time `u` holding `val` (D8): key `hit` (the key under the playhead, P5-6) or else the
- * nearest within KEY_EPS of `u` (so no two keys are ever closer than KEY_EPS) gets the value and keeps its time and ease (`list` itself when the value is already equal); otherwise a new key is inserted with a
- * copy of the ease of the segment it splits, or `linear` at either end. With `limit`, inserting into a full list
- * (MAX_KEYS) gives null (the caller refuses).
+ * Ruling P5-7: the time the key under the playhead (`hit`) takes when its value is replaced: the playhead's frame
+ * start `u` (the time the frame renders), so the frame shows exactly the typed value; its own time when moving it would
+ * reorder the list or bring it within KEY_EPS of another key (one key per KEY_EPS is kept).
+ */
+function hitTime(list: readonly AnyKey[], i: number, u: number): number {
+  const prev = list[i - 1];
+  const next = list[i + 1];
+  const ok = (!prev || (prev.t < u && !tooClose(prev.t, u))) && (!next || (next.t > u && !tooClose(next.t, u)));
+  return ok ? u : list[i].t;
+}
+
+/**
+ * `list` with a key at local time `u` holding `val` (D8). Key `hit` (the key under the playhead, P5-6) gets the value
+ * and moves to `u` (P5-7, see hitTime), keeping its ease; else the nearest key within KEY_EPS of `u` (so no two keys
+ * are ever closer than KEY_EPS) gets the value and keeps its time and ease; `list` itself when nothing changes.
+ * Otherwise a new key is inserted with a copy of the ease of the segment it splits, or `linear` at either end. With
+ * `limit`, inserting into a full list (MAX_KEYS) gives null (the caller refuses).
  */
 export function upsertKey(list: readonly AnyKey[], u: number, val: KeyValue, limit = true, hit = -1): readonly AnyKey[] | null {
   const i = hit >= 0 ? hit : nearestKey(list, u);
   if (i >= 0) {
-    if (sameValue(list[i], val)) return list;
+    const t = hit >= 0 ? hitTime(list, i, u) : list[i].t;
+    if (sameValue(list[i], val) && t === list[i].t) return list;
     const out = list.slice();
-    out[i] = { ...list[i], ...val } as AnyKey;
+    out[i] = { ...list[i], ...val, t } as AnyKey;
     return out;
   }
   if (limit && list.length >= MAX_KEYS) return null;

@@ -1,6 +1,7 @@
 // Ruling P5-6: a split at a playhead that is not a whole number of frames from the clip start leaves the right half's
 // keys off its own frame grid. Keys under the playhead are matched by frame window, so `]` / Next reach every key,
-// typing at a diamond replaces that key, and the key toggle removes it. The pip project: a 200×200 lime square ('pip',
+// typing at a diamond replaces that key and moves it to the frame start (P5-7: the frame shows exactly the typed value),
+// and the key toggle removes it. The pip project: a 200×200 lime square ('pip',
 // 0..2 s, scale 1, centred) over a blue background.
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -64,7 +65,7 @@ test('`]` and Next reach every off-frame key in order and never get stuck; `[` g
   expect(errors).toEqual([]);
 });
 
-test('typing at an off-frame diamond replaces that key (one step, no extra key); the toggle then removes it', async ({ page }) => {
+test('typing at an off-frame diamond replaces that key at the frame start: that frame shows exactly the typed value (P5-7)', async ({ page }) => {
   const errors = trackErrors(page);
   await splitAnimated(page);
   const before = await scaleKeys(page);
@@ -77,16 +78,24 @@ test('typing at an off-frame diamond replaces that key (one step, no extra key);
   const depth = await undoDepth(page);
   await field(page, 'scale').fill('250');
   await field(page, 'scale').press('Enter');
-  await expect.poll(() => scaleKeys(page)).toEqual([[0.5, 1], [1.2, 2.5], [1.7, 2]]);
+  // The key moved to its frame's start, CUT + 14 frames (1.1767 s, 0.7 frame earlier), with the typed value.
+  const u = CUT + 14 / 30;
+  await expect.poll(async () => (await scaleKeys(page)).length).toBe(3);
+  const after = await scaleKeys(page);
+  expect(after[0]).toEqual([0.5, 1]);
+  expect(after[1][0]).toBeCloseTo(u, 9);
+  expect(after[1][1]).toBe(2.5);
+  expect(after[2]).toEqual([1.7, 2]);
   expect(await undoDepth(page)).toBe(depth + 1);
-  // This frame shows the new value (half-size 250 format px) ...
-  await expectPixel(page, C.x + 235, C.y, isGreen, 'new value at the key frame');
-  await expectPixel(page, C.x + 265, C.y, isBlue, 'new value at the key frame');
-  // ... and the next frame continues from it (2.5 → 2 over 0.5 s: about 2.49), no jump back to the old 1.5.
+  // This frame shows EXACTLY the typed value: field 250 and a half-size of 250 format px (edge 1210, +-2 px).
+  await expect(field(page, 'scale')).toHaveValue('250');
+  await expectPixel(page, C.x + 248, C.y, isGreen, 'typed value at the key frame');
+  await expectPixel(page, C.x + 252, C.y, isBlue, 'typed value at the key frame');
+  // ... and the next frame continues from it (2.5 at u → 2 at 1.7 s: 2.4682 at u + 1/30), no jump back to the old 1.5.
   await setTime(page, 1.2 + 1 / 30);
-  await expect(field(page, 'scale')).toHaveValue('249');
-  await expectPixel(page, C.x + 235, C.y, isGreen, 'next frame consistent');
-  await expectPixel(page, C.x + 265, C.y, isBlue, 'next frame consistent');
+  await expect(field(page, 'scale')).toHaveValue('246.82');
+  await expectPixel(page, C.x + 245, C.y, isGreen, 'next frame consistent');
+  await expectPixel(page, C.x + 249, C.y, isBlue, 'next frame consistent');
 
   // Back on the diamond: the key toggle removes THAT key (no near-duplicate added), ONE step.
   await setTime(page, 1.2);
