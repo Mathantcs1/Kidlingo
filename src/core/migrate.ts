@@ -1,12 +1,12 @@
 import { fitFades } from './clipAudio';
 import { toBlend, toClipEffects } from './migrateEffects';
 import { toOverlaySpec } from './overlaySpec';
-import { defaultClipAudio, newId } from './model';
+import { CURRENT_VERSION, defaultClipAudio, newId } from './model';
 import type { AudioEffect, AudioEffectType, Clip, ClipAudio, Project, Track, TrackDuck } from './model';
 
 export type MigrateResult = { ok: true; project: Project } | { ok: false; reason: 'newer' | 'malformed' };
 
-const CURRENT = 5;
+const CURRENT: number = CURRENT_VERSION;
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const num = (v: unknown, fallback: number, min: number, max: number): number =>

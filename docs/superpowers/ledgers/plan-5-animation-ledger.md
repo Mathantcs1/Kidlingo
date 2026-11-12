@@ -32,3 +32,4 @@ Ruling: P5-2 - STANDING DEPLOY AUTHORISATION (user, this session): each Plan 5 P
 
 ## Task log
 (none yet)
+Task 1: implemented (869dcbb incl. report); gate: npm test 1185, typecheck, build, dist grep empty, full e2e 391/391 before and after (implementer). Review (sonnet): clean, 0 Important, 3 Minor; Minor 1 (migrate.ts CURRENT duplicated CURRENT_VERSION) fixed by the controller (migrate.ts now `const CURRENT: number = CURRENT_VERSION`; Task 3 bumps only model.ts). Task 1: complete. Note for Task 4: timeline.ts <-> clipEdits.ts import cycle is safe today (function declarations only); if Task 4 adds module-level state, move EPS/mapClips/replaceClip/assertFinite/assertFree into a third file.
