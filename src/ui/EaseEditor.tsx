@@ -1,3 +1,4 @@
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { EASE_KINDS, isSameEase } from '../core/easing';
 import type { Ease, EaseKind } from '../core/easing';
@@ -57,6 +58,7 @@ function EasePanel({ open }: { open: EaseOpen }) {
     draftRef.current = e;
     setDraftState(e);
   };
+  const lastCount = found ? open.refs.filter((r) => { const l = targetKeys(found.clip, r.target) ?? []; return l.length > 0 && tooClose(l[l.length - 1].t, r.t); }).length : 0;
   const shown = draft ?? committed;
   const handles = bezierOf(shown);
 
@@ -68,6 +70,10 @@ function EasePanel({ open }: { open: EaseOpen }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return;
+      // Only when focus is in the panel, on its opener, or nowhere: other consumers (a number draft, a dialog) own their Escape.
+      const a = document.activeElement;
+      const mine = !a || a === document.body || !!panel.current?.contains(a) || a === useEaseEditor.getState().open?.returnTo;
+      if (!mine) return;
       cancelled.current = true;
       e.preventDefault();
       e.stopPropagation();
@@ -102,6 +108,12 @@ function EasePanel({ open }: { open: EaseOpen }) {
     el.style.top = `${top}px`;
   }, [open]);
 
+  // Keys pressed inside the panel (preset buttons, handles) must not reach the global shortcuts (delete, space, nudge);
+  // number inputs already own theirs.
+  const keepShortcuts = (e: ReactKeyboardEvent<HTMLElement>): void => {
+    if (e.target instanceof HTMLInputElement) return;
+    if (['Delete', 'Backspace', ' ', '[', ']'].includes(e.key)) e.stopPropagation();
+  };
   const commit = (e: Ease): void => {
     if (!cancelled.current && !locked) setEaseCmd(open.clipId, open.refs, e);
   };
@@ -127,19 +139,22 @@ function EasePanel({ open }: { open: EaseOpen }) {
     const h = clampHandle(i % 2 === 0 ? { x: n, y: 0 } : { x: 0, y: n });
     const next = [...handles] as Bezier;
     next[i] = round3(i % 2 === 0 ? h.x : h.y);
-    if (next.every((v, j) => v === handles[j]) && committed.kind === 'bezier') return;
+    // Typing the number a key already has changes nothing (a preset stays a preset); a mixed selection still unifies.
+    if (next.every((v, j) => round3(v) === round3(handles[j])) && !mixed) return;
     commit({ kind: 'bezier', bezier: next });
   };
 
   return (
-    <div ref={panel} className="ease-editor" data-testid="ease-editor" role="dialog" aria-modal="false" aria-label="Ease editor">
+    <div ref={panel} className="ease-editor" data-testid="ease-editor" role="dialog" aria-modal="false" aria-label="Ease editor" onKeyDown={keepShortcuts}>
       <div className="ease-head">
         <span>{open.refs.length > 1 ? `Ease of ${open.refs.length} keyframes` : 'Ease of keyframe'}</span>
         <button type="button" className="ease-close" data-testid="ease-close" aria-label="Close ease editor" onClick={closeEase}>
           ×
         </button>
       </div>
-      <p className="ease-note">The curve shapes the segment from this key to the next.{mixed && ' The keys differ; showing the first.'}{locked && ' Track is locked.'}</p>
+      <p className="ease-note">The curve shapes the segment from this key to the next.{mixed && ' The keys differ; showing the first.'}{locked && ' Track is locked.'}
+        {lastCount > 0 && (lastCount === open.refs.length ? ' Last key: its ease only applies if a key is added after it.' : ' Some keys are last in their list: their ease only applies if a key is added after them.')}
+      </p>
       <div className="ease-presets" role="group" aria-label="Ease presets">
         {EASE_KINDS.map((kind) => (
           <button
