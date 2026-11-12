@@ -2,20 +2,21 @@
 // times/values and duplicate times (keeping the last), unknown eases => linear, values clamped (D5), at most MAX_KEYS
 // per property, keys of unknown or non-animatable params dropped. An emptied list (or keys object) is removed.
 import { repairEase } from './easing';
-import { KEYED_ROTATION_LIMIT, KEY_EPS, MAX_KEYS } from './keyframes';
+import { KEYED_POSITION_LIMIT, KEYED_ROTATION_LIMIT, KEYED_SCALE_LIMIT, MAX_KEYS, tooClose } from './keyframes';
 import type { Clip, Keyframe, PositionKeyframe, TransformKeys, VideoEffectType } from './model';
 import { animatableParam } from './videoEffects';
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v)) + 0;
+const P = KEYED_POSITION_LIMIT;
 
 /** Sorted by `t` (stable), keys closer than KEY_EPS to the previous kept one replace it, capped at MAX_KEYS. */
 function normalise<K extends { t: number }>(list: K[]): K[] | undefined {
   const sorted = list.map((k, i) => ({ k, i })).sort((a, b) => a.k.t - b.k.t || a.i - b.i).map((e) => e.k);
   const out: K[] = [];
   for (const k of sorted) {
-    if (out.length > 0 && k.t - out[out.length - 1].t < KEY_EPS) out[out.length - 1] = k;
+    if (out.length > 0 && tooClose(k.t, out[out.length - 1].t)) out[out.length - 1] = k;
     else out.push(k);
   }
   return out.length > 0 ? out.slice(0, MAX_KEYS) : undefined;
@@ -31,12 +32,12 @@ export function repairKeyList(raw: unknown, min: number, max: number): Keyframe[
   return normalise(keys);
 }
 
-/** A position key list (x, y unclamped but finite); undefined when nothing valid remains. */
+/** A position key list (x, y finite, within ±KEYED_POSITION_LIMIT); undefined when nothing valid remains. */
 export function repairPositionKeys(raw: unknown): PositionKeyframe[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const keys: PositionKeyframe[] = [];
   for (const k of raw) {
-    if (isObject(k) && finite(k.t) && finite(k.x) && finite(k.y)) keys.push({ t: k.t, x: k.x, y: k.y, ease: repairEase(k.ease) });
+    if (isObject(k) && finite(k.t) && finite(k.x) && finite(k.y)) keys.push({ t: k.t, x: clamp(k.x, -P, P), y: clamp(k.y, -P, P), ease: repairEase(k.ease) });
   }
   return normalise(keys);
 }
@@ -50,7 +51,7 @@ export function repairClipKeys(raw: unknown, kind: Clip['kind'] | unknown): Tran
   const full = kind !== 'adjustment';
   const keys: TransformKeys = {};
   const position = full ? repairPositionKeys(raw.position) : undefined;
-  const scale = full ? repairKeyList(raw.scale, 0, Infinity) : undefined;
+  const scale = full ? repairKeyList(raw.scale, 0, KEYED_SCALE_LIMIT) : undefined;
   const rotation = full ? repairKeyList(raw.rotation, -KEYED_ROTATION_LIMIT, KEYED_ROTATION_LIMIT) : undefined;
   const opacity = repairKeyList(raw.opacity, 0, 1);
   if (position) keys.position = position;

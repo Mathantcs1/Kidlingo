@@ -11,6 +11,14 @@ export const KEY_EPS = 1e-4;
 export const MAX_KEYS = 500;
 /** Keyed rotation is unbounded multi-turn degrees, clamped to this (D4). */
 export const KEYED_ROTATION_LIMIT = 36_000;
+/** Position keys stay within ±this (format px) and keyed scale within 0..KEYED_SCALE_LIMIT, so `b − a` stays finite. */
+export const KEYED_POSITION_LIMIT = 1e7;
+export const KEYED_SCALE_LIMIT = 1e6;
+
+/** Whether two key times count as the same key (closer than KEY_EPS): the ONE rule for migration and every edit. */
+export function tooClose(a: number, b: number): boolean {
+  return Math.abs(a - b) < KEY_EPS;
+}
 
 /**
  * The clip-local key time at timeline time `t` (D3): `in + snap(t − start)` for sourced clips (video, image), so keys

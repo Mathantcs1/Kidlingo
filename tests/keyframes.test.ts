@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { KEY_EPS, MAX_KEYS, localTime, maxScale, positionAt, valueAt } from '../src/core/keyframes';
+import { KEY_EPS, MAX_KEYS, localTime, tooClose, maxScale, positionAt, valueAt } from '../src/core/keyframes';
 import { easeAt } from '../src/core/easing';
 import type { Ease } from '../src/core/easing';
 import { defaultClipAudio, defaultTransform } from '../src/core/model';
@@ -30,6 +30,15 @@ describe('constants', () => {
   it('KEY_EPS and MAX_KEYS', () => {
     expect(KEY_EPS).toBe(1e-4);
     expect(MAX_KEYS).toBe(500);
+  });
+
+  it('tooClose: the one "same key time" rule (symmetric, strictly below KEY_EPS)', () => {
+    expect(tooClose(1, 1)).toBe(true);
+    expect(tooClose(1, 1 + KEY_EPS / 2)).toBe(true);
+    expect(tooClose(1 + KEY_EPS / 2, 1)).toBe(true);
+    expect(tooClose(1, 1 + 2 * KEY_EPS)).toBe(false);
+    expect(tooClose(1 + 2 * KEY_EPS, 1)).toBe(false);
+    expect(tooClose(0, 0.5)).toBe(false);
   });
 });
 

@@ -1,7 +1,8 @@
 // Data v6 (Plan 5 Task 3): v5 saves open unchanged as v6 (no `keys` added); hand-edited v6 keys are repaired per D11.
 import { describe, it, expect } from 'vitest';
 import { migrateProject } from '../src/core/migrate';
-import { MAX_KEYS } from '../src/core/keyframes';
+import { KEYED_POSITION_LIMIT, KEYED_SCALE_LIMIT, MAX_KEYS } from '../src/core/keyframes';
+import { resolveClip } from '../src/core/animate';
 import { CURRENT_VERSION, defaultClipAudio } from '../src/core/model';
 import type { Clip, Project } from '../src/core/model';
 import { overlayDefaults } from '../src/core/overlaySpec';
@@ -117,7 +118,7 @@ describe('v6 key repair (D11)', () => {
     expect(c.keys?.opacity).toEqual([{ t: 0, v: 0, ease: lin }, { t: 1, v: 1, ease: lin }, { t: 2, v: 0, ease: lin }]);
   });
 
-  it('clamps values per D5: opacity 0..1, scale >= 0, keyed rotation to +-36000, position unclamped', () => {
+  it('clamps values per D5: opacity 0..1, scale >= 0, keyed rotation to +-36000, position within its wide bound', () => {
     const c = one(base('c', 'video', {
       keys: {
         opacity: [{ t: 0, v: -1, ease: lin }, { t: 1, v: 3, ease: lin }],
@@ -130,6 +131,24 @@ describe('v6 key repair (D11)', () => {
     expect(c.keys?.scale?.map((k) => k.v)).toEqual([0, 50]);
     expect(c.keys?.rotation?.map((k) => k.v)).toEqual([-36000, 36000]);
     expect(c.keys?.position).toEqual([{ t: 0, x: -1e6, y: 1e6, ease: lin }]);
+  });
+
+  it('bounds position keys and keyed scale so overflowing values cannot evaluate to NaN (P5-4)', () => {
+    expect(KEYED_POSITION_LIMIT).toBe(1e7);
+    expect(KEYED_SCALE_LIMIT).toBe(1e6);
+    const c = one(base('c', 'video', {
+      keys: {
+        position: [{ t: 0, x: -1e308, y: 1e308, ease: lin }, { t: 1, x: 1e308, y: -1e308, ease: lin }],
+        scale: [{ t: 0, v: 0, ease: lin }, { t: 1, v: 1e308, ease: lin }],
+      },
+    }));
+    expect(c.keys?.position?.map((k) => [k.x, k.y])).toEqual([[-1e7, 1e7], [1e7, -1e7]]);
+    expect(c.keys?.scale?.map((k) => k.v)).toEqual([0, 1e6]);
+    for (const t of [0, 0.5, 0.99, 1, 2]) {
+      const tr = resolveClip(c, t, 30).transform;
+      expect([tr.x, tr.y, tr.scale].every(Number.isFinite)).toBe(true);
+    }
+    expect(resolveClip(c, 0.5, 30).transform.x).toBe(0);
   });
 
   it('truncates a list of 600 keys to MAX_KEYS (the earliest)', () => {
