@@ -67,7 +67,7 @@ function previewFor(p: Project, g: Gesture, dx: number, x: number, y: number, pp
 }
 
 /** Swallows the click that follows a drag, so it does not also select or deselect. */
-function swallowNextClick(): void {
+export function swallowNextClick(): void {
   const stop = (e: Event): void => {
     e.stopPropagation();
     e.preventDefault();

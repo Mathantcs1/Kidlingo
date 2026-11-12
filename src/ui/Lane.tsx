@@ -3,6 +3,7 @@ import type { DragEvent, PointerEvent } from 'react';
 import type { Id, Project, Track } from '../core/model';
 import { useEditor } from '../state/store';
 import ClipView from './ClipView';
+import KeyframeRow from './KeyframeRow';
 import { dropStart, laneRejects } from './drag';
 import { dropMedia } from './edits';
 import { timeToPx } from './layout';
@@ -88,6 +89,7 @@ export default function Lane({ project, track, label, pps, selected, preview, on
           onDragStart={onDragStart}
         />
       ))}
+      {track.clips.map((c) => selected.has(c.id) && <KeyframeRow key={`kf-${c.id}`} clip={c} pps={pps} locked={track.locked} />)}
       {preview?.trackId === track.id && preview.zone === null && (
         <div
           className={`clip-ghost${preview.kind === 'move' ? '' : ' is-trim'}${preview.rejected ? ' is-reject' : ''}`}

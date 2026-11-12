@@ -1,6 +1,6 @@
 // DOM-free keyboard helpers for the editor shortcuts.
 
-export type Shortcut = 'play' | 'split' | 'delete' | 'rippleDelete' | 'undo' | 'redo';
+export type Shortcut = 'play' | 'split' | 'delete' | 'rippleDelete' | 'undo' | 'redo' | 'prevKey' | 'nextKey' | 'deleteKeys';
 
 /** The parts of a KeyboardEvent the shortcut map reads. */
 export interface KeyLike {
@@ -37,7 +37,7 @@ const OWNS_EDITING_KEYS = new Set(['range', 'color']);
  * picker must not delete or split clips. Undo/redo and Space keep their usual behaviour.
  */
 export function shortcutBlockedByRange(t: TargetLike, s: Shortcut): boolean {
-  return t.tagName.toUpperCase() === 'INPUT' && OWNS_EDITING_KEYS.has((t.type ?? '').toLowerCase()) && (s === 'delete' || s === 'rippleDelete' || s === 'split');
+  return t.tagName.toUpperCase() === 'INPUT' && OWNS_EDITING_KEYS.has((t.type ?? '').toLowerCase()) && (s === 'delete' || s === 'rippleDelete' || s === 'deleteKeys' || s === 'split');
 }
 
 /** The parts of an element that decide whether Space activates it natively. */
@@ -72,5 +72,12 @@ export function shortcutFor(e: KeyLike): Shortcut | null {
   if (e.code === 'Space' || e.key === ' ') return 'play';
   if (key === 's' && !e.shiftKey) return 'split';
   if (e.key === 'Delete' || e.key === 'Backspace') return e.shiftKey ? 'rippleDelete' : 'delete';
+  if (e.key === '[') return 'prevKey';
+  if (e.key === ']') return 'nextKey';
   return null;
+}
+
+/** O15: while timeline keyframes are selected, Delete/Backspace (with or without Shift) removes them, not the clips. */
+export function keyRouted(s: Shortcut, keysSelected: boolean): Shortcut {
+  return keysSelected && (s === 'delete' || s === 'rippleDelete') ? 'deleteKeys' : s;
 }

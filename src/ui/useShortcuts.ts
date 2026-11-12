@@ -4,7 +4,9 @@ import { isKeyboardFocused } from './inputModality';
 import { TRANSFORMING_CLASS } from './useTransformDrag';
 import { isTextEntry, nativeSpaceTarget } from './keys';
 import type { Shortcut } from './keys';
-import { shortcutBlockedByRange, shortcutFor } from './keys';
+import { keyRouted, shortcutBlockedByRange, shortcutFor } from './keys';
+import { NO_KEYS, setKeySel } from './keySelection';
+import { deleteSelectedKeysCmd, hasSelectedKeys, jumpKeyCmd } from './keySelectionCommands';
 
 const COMMANDS: Record<Shortcut, () => void> = {
   play: togglePlay,
@@ -13,6 +15,9 @@ const COMMANDS: Record<Shortcut, () => void> = {
   rippleDelete: rippleDeleteSelected,
   undo,
   redo,
+  prevKey: () => jumpKeyCmd(-1),
+  nextKey: () => jumpKeyCmd(1),
+  deleteKeys: deleteSelectedKeysCmd,
 };
 
 function isTyping(target: EventTarget | null): boolean {
@@ -49,9 +54,13 @@ export function useShortcuts(enabled: boolean): void {
         e.preventDefault();
         return;
       }
+      // Escape drops a timeline key selection (a diamond drag handles its own Escape first, in the capture phase).
+      if (e.key === 'Escape' && hasSelectedKeys()) setKeySel(NO_KEYS);
       const parts = keyParts(e);
-      const shortcut = shortcutFor({ ...parts, repeat: false });
-      if (!shortcut) return;
+      const found = shortcutFor({ ...parts, repeat: false });
+      if (!found) return;
+      // O15: selected keyframes take Delete/Backspace before clips.
+      const shortcut = keyRouted(found, hasSelectedKeys());
       if (e.target instanceof HTMLInputElement && shortcutBlockedByRange(e.target, shortcut)) return;
       e.preventDefault();
       // Held Space/S/Delete keys are swallowed rather than repeated (shortcutFor drops their repeats).
