@@ -75,7 +75,7 @@ export function repairEase(raw: unknown): Ease {
   if (typeof r.kind !== 'string' || !(EASE_KINDS as readonly string[]).includes(r.kind)) return { kind: 'linear' };
   if (r.kind !== 'bezier') return { kind: r.kind as EaseKind };
   const h = r.bezier;
-  if (!Array.isArray(h) || h.length !== 4 || !h.every((n) => typeof n === 'number' && Number.isFinite(n))) {
+  if (!Array.isArray(h) || h.length !== 4 || !Array.from(h).every((n) => typeof n === 'number' && Number.isFinite(n))) {
     return { kind: 'linear' };
   }
   return {

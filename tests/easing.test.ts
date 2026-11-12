@@ -211,4 +211,15 @@ describe('isSameEase', () => {
   it('ignores handles on non-bezier kinds', () => {
     expect(isSameEase({ kind: 'easeIn' }, { kind: 'easeIn', bezier: [0, 0, 1, 1] })).toBe(true);
   });
+
+  it('pins the elastic and bounce curve shapes (not just bounds)', () => {
+    expect(easeAt({ kind: 'elastic' }, 0.5)).toBeCloseTo(1.015625, 9);
+    expect(easeAt({ kind: 'bounce' }, 0.2)).toBeCloseTo(0.3025, 9);
+    expect(easeAt({ kind: 'bounce' }, 0.5)).toBeCloseTo(0.765625, 9);
+    expect(easeAt({ kind: 'bounce' }, 0.9)).toBeCloseTo(0.988125, 6);
+  });
+  it('repairEase treats a sparse handle array as linear', () => {
+    // eslint-disable-next-line no-sparse-arrays
+    expect(repairEase({ kind: 'bezier', bezier: new Array(4) })).toEqual({ kind: 'linear' });
+  });
 });
