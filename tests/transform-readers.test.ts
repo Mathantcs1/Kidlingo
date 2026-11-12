@@ -31,8 +31,7 @@ const ALLOWED: Allowed[] = [
   ['src/render/effects/unavailable.ts', 'if (s.effects.length > 0)', 'not a clip: ExportSkips summary'],
   ['src/render/effects/unavailable.ts', 's.effects.map((t) => VIDEO_EFFECTS[t].label)', 'not a clip: ExportSkips summary'],
   // ---- src/ui: inspectors, on-canvas handles and commands.
-  ['src/ui/VideoEffectRow.tsx', 'const stored = effect.params[def.key]', 'reads stored value (Task 7 shows the resolved value at the playhead)'],
-  ['src/ui/VideoEffectRow.tsx', 'keyToHex({ keyR: effect.params.keyR', 'reads stored value (Task 7 shows the resolved value at the playhead)'],
+  ['src/ui/effectParams.tsx', '(effect.params[key] ?? fallback)', 'reads resolved value at the playhead when animated (targetValueAt), the stored value on purpose when not'],
   ['src/ui/VideoEffectRow.tsx', 'schema.params.filter(', 'not a clip: effect schema'],
   ['src/ui/EffectRow.tsx', 'const stored = effect.params[def.key]', 'reads stored value on purpose: audio effects are not animated in 5A'],
   ['src/ui/EffectRow.tsx', 'schema.params.map(', 'not a clip: audio effect schema'],

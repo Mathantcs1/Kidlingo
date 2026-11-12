@@ -1,14 +1,19 @@
 // Store-bound commands for the selected clip's PICTURE effects (Plan 4 Task 10). Each is ONE `apply` (one undo
 // step); refusals (locked track, 9th effect, missing LUT file) become toasts through `guard`.
+import { targetKeys } from '../core/keyframeEdits';
+import type { AnimTarget } from '../core/keyframeEdits';
 import type { LookKey } from '../core/looks';
 import type { BlendMode, Id, Project, VideoEffectType } from '../core/model';
 import {
   addVideoEffect, applyLook, moveVideoEffect, removeVideoEffect, setClipBlend, updateVideoEffect,
 } from '../core/videoEffectEdits';
+import { setEffectParamsAt } from '../core/targetGroups';
+import { findClip } from '../core/timeline';
 import { VIDEO_EFFECTS } from '../core/videoEffects';
 import type { EffectGroup } from '../core/videoEffects';
 import { useEditor } from '../state/store';
 import { guard } from './Toast';
+import { setValueAtCmd } from './keyframeCommands';
 
 const apply = (fn: (p: Project) => Project): void => guard(() => useEditor.getState().apply(fn));
 
@@ -43,9 +48,33 @@ export function keyToHex({ keyR, keyG, keyB }: KeyColour): string {
   return `#${h(keyR)}${h(keyG)}${h(keyB)}`;
 }
 
-/** The chroma key colour picker: keyR, keyG and keyB change together in ONE apply. */
-export const setKeyColourCmd = (clipId: Id, effectId: Id, hex: string): void =>
-  updateVideoEffectCmd(clipId, effectId, { params: hexToKey(hex) });
+/** The three animation targets of the chroma key colour (keyR leads the controls). */
+export const KEY_TARGETS = (effectId: Id): AnimTarget[] =>
+  ['keyR', 'keyG', 'keyB'].map((param) => ({ kind: 'effect', effectId, param }));
+
+/**
+ * One slider commit (ONE step): a key at the playhead when the param is animated, else the static update (also for
+ * params that cannot be animated, such as mirror.mode).
+ */
+export function setEffectParamCmd(clipId: Id, effectId: Id, param: string, value: number): void {
+  guard(() => {
+    const target: AnimTarget = { kind: 'effect', effectId, param };
+    if (targetKeys(findClip(useEditor.getState().history.present, clipId).clip, target) !== undefined) setValueAtCmd(clipId, target, value);
+    else updateVideoEffectCmd(clipId, effectId, { params: { [param]: value } });
+  });
+}
+
+/**
+ * The chroma key colour picker: keyR, keyG and keyB change together in ONE apply, as three keys at the playhead
+ * when the colour is animated, statically as before when it is not.
+ */
+export function setKeyColourCmd(clipId: Id, effectId: Id, hex: string): void {
+  const { playhead } = useEditor.getState();
+  apply((p) => {
+    const animated = targetKeys(findClip(p, clipId).clip, KEY_TARGETS(effectId)[0]) !== undefined;
+    return animated ? setEffectParamsAt(p, clipId, effectId, hexToKey(hex), playhead) : updateVideoEffect(p, clipId, effectId, { params: hexToKey(hex) });
+  });
+}
 
 const GROUP_ORDER: EffectGroup[] = ['colour', 'look', 'blur', 'stylise', 'key'];
 export const GROUP_LABEL: Record<EffectGroup, string> = {

@@ -73,7 +73,7 @@ export default function EffectsInspector({ clip, editable, locked }: Props) {
           {clip.effects.map((e, i) => (
             <VideoEffectRow
               key={e.id}
-              clipId={clip.id}
+              clip={clip}
               effect={e}
               index={i}
               count={clip.effects.length}

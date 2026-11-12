@@ -1,11 +1,12 @@
 // Store-bound keyframe commands (Plan 5 Task 6): each edit is ONE `apply` (one undo step) at the playhead; refusals
 // (locked track, playhead off the clip) become toasts through `guard`. Jumps move the playhead only (no history).
 import { localRange, localTime, tooClose } from '../core/keyframes';
-import { OUTSIDE_REFUSAL, keyTimes, removeKeys, setAnimated, setValueAt, targetKeys, targetValueAt } from '../core/keyframeEdits';
+import { OUTSIDE_REFUSAL, keyTimes, removeKeys, setValueAt, targetKeys, targetValueAt } from '../core/keyframeEdits';
 import type { AnimTarget, AnimValue, KeyRef } from '../core/keyframeEdits';
 import { clipEnd } from '../core/model';
 import type { Clip, Id, Project, Transform } from '../core/model';
 import { TimelineError, findClip } from '../core/timeline';
+import { setTargetsAnimated, setTargetsAt } from '../core/targetGroups';
 import { setTransformAt } from '../core/transformKeyEdits';
 import { useEditor } from '../state/store';
 import { guard } from './Toast';
@@ -54,10 +55,13 @@ export function keyJumpTime(clip: Clip, target: AnimTarget | null, t: number, fp
   return pick === undefined ? null : keyTimelineTime(clip, pick);
 }
 
-/** Stopwatch: animates `target` from the value at the playhead, or makes it static at that value (ONE step). */
-export function toggleAnimatedCmd(clipId: Id, target: AnimTarget): void {
+/**
+ * Stopwatch: animates `target` from the value at the playhead, or makes it static at that value (ONE step). `group`
+ * lists the targets that switch together with it (the chroma key colour's three params; `target` leads).
+ */
+export function toggleAnimatedCmd(clipId: Id, target: AnimTarget, group: readonly AnimTarget[] = [target]): void {
   const { playhead } = editor();
-  apply((p) => setAnimated(p, clipId, target, targetKeys(findClip(p, clipId).clip, target) === undefined, playhead));
+  apply((p) => setTargetsAnimated(p, clipId, group, targetKeys(findClip(p, clipId).clip, target) === undefined, playhead));
 }
 
 /** Sets `target` to `value` at the playhead: a key when animated, else the static edit (ONE step). */
@@ -75,16 +79,20 @@ export const setTransformAtCmd = (clipId: Id, patch: Partial<Transform>): void =
 /**
  * The key diamond: a static target starts animating (one key); on a key, that key is removed (the last one leaves the
  * value static); elsewhere a key holding the value shown at the playhead is added. ONE step; refused off the clip.
+ * `group`: targets that follow `target` together (the chroma key colour's three params).
  */
-export function toggleKeyAtPlayheadCmd(clipId: Id, target: AnimTarget): void {
+export function toggleKeyAtPlayheadCmd(clipId: Id, target: AnimTarget, group: readonly AnimTarget[] = [target]): void {
   const { playhead } = editor();
   apply((p) => {
     const { clip } = findClip(p, clipId);
-    if (!targetKeys(clip, target)) return setAnimated(p, clipId, target, true, playhead);
+    if (!targetKeys(clip, target)) return setTargetsAnimated(p, clipId, group, true, playhead);
     if (!onClip(clip, playhead)) throw new TimelineError(OUTSIDE_REFUSAL);
-    const ref = keyAtPlayhead(clip, target, playhead, p.format.fps);
-    if (ref) return removeKeys(p, clipId, [ref]);
-    return setValueAt(p, clipId, target, targetValueAt(clip, target, playhead, p.format.fps), playhead);
+    if (keyAtPlayhead(clip, target, playhead, p.format.fps)) {
+      const refs = group.flatMap((g) => keyAtPlayhead(clip, g, playhead, p.format.fps) ?? []);
+      return removeKeys(p, clipId, refs);
+    }
+    const entries = group.map((g) => ({ target: g, value: targetValueAt(clip, g, playhead, p.format.fps) }));
+    return setTargetsAt(p, clipId, entries, playhead);
   });
 }
 

@@ -26,6 +26,8 @@ export const transformKeyIds = (prop: TransformProp): KeyframeIds => ({
 interface Props {
   clip: Clip;
   target: AnimTarget;
+  /** Targets that switch and key together with `target` (the chroma key colour's three params); `target` leads. */
+  group?: readonly AnimTarget[];
   label: string;
   ids: KeyframeIds;
   /** Edits are off (locked track, project not ready); navigation (previous/next, strip) stays available. */
@@ -47,7 +49,7 @@ function Stopwatch() {
  * (playhead only), the key diamond (add a key holding the shown value, or remove the key under the playhead; pressed
  * while one is there) and the mini key strip. Re-renders on playhead moves only while the property is animated.
  */
-export default function KeyframeControls({ clip, target, label, ids, disabled, title }: Props) {
+export default function KeyframeControls({ clip, target, group, label, ids, disabled, title }: Props) {
   const animated = targetKeys(clip, target) !== undefined;
   const playhead = useEditor((s) => (animated ? s.playhead : 0));
   const fps = useEditor((s) => s.history.present.format.fps);
@@ -65,7 +67,7 @@ export default function KeyframeControls({ clip, target, label, ids, disabled, t
         aria-label={`Animate ${label}`}
         title={title ?? (animated ? `Stop animating ${label} (keeps the value at the playhead)` : `Animate ${label} from the playhead`)}
         disabled={disabled}
-        onClick={() => toggleAnimatedCmd(clip.id, target)}
+        onClick={() => toggleAnimatedCmd(clip.id, target, group)}
       >
         <Stopwatch />
       </button>
@@ -88,7 +90,7 @@ export default function KeyframeControls({ clip, target, label, ids, disabled, t
         aria-label={`${label} keyframe at the playhead`}
         title={title ?? (atKey ? `Remove the ${label} keyframe here` : `Add a ${label} keyframe here`)}
         disabled={disabled}
-        onClick={() => toggleKeyAtPlayheadCmd(clip.id, target)}
+        onClick={() => toggleKeyAtPlayheadCmd(clip.id, target, group)}
       >
         <span aria-hidden="true">◆</span>
       </button>
