@@ -1,16 +1,14 @@
 import type { KeyboardEvent } from 'react';
+import { useEffect } from 'react';
 import { clipDuration } from '../core/model';
 import type { Clip } from '../core/model';
 import './animation.css';
 import { keyTimelineTime } from './keyframeCommands';
-import { diamondX, rowSummary } from './keyDrag';
-import { isPicked, useKeySelection } from './keySelection';
+import { MIN_ROW_PX, diamondX, rowSummary, selWithoutHiddenRow } from './keyDrag';
+import { isPicked, keySel, setKeySel, useKeySelection } from './keySelection';
 import { openEaseCmd, selectKeyCmd } from './keySelectionCommands';
 import { timeToPx } from './layout';
 import { useKeyDrag } from './useKeyDrag';
-
-/** Below this clip width (px) the row is hidden: diamonds would cover the whole clip and its trim handles. */
-export const MIN_ROW_PX = 24;
 
 interface Props {
   clip: Clip;
@@ -30,6 +28,8 @@ export default function KeyframeRow({ clip, pps, locked }: Props) {
   const { live, onPointerDown, onClick } = useKeyDrag(clip.id, pps, locked);
   const width = timeToPx(clipDuration(clip), pps);
   const { times, before, after } = rowSummary(clip);
+  // A hidden row (zoomed out) must not leave a key selection behind that Delete would act on unseen.
+  useEffect(() => setKeySel(selWithoutHiddenRow(keySel(), clip, pps)), [clip, pps]);
   if (width < MIN_ROW_PX || (times.length === 0 && !before && !after)) return null;
 
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, u: number): void => {

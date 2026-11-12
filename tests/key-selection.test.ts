@@ -6,7 +6,10 @@ import { useEditor } from '../src/state/store';
 import { useToasts } from '../src/ui/Toast';
 import { keyRouted, shortcutFor } from '../src/ui/keys';
 import { NO_KEYS, isPicked, pickKey, pruneKeySel, selectedRefs, useKeySelection } from '../src/ui/keySelection';
-import { deleteRouted, jumpKeyCmd, moveSelectedKeysCmd, selectKeyCmd } from '../src/ui/keySelectionCommands';
+import { dropKeySelectionOnEscape, jumpKeyCmd, moveSelectedKeysCmd, deleteSelectedKeysCmd, selectKeyCmd } from '../src/ui/keySelectionCommands';
+import { COMMANDS, routeShortcut } from '../src/ui/shortcutCommands';
+import { MIN_ROW_PX, selWithoutHiddenRow } from '../src/ui/keyDrag';
+import { hasSelectedKeys } from '../src/ui/keySelectionCommands';
 import { base, video } from './overlay-fixtures';
 
 const lin = { kind: 'linear' } as const;
@@ -16,6 +19,11 @@ const sel = () => useKeySelection.getState().sel;
 const depth = () => state().history.past.length;
 const present = () => state().history.present;
 const clip = (id = 'c1'): Clip | undefined => present().tracks.flatMap((t) => t.clips).find((c) => c.id === id);
+/** The production Delete path: shortcutFor -> routeShortcut (key selection decides) -> COMMANDS. */
+const pressDelete = (shift = false): void => {
+  const found = shortcutFor({ key: 'Delete', code: 'Delete', ctrlKey: false, metaKey: false, shiftKey: shift, altKey: false, repeat: false })!;
+  COMMANDS[routeShortcut(found)]();
+};
 const toasts = () => useToasts.getState().toasts.map((t) => t.message);
 
 /** c1: sourced, source 1..5 s at timeline 2..6 (local = t − 1); scale keys at local 1.5 and 3; opacity at 3. */
@@ -117,7 +125,85 @@ describe('moveSelectedKeysCmd', () => {
   });
 });
 
+describe('several selected keys (two times at once)', () => {
+  /** c1 has keys at local 1.5 (scale), 3 (scale, opacity); a third time at 4 gives room to move. */
+  const three = (): Clip => video('c1', { start: 2, in: 1, out: 5, keys: { scale: [k(1.5), k(3, 2)], opacity: [k(3, 0.5), k(3.9, 1)] } });
+
+  it('moveSelectedKeysCmd moves BOTH selected times in ONE step; the selection follows both', () => {
+    load([three()]);
+    selectKeyCmd('c1', 1.5, false);
+    selectKeyCmd('c1', 3, true);
+    expect(sel().times).toEqual([1.5, 3]);
+    moveSelectedKeysCmd(0.25);
+    expect(depth()).toBe(1);
+    expect(clip()!.keys).toEqual({ scale: [k(1.75), k(3.25, 2)], opacity: [k(3.25, 0.5), k(3.9, 1)] });
+    expect(sel()).toEqual({ clipId: 'c1', times: [1.75, 3.25] });
+  });
+
+  it('deleteSelectedKeysCmd removes both times in ONE step and clears the selection', () => {
+    load([three()]);
+    selectKeyCmd('c1', 1.5, false);
+    selectKeyCmd('c1', 3, true);
+    deleteSelectedKeysCmd();
+    expect(depth()).toBe(1);
+    expect(clip()!.keys).toEqual({ opacity: [k(3.9, 1)] }); // scale had only those two keys => static
+    expect(sel()).toEqual(NO_KEYS);
+  });
+
+  it('chroma key colour: two selected times move/delete all THREE colour refs at each', () => {
+    const col = [k(1, 0), k(2, 1), k(3, 0.5)];
+    const chroma = (): Clip => video('c1', {
+      start: 2, in: 1, out: 5,
+      effects: [{ id: 'ck', type: 'chromaKey', enabled: true, params: { keyR: 0, keyG: 1, keyB: 0, tolerance: 0.3, softness: 0.1, spill: 0.5 },
+        keys: { keyR: col, keyG: col, keyB: col } }],
+    } as Partial<Clip>);
+    load([chroma()]);
+    selectKeyCmd('c1', 1, false);
+    selectKeyCmd('c1', 2, true);
+    expect(selectedRefs(clip()!, sel().times)).toHaveLength(6);
+    moveSelectedKeysCmd(0.5);
+    expect(depth()).toBe(1);
+    const keys = (clip()!.effects![0] as unknown as { keys: Record<string, Keyframe[]> }).keys;
+    for (const g of ['keyR', 'keyG', 'keyB']) expect(keys[g].map((x) => x.t)).toEqual([1.5, 2.5, 3]);
+    deleteSelectedKeysCmd();
+    expect(depth()).toBe(2);
+    const after = (clip()!.effects![0] as unknown as { keys?: Record<string, Keyframe[]> }).keys ?? {};
+    for (const g of ['keyR', 'keyG', 'keyB']) expect(after[g]?.map((x) => x.t) ?? []).toEqual([3]);
+  });
+});
+
+describe('Escape drops the key selection and reports it', () => {
+  it('returns true only when something was cleared', () => {
+    expect(dropKeySelectionOnEscape()).toBe(false);
+    selectKeyCmd('c1', 3, false);
+    expect(dropKeySelectionOnEscape()).toBe(true);
+    expect(sel()).toEqual(NO_KEYS);
+    expect(dropKeySelectionOnEscape()).toBe(false);
+  });
+});
+
+describe('a hidden keyframe row (clip narrower than MIN_ROW_PX)', () => {
+  it('selWithoutHiddenRow clears the selection of that clip only while its row is hidden', () => {
+    const c = keyed(); // 4 s long
+    const picked = { clipId: 'c1', times: [3] };
+    expect(MIN_ROW_PX).toBe(24);
+    expect(selWithoutHiddenRow(picked, c, 6)).toBe(picked); // 24 px: shown
+    expect(selWithoutHiddenRow(picked, c, 5.9)).toBe(NO_KEYS); // 23.6 px: hidden
+    const other = { clipId: 'c2', times: [1] };
+    expect(selWithoutHiddenRow(other, c, 5.9)).toBe(other);
+  });
+});
+
 describe('Delete routing (O15: selected keys before clips)', () => {
+  it('routeShortcut follows the live key selection (the production path)', () => {
+    expect(routeShortcut('delete')).toBe('delete');
+    selectKeyCmd('c1', 3, false);
+    expect(hasSelectedKeys()).toBe(true);
+    expect(routeShortcut('delete')).toBe('deleteKeys');
+    expect(routeShortcut('rippleDelete')).toBe('deleteKeys');
+    expect(routeShortcut('undo')).toBe('undo');
+  });
+
   it('keyRouted sends Delete/Backspace (and Shift) to the keys only while keys are selected', () => {
     expect(keyRouted('delete', true)).toBe('deleteKeys');
     expect(keyRouted('rippleDelete', true)).toBe('deleteKeys');
@@ -127,12 +213,12 @@ describe('Delete routing (O15: selected keys before clips)', () => {
 
   it('first Delete removes the selected keys (ONE step, clip kept); the next Delete removes the clip', () => {
     selectKeyCmd('c1', 3, false);
-    deleteRouted('delete');
+    pressDelete(true); // Shift+Delete is routed the same way
     expect(depth()).toBe(1);
     expect(clip()!.keys).toEqual({ scale: [k(1.5)] }); // opacity's last key removed => static at its value
     expect(clip()!.transform.opacity).toBe(0.5);
     expect(sel()).toEqual(NO_KEYS);
-    deleteRouted('delete');
+    pressDelete();
     expect(depth()).toBe(2);
     expect(clip()).toBeUndefined();
   });
@@ -140,7 +226,7 @@ describe('Delete routing (O15: selected keys before clips)', () => {
   it('locked track: the key delete is refused with a toast and does NOT fall back to the clip', () => {
     load([keyed()], true);
     selectKeyCmd('c1', 1.5, false);
-    deleteRouted('delete');
+    pressDelete();
     expect(depth()).toBe(0);
     expect(clip()).toBeDefined();
     expect(toasts()).toContain('Track is locked');

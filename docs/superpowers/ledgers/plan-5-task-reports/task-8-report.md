@@ -42,7 +42,7 @@ Commit: `029ccb3 feat(ui): keyframe diamonds, selection and keyboard on the time
   as a SIBLING of the clip button (buttons cannot nest), hidden for audio clips, clips without keys, and clips narrower than
   `MIN_ROW_PX = 24`. Diamonds `keyframe-diamond` are buttons (Tab-reachable) with `data-time` (timeline time, follows the live
   drag), `data-selected`, `aria-pressed`, `aria-label` "Keyframe at 1.20 s"; arrows `keyframe-more-before/after`. Enter on a
-  diamond selects it (if needed) and calls `openEaseCmd()`; double-click calls `openEaseCmd()`.
+  diamond selects it (if needed) and calls `openEaseCmd()`; double-click calls `openEaseCmd()` (for ONE time: the first click of the double-click reduced the selection to that diamond; Enter uses the whole selection).
 - `src/ui/keys.ts`: new shortcuts `prevKey` (`[`), `nextKey` (`]`), `deleteKeys`; `keyRouted(s, keysSelected)` maps
   Delete/Backspace (and Shift+Delete/Backspace) to `deleteKeys` while keys are selected; `shortcutBlockedByRange` also blocks
   `deleteKeys` on sliders/pickers. `useShortcuts.ts` routes through `keyRouted`, maps the new commands, and Escape (not typing,
@@ -98,7 +98,8 @@ Commit: `029ccb3 feat(ui): keyframe diamonds, selection and keyboard on the time
 
 ## Contract for Tasks 9-12
 - Task 9: `setEaseOpener((clipId, refs) => …)` in `src/ui/keySelectionCommands.ts` registers the ease editor; Enter on a timeline
-  diamond (selecting it first if unselected) and double-click call it with `selectedRefs` of the whole selection (all targets,
+  diamond (selecting it first if unselected) calls it with `selectedRefs` of the WHOLE selection; a double-click opens it for a SINGLE
+  time (its first click already reduced the selection to that diamond) (all targets,
   three chroma refs per time). `setKeyEase(p, clipId, refs, ease)` in ONE apply; the key selection survives the edit (pruning
   keeps times whose keys still exist). Register in an effect and unregister (`null`) on unmount. Enter currently
   `preventDefault`s the native click.
@@ -113,3 +114,7 @@ Commit: `029ccb3 feat(ui): keyframe diamonds, selection and keyboard on the time
 3. A key at the clip's first frame puts a diamond over the lower part of the start trim handle (T8-6); manual QA should judge.
 4. The plan's Task 8 gate calls for a full `npm run e2e`; not run per the brief (controller to run).
 5. `npm run build` prints a pre-existing Rolldown INEFFECTIVE_DYNAMIC_IMPORT warning (mediabunny), unrelated.
+
+
+## Fix round 1
+Multi-key move/delete unit + e2e tests (`tests/e2e/keyframes-timeline-multi.spec.ts`), `routeShortcut`/`COMMANDS` extracted to `src/ui/shortcutCommands.ts` (dead `deleteRouted` removed), key selection cleared while its row is hidden (`selWithoutHiddenRow`), Escape that cleared the selection calls `preventDefault`, `deleteKeys` range-guard test.

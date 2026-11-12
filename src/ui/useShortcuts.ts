@@ -1,24 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { deleteSelected, redo, rippleDeleteSelected, splitAtPlayhead, togglePlay, undo } from './commands';
 import { isKeyboardFocused } from './inputModality';
 import { TRANSFORMING_CLASS } from './useTransformDrag';
 import { isTextEntry, nativeSpaceTarget } from './keys';
-import type { Shortcut } from './keys';
-import { keyRouted, shortcutBlockedByRange, shortcutFor } from './keys';
-import { NO_KEYS, setKeySel } from './keySelection';
-import { deleteSelectedKeysCmd, hasSelectedKeys, jumpKeyCmd } from './keySelectionCommands';
-
-const COMMANDS: Record<Shortcut, () => void> = {
-  play: togglePlay,
-  split: splitAtPlayhead,
-  delete: deleteSelected,
-  rippleDelete: rippleDeleteSelected,
-  undo,
-  redo,
-  prevKey: () => jumpKeyCmd(-1),
-  nextKey: () => jumpKeyCmd(1),
-  deleteKeys: deleteSelectedKeysCmd,
-};
+import { shortcutBlockedByRange, shortcutFor } from './keys';
+import { dropKeySelectionOnEscape } from './keySelectionCommands';
+import { COMMANDS, routeShortcut } from './shortcutCommands';
 
 function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && isTextEntry(target as HTMLElement & { type?: string });
@@ -55,12 +41,13 @@ export function useShortcuts(enabled: boolean): void {
         return;
       }
       // Escape drops a timeline key selection (a diamond drag handles its own Escape first, in the capture phase).
-      if (e.key === 'Escape' && hasSelectedKeys()) setKeySel(NO_KEYS);
+      // Only an Escape that cleared something is marked used (the record button and drags read defaultPrevented).
+      if (e.key === 'Escape' && dropKeySelectionOnEscape()) e.preventDefault();
       const parts = keyParts(e);
       const found = shortcutFor({ ...parts, repeat: false });
       if (!found) return;
       // O15: selected keyframes take Delete/Backspace before clips.
-      const shortcut = keyRouted(found, hasSelectedKeys());
+      const shortcut = routeShortcut(found);
       if (e.target instanceof HTMLInputElement && shortcutBlockedByRange(e.target, shortcut)) return;
       e.preventDefault();
       // Held Space/S/Delete keys are swallowed rather than repeated (shortcutFor drops their repeats).

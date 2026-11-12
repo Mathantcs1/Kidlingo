@@ -5,7 +5,6 @@ import type { KeyRef } from '../core/keyframeEdits';
 import type { Clip, Id } from '../core/model';
 import { findClip } from '../core/timeline';
 import { useEditor } from '../state/store';
-import { deleteSelected, rippleDeleteSelected } from './commands';
 import { jumpToKeyCmd, seekToKeyCmd } from './keyframeCommands';
 import { NO_KEYS, keySel, pickKey, selectedRefs, setKeySel } from './keySelection';
 import { guard } from './Toast';
@@ -59,11 +58,11 @@ export function moveSelectedKeysCmd(delta: number): void {
   });
 }
 
-/** Delete/Backspace from the keyboard: the selected keys when there are any, else the selected clips (O15). */
-export function deleteRouted(kind: 'delete' | 'rippleDelete'): void {
-  if (hasSelectedKeys()) deleteSelectedKeysCmd();
-  else if (kind === 'delete') deleteSelected();
-  else rippleDeleteSelected();
+/** Escape: drops the key selection; true only when there was one (the caller then marks the event as used). */
+export function dropKeySelectionOnEscape(): boolean {
+  if (!hasSelectedKeys()) return false;
+  setKeySel(NO_KEYS);
+  return true;
 }
 
 /** `[` / `]`: the playhead to the previous/next key of the key clip (any property); no history. */

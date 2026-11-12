@@ -3,11 +3,13 @@
 import { localRange } from '../core/keyframes';
 import { keyTimes, moveKeys } from '../core/keyframeEdits';
 import type { KeyRef } from '../core/keyframeEdits';
+import { clipDuration } from '../core/model';
 import type { Clip, Id, Project } from '../core/model';
 import { TimelineError } from '../core/timeline';
 import { SNAP_PX } from './drag';
 import { keyVisible } from './keyframeCommands';
-import { visibleKeyTimes } from './keySelection';
+import { NO_KEYS, visibleKeyTimes } from './keySelection';
+import type { KeySel } from './keySelection';
 
 /** The clip's diamonds (visible key times) and whether keys lie beyond its start/end (D9 keeps them on trims). */
 export function rowSummary(clip: Clip): { times: number[]; before: boolean; after: boolean } {
@@ -75,4 +77,12 @@ export function moveRefusal(p: Project, clipId: Id, refs: readonly KeyRef[], del
     if (e instanceof TimelineError) return e.message;
     throw e;
   }
+}
+
+/** Below this clip width (px) the keyframe row is hidden: diamonds would cover the whole clip and its trim handles. */
+export const MIN_ROW_PX = 24;
+
+/** A key selection of `clip` is dropped while its row is hidden (too narrow), so Delete never removes unseen keys. */
+export function selWithoutHiddenRow(s: KeySel, clip: Clip, pps: number): KeySel {
+  return s.clipId === clip.id && clipDuration(clip) * pps < MIN_ROW_PX ? NO_KEYS : s;
 }

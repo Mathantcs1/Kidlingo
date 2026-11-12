@@ -288,9 +288,10 @@ describe('parseEntry locale forms', () => {
 describe('shortcutBlockedByRange', () => {
   it('range sliders own Delete/Backspace and S, but not undo, redo or play', () => {
     const range = { tagName: 'INPUT', type: 'range' };
-    for (const s of ['delete', 'rippleDelete', 'split'] as const) expect(shortcutBlockedByRange(range, s), s).toBe(true);
-    for (const s of ['undo', 'redo', 'play'] as const) expect(shortcutBlockedByRange(range, s), s).toBe(false);
+    for (const s of ['delete', 'rippleDelete', 'deleteKeys', 'split'] as const) expect(shortcutBlockedByRange(range, s), s).toBe(true);
+    for (const s of ['undo', 'redo', 'play', 'prevKey', 'nextKey'] as const) expect(shortcutBlockedByRange(range, s), s).toBe(false);
     expect(shortcutBlockedByRange({ tagName: 'INPUT', type: 'color' }, 'delete')).toBe(true);
+    expect(shortcutBlockedByRange({ tagName: 'INPUT', type: 'color' }, 'deleteKeys')).toBe(true);
     expect(shortcutBlockedByRange({ tagName: 'DIV' }, 'delete')).toBe(false);
     expect(shortcutBlockedByRange({ tagName: 'INPUT', type: 'checkbox' }, 'delete')).toBe(false);
   });
