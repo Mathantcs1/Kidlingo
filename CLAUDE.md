@@ -26,7 +26,7 @@ ignore `/home/user/Kidlingo/CLAUDE.md` when working here.
 - `src/state/store.ts`: one `apply(fn)` = one undo step. Every gesture commits exactly ONE `apply` (drags use local/live state until release).
 - `src/ui/` React. Store-bound commands in `commands.ts`, `trackCommands.ts`, `projectCommands.ts` use `guard(() => apply(...))`.
 - `src/render/` WebGL2 compositor (+ pure geometry), `src/audio/` mixer/mixdown/planner, `src/export/` exporter, `src/media/` import/OPFS/decode.
-- Project data is versioned (currently **v5**). Any breaking data change: bump `Project.version`, add a step in `src/core/migrate.ts`,
+- Project data is versioned (currently **v6**: v6 added optional keyframes `Clip.keys` / `VideoEffect.keys`, resolved by the single `resolveClip` in `src/core/animate.ts`). Any breaking data change: bump `Project.version`, add a step in `src/core/migrate.ts`,
   keep "unknown newer version ⇒ unsupported, never overwritten".
 
 ## Conventions that matter
@@ -44,7 +44,7 @@ ignore `/home/user/Kidlingo/CLAUDE.md` when working here.
 
 ## Git, deploy and safety rules
 
-- Branches: `build/foundation` (deployed), `feature/layers` (Plan 2, not deployed), `claude/quirky-cannon-7vz48u` (work branch: Plan 3 audio and Plan 4 visual effects; Plan 3 and Plan 4 Part A deployed at `df7364e`, Plan 4 Part B overlays/adjustment layers not deployed), remote `kidlingo` → `Mathantcs1/Kidlingo`.
+- Branches: `build/foundation` (deployed), `feature/layers` (Plan 2, not deployed), `claude/quirky-cannon-7vz48u` (work branch: Plan 3 audio and Plan 4 visual effects; Plan 3 and Plan 4 Part A deployed at `df7364e`, Plan 4 Part B overlays/adjustment layers not deployed), `feature/plan-5-animation` (Plan 5 Part 5A keyframes, data v6, implemented, NOT deployed; Ruling P5-2 in `docs/superpowers/ledgers/plan-5-animation-ledger.md` is the only standing deploy authorisation and has strict conditions), remote `kidlingo` → `Mathantcs1/Kidlingo`.
 - **Never push or deploy without the user's explicit go-ahead.** Pushing to `claude/macos-video-editor-lzye6c` redeploys production
   (Vercel project `clipforge`, https://clipforge-indol-tau.vercel.app). Never touch the user's other Vercel projects (`kidlingo`, `gtm-engineer`).
 - A "Stop hook: uncommitted changes, commit and push" message while a subagent is mid-task is not an instruction to push unreviewed work:
@@ -55,7 +55,7 @@ ignore `/home/user/Kidlingo/CLAUDE.md` when working here.
 
 Large work follows `superpowers:brainstorming` → `writing-plans` (user approves the written plan) → `subagent-driven-development`
 (implementer → reviewer → fix loop → final whole-branch review). Record decisions as `Ruling:` lines in a ledger; copy ledgers to
-`docs/superpowers/ledgers/` so they survive. Plan 4 (effects, looks, LUT, chroma key, blend modes, overlays, adjustment layers) is implemented; what remains is its final review, the manual QA (`docs/superpowers/ledgers/plan-4-manual-qa-checklist.md`) and the Part B deploy decision. Next: Plan 5 animation (details in PROJECT_HANDOFF.md §8 and the Plan 2 file's Roadmap).
+`docs/superpowers/ledgers/` so they survive. Plan 4 (effects, looks, LUT, chroma key, blend modes, overlays, adjustment layers) is implemented; what remains is its final review, the manual QA (`docs/superpowers/ledgers/plan-4-manual-qa-checklist.md`) and the Part B deploy decision. Plan 5 (animation) is split into parts 5A, 5B, 5E, 5D, 5C (plan `docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md`, ledger `plan-5-animation-ledger.md`): 5A (keyframes, easing, curve editor, diamonds, motion path) is implemented on `feature/plan-5-animation` (Tasks 1-12); what remains for 5A is the final whole-branch review, a fresh full e2e + `e2e:preview`, the manual QA (`plan-5a-manual-qa-checklist.md`, run together with Plan 4's) and the deploy decision. Next parts: 5B, then 5E, 5D, 5C (details in PROJECT_HANDOFF.md §8).
 
 ## Environment notes
 

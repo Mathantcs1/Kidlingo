@@ -60,6 +60,26 @@ It is a static site built with React, TypeScript and Vite.
   - **Overlays** (Add overlay menu): lower third, subscribe button, progress bar and stickers (heart, star, arrow, like,
     bell, fire, check, sparkle). They are clips on a video layer (text, subtext, colour, accent and sticker in the
     Inspector; position, scale, rotation and opacity like any clip) and are drawn with the system font stack.
+- **Keyframe animation** (Plan 5, Part 5A): animate a clip over time instead of setting one fixed value.
+  - **What can be keyed**: position, scale, rotation and opacity of video, image, overlay and adjustment clips
+    (adjustment clips: opacity only), and every numeric parameter of a picture effect (Colour, Blur, Vignette,
+    Chroma key colour and so on; Mirror's mode is not animatable). Audio clips have no keyframes.
+  - **Inspector**: each property has a stopwatch (switch animation on or off, one undo step each), a key diamond
+    (add a key holding the value shown, or remove the key under the playhead), previous/next key buttons and a mini
+    key strip. While a property is animated, typing a value, dragging a slider or dragging the clip on the preview
+    writes a key at the playhead (one undo step per gesture); the playhead must be on the clip. Turning animation off
+    keeps the value shown at the playhead.
+  - **Easing**: every segment between two keys has an ease: Linear, Hold, Ease in, Ease out, Ease in-out, Back,
+    Elastic, Bounce or a **custom cubic-Bezier curve** edited in the ease editor (open it from a diamond with a
+    double-click or Enter, or the ∿ button; drag the two handles or type the numbers; presets and curve edits are
+    one undo step and apply to every property keyed at that time).
+  - **Timeline diamonds**: a selected animated clip shows a row of key diamonds. Click to select a key (Shift-click for
+    several), drag to retime (whole frames, one undo step, Escape cancels), Delete or Backspace removes the selected
+    keys; `[` and `]` jump the playhead to the previous/next key.
+  - **Motion path**: a selected clip with position keys shows its path on the preview (read-only dots at the keys;
+    clicking a dot moves the playhead to that key).
+  - Splitting, trimming, moving, ripple-deleting, joining, merging all and changing the project format keep the
+    animation where it was (the keys follow the clip or the format).
 - **Numeric position/scale/rotation/opacity fields** in the inspector for a video, image or overlay clip (adjustment clips get opacity only): X and Y in
   pixels from the frame centre (0 = centred), scale and opacity in percent, rotation in degrees clockwise. Type a
   value and press Enter (or leave the field) to apply it as one undo step; Up/Down step the value (Shift ×10) and
@@ -110,15 +130,17 @@ It is a static site built with React, TypeScript and Vite.
 
 ## Roadmap (planned, not implemented yet)
 
-The multi-layer timeline (Plan 2), audio editing (Plan 3) and visual effects (Plan 4) are implemented (Plans 2 and 3 and
-Plan 4 Part A, through blend modes, are deployed; Plan 4 Part B, the overlays and adjustment layers, is on the work
-branch and not deployed). The next plan, not implemented yet, is outlined in the roadmap section of
-[docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md](docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md):
+The multi-layer timeline (Plan 2), audio editing (Plan 3), visual effects (Plan 4) and the keyframe engine (Plan 5,
+Part 5A) are implemented. Plans 2 and 3 and Plan 4 Part A, through blend modes, are deployed; Plan 4 Part B (overlays,
+adjustment layers) and Plan 5 Part 5A are on work branches and not deployed. The rest of Plan 5 is outlined in
+[docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md](docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md):
 
-- **Plan 5, animation and motion**: keyframes and easing, motion paths, text with animation presets,
-  transitions, speed ramps, reverse, crop/rotate/flip.
+- **5B presets and motion**: entrance/emphasis/exit animation presets, springs, loops, spatial Bezier paths with
+  on-canvas key dragging, copy/paste of keyframes, save-as-preset.
+- **5E crop, flip, anchor point**, **5D speed** (constant speed, reverse, ramps, freeze frame, pitch-preserving
+  audio) and **5C transitions** (crossfade, wipe, slide, zoom on a cut).
 
-There is currently no transition, keyframe or text-clip tool (overlays carry fixed text only).
+There is currently no transition, speed, crop or text-clip tool (overlays carry fixed text only).
 
 ## Supported files
 
@@ -190,8 +212,9 @@ Shortcuts are ignored while you type in a text field or select, and while the ex
 | --- | --- |
 | Space | Play / pause |
 | S | Split at the playhead (the selected clips, or every clip under the playhead if none is selected) |
-| Delete or Backspace | Delete the selected clips |
-| Shift+Delete or Shift+Backspace | Ripple delete: delete the selected clips and close the gaps |
+| Delete or Backspace | Delete the selected keyframes if any are selected, otherwise the selected clips |
+| Shift+Delete or Shift+Backspace | Same for keyframes; otherwise ripple delete: delete the selected clips and close the gaps |
+| `[` / `]` | Jump the playhead to the previous / next keyframe of the selected clip (needs a key selected when several clips are selected) |
 | Ctrl+Z / Cmd+Z | Undo |
 | Shift+Ctrl+Z / Shift+Cmd+Z, or Ctrl+Y | Redo |
 
@@ -254,8 +277,22 @@ Layers and the preview:
     by the tests; there is no time guard yet, and a GPU reset during an export ends it with a "WebGL context lost" error.
     The preview and an export each hold their own effect memory while an export runs.
   - All performance and accuracy measurements were made with the software renderer (SwiftShader) in headless Chromium;
-    nothing was measured on a real GPU. There are no keyframes yet, so effect parameters cannot be animated.
-- No transitions, keyframes or text clips yet (see the roadmap).
+    nothing was measured on a real GPU.
+- **Animation limits** (Plan 5, Part 5A):
+  - At most **500 keys per property** (a further key is refused; a hand-edited project is trimmed to the earliest 500).
+    A key costs about 55 to 60 bytes of saved project.
+  - There are no animation presets, springs or loops yet, no speed change, no transitions and no crop/flip yet
+    (Parts 5B, 5E, 5D and 5C). The motion path is display only (key dots are not draggable on the preview).
+  - A split or trim that is not a whole number of frames from the clip's start can move the animation's frame grid by
+    less than one frame. A static edit of an animated property is refused ("This setting is animated: change it at the
+    playhead"); turn the stopwatch off first.
+  - A scale of 0 hides a clip (an Elastic or Back ease can overshoot to 0 briefly; values are floored at 0).
+  - **Exports are not bit-reproducible in headless Chromium**: its software H.264 encoder gives slightly different bytes
+    run to run at 1080p (the rendered frames are identical, the encoded ones differ by well under 1/255 on average).
+  - Overlay text uses the device's system font; the animation measurements (preview frame time, memory, parity with
+    the export) were made with the software renderer (SwiftShader) in headless Chromium on Linux, not on a real GPU,
+    in Safari or in QuickTime (see `docs/superpowers/ledgers/plan-5a-manual-qa-checklist.md`).
+- No transitions, speed change, crop or text clips yet (see the roadmap).
 
 ## Development
 

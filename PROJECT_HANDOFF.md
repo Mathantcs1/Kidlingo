@@ -22,7 +22,7 @@ and a multi-layer timeline. It is hosted on Vercel. Building is staged into plan
 | Deployed branch | `claude/macos-video-editor-lzye6c` on that remote = what Vercel serves |
 | Live site | https://clipforge-indol-tau.vercel.app (Vercel Authentication is OFF, public) |
 | Vercel | team "Mathan's projects" (`trade-journal-mathan`, `team_DwaxJujNZSykp0iwygdhXN0h`), project `clipforge` (`prj_DJABs4FyofqDa7l13HvANO0M0dq7`), framework preset is Next.js but `vercel.json` in the repo overrides to Vite |
-| Local branches | `main` (only the early spec/plan docs), `build/foundation` (Plan 1 + hotfix, **deployed**), `feature/layers` (Plan 2; **now deployed to production**: its tip `4031ea7` is on `claude/macos-video-editor-lzye6c`; local name `claude/clipforge-plan-2-layers` in the Plan 3 checkout), `claude/quirky-cannon-7vz48u` (the work branch: Plan 3 audio editing and Plan 4 visual effects on top of Plan 2; Plans 3 and Plan 4 Part A are **deployed** to production (`3aa8eb6`, then fast-forward to `df7364e`); Plan 4 Part B (overlays, adjustment layers) and Task 14 are on this branch and **not deployed**) |
+| Local branches | `main` (only the early spec/plan docs), `build/foundation` (Plan 1 + hotfix, **deployed**), `feature/layers` (Plan 2; **now deployed to production**: its tip `4031ea7` is on `claude/macos-video-editor-lzye6c`; local name `claude/clipforge-plan-2-layers` in the Plan 3 checkout), `claude/quirky-cannon-7vz48u` (the work branch: Plan 3 audio editing and Plan 4 visual effects on top of Plan 2; Plans 3 and Plan 4 Part A are **deployed** to production (`3aa8eb6`, then fast-forward to `df7364e`); Plan 4 Part B (overlays, adjustment layers) and Task 14 are on this branch and **not deployed**), `feature/plan-5-animation` (Plan 5 Part 5A keyframes, data v6, created from the deployed Plan 4 state `22f797c`; implemented, **not deployed**: Ruling P5-2 allows a deploy only after the part's gate and the user's go-ahead is exercised) |
 
 Important facts:
 - **Do not use `/home/user/Kidlingo/CLAUDE.md` or its Fairshare code for ClipForge.** Kidlingo is an unrelated expense-splitting app
@@ -55,6 +55,11 @@ Environment facts that matter:
 - The e2e dev-server output shows a few forwarded `console.error` lines from tests that deliberately stub WebGL failures; they are expected.
 
 ## 4. Test results
+
+**Plan 5 Part 5A (branch `feature/plan-5-animation`, written at Task 12):**
+- Vitest: **1435 tests passed, 105 files** (`npm test`; baseline 1182 at Plan 4's end). `npm run typecheck` clean, `npm run build` OK, `grep -rl __clipforge dist` prints nothing.
+- Playwright e2e: 468 specs (391 at Plan 4's end). The last full run (Task 11) was 464/467 in 21.8 min; the 3 failures (`audio-chain.spec.ts:94`, `audio-denoise.spec.ts:40/:57`) are the known "Execution context was destroyed" flake class and passed 10/10 alone. Task 12 added `keyframes-journey.spec.ts` (~40 s) and extended the 1080p exact-render check to ten frames; the controller runs the fresh full run and `e2e:preview` before any deploy.
+- Nothing from Plan 5A has been seen on a real GPU, felt with a trackpad or played in QuickTime: run `docs/superpowers/ledgers/plan-5a-manual-qa-checklist.md` TOGETHER with Plan 4's (also never run) in desktop Chrome on a Mac.
 
 **Plan 4 (branch `claude/quirky-cannon-7vz48u`, written at Task 14):**
 - Vitest: **1182 tests passed, 87 files** (`npm test`). `npm run typecheck` clean, `npm run build` OK, `grep -rl __clipforge dist` prints nothing.
@@ -108,13 +113,21 @@ Environment facts that matter:
 - UI: EffectsInspector/LooksGallery/LutPicker/VideoEffectRow, BlendModeSelect, OverlayMenu/OverlayInspector. Preview and export go through the same compositor; the export dialog lists skipped effects/LUTs/blend (`src/render/effects/unavailable.ts`).
 - Decisions: `docs/superpowers/ledgers/plan-4-visual-effects-ledger.md` (Rulings P1-P10, T11-1..3, T13-1..4) and the per-task reports in `docs/superpowers/ledgers/plan-4-task-reports/`; manual QA: `plan-4-manual-qa-checklist.md`.
 
+### Plan 5 Part 5A (keyframe engine, on `feature/plan-5-animation`, NOT deployed)
+- Project data model **v6**: optional `Clip.keys` (position, scale, rotation, opacity) and `VideoEffect.keys` (per numeric param); a key is `{ t, v, ease }` (position `{ t, x, y, ease }`), `t` is clip-local seconds, max 500 keys per property. Migration v5 -> v6 repairs/clamps keys; `{version: 7}` stays unsupported and never overwritten.
+- Pure core (`src/core/easing.ts` 9 eases incl. a CSS-exact cubic-Bezier solver, `keyframes.ts`, `animate.ts` = ONE resolver `resolveClip(clip, t, fps)`, `keyframeEdits.ts`, `keyLists.ts`): split/trim/move/join/merge/reframe/detach/look rules keep the picture (Rulings P5-3..5, T4-1..11). A static edit of an animated property is refused; edits write a key at the playhead.
+- Render: the compositor calls the resolver once per clip per frame; preview and export share it; overlay textures are sized from the maximum animated scale (stable). Reader audit test lists every reader of `transform`/`params`.
+- UI: inspector stopwatch/key/prev/next/strip rows (`KeyframeControls`, transform and effect params), on-canvas keyed drag, timeline diamonds with selection, retime drag, multi-key delete and `[`/`]` (`keyRouted`: Delete removes selected keys before clips), ease presets and cubic-Bezier editor (`EaseEditor`), read-only motion path with key dots.
+- Evidence: Task 11 guards (resolver 33-45 us/frame for 16 clips x 6 props x 500 keys; preview frame time x0.89-0.98 of the frozen twin; overlay texture bytes unchanged by animated scale; ~55-62 bytes per saved key; 1080p export of 10 s x 8 animated clips 46-51 s), Task 12 journey (`tests/e2e/keyframes-journey.spec.ts`: split of an animated decoded video and image drift 0.00/255, export vs preview <= 3.5/255).
+- Decisions: `docs/superpowers/ledgers/plan-5-animation-ledger.md` (Rulings P5-1..5, T2-..T11-4) and `plan-5-task-reports/`; plan `docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md`; manual QA `plan-5a-manual-qa-checklist.md`.
+
 ### Not built (see section 8)
-Text clips, transitions, keyframes/easing, speed/reverse, crop/flip, track/master effects, crossfades, clip linking, auto-captions, stabilisation.
+Text clips, transitions, animation presets/springs/loops (5B), speed/reverse, crop/flip, track/master effects, crossfades, clip linking, auto-captions, stabilisation.
 
 ## 6. Architecture
 
 ```
-src/core/     pure, framework-free logic (the only place model math happens): model.ts (Project v5), migrate.ts, timeline.ts,
+src/core/     pure, framework-free logic (the only place model math happens): model.ts (Project v6), migrate.ts, timeline.ts, easing.ts + keyframes.ts + animate.ts (resolveClip) + keyframeEdits.ts + keyLists.ts (Plan 5A),
               tracks.ts, merge.ts (join/snap/fit/reframe), fps.ts, scale.ts, formats.ts; v3 audio edits (fades/pan/volume/duck/detach/effect list)
 src/state/    store.ts (Zustand; history snapshots, selection, activeTrackId, autosave), history.ts, selection.ts, persist.ts
               (IndexedDB via idb-keyval, key 'clipforge:current'), tabLock.ts
@@ -186,7 +199,9 @@ Plan 2 tasks (all reviewed, fix rounds closed, nothing pushed):
 ### Roadmap (separate plans; write each in detail with the writing-plans skill, get the user's approval, then execute with subagent-driven-development)
 - **Plan 3, audio editing: DONE (implemented on `claude/quirky-cannon-7vz48u`, not deployed).** See section 5. Still open for later: track/master effects, crossfades, clip linking, speed change with pitch preservation (Plan 5).
 - **Plan 4, visual effects and looks: DONE except the deploy of Part B (overlays, adjustment layers) and the manual QA (`plan-4-manual-qa-checklist.md`, never run on a real GPU or Mac). Original scope:** WebGL2 effect registry (param schema + shader) with per-clip stacks and live preview: colour, looks (B&W, sepia, film grain, teal-orange, vignette, Cinematic/Moody/Golden Hour…, `.cube` LUT import), blur/sharpen/glow/pixelate, stylise (RGB split, glitch, VHS, mirror, invert), chroma key, overlays (lower thirds, subscribe button, progress bar, stickers). Split `compositor.ts`/`gl.ts` first. Data model v4.
-- **NEXT: Plan 5, animation and motion:** keyframes (transform + effect params) with easing and a curve editor, motion paths, text clips with animation presets, transitions (needs a clip-boundary overlap model), speed 0.25–4× / reverse / ramp with pitch-preserving audio (touches every `duration = out − in` call site: `clipDuration/clipEnd`, `trimClip`, `splitClip`, `ui/drag.ts`, `audio/plan.ts`, compositor source-time mapping, exporter), crop/rotate/flip. Data model v6 (v5 is taken by Plan 4).
+- **Plan 5, animation and motion (approved, split into parts; plan `docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md`, ledger `docs/superpowers/ledgers/plan-5-animation-ledger.md`):** order 5A -> 5B -> 5E -> 5D -> 5C.
+  - **5A keyframe engine: IMPLEMENTED on `feature/plan-5-animation` (Tasks 1-12), NOT deployed.** Data v6. Remaining before the deploy: the final whole-branch review and fix wave (controller), a fresh full `npm run e2e -- --trace off`, `npm run e2e:preview`, and the manual QA (with Plan 4's). Ruling P5-2 is the user's standing authorisation to deploy each part (fast-forward push of the feature branch to `claude/macos-video-editor-lzye6c`) once it is "tested and passed"; do not deploy before every condition in that ruling holds. Deploying makes saves v6: older open tabs show "saved by a newer version" and protect the data.
+  - **5B** presets and motion (entrance/emphasis/exit presets, springs, loops, spatial Bezier paths with on-canvas key dragging, copy/paste keys, save-as-preset; data v7), **5E** crop/flip/anchor (v8), **5D** speed/reverse/ramps with pitch-preserving audio (v9; touches every `duration = out - in` site), **5C** transitions (v10).
 See `docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md` (Roadmap section) and the spec for details.
 
 ## 9. Known issues and deferred items
@@ -220,6 +235,14 @@ Plan 4 (visual effects) known limits and deferred items (full text in the Plan 4
 - The heavy-stack time guard is deferred (Ruling T11-3): 8 x blur 100 at 1080p took ~17 s/frame on SwiftShader; a watchdog reset ends an export as "WebGL context lost". Preview and export pools coexist during an export (about 1.6 GB worst case at 4K: 2 x (640 + 128) MiB plus overlay textures); the effect pool has a 640 MiB byte budget, the composite buffer 128 MiB per compositor.
 - ALL Plan 4 measurements (14x perf threshold, 3/255 GPU-vs-CPU drift guards, memory) are SwiftShader-only; recheck on a real GPU. RGBA8 working targets (8-bit quantisation per pass).
 - A known e2e flake: `audio-denoise.spec.ts:57` once failed with "Execution context was destroyed" in the full run and passes alone.
+
+Plan 5A (keyframes) known limits and deferred items (full text in the Plan 5 ledger and task reports):
+- At most 500 keys per property; no presets/springs/loops (5B), no speed/transitions/crop (5D/5C/5E). The motion path is display only.
+- A split/trim at a non-whole-frame offset can shift the animation's frame grid by < 1 frame (Ruling P5-5); frame-exact when cut at whole frames from the clip start (and all tests do).
+- Chromium's software H.264 encoder is not bit-reproducible at 1080p (Ruling T11-2): two exports differ in almost every decoded frame by well under 1/255 on average; the 320 px export and the 1080p render are exact.
+- Deferred Minors: a typed draft on a keyed field is dropped when the playhead moves before blur; the four keyframe rows are always visible (collapse after manual QA); maxScale for overlay textures ignores eased overshoot (soft at Bezier peaks) and overlay minification aliases (no mipmaps); every motion-path dot is a tab stop (500 keys = 500 Tab presses) and all dots re-render per playback frame; the timeline re-renders every lane per frame and `moveKeys` runs on every pointermove during a diamond drag; ease editor has no focus trap, 12 px handles, no `aria-valuenow` for y; chroma colour counts as "animated" by the red key only (unreachable from the UI); `[`/`]` are unreachable on AltGr layouts; inert keys can remain left of a sourced start trim.
+- All Plan 5A measurements are SwiftShader-only; Plan 4's and 5A's manual QA are unrun.
+- Known e2e flake class (page reload mid `page.evaluate`, early in a long run): `audio-chain.spec.ts:94`, `audio-denoise.spec.ts:40/:57`; pass alone.
 
 Code-health (all tests pass despite these):
 - Over the ~200-line guideline: `src/export/exporter.ts` 345, `src/ui/styles.css` 1211, `src/media/decode.ts` 212, `src/harness.ts` 204, `src/render/overlayGeometry.ts` 193–203.
