@@ -6,11 +6,25 @@ import { commitClip, setValueAt } from './keyframeEdits';
 import { upsertKey } from './keyLists';
 import { keyIndexAtPlayhead, localTime } from './keyframes';
 import type { Clip, Id, Project, Transform } from './model';
+import { orientHeading } from './spatialPath';
 import { findClip } from './timeline';
 import { setClipTransform } from './transformEdits';
 
 const POS: AnimTarget = { kind: 'transform', prop: 'position' };
 const SCALARS = ['scale', 'rotation', 'opacity'] as const;
+
+/**
+ * 5B D7: with orient along path the shown (base) rotation is the stored rotation + the path heading, so a typed or
+ * dragged rotation stores `v − heading` (the heading stays derived). A result within 1e-9 of the stored value IS the
+ * stored value (retyping the shown value is a no-op despite rounding).
+ */
+function withoutHeading(clip: Clip, target: AnimTarget, v: number, u: number): number {
+  const h = orientHeading(clip.keys, u);
+  if (h === 0) return v;
+  const cur = valueAtLocal(clip, target, u) as number;
+  const w = v - h;
+  return Math.abs(w - cur) <= 1e-9 ? cur : w;
+}
 
 /** The patch split into static fields and keyed writes (x/y become one position value, the missing one resolved). */
 function route(clip: Clip, patch: Partial<Transform>, u: number): { statics: Partial<Transform>; keyed: [AnimTarget, AnimValue][] } {
@@ -26,9 +40,10 @@ function route(clip: Clip, patch: Partial<Transform>, u: number): { statics: Par
     }
   }
   for (const prop of SCALARS) {
-    const v = patch[prop];
+    let v = patch[prop];
     if (v === undefined) continue;
     const target: AnimTarget = { kind: 'transform', prop };
+    if (prop === 'rotation') v = withoutHeading(clip, target, v, u);
     if (targetKeys(clip, target)) keyed.push([target, v]);
     else statics[prop] = v;
   }

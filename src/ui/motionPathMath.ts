@@ -1,6 +1,9 @@
 // DOM-free motion-path sampling (Plan 5 Task 10, read-only in 5A): the position keys of a clip, evaluated through
-// positionAt (one eased fraction for x and y) at one sample per frame, in FORMAT px (centre + offset, like the handles).
-import { keyVisible, localRange, positionAt } from '../core/keyframes';
+// positionAt (one eased fraction for x and y; curved segments along their Bezier, 5B D6) at one sample per frame, in
+// FORMAT px (centre + offset, like the handles). Loops (5B D4) are not drawn: the path shows the keyed span, which
+// every repeat/ping-pong cycle retraces (an offset cycle draws the same shape shifted).
+import { keyVisible, localRange, positionAt, segmentIndex } from '../core/keyframes';
+import { isCurved } from '../core/pathCurve';
 import type { Clip, PositionKeyframe, Project } from '../core/model';
 import { findClip } from '../core/timeline';
 import { clipCentre } from '../render/overlayGeometry';
@@ -10,6 +13,8 @@ import { liveSelection } from './edits';
 
 /** At most this many points per path (a long clip is sampled every few frames instead of every frame). */
 export const MAX_PATH_SAMPLES = 2000;
+/** A curved segment spanning fewer frames than this is drawn with this many evenly timed points (5B D6), budget allowing. */
+export const CURVE_POINTS = 24;
 const EDGE = 1e-9;
 /** Radius of a key dot in CSS px, and how far from the displayed clip centre a dot lets a press through to the move handle. */
 export const DOT_R = 5;
@@ -32,7 +37,8 @@ const toFormat = (p: { x: number; y: number }, format: Size): Point => clipCentr
  * The path of `clip`'s position keys over the part of its visible local range between the first and last key (an end
  * inside the range is the key itself, an end beyond an edge is cut there). One point per frame on the clip's own frame
  * grid (so points are the frames the preview shows), every key in range exactly, sparser (whole frames) when the span
- * would need more than MAX_PATH_SAMPLES. One key: no run, only its dot. Dots exist for visible keys only.
+ * would need more than MAX_PATH_SAMPLES. A short curved segment gets CURVE_POINTS points so the curve reads as a curve
+ * (when the key count keeps that within the budget). One key: no run, only its dot. Dots exist for visible keys only.
  */
 export function sampleMotionPath(clip: Clip, fps: number, format: Size): MotionPathData {
   const list = clip.keys?.position ?? [];
@@ -53,6 +59,11 @@ export function sampleMotionPath(clip: Clip, fps: number, format: Size): MotionP
   // The ease of the key segment containing local time `u` (the last key at or before it).
   const easeAfter = (u: number) => (list.filter((k) => k.t <= u + EDGE).pop() ?? list[0]).ease;
   const isKey = (u: number): boolean => list.some((k) => Math.abs(k.t - u) < EDGE);
+  const dense = list.length * CURVE_POINTS <= MAX_PATH_SAMPLES / 2;
+  const curved = (s: number, e: number): boolean => {
+    const i = segmentIndex(list, (s + e) / 2);
+    return i >= 0 && i + 1 < list.length && isCurved(list[i], list[i + 1]);
+  };
 
   let run: Point[] = [at(a)];
   for (let i = 0; i + 1 < bounds.length; i++) {
@@ -62,6 +73,10 @@ export function sampleMotionPath(clip: Clip, fps: number, format: Size): MotionP
       // The picture holds the position at `s` until the key at `e`, then jumps: end the run, start the next there.
       out.runs.push(run);
       run = [at(e)];
+      continue;
+    }
+    if (dense && (e - s) / dt < CURVE_POINTS && curved(s, e)) {
+      for (let j = 1; j <= CURVE_POINTS; j++) run.push(at(j === CURVE_POINTS ? e : s + ((e - s) * j) / CURVE_POINTS));
       continue;
     }
     for (let n = Math.floor((s - lo) / dt + EDGE) + 1; lo + n * dt < e - EDGE; n++) run.push(at(lo + n * dt));
@@ -76,7 +91,8 @@ const cache = new WeakMap<PositionKeyframe[], { sig: string; data: MotionPathDat
 
 /**
  * `sampleMotionPath` memoised on the position key list (an edit makes a new array, so playback frames, selection and
- * moves reuse the same object); the signature covers what else the result depends on: the visible range, fps, format.
+ * moves reuse the same object; every path edit (key move, tangents, smooth) makes a new list too, 5B D6); the
+ * signature covers what else the result depends on: the visible range, fps, format.
  */
 export function cachedMotionPath(clip: Clip, fps: number, format: Size): MotionPathData {
   const list = clip.keys?.position;

@@ -3,7 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { resolveClip, resolvedTransform } from '../src/core/animate';
 import { targetValueAt, valueAtLocal } from '../src/core/animTargets';
-import { evalKeys, evalPositionKeys, loopedTime } from '../src/core/keyLoops';
+import { evalKeys, loopedTime } from '../src/core/keyLoops';
+import { evalPosition } from '../src/core/spatialPath';
 import { valueAt } from '../src/core/keyframes';
 import type { KeyLoop } from '../src/core/model';
 import type { LoopMode } from '../src/core/keyTypes';
@@ -109,12 +110,12 @@ describe('loopedTime / evalKeys (D4)', () => {
 
   it('position loops: repeat / pingPong per point, offset per axis', () => {
     const list = [pk(0, 0, 0), pk(1, 100, -40)];
-    expect(evalPositionKeys(list, loop('repeat'), 1.25)).toEqual({ x: 25, y: -10 });
-    expect(evalPositionKeys(list, loop('pingPong'), 1.25)).toEqual({ x: 75, y: -30 });
-    expect(evalPositionKeys(list, loop('offset'), 2.5)).toEqual({ x: 250, y: -100 });
-    expect(evalPositionKeys(list, loop('offset', 1), 9)).toEqual({ x: 200, y: -80 });
-    expect(evalPositionKeys(list, undefined, 2.5)).toEqual({ x: 100, y: -40 });
-    expect(evalPositionKeys([pk(0, 3, 4)], loop('offset'), 2.5)).toEqual({ x: 3, y: 4 });
+    expect(evalPosition(list, loop('repeat'), 1.25)).toEqual({ x: 25, y: -10 });
+    expect(evalPosition(list, loop('pingPong'), 1.25)).toEqual({ x: 75, y: -30 });
+    expect(evalPosition(list, loop('offset'), 2.5)).toEqual({ x: 250, y: -100 });
+    expect(evalPosition(list, loop('offset', 1), 9)).toEqual({ x: 200, y: -80 });
+    expect(evalPosition(list, undefined, 2.5)).toEqual({ x: 100, y: -40 });
+    expect(evalPosition([pk(0, 3, 4)], loop('offset'), 2.5)).toEqual({ x: 3, y: 4 });
   });
 });
 

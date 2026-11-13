@@ -2,9 +2,10 @@
 // Reading and writing one target's keys and static value, its legal ranges, and the queries the UI needs. Pure.
 import { nearestKey } from './keyLists';
 import type { AnyKey } from './keyLists';
-import { evalKeys, evalPositionKeys } from './keyLoops';
+import { evalKeys } from './keyLoops';
 import { localTime, tooClose } from './keyframes';
 import type { Clip, Id, Keyframe, PositionKeyframe, TransformKeys } from './model';
+import { evalPosition } from './spatialPath';
 import { TimelineError } from './timeline';
 import { targetLoop, withParamLoop, withPropLoop } from './targetLoops';
 import { normaliseDegrees } from './transformLimits';
@@ -73,7 +74,7 @@ export function valueAtLocal(clip: Clip, target: AnimTarget, u: number): AnimVal
   const list = targetKeys(clip, target);
   if (!list) return staticValue(clip, target);
   const loop = targetLoop(clip, target);
-  if (target.kind === 'transform' && target.prop === 'position') return evalPositionKeys(list as PositionKeyframe[], loop, u);
+  if (target.kind === 'transform' && target.prop === 'position') return evalPosition(list as PositionKeyframe[], loop, u);
   return evalKeys(list as Keyframe[], loop, u, ...range(clip, target));
 }
 

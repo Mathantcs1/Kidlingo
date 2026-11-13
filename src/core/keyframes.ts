@@ -4,6 +4,7 @@ import { easeAt } from './easing';
 import { frameIndex, snapToFrame } from './fps';
 import { clipDuration, clipEnd, isSourceless } from './model';
 import type { Clip, Keyframe, PositionKeyframe } from './model';
+import { curvedPoint, isCurved } from './pathCurve';
 
 /** Two keys of one property closer than this (seconds) are the same key. */
 export const KEY_EPS = 1e-4;
@@ -67,7 +68,7 @@ export function keyIndexAtPlayhead(clip: Clip, list: readonly { t: number }[], t
 }
 
 /** Index of the last key with `t <= u` (binary search); −1 when `u` is before the first key. */
-function segmentIndex(keys: readonly { t: number }[], u: number): number {
+export function segmentIndex(keys: readonly { t: number }[], u: number): number {
   let lo = 0;
   let hi = keys.length - 1;
   if (hi < 0 || u < keys[0].t) return -1;
@@ -101,7 +102,10 @@ export function valueAt(keys: readonly Keyframe[], u: number, min = -Infinity, m
   return v < min ? min : v > max ? max : v;
 }
 
-/** The position at local time `u`: x and y share one eased fraction (straight path, D4); unclamped. */
+/**
+ * The position at local time `u`: x and y share one eased fraction (D4); unclamped. A segment with tangents (5B D6) is
+ * the Bezier curve travelled by arc length (pathCurve.ts); every other segment is the 5A straight line, bit for bit.
+ */
 export function positionAt(keys: readonly PositionKeyframe[], u: number): { x: number; y: number } {
   if (keys.length === 0) return { x: NaN, y: NaN };
   const i = segmentIndex(keys, u);
@@ -112,6 +116,7 @@ export function positionAt(keys: readonly PositionKeyframe[], u: number): { x: n
   }
   const a = keys[i];
   const b = keys[i + 1];
+  if (isCurved(a, b)) return curvedPoint(a, b, f);
   return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
 }
 

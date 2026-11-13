@@ -2,12 +2,25 @@
 // mutated; split/shift results hold fresh key objects so no two clips (or halves) ever share a key.
 import { repairEase } from './easing';
 import { MAX_KEYS, tooClose } from './keyframes';
-import type { KeyLoop, Keyframe, PositionKeyframe, TransformKeys, VideoEffect } from './model';
+import type { KeyLoop, Keyframe, PositionKeyframe, TransformKeys, Vec, VideoEffect } from './model';
 
 export type AnyKey = Keyframe | PositionKeyframe;
 
-/** A deep copy of one key (its ease included; stored eases are valid, so repairEase is an exact copy). */
-export const copyKey = <K extends AnyKey>(k: K): K => ({ ...k, ease: repairEase(k.ease) });
+/** A copy of a tangent (5B D6), or undefined. */
+const copyVec = (v: Vec | undefined): Vec | undefined => v && { x: v.x, y: v.y };
+
+/**
+ * A deep copy of one key: its ease (stored eases are valid, so repairEase is an exact copy) and, for position keys, its
+ * spatial tangents (5B D6), so no two keys ever share a tangent object.
+ */
+export function copyKey<K extends AnyKey>(k: K): K {
+  const out = { ...k, ease: repairEase(k.ease) };
+  if ('x' in out) {
+    if (out.in) out.in = copyVec(out.in);
+    if (out.out) out.out = copyVec(out.out);
+  }
+  return out;
+}
 
 /** Index of the key nearest to `u` among those within KEY_EPS of it (tooClose); −1 when there is none. */
 export function nearestKey(list: readonly { t: number }[], u: number): number {
@@ -38,8 +51,8 @@ export function splitKeys<K extends AnyKey>(list: readonly K[], lo: number, hi: 
 export const shiftKeys = <K extends AnyKey>(list: readonly K[], d: number): K[] => list.map((k) => ({ ...copyKey(k), t: k.t + d }));
 
 /**
- * A clip's transform keys with every list mapped by `num` / `pos`, which also learn whether the list is looped (5B D4:
- * a split keeps a looped list whole); undefined stays undefined. `loops` (copied) and `orient` are carried unchanged.
+ * A clip's transform keys with every list mapped by `num` / `pos`, which also learn whether the list must stay whole
+ * (`looped`: a looped list, 5B D4, or an oriented position path, D7; a split keeps such a list whole); undefined stays undefined. `loops` (copied) and `orient` are carried unchanged.
  */
 export function mapTransformKeys(
   keys: TransformKeys | undefined,
@@ -48,7 +61,8 @@ export function mapTransformKeys(
 ): TransformKeys | undefined {
   if (!keys) return undefined;
   const out: TransformKeys = {};
-  if (keys.position) out.position = pos(keys.position, keys.loops?.position !== undefined);
+  // An oriented path is kept whole too (5B D7): a heading fallback may read a segment beyond the half's own range.
+  if (keys.position) out.position = pos(keys.position, keys.loops?.position !== undefined || keys.orient === true);
   for (const prop of ['scale', 'rotation', 'opacity'] as const) {
     const l = keys[prop];
     if (l) out[prop] = num(l, keys.loops?.[prop] !== undefined);

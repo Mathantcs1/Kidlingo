@@ -1,8 +1,9 @@
 // The ONE resolver (Plan 5 D7): a stored clip -> the clip "as seen at time t". The compositor calls it once per clip
 // per frame; the UI calls it at the playhead. Static clips take an allocation-free path and come back as-is.
-import { evalKeys, evalPositionKeys } from './keyLoops';
+import { evalKeys } from './keyLoops';
 import { localTime } from './keyframes';
 import type { Clip, Keyframe, Transform, VideoEffect } from './model';
+import { evalPosition, orientHeading } from './spatialPath';
 import { animatableParam } from './videoEffects';
 
 /** What the resolver needs of the project format (5B presets scale by the canvas size). */
@@ -32,19 +33,21 @@ export function isAnimated(clip: Clip): boolean {
 /**
  * The transform at timeline time `t`: `clip.transform` itself when no transform property is animated, else a new
  * object with every animated property evaluated with its loop (5B D4) and clamped (D5: opacity 0..1, scale >= 0;
- * position and rotation unclamped).
+ * position and rotation unclamped). Position follows curved segments (5B D6); with `orient` the path heading is added
+ * to the keyed or static rotation (D7). This is the BASE ("rest") value the inspector shows.
  */
 export function resolvedTransform(clip: Clip, t: number, fps: number): Transform {
   if (!transformAnimated(clip)) return clip.transform;
   const k = clip.keys!;
   const loops = k.loops;
   const u = localTime(clip, t, fps);
-  const pos = has(k.position) ? evalPositionKeys(k.position!, loops?.position, u) : clip.transform;
+  const pos = has(k.position) ? evalPosition(k.position!, loops?.position, u) : clip.transform;
+  const rotation = has(k.rotation) ? evalKeys(k.rotation!, loops?.rotation, u, -Infinity, Infinity) : clip.transform.rotation;
   return {
     x: pos.x,
     y: pos.y,
     scale: has(k.scale) ? evalKeys(k.scale!, loops?.scale, u, 0, Infinity) : clip.transform.scale,
-    rotation: has(k.rotation) ? evalKeys(k.rotation!, loops?.rotation, u, -Infinity, Infinity) : clip.transform.rotation,
+    rotation: k.orient ? rotation + orientHeading(k, u) : rotation,
     opacity: has(k.opacity) ? evalKeys(k.opacity!, loops?.opacity, u, 0, 1) : clip.transform.opacity,
   };
 }

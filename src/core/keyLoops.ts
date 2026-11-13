@@ -1,8 +1,8 @@
 // Key loops (data v7, Plan 5B D4): cycles after the last key of a target, evaluated in clip-local time. The ONE
 // numeric evaluator (`evalKeys`) behind the resolver, the effect params and the inspector, so they cannot drift. Pure,
-// closed form, allocation-free except for evalPositionKeys' result.
-import { positionAt, valueAt } from './keyframes';
-import type { KeyLoop, Keyframe, PositionKeyframe } from './model';
+// closed form, allocation-free. Positions: `evalPosition` in spatialPath.ts (5B Task 4).
+import { valueAt } from './keyframes';
+import type { KeyLoop, Keyframe } from './model';
 
 /** Where a looped target reads its keys: mapped local time `u`, cycle index (0 = the keys themselves), backwards? */
 export interface LoopedTime {
@@ -53,15 +53,4 @@ export function evalKeys(list: readonly Keyframe[], loop: KeyLoop | undefined, u
   if (loop.mode !== 'offset' || m.cycle === 0) return valueAt(list, m.u, min, max);
   const v = valueAt(list, m.u) + m.cycle * (list[list.length - 1].v - list[0].v);
   return v < min ? min : v > max ? max : v;
-}
-
-/** The position at local time `u` with its optional loop ('offset' adds per axis); unclamped like positionAt. */
-export function evalPositionKeys(list: readonly PositionKeyframe[], loop: KeyLoop | undefined, u: number): { x: number; y: number } {
-  if (!loop || list.length < 2) return positionAt(list, u);
-  const m = loopedTime(list, loop, u);
-  const p = positionAt(list, m.u);
-  if (loop.mode !== 'offset' || m.cycle === 0) return p;
-  const a = list[0];
-  const b = list[list.length - 1];
-  return { x: p.x + m.cycle * (b.x - a.x), y: p.y + m.cycle * (b.y - a.y) };
 }
