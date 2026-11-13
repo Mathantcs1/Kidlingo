@@ -37,7 +37,10 @@ export function splitKeys<K extends AnyKey>(list: readonly K[], lo: number, hi: 
 /** Every key moved by `d` seconds (fresh copies). */
 export const shiftKeys = <K extends AnyKey>(list: readonly K[], d: number): K[] => list.map((k) => ({ ...copyKey(k), t: k.t + d }));
 
-/** A clip's transform keys with every list mapped by `num` / `pos`; undefined stays undefined. */
+/**
+ * A clip's transform keys with every list mapped by `num` / `pos`; undefined stays undefined. v7 `loops` (copied) and
+ * `orient` are carried unchanged (5B Task 3 decides how split treats looped lists, D4).
+ */
 export function mapTransformKeys(
   keys: TransformKeys | undefined,
   num: (l: Keyframe[]) => Keyframe[],
@@ -50,6 +53,8 @@ export function mapTransformKeys(
     const l = keys[prop];
     if (l) out[prop] = num(l);
   }
+  if (keys.loops) out.loops = Object.fromEntries(Object.entries(keys.loops).map(([q, l]) => [q, { ...l }]));
+  if (keys.orient) out.orient = true;
   return out;
 }
 

@@ -39,7 +39,7 @@ const lin = { kind: 'linear' };
 
 const FMT30 = { width: 1920, height: 1080, fps: 30 };
 
-describe('v5 -> v6', () => {
+describe('v5 -> current', () => {
   const every = () => saved(5, [
     base('v1', 'video', { effects: [colour()] }),
     base('i1', 'image', { start: 2 }),
@@ -48,12 +48,11 @@ describe('v5 -> v6', () => {
   ], [base('a1', 'audio')]);
 
   it('opens every clip kind unchanged apart from the version; no keys added; input not mutated; idempotent', () => {
-    expect(CURRENT_VERSION).toBe(6);
     const raw = every();
     const snap = JSON.stringify(raw);
     const p = ok(raw);
     expect(JSON.stringify(raw)).toBe(snap);
-    expect(p.version).toBe(6);
+    expect(p.version).toBe(CURRENT_VERSION);
     expect({ ...p, version: 5 }).toEqual(raw);
     for (const c of p.tracks.flatMap((t) => t.clips)) {
       expect('keys' in c).toBe(false);
@@ -62,8 +61,8 @@ describe('v5 -> v6', () => {
     expect(ok(p)).toEqual(p);
   });
 
-  it('refuses the next version (v7) and later as newer', () => {
-    expect(migrateProject({ ...every(), version: 7 })).toEqual({ ok: false, reason: 'newer' });
+  it('refuses the next version and later as newer', () => {
+    expect(migrateProject({ ...every(), version: CURRENT_VERSION + 1 })).toEqual({ ok: false, reason: 'newer' });
     expect(migrateProject({ version: CURRENT_VERSION + 1 })).toEqual({ ok: false, reason: 'newer' });
   });
 

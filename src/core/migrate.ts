@@ -1,6 +1,7 @@
 import { fitFades } from './clipAudio';
 import { toBlend, toClipEffects } from './migrateEffects';
 import { repairClipKeys, withKeys } from './migrateKeys';
+import { repairMotion, withMotion } from './migrateMotion';
 import { toOverlaySpec } from './overlaySpec';
 import { CURRENT_VERSION, defaultClipAudio, newId } from './model';
 import type { AudioEffect, AudioEffectType, Clip, ClipAudio, Project, Track, TrackDuck } from './model';
@@ -69,15 +70,16 @@ function toDuck(raw: unknown): TrackDuck | null {
 }
 
 /**
- * One clip with its v2-v6 fields repaired. An overlay clip (v5) gets no media, effects, blend or fit (it keeps its
+ * One clip with its v2-v7 fields repaired. An overlay clip (v5) gets no media, effects, blend or fit (it keeps its
  * audio settings as stored); one whose spec cannot be understood, or that sits on an audio track, is dropped (null).
  * An adjustment clip (v5) gets no media, fit 'fit' and no overlay spec, and keeps its repaired effects and blend;
- * one on an audio track is dropped. Transform keys (v6) are repaired per kind (migrateKeys.ts); a clip without
- * valid keys has no `keys` field. Unknown extra keys are kept.
+ * one on an audio track is dropped. Transform keys (v6; v7 tangents, loops, orient) are repaired per kind
+ * (migrateKeys.ts) and so is the preset stack (v7, migrateMotion.ts); a clip without valid keys / presets has no `keys` /
+ * `motion` field. Unknown extra keys are kept.
  */
 function toClip(c: Record<string, unknown>, trackKind: Track['kind']): Clip | null {
   const fixed = toClipFields(c, trackKind);
-  return fixed && (withKeys(fixed, repairClipKeys(c.keys, c.kind)) as unknown as Clip);
+  return fixed && (withMotion(withKeys(fixed, repairClipKeys(c.keys, c.kind)), repairMotion(c.motion, c.kind)) as unknown as Clip);
 }
 
 function toClipFields(c: Record<string, unknown>, trackKind: Track['kind']): Record<string, unknown> | null {
@@ -117,8 +119,9 @@ function toTrack(raw: unknown): Track | null {
 }
 
 /**
- * Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3-v6 are repaired per field (v4 → v5 adds nothing:
+ * Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3-v7 are repaired per field (v4 → v5 adds nothing:
  * overlay and adjustment clips are new in v5; v5 → v6 adds nothing: keyframes are new in v6 and only repaired when
+ * present; v6 → v7 adds nothing: presets, loops, tangents, orient and springs are new in v7 and only repaired when
  * present); newer versions are refused ('newer', so the save is never overwritten).
  */
 export function migrateProject(raw: unknown): MigrateResult {

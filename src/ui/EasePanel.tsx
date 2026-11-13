@@ -16,8 +16,10 @@ import { setEaseCmd } from './keyframeCommands';
 import './ease.css';
 
 const LABELS: Record<EaseKind, string> = {
-  linear: 'Linear', hold: 'Hold', easeIn: 'Ease in', easeOut: 'Ease out', easeInOut: 'Ease in-out', back: 'Back', elastic: 'Elastic', bounce: 'Bounce', bezier: 'Custom',
+  linear: 'Linear', hold: 'Hold', easeIn: 'Ease in', easeOut: 'Ease out', easeInOut: 'Ease in-out', back: 'Back', elastic: 'Elastic', bounce: 'Bounce', bezier: 'Custom', spring: 'Spring',
 };
+/** The preset buttons: 'spring' is offered with its parameter fields in 5B Task 8 (it is stored data from v7). */
+const OFFERED = EASE_KINDS.filter((k) => k !== 'spring');
 const FIELDS = ['x1', 'y1', 'x2', 'y2'] as const;
 const CSS_EASE: Bezier = [0.25, 0.1, 0.25, 1];
 
@@ -144,7 +146,7 @@ export default function EasePanel({ open }: { open: EaseOpen }) {
         {lastCount > 0 && (lastCount === open.refs.length ? ' Last key: its ease only applies if a key is added after it.' : ' Some keys are last in their list: their ease only applies if a key is added after them.')}
       </p>
       <div className="ease-presets" role="group" aria-label="Ease presets">
-        {EASE_KINDS.map((kind) => (
+        {OFFERED.map((kind) => (
           <button
             key={kind}
             type="button"

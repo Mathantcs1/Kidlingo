@@ -1,5 +1,6 @@
-// Repairs a clip's picture effect stack and blend mode when a saved project is opened (data v4; param keys v6).
-import { repairEffectKeys, withKeys } from './migrateKeys';
+// Repairs a clip's picture effect stack and blend mode when a saved project is opened (data v4; param keys v6; param
+// loops v7, only for params that kept keys).
+import { repairEffectKeys, repairEffectLoops, withKeys } from './migrateKeys';
 import { newId } from './model';
 import type { BlendMode, VideoEffect } from './model';
 import { BLEND_MODES, MAX_VIDEO_EFFECTS, clampParams, isVideoEffectType } from './videoEffects';
@@ -10,9 +11,12 @@ function toVideoEffect(raw: unknown): VideoEffect | null {
   if (!isObject(raw) || typeof raw.id !== 'string' || !isVideoEffectType(raw.type)) return null;
   const params: Record<string, number> = {};
   for (const [k, v] of Object.entries(isObject(raw.params) ? raw.params : {})) if (typeof v === 'number' && Number.isFinite(v)) params[k] = v;
-  const { ref, keys, ...rest } = raw;
+  const { ref, keys, loops, ...rest } = raw;
   const fields = { ...rest, id: raw.id, type: raw.type, enabled: raw.enabled !== false, params: clampParams(raw.type, params) };
-  const base: VideoEffect = withKeys(fields, repairEffectKeys(keys, raw.type));
+  const repairedKeys = repairEffectKeys(keys, raw.type);
+  const repairedLoops = repairEffectLoops(loops, repairedKeys);
+  const keyed: VideoEffect = withKeys(fields, repairedKeys);
+  const base: VideoEffect = repairedLoops ? { ...keyed, loops: repairedLoops } : keyed;
   if (raw.type !== 'lut') return base;
   return typeof ref === 'string' && ref !== '' ? { ...base, ref } : null;
 }

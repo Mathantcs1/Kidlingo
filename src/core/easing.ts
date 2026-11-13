@@ -2,15 +2,30 @@ import { cubicBezierAt } from './bezier';
 
 export { cubicBezierAt };
 
-export type EaseKind = 'linear' | 'hold' | 'easeIn' | 'easeOut' | 'easeInOut' | 'back' | 'elastic' | 'bounce' | 'bezier';
+export type EaseKind = 'linear' | 'hold' | 'easeIn' | 'easeOut' | 'easeInOut' | 'back' | 'elastic' | 'bounce' | 'bezier' | 'spring';
+
+/** A damped spring (data v7, Plan 5B D5): stiffness 1..1000, damping 0..100, mass 0.1..10. */
+export interface SpringParams {
+  stiffness: number;
+  damping: number;
+  mass: number;
+}
 
 export interface Ease {
   kind: EaseKind;
   /** Only for 'bezier': [x1, y1, x2, y2] (x in [0, 1], y in [-1, 2]). */
   bezier?: [number, number, number, number];
+  /** Only for 'spring' (stored data always carries it after repair; missing reads as SPRING_DEFAULT). */
+  spring?: SpringParams;
 }
 
-export const EASE_KINDS: readonly EaseKind[] = ['linear', 'hold', 'easeIn', 'easeOut', 'easeInOut', 'back', 'elastic', 'bounce', 'bezier'];
+/** Every stored ease kind (the ease editor offers 'spring' with its fields from 5B Task 8). */
+export const EASE_KINDS: readonly EaseKind[] = ['linear', 'hold', 'easeIn', 'easeOut', 'easeInOut', 'back', 'elastic', 'bounce', 'bezier', 'spring'];
+
+export const SPRING_DEFAULT: Readonly<SpringParams> = { stiffness: 170, damping: 26, mass: 1 };
+export const SPRING_LIMITS: Readonly<Record<keyof SpringParams, readonly [number, number]>> = {
+  stiffness: [1, 1000], damping: [0, 100], mass: [0.1, 10],
+};
 
 /** CSS cubic-bezier definitions of the three standard curves. */
 export const EASE_PRESETS: Record<'easeIn' | 'easeOut' | 'easeInOut', [number, number, number, number]> = {
@@ -40,6 +55,7 @@ function bounceOut(u: number): number {
  */
 export function easeAt(e: Ease, u: number, seconds = 1): number {
   void seconds; // the segment's duration in seconds: only the spring ease (5B Task 3) reads it
+  // TEMPORARY (5B Task 2): 'spring' falls through to the linear default below until Task 3 adds its closed form.
 
   if (!(u > 0)) return 0;
   if (u >= 1) return 1;
@@ -71,11 +87,26 @@ export function easeAt(e: Ease, u: number, seconds = 1): number {
 
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
-/** Defensive parse of stored data: unknown kind, malformed or non-finite handles => linear; handles are clamped. */
+/** Spring params from stored data: each non-finite or missing param => its default, finite ones clamped (D14). */
+export function repairSpring(raw: unknown): SpringParams {
+  const r = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
+  const one = (k: keyof SpringParams): number => {
+    const v = r[k];
+    const [lo, hi] = SPRING_LIMITS[k];
+    return typeof v === 'number' && Number.isFinite(v) ? clamp(v, lo, hi) + 0 : SPRING_DEFAULT[k];
+  };
+  return { stiffness: one('stiffness'), damping: one('damping'), mass: one('mass') };
+}
+
+/**
+ * Defensive parse of stored data: unknown kind, malformed or non-finite handles => linear; handles are clamped;
+ * a spring always comes back with all three params (repairSpring).
+ */
 export function repairEase(raw: unknown): Ease {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return { kind: 'linear' };
-  const r = raw as { kind?: unknown; bezier?: unknown };
+  const r = raw as { kind?: unknown; bezier?: unknown; spring?: unknown };
   if (typeof r.kind !== 'string' || !(EASE_KINDS as readonly string[]).includes(r.kind)) return { kind: 'linear' };
+  if (r.kind === 'spring') return { kind: 'spring', spring: repairSpring(r.spring) };
   if (r.kind !== 'bezier') return { kind: r.kind as EaseKind };
   const h = r.bezier;
   if (!Array.isArray(h) || h.length !== 4 || !Array.from(h).every((n) => typeof n === 'number' && Number.isFinite(n))) {
@@ -89,6 +120,11 @@ export function repairEase(raw: unknown): Ease {
 
 export function isSameEase(a: Ease, b: Ease): boolean {
   if (a.kind !== b.kind) return false;
+  if (a.kind === 'spring') {
+    const s = a.spring ?? SPRING_DEFAULT;
+    const q = b.spring ?? SPRING_DEFAULT;
+    return s.stiffness === q.stiffness && s.damping === q.damping && s.mass === q.mass;
+  }
   if (a.kind !== 'bezier') return true;
   const x = a.bezier;
   const y = b.bezier;

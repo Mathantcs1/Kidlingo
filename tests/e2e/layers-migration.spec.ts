@@ -1,6 +1,6 @@
 // Review focus #1: a project saved by an older version (v1, tracks without names or flags) opens unchanged, with
 // no restore notice, and is saved back at the current version (v6) once edited; v2 and v3 saves gain audio and
-// picture-effect defaults; a project from a newer version (v7) stays unsupported and is never overwritten. (The v5 -> v6
+// picture-effect defaults; a project from a newer version (CURRENT_VERSION + 1) stays unsupported and is never overwritten. (The v5 -> v6
 // picture test lives in keyframes-migration.spec.ts.)
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -187,11 +187,10 @@ test('a v3 save opens with every clip, gains empty effect stacks and normal blen
   expect(errors).toEqual([]);
 });
 
-test('a save from the next version (v7) is unsupported: notice shown, the stored project and its media are left alone', async ({ page }) => {
+test('a save from the next version is unsupported: notice shown, the stored project and its media are left alone', async ({ page }) => {
   const v2 = await savedWithClip(page);
   const ids = await storedIds(page);
   const v7 = { ...v2, version: CURRENT_VERSION + 1 };
-  expect(v7.version).toBe(7);
   await writeSaved(page, v7);
 
   await page.reload();

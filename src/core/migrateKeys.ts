@@ -1,8 +1,12 @@
 // Repairs hand-edited keyframes when a v6 save is opened (Plan 5 D11): sort by time, drop malformed keys, non-finite
 // times/values and duplicate times (keeping the last), unknown eases => linear, values clamped (D5), at most MAX_KEYS
 // per property, keys of unknown or non-animatable params dropped. An emptied list (or keys object) is removed.
+// v7 (Plan 5B D14): tangents finite and within ±KEYED_POSITION_LIMIT, `broken`/`orient` only `true`, loops only for
+// properties/params that have keys (valid mode, count integer 1..1000 or null), spring eases via repairEase.
 import { repairEase } from './easing';
 import { KEYED_POSITION_LIMIT, KEYED_ROTATION_LIMIT, KEYED_SCALE_LIMIT, MAX_KEYS, tooClose } from './keyframes';
+import { LOOP_COUNT_MAX, LOOP_MODES } from './keyTypes';
+import type { KeyLoop, KeyedTransformProp, LoopMode, Vec } from './keyTypes';
 import type { Clip, Keyframe, PositionKeyframe, TransformKeys, VideoEffectType } from './model';
 import { animatableParam } from './videoEffects';
 
@@ -32,12 +36,46 @@ export function repairKeyList(raw: unknown, min: number, max: number): Keyframe[
   return normalise(keys);
 }
 
-/** A position key list (x, y finite, within ±KEYED_POSITION_LIMIT); undefined when nothing valid remains. */
+/** A spatial tangent (format px offset): finite x and y, clamped to ±KEYED_POSITION_LIMIT; anything else undefined. */
+export function repairTangent(raw: unknown): Vec | undefined {
+  return isObject(raw) && finite(raw.x) && finite(raw.y) ? { x: clamp(raw.x, -P, P), y: clamp(raw.y, -P, P) } : undefined;
+}
+
+/** A loop/preset cycle count: a finite number is rounded and clamped to 1..1000; anything else is null (until the end). */
+export function repairCount(raw: unknown): number | null {
+  return finite(raw) ? clamp(Math.round(raw), 1, LOOP_COUNT_MAX) : null;
+}
+
+/** A key loop: a known mode (else undefined) and a repaired count. */
+export function repairLoop(raw: unknown): KeyLoop | undefined {
+  if (!isObject(raw) || !(LOOP_MODES as readonly unknown[]).includes(raw.mode)) return undefined;
+  return { mode: raw.mode as LoopMode, count: repairCount(raw.count) };
+}
+
+/** The loops of the targets in `present` only (loops of absent targets dropped); undefined when none remain. */
+function repairLoops<K extends string>(raw: unknown, present: readonly K[]): Partial<Record<K, KeyLoop>> | undefined {
+  if (!isObject(raw)) return undefined;
+  const out: Partial<Record<K, KeyLoop>> = {};
+  for (const k of present) {
+    const loop = Object.hasOwn(raw, k) ? repairLoop(raw[k]) : undefined;
+    if (loop) out[k] = loop;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** A position key list (x, y finite, within ±KEYED_POSITION_LIMIT; v7 tangents and broken); undefined when empty. */
 export function repairPositionKeys(raw: unknown): PositionKeyframe[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const keys: PositionKeyframe[] = [];
   for (const k of raw) {
-    if (isObject(k) && finite(k.t) && finite(k.x) && finite(k.y)) keys.push({ t: k.t, x: clamp(k.x, -P, P), y: clamp(k.y, -P, P), ease: repairEase(k.ease) });
+    if (!isObject(k) || !finite(k.t) || !finite(k.x) || !finite(k.y)) continue;
+    const key: PositionKeyframe = { t: k.t, x: clamp(k.x, -P, P), y: clamp(k.y, -P, P), ease: repairEase(k.ease) };
+    const tin = repairTangent(k.in);
+    const tout = repairTangent(k.out);
+    if (tin) key.in = tin;
+    if (tout) key.out = tout;
+    if (k.broken === true) key.broken = true;
+    keys.push(key);
   }
   return normalise(keys);
 }
@@ -58,7 +96,12 @@ export function repairClipKeys(raw: unknown, kind: Clip['kind'] | unknown): Tran
   if (scale) keys.scale = scale;
   if (rotation) keys.rotation = rotation;
   if (opacity) keys.opacity = opacity;
-  return Object.keys(keys).length > 0 ? keys : undefined;
+  const props = (['position', 'scale', 'rotation', 'opacity'] as const).filter((q): q is KeyedTransformProp => keys[q] !== undefined);
+  if (props.length === 0) return undefined;
+  const loops = repairLoops(raw.loops, props);
+  if (loops) keys.loops = loops;
+  if (raw.orient === true && position) keys.orient = true;
+  return keys;
 }
 
 /** An effect's param keys: only animatable params of its schema, values clamped to the param's range. */
@@ -71,6 +114,11 @@ export function repairEffectKeys(raw: unknown, type: VideoEffectType): Record<st
     if (repaired) keys[param] = repaired;
   }
   return Object.keys(keys).length > 0 ? keys : undefined;
+}
+
+/** An effect's param loops: only for params that kept keys (`keys`, already repaired). */
+export function repairEffectLoops(raw: unknown, keys: Record<string, Keyframe[]> | undefined): Record<string, KeyLoop> | undefined {
+  return keys ? (repairLoops(raw, Object.keys(keys)) as Record<string, KeyLoop> | undefined) : undefined;
 }
 
 /** `obj` with its `keys` field replaced by `keys`, or removed when undefined (never mutates `obj`). */
