@@ -81,7 +81,7 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
   const shownImages = new Set<Id>();
   const shownOverlays = new Set<Id>();
   for (const raw of visualClipsAt(p, t)) {
-    const clip = resolveClip(raw, t, p.format.fps);
+    const clip = resolveClip(raw, t, p.format);
     if (clip.kind === 'adjustment') {
       // No media and nothing to upload: the compositor applies it to the composite so far.
       draws.push({ clip, adjustment: true });

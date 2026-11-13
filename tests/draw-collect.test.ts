@@ -8,9 +8,9 @@ vi.mock('../src/core/animate', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/core/animate')>();
   return {
     ...actual,
-    resolveClip: (clip: import('../src/core/model').Clip, t: number, fps: number) => {
+    resolveClip: (clip: import('../src/core/model').Clip, t: number, format: import('../src/core/animate').ResolveFormat) => {
       calls.push(clip.id);
-      return actual.resolveClip(clip, t, fps);
+      return actual.resolveClip(clip, t, format);
     },
   };
 });

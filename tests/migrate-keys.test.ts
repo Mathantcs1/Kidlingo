@@ -37,6 +37,8 @@ const ok = (raw: unknown): Project => {
 const one = (clip: unknown, version = 6): Clip => ok(saved(version, [clip])).tracks[0].clips[0];
 const lin = { kind: 'linear' };
 
+const FMT30 = { width: 1920, height: 1080, fps: 30 };
+
 describe('v5 -> v6', () => {
   const every = () => saved(5, [
     base('v1', 'video', { effects: [colour()] }),
@@ -145,10 +147,10 @@ describe('v6 key repair (D11)', () => {
     expect(c.keys?.position?.map((k) => [k.x, k.y])).toEqual([[-1e7, 1e7], [1e7, -1e7]]);
     expect(c.keys?.scale?.map((k) => k.v)).toEqual([0, 1e6]);
     for (const t of [0, 0.5, 0.99, 1, 2]) {
-      const tr = resolveClip(c, t, 30).transform;
+      const tr = resolveClip(c, t, FMT30).transform;
       expect([tr.x, tr.y, tr.scale].every(Number.isFinite)).toBe(true);
     }
-    expect(resolveClip(c, 0.5, 30).transform.x).toBe(0);
+    expect(resolveClip(c, 0.5, FMT30).transform.x).toBe(0);
   });
 
   it('truncates a list of 600 keys to MAX_KEYS (the earliest)', () => {

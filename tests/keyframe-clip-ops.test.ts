@@ -17,6 +17,7 @@ import { resetClipTransform } from '../src/ui/transformEdits';
 import { clipOf, colourFx, k, mk, pk, project, randomEase, randomTimes, rng } from './keyframe-fixtures';
 
 const FPS = 30;
+const FMT = { width: 1920, height: 1080, fps: FPS };
 const close = (a: Clip, b: Clip, where: string) => {
   for (const key of ['x', 'y', 'scale', 'rotation', 'opacity'] as const) {
     expect(Math.abs(a.transform[key] - b.transform[key]), `${where} ${key}`).toBeLessThanOrEqual(1e-9);
@@ -72,8 +73,8 @@ describe('splitClip with keys (D9)', () => {
       const cutFrame = 2 + Math.floor(r() * (nFrames - 4));
       const time = c.start + cutFrame / FPS;
       const [left, right] = halves(splitClip(withClip(c), 'c', time));
-      for (const t of frames(c.start, time)) close(resolveClip(left, t, FPS), resolveClip(c, t, FPS), `#${i} L t=${t}`);
-      for (const t of frames(time, clipEnd(c))) close(resolveClip(right, t, FPS), resolveClip(c, t, FPS), `#${i} R t=${t}`);
+      for (const t of frames(c.start, time)) close(resolveClip(left, t, FMT), resolveClip(c, t, FMT), `#${i} L t=${t}`);
+      for (const t of frames(time, clipEnd(c))) close(resolveClip(right, t, FMT), resolveClip(c, t, FMT), `#${i} R t=${t}`);
     }
   });
 
@@ -147,10 +148,10 @@ describe('trimClip with keys (D3, D9)', () => {
       const dStart = Math.max(earliest, Math.floor(r() * (nFrames - 4)) - 10);
       const t1 = c.start + dStart / FPS;
       const trimmed = trimClip(withClip(c), 'c', 'start', t1).tracks[0].clips[0];
-      for (const t of frames(Math.max(t1, c.start), clipEnd(c))) close(resolveClip(trimmed, t, FPS), resolveClip(c, t, FPS), `#${i} start t=${t}`);
+      for (const t of frames(Math.max(t1, c.start), clipEnd(c))) close(resolveClip(trimmed, t, FMT), resolveClip(c, t, FMT), `#${i} start t=${t}`);
       const t2 = clipEnd(c) - Math.floor(r() * (nFrames - 4)) / FPS;
       const cut = trimClip(withClip(c), 'c', 'end', t2).tracks[0].clips[0];
-      for (const t of frames(c.start, t2)) close(resolveClip(cut, t, FPS), resolveClip(c, t, FPS), `#${i} end t=${t}`);
+      for (const t of frames(c.start, t2)) close(resolveClip(cut, t, FMT), resolveClip(c, t, FMT), `#${i} end t=${t}`);
       expect(cut.keys).toBe(c.keys);
     }
   });

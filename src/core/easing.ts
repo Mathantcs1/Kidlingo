@@ -35,9 +35,12 @@ function bounceOut(u: number): number {
 /**
  * Eased progress for u in [0, 1] (clamped; NaN reads as 0). Exactly 0 at u = 0 and exactly 1 at u = 1 for every kind;
  * `hold` stays 0 until u = 1. `back`, `elastic`, `bounce` are the standard "out" variants; `back`, `elastic` and
- * `bezier` may leave [0, 1] in between (callers clamp to the property's legal range).
+ * `bezier` may leave [0, 1] in between (callers clamp to the property's legal range). `seconds` is the segment's
+ * real duration (default 1); no kind reads it yet.
  */
-export function easeAt(e: Ease, u: number): number {
+export function easeAt(e: Ease, u: number, seconds = 1): number {
+  void seconds; // the segment's duration in seconds: only the spring ease (5B Task 3) reads it
+
   if (!(u > 0)) return 0;
   if (u >= 1) return 1;
   switch (e.kind) {

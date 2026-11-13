@@ -8,6 +8,7 @@ import type { Clip, Keyframe, PositionKeyframe, Project } from '../src/core/mode
 import { colourFx, k, mk, pk, project, rng } from './keyframe-fixtures';
 
 const FPS = 30;
+const FMT = { width: 1920, height: 1080, fps: FPS };
 const CLIPS = 16;
 const DURATION = 20;
 
@@ -53,7 +54,7 @@ function bestPerFrame(frame: (t: number) => void, frames = 400, batches = 9): nu
 /** The resolver's work for one frame: every clip resolved once (what collectDraws does). */
 const resolveFrame = (list: Clip[]) => (t: number): void => {
   for (const c of list) {
-    const r = resolveClip(c, t, FPS);
+    const r = resolveClip(c, t, FMT);
     sink += r.transform.x + r.effects[0].params.brightness;
   }
 };
@@ -117,7 +118,7 @@ describe('keyframe evaluation cost (16 clips × 6 properties)', () => {
 
   it('a static clip resolves to itself without work', () => {
     const still = mk('s', { start: 0, in: 0, out: DURATION, effects: [colourFx('f')] });
-    expect(resolveClip(still, 3, FPS)).toBe(still);
+    expect(resolveClip(still, 3, FMT)).toBe(still);
   });
 });
 

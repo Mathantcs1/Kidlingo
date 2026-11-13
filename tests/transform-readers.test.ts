@@ -43,7 +43,7 @@ const ALLOWED: Allowed[] = [
   // through `withLiveValue(project, clipId, patch, t)` (no direct read).
   ['src/ui/overlayHit.ts', 'clipCorners(target.size, target.transform, format)', 'hit box from the target transform: resolved at the playhead by TransformOverlay (or the live drag)'],
   ['src/ui/useTransformDrag.ts', 'storeTransform: clip.transform', 'reads stored value on purpose: detects an external store change (drag start = resolvedTransform at the playhead)'],
-  ['src/ui/useTransformDrag.ts', 'now.transform !== g.storeTransform', 'reads stored value on purpose: detects an external store change'],
+  ['src/ui/dragStale.ts', 'now.transform !== g.storeTransform', 'reads stored value on purpose: detects an external store change (moved from useTransformDrag.ts, 5B Task 1)'],
   ['src/ui/TransformOverlay.tsx', 'live ? live.transform : resolvedTransform(target.clip', 'handles at the live drag transform, else the resolved transform at the playhead'],
   ['src/ui/TransformOverlay.tsx', 'clipCorners(target.size, target.transform, format)', 'handles at the target transform (resolved at the playhead, or the live drag)'],
   ['src/ui/edits.ts', 'rotation: c.transform.rotation, opacity: c.transform.opacity', 'reads stored value on purpose: setClipFit keeps the static rotation/opacity'],

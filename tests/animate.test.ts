@@ -21,6 +21,7 @@ const clip = (extra: Partial<Clip> = {}): Clip => ({
 });
 
 const FPS = 30;
+const FMT = { width: 1920, height: 1080, fps: FPS };
 
 describe('isAnimated', () => {
   it('false for a clip without keys, with an empty keys object or only empty lists', () => {
@@ -39,7 +40,7 @@ describe('isAnimated', () => {
 describe('resolveClip', () => {
   it('returns the SAME object for a static clip', () => {
     for (const c of [clip(), clip({ keys: {} }), clip({ kind: 'overlay', effects: [] }), clip({ keys: { rotation: [] } })]) {
-      expect(resolveClip(c, 11, FPS)).toBe(c);
+      expect(resolveClip(c, 11, FMT)).toBe(c);
       expect(resolvedTransform(c, 11, FPS)).toBe(c.transform);
     }
   });
@@ -53,7 +54,7 @@ describe('resolveClip', () => {
         opacity: [k(0, 0), k(2, 1)],
       },
     });
-    const r = resolveClip(c, 11 + 0.01, FPS); // local 1 s (between-frame time snaps to the frame start)
+    const r = resolveClip(c, 11 + 0.01, FMT); // local 1 s (between-frame time snaps to the frame start)
     expect(r).not.toBe(c);
     expect(r.keys).toBeUndefined();
     expect('keys' in r).toBe(false);
@@ -75,8 +76,8 @@ describe('resolveClip', () => {
 
   it('sourced clips evaluate at in + offset; sourceless at the offset', () => {
     const keys = { opacity: [k(0, 0), k(4, 1)] };
-    expect(resolveClip(clip({ in: 2, out: 6, keys }), 11, FPS).transform.opacity).toBeCloseTo(0.75, 12);
-    expect(resolveClip(clip({ kind: 'overlay', in: 2, out: 6, effects: [], keys }), 11, FPS).transform.opacity).toBeCloseTo(0.25, 12);
+    expect(resolveClip(clip({ in: 2, out: 6, keys }), 11, FMT).transform.opacity).toBeCloseTo(0.75, 12);
+    expect(resolveClip(clip({ kind: 'overlay', in: 2, out: 6, effects: [], keys }), 11, FMT).transform.opacity).toBeCloseTo(0.25, 12);
   });
 
   it('evaluates effect params, keeps other params, drops effect keys and never mutates the input', () => {
@@ -84,7 +85,7 @@ describe('resolveClip', () => {
     const other = fx({ id: 'e2', type: 'bw', params: { amount: 1 } });
     const c = clip({ effects: [e, other] });
     const snap = JSON.stringify(c);
-    const r = resolveClip(c, 11, FPS);
+    const r = resolveClip(c, 11, FMT);
     expect(JSON.stringify(c)).toBe(snap);
     expect(r.transform).toBe(c.transform);
     expect(r.effects[0].params.brightness).toBeCloseTo(0, 12);
@@ -107,7 +108,7 @@ describe('resolveClip', () => {
     const local = 0.6;
     const over = easeAt(back, local);
     expect(over).toBeGreaterThan(1);
-    const r = resolveClip(c, 10 + local, FPS);
+    const r = resolveClip(c, 10 + local, FMT);
     expect(r.transform.opacity).toBe(1);
     expect(r.transform.scale).toBe(0);
     expect(r.transform.rotation).toBeCloseTo(90 * over, 9);
@@ -119,13 +120,13 @@ describe('resolveClip', () => {
 
   it('ignores keys on a non-animatable param (mirror.mode) and unknown params', () => {
     const m = { id: 'm1', type: 'mirror', enabled: true, params: { mode: 2 }, keys: { mode: [k(0, 0)], nope: [k(0, 1)] } } as VideoEffect;
-    const r = resolveClip(clip({ effects: [m] }), 11, FPS);
+    const r = resolveClip(clip({ effects: [m] }), 11, FMT);
     expect(r.effects[0].params).toEqual({ mode: 2 });
     expect('keys' in r.effects[0]).toBe(false);
   });
 
   it('is deterministic: the same (clip, t) gives equal results', () => {
     const c = clip({ keys: { scale: [k(0, 1, { kind: 'elastic' }), k(3, 2)] } });
-    expect(resolveClip(c, 11.3, 25)).toEqual(resolveClip(c, 11.3, 25));
+    expect(resolveClip(c, 11.3, { ...FMT, fps: 25 })).toEqual(resolveClip(c, 11.3, { ...FMT, fps: 25 }));
   });
 });

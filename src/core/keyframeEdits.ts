@@ -1,21 +1,19 @@
 // Pure keyframe edits (Plan 5 D2/D8/D10/D11): stopwatch on/off, value at the playhead, key removal, retiming and
 // eases. `(Project, …) => Project`; locked tracks refuse; no-ops return the SAME project; never mutates input.
-import {
-  assertTarget, sameTarget, staticValue, targetKeys, valueAtLocal, withStaticValue, withTargetKeys,
-} from './animTargets';
+import { staticValue, targetKeys, valueAtLocal, withStaticValue, withTargetKeys } from './animTargets';
 import type { AnimTarget, AnimValue, KeyRef } from './animTargets';
 import { isSameEase, repairEase } from './easing';
 import type { Ease } from './easing';
-import { nearestKey, upsertKey } from './keyLists';
+import { assertInside, commitClip, isPosition, keyToValue, locate, sameFrame, selection } from './keyEditHelpers';
+import { upsertKey } from './keyLists';
 import type { AnyKey, KeyValue } from './keyLists';
 import {
-  KEYED_POSITION_LIMIT, KEYED_ROTATION_LIMIT, KEYED_SCALE_LIMIT, MAX_KEYS, keyFrame, keyIndexAtPlayhead, keyVisible, localRange,
+  KEYED_POSITION_LIMIT, KEYED_ROTATION_LIMIT, KEYED_SCALE_LIMIT, MAX_KEYS, keyIndexAtPlayhead, localRange,
   localTime, tooClose,
 } from './keyframes';
-import { clipEnd } from './model';
 import type { Clip, Id, Project } from './model';
 import { scaleBounds } from './scale';
-import { EPS, TimelineError, assertFinite, assertUnlocked, findClip } from './timeline';
+import { EPS, TimelineError, assertFinite } from './timeline';
 import { REACH, clamp } from './transformLimits';
 import { setClipTransform } from './transformEdits';
 import { animatableParam } from './videoEffects';
@@ -24,28 +22,7 @@ import { updateVideoEffect } from './videoEffectEdits';
 export type { AnimTarget, AnimValue, KeyRef, TransformProp } from './animTargets';
 export { ANIMATED_REFUSAL, animatedTargets, keyRefsAt, keyTimes, targetKeys, targetValueAt } from './animTargets';
 
-export const OUTSIDE_REFUSAL = 'Move the playhead onto the clip to set a keyframe';
-
-/** The clip and its track after the lock guard and the per-kind target refusals. */
-function locate(p: Project, clipId: Id, target?: AnimTarget): Clip {
-  const { track, clip } = findClip(p, clipId);
-  assertUnlocked(p, track.id);
-  if (target) assertTarget(clip, target);
-  return clip;
-}
-
-/** `p` with clip `clipId` replaced by `next` (only its own track is copied). */
-export function commitClip(p: Project, clipId: Id, next: Clip): Project {
-  const swap = (c: Clip): Clip => (c.id === clipId ? next : c);
-  return { ...p, tracks: p.tracks.map((t) => (t.clips.some((c) => c.id === clipId) ? { ...t, clips: t.clips.map(swap) } : t)) };
-}
-
-function assertInside(clip: Clip, t: number): void {
-  if (!(t >= clip.start - EPS && t < clipEnd(clip) - EPS)) throw new TimelineError(OUTSIDE_REFUSAL);
-}
-
-const isPosition = (target: AnimTarget): boolean => target.kind === 'transform' && target.prop === 'position';
-const keyToValue = (k: AnyKey): AnimValue => ('v' in k ? k.v : { x: k.x, y: k.y });
+export { OUTSIDE_REFUSAL, commitClip } from './keyEditHelpers';
 
 /**
  * A key value within the target's legal range: D5 (opacity 0..1, effect params their schema range, keyed rotation
@@ -119,22 +96,6 @@ export function setValueAt(p: Project, clipId: Id, target: AnimTarget, value: An
   return next === list ? p : commitClip(p, clipId, withTargetKeys(clip, target, next));
 }
 
-/** The distinct targets of `refs`, each with the indices of its keys that the refs select (nearest within KEY_EPS). */
-function selection(clip: Clip, refs: readonly KeyRef[]): { target: AnimTarget; list: readonly AnyKey[]; picked: Set<number> }[] {
-  const out: { target: AnimTarget; list: readonly AnyKey[]; picked: Set<number> }[] = [];
-  for (const r of refs) {
-    let entry = out.find((e) => sameTarget(e.target, r.target));
-    if (!entry) {
-      assertTarget(clip, r.target);
-      entry = { target: r.target, list: targetKeys(clip, r.target) ?? [], picked: new Set() };
-      out.push(entry);
-    }
-    const i = nearestKey(entry.list, r.t);
-    if (i >= 0) entry.picked.add(i);
-  }
-  return out.filter((e) => e.picked.size > 0);
-}
-
 /**
  * Removes the referenced keys. A property that loses its last key becomes static at its EARLIEST key's value (the
  * removed key itself when it was alone; rotation normalised). Same project when no ref matches a key.
@@ -170,10 +131,6 @@ export function moveKeys(p: Project, clipId: Id, refs: readonly KeyRef[], delta:
   }
   return next === clip ? p : commitClip(p, clipId, next);
 }
-
-/** Whether two visible local key times fall in the same frame of the clip's grid (P5-6). */
-const sameFrame = (clip: Clip, a: number, b: number, fps: number): boolean =>
-  keyVisible(clip, a) && keyVisible(clip, b) && keyFrame(clip, a, fps) === keyFrame(clip, b, fps);
 
 /** Sets the ease of the referenced keys (the segment each one starts, D4). Same project when nothing changes. */
 export function setKeyEase(p: Project, clipId: Id, refs: readonly KeyRef[], ease: Ease): Project {

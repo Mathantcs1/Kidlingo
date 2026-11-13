@@ -15,6 +15,7 @@ import { sampleMotionPath } from '../src/ui/motionPathMath';
 import { clipOf, k, pk, project } from './keyframe-fixtures';
 
 const FPS = 30;
+const FMT = { width: 1920, height: 1080, fps: FPS };
 const FORMAT = { width: 1920, height: 1080 };
 const EASES: Ease[] = [
   { kind: 'linear' }, { kind: 'hold' }, { kind: 'easeIn' }, { kind: 'easeOut' }, { kind: 'easeInOut' }, { kind: 'back' },
@@ -36,7 +37,7 @@ function everyFrame(clip: Clip, what: string): void {
   for (let f = 0; f <= 4 * FPS; f++) {
     const t = clip.start + f / FPS;
     expectFinite(resolvedTransform(clip, t, FPS), `${what} frame ${f}`);
-    const r = resolveClip(clip, t, FPS);
+    const r = resolveClip(clip, t, FMT);
     for (const e of r.effects) for (const v of Object.values(e.params)) expect(Number.isFinite(v)).toBe(true);
   }
   const path = sampleMotionPath(clip, FPS, FORMAT);

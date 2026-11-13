@@ -4,6 +4,7 @@ import { resolvedTransform } from '../core/animate';
 import type { Clip, Project, Transform } from '../core/model';
 import type { Handle } from '../render/overlayGeometry';
 import { useEditor } from '../state/store';
+import { isStaleDrag } from './dragStale';
 import { pastThreshold } from './drag';
 import { canvasBoxOf, dragPatch, handleAt, transformFor } from './overlayHit';
 import type { DragInput, DragTarget, LiveTransform } from './overlayHit';
@@ -17,7 +18,7 @@ export const TRANSFORMING_CLASS = 'is-transforming';
 interface Gesture extends DragInput {
   pointerId: number;
   clipId: string;
-  /** The store's transform and keys objects at the press: if anything else replaces them, the drag's start is stale. */
+  /** The store's transform and keys objects at the press (see dragStale.ts): if anything else replaces them, the drag's start is stale. */
   storeTransform: Transform;
   storeKeys: Clip['keys'];
   /** The playhead at the press: the drag edits the clip as seen then, and commits there (a key when animated). */
@@ -133,11 +134,7 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
     };
     const unsubscribe = useEditor.subscribe((s, prev) => {
       if (s.playhead !== g.at) return end();
-      const p = s.history.present;
-      if (p === prev.history.present) return;
-      const now = clipIn(p, g.clipId);
-      const stale = !now || now.transform !== g.storeTransform || now.keys !== g.storeKeys;
-      if (stale || p.format.width !== g.format.width || p.format.height !== g.format.height || p.format.fps !== prev.history.present.format.fps) end();
+      if (isStaleDrag(g, s.history.present, prev.history.present)) end();
     });
     const listeners: [string, EventListener, boolean][] = [
       ['pointermove', onMove as EventListener, false],

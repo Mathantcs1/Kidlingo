@@ -4,6 +4,9 @@ import { localTime, positionAt, valueAt } from './keyframes';
 import type { Clip, Keyframe, Transform, VideoEffect } from './model';
 import { animatableParam } from './videoEffects';
 
+/** What the resolver needs of the project format (5B presets scale by the canvas size). */
+export type ResolveFormat = { width: number; height: number; fps: number };
+
 const has = (list: readonly unknown[] | undefined): boolean => list !== undefined && list.length > 0;
 
 function effectAnimated(e: VideoEffect): boolean {
@@ -61,10 +64,11 @@ function resolveEffect(e: VideoEffect, u: number): VideoEffect {
  * whose `transform` and `effects[].params` hold the evaluated values and which carries no `keys` (on the clip or its
  * effects). Effects without keys and an unanimated transform are shared with the input, which is never mutated.
  */
-export function resolveClip(clip: Clip, t: number, fps: number): Clip {
+export function resolveClip(clip: Clip, t: number, format: ResolveFormat): Clip {
   if (!isAnimated(clip)) return clip;
   const { keys: _keys, ...rest } = clip;
   const anyEffect = clip.effects.some((e) => e.keys !== undefined);
+  const { fps } = format;
   const u = anyEffect ? localTime(clip, t, fps) : 0;
   return {
     ...rest,

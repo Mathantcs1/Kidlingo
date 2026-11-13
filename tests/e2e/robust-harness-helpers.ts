@@ -53,5 +53,5 @@ export async function eightClips(page: Page, count = 8, extra: Clip[] = []): Pro
 
 /** The same project with every clip frozen at its resolved state at `t` (no keys): the same draws, no evaluation. */
 export function frozen(p: Project, t: number): Project {
-  return { ...p, tracks: p.tracks.map((tr) => ({ ...tr, clips: tr.clips.map((c) => resolveClip(c, t, p.format.fps)) })) };
+  return { ...p, tracks: p.tracks.map((tr) => ({ ...tr, clips: tr.clips.map((c) => resolveClip(c, t, p.format)) })) };
 }

@@ -83,7 +83,7 @@ function segmentIndex(keys: readonly { t: number }[], u: number): number {
 function fraction(keys: readonly { t: number; ease: Keyframe['ease'] }[], i: number, u: number): number | null {
   if (i < 0 || i >= keys.length - 1) return null;
   const a = keys[i];
-  return easeAt(a.ease, (u - a.t) / (keys[i + 1].t - a.t));
+  return easeAt(a.ease, (u - a.t) / (keys[i + 1].t - a.t), keys[i + 1].t - a.t);
 }
 
 /**
