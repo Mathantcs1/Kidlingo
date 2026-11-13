@@ -2,9 +2,11 @@
 // Reading and writing one target's keys and static value, its legal ranges, and the queries the UI needs. Pure.
 import { nearestKey } from './keyLists';
 import type { AnyKey } from './keyLists';
-import { localTime, positionAt, tooClose, valueAt } from './keyframes';
+import { evalKeys, evalPositionKeys } from './keyLoops';
+import { localTime, tooClose } from './keyframes';
 import type { Clip, Id, Keyframe, PositionKeyframe, TransformKeys } from './model';
 import { TimelineError } from './timeline';
+import { targetLoop, withParamLoop, withPropLoop } from './targetLoops';
 import { normaliseDegrees } from './transformLimits';
 import { VIDEO_EFFECTS, animatableParam } from './videoEffects';
 
@@ -66,26 +68,37 @@ export function staticValue(clip: Clip, target: AnimTarget): AnimValue {
   return target.prop === 'position' ? { x: t.x, y: t.y } : t[target.prop];
 }
 
-/** The value at LOCAL time `u`: evaluated and clamped like the resolver when animated, else the static value. */
+/** The value at LOCAL time `u`: evaluated (with its loop, 5B D4) and clamped like the resolver when animated, else the static value. */
 export function valueAtLocal(clip: Clip, target: AnimTarget, u: number): AnimValue {
   const list = targetKeys(clip, target);
   if (!list) return staticValue(clip, target);
-  if (target.kind === 'transform' && target.prop === 'position') return positionAt(list as PositionKeyframe[], u);
-  return valueAt(list as Keyframe[], u, ...range(clip, target));
+  const loop = targetLoop(clip, target);
+  if (target.kind === 'transform' && target.prop === 'position') return evalPositionKeys(list as PositionKeyframe[], loop, u);
+  return evalKeys(list as Keyframe[], loop, u, ...range(clip, target));
 }
 
 /** The value seen at TIMELINE time `t` (the inspector's value at the playhead). */
 export const targetValueAt = (clip: Clip, target: AnimTarget, t: number, fps: number): AnimValue =>
   valueAtLocal(clip, target, localTime(clip, t, fps));
 
-/** `clip` with the target's key list replaced; an empty/undefined list is removed, and so is an emptied `keys`. */
+const hasList = (keys: TransformKeys): boolean => TRANSFORM_PROPS.some((q) => (keys[q]?.length ?? 0) > 0);
+
+/**
+ * `clip` with the target's key list replaced; an empty/undefined list is removed together with the target's loop
+ * (5B D4) and, for position, `orient` (D7), so nothing stale revives when keys are added again; a `keys` object with
+ * no list left (or an effect's) is removed.
+ */
 export function withTargetKeys(clip: Clip, target: AnimTarget, list: readonly AnyKey[] | undefined): Clip {
   const keep = list && list.length > 0 ? list : undefined;
   if (target.kind === 'transform') {
     const { [target.prop]: _old, ...rest } = clip.keys ?? {};
-    const keys: TransformKeys = keep ? { ...rest, [target.prop]: keep } : rest;
+    let keys: TransformKeys = keep ? { ...rest, [target.prop]: keep } : withPropLoop(rest, target.prop, undefined);
+    if (!keep && target.prop === 'position') {
+      const { orient: _o, ...noOrient } = keys;
+      keys = noOrient;
+    }
     const { keys: _k, ...bare } = clip;
-    return Object.keys(keys).length > 0 ? { ...clip, keys } : bare;
+    return hasList(keys) ? { ...clip, keys } : bare;
   }
   return {
     ...clip,
@@ -93,8 +106,9 @@ export function withTargetKeys(clip: Clip, target: AnimTarget, list: readonly An
       if (e.id !== target.effectId) return e;
       const { [target.param]: _old, ...rest } = e.keys ?? {};
       const keys = keep ? { ...rest, [target.param]: keep as Keyframe[] } : rest;
-      const { keys: _k, ...bare } = e;
-      return Object.keys(keys).length > 0 ? { ...e, keys } : bare;
+      const fx = keep ? e : withParamLoop(e, target.param, undefined);
+      const { keys: _k, loops: _l, ...bare } = fx;
+      return Object.keys(keys).length > 0 ? { ...fx, keys } : bare;
     }),
   };
 }

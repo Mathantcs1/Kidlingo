@@ -2,13 +2,16 @@
 // on-canvas overlay (re-exported by src/ui/transformEdits.ts). Keyed writes live in keyframeEdits.ts (Plan 5).
 import { ANIMATED_REFUSAL } from './animTargets';
 import { fitTransform } from './merge';
+import type { KeyedTransformProp } from './keyTypes';
 import type { Clip, Id, Project, Transform, TransformKeys } from './model';
 import { overlayDefaultTransform } from './overlays';
 import { scaleBounds } from './scale';
+import { withPropLoop } from './targetLoops';
 import { TimelineError, assertUnlocked, findClip } from './timeline';
 import { REACH, clamp, normaliseDegrees } from './transformLimits';
 
 const KEYS = ['x', 'y', 'scale', 'rotation', 'opacity'] as const;
+const KEYED: readonly KeyedTransformProp[] = ['position', 'scale', 'rotation', 'opacity'];
 const PROP_OF = { x: 'position', y: 'position', scale: 'scale', rotation: 'rotation', opacity: 'opacity' } as const;
 
 /**
@@ -81,12 +84,19 @@ function writeTransform(
   };
 }
 
-/** `keys` without the listed transform properties; undefined when nothing remains. */
-export function withoutTransformKeys(keys: TransformKeys | undefined, props: readonly (keyof TransformKeys)[]): TransformKeys | undefined {
+/**
+ * `keys` without the listed transform properties, their loops (5B D4) and, without position, `orient` (D7);
+ * undefined when no key list remains.
+ */
+export function withoutTransformKeys(keys: TransformKeys | undefined, props: readonly KeyedTransformProp[]): TransformKeys | undefined {
   if (!keys) return undefined;
-  const out: TransformKeys = { ...keys };
-  for (const prop of props) delete out[prop];
-  return Object.keys(out).length > 0 ? out : undefined;
+  let out: TransformKeys = { ...keys };
+  for (const prop of props) {
+    delete out[prop];
+    out = withPropLoop(out, prop, undefined);
+  }
+  if (props.includes('position')) delete out.orient;
+  return KEYED.some((q) => (out[q]?.length ?? 0) > 0) ? out : undefined;
 }
 
 /**

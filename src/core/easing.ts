@@ -1,4 +1,5 @@
 import { cubicBezierAt } from './bezier';
+import { springEase } from './spring';
 
 export { cubicBezierAt };
 
@@ -51,12 +52,9 @@ function bounceOut(u: number): number {
  * Eased progress for u in [0, 1] (clamped; NaN reads as 0). Exactly 0 at u = 0 and exactly 1 at u = 1 for every kind;
  * `hold` stays 0 until u = 1. `back`, `elastic`, `bounce` are the standard "out" variants; `back`, `elastic` and
  * `bezier` may leave [0, 1] in between (callers clamp to the property's legal range). `seconds` is the segment's
- * real duration (default 1); no kind reads it yet.
+ * real duration (default 1); only `spring` reads it (D5: physical seconds, endpoint-corrected, may overshoot).
  */
 export function easeAt(e: Ease, u: number, seconds = 1): number {
-  void seconds; // the segment's duration in seconds: only the spring ease (5B Task 3) reads it
-  // TEMPORARY (5B Task 2): 'spring' falls through to the linear default below until Task 3 adds its closed form.
-
   if (!(u > 0)) return 0;
   if (u >= 1) return 1;
   switch (e.kind) {
@@ -80,6 +78,8 @@ export function easeAt(e: Ease, u: number, seconds = 1): number {
       const b = e.bezier;
       return b ? cubicBezierAt(b[0], b[1], b[2], b[3], u) : u;
     }
+    case 'spring':
+      return springEase(e.spring ?? SPRING_DEFAULT, u, seconds);
     default:
       return u;
   }

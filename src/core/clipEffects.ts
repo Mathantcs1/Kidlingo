@@ -4,8 +4,11 @@ import type { Keyframe, VideoEffect } from './model';
 
 /**
  * Copies the picture effect stack with NEW ids (ids must stay unique across clips after a split). Param keys (data
- * v6) are deep-copied, or mapped by `mapKeys` (a split keeps each half's keys, D9), so no two clips share a key list.
+ * v6) are deep-copied, or mapped by `mapKeys` (a split keeps each half's keys, D9; whole lists when looped, 5B D4),
+ * and param loops copied, so no two clips share a key list or loop.
  */
-export function cloneVideoEffects(effects: VideoEffect[], mapKeys: (l: Keyframe[]) => Keyframe[] = (l) => l.map(copyKey)): VideoEffect[] {
+export function cloneVideoEffects(
+  effects: VideoEffect[], mapKeys: (l: Keyframe[], looped: boolean) => Keyframe[] = (l) => l.map(copyKey),
+): VideoEffect[] {
   return effects.map((e) => mapEffectKeys({ ...e, id: newId(), params: { ...e.params } }, mapKeys));
 }

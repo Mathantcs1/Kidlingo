@@ -1,5 +1,5 @@
-// The spring ease's DATA (Plan 5B Task 2, D5): kind, params, repair and comparison. Its maths come in Task 3; until
-// then `easeAt` evaluates a spring as linear (pinned below so Task 3 must replace this test, not silently change it).
+// The spring ease's DATA (Plan 5B Task 2, D5): kind, params, repair and comparison. Its maths (Task 3) are pinned in
+// tests/spring.test.ts.
 import { describe, it, expect } from 'vitest';
 import { EASE_KINDS, SPRING_DEFAULT, SPRING_LIMITS, easeAt, isSameEase, repairEase } from '../src/core/easing';
 import type { Ease } from '../src/core/easing';
@@ -13,10 +13,12 @@ describe('spring ease data', () => {
     expect(SPRING_LIMITS).toEqual({ stiffness: [1, 1000], damping: [0, 100], mass: [0.1, 10] });
   });
 
-  it('TEMPORARY (until 5B Task 3): easeAt treats spring as linear, exact at both ends, any segment length', () => {
-    for (const u of [0, 0.1, 0.37, 0.5, 0.99, 1]) {
-      expect(easeAt(spring(180, 8, 1), u)).toBe(u);
-      expect(easeAt(spring(180, 8, 1), u, 0.25)).toBe(u);
+  it('easeAt evaluates a spring (5B Task 3; was linear in Task 2): exact at both ends, segment-length aware', () => {
+    expect(easeAt(spring(180, 8, 1), 0.37)).not.toBe(0.37);
+    expect(easeAt(spring(180, 8, 1), 0.37, 0.25)).not.toBe(easeAt(spring(180, 8, 1), 0.37));
+    for (const sec of [undefined, 0.25, 2]) {
+      expect(easeAt(spring(180, 8, 1), 0, sec)).toBe(0);
+      expect(easeAt(spring(180, 8, 1), 1, sec)).toBe(1);
     }
     expect(easeAt(spring(180, 8, 1), -1)).toBe(0);
     expect(easeAt(spring(180, 8, 1), 2)).toBe(1);

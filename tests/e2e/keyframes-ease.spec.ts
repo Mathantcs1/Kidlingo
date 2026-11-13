@@ -17,6 +17,9 @@ test('easeIn on a segment: the pixel at its quarter point follows easeAt, in ONE
   const dblclick = diamond(page, 0.4);
   await dblclick.dblclick();
   await expect(editor(page)).toBeVisible();
+  // Plan 5B: spring is stored data and evaluates (Task 3), but the editor offers it only with its fields (Task 8).
+  await expect(page.getByTestId('ease-preset-linear')).toBeVisible();
+  await expect(page.getByTestId('ease-preset-spring')).toHaveCount(0);
   await page.getByTestId('ease-preset-easeIn').click();
   expect(await undoDepth(page)).toBe(d + 1);
   expect((await keys(page, 'opacity')).map((e) => e.kind)).toEqual(['easeIn', 'linear', 'linear']);

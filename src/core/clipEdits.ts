@@ -1,6 +1,6 @@
 import { cloneEffects, fitFades, withAudio } from './clipAudio';
 import { cloneVideoEffects } from './clipEffects';
-import { mapEffectKeys, mapTransformKeys, shiftKeys, splitKeys } from './keyLists';
+import { copyKey, mapEffectKeys, mapTransformKeys, shiftKeys, splitKeys } from './keyLists';
 import type { AnyKey } from './keyLists';
 import { clipDuration, clipEnd, isSourceless, newId } from './model';
 import type { Clip, Id, Project, TransformKeys } from './model';
@@ -12,9 +12,12 @@ const withClipKeys = (clip: Clip, keys: TransformKeys | undefined): Clip => {
   return keys ? { ...rest, keys } : rest;
 };
 
-/** A key list mapper: the keys deciding local range [lo, hi] (splitKeys), moved by `d` seconds. Fresh copies. */
-const part = (lo: number, hi: number, d: number) => <K extends AnyKey>(l: K[]): K[] => {
-  const kept = splitKeys(l, lo, hi);
+/**
+ * A key list mapper for one split half: the keys deciding local range [lo, hi] (splitKeys), moved by `d` seconds. A
+ * LOOPED list is kept whole (5B D4: evaluation past its last key reads the whole list). Fresh copies.
+ */
+const part = (lo: number, hi: number, d: number) => <K extends AnyKey>(l: K[], looped: boolean): K[] => {
+  const kept = looped ? l.map(copyKey) : splitKeys(l, lo, hi);
   return d === 0 ? kept : shiftKeys(kept, d);
 };
 
@@ -56,8 +59,8 @@ export function splitClip(p: Project, clipId: Id, time: number): Project {
     throw new TimelineError('Split point too close to clip edge');
   }
   const cut = clip.in + (time - clip.start);
-  // Keys (Plan 5 D9): each half keeps the keys that decide its own local range; a sourceless right half's keys
-  // shift by −(time − start) because its local time restarts at 0.
+  // Keys (Plan 5 D9): each half keeps the keys that decide its own local range, a looped target its whole list (5B
+  // D4); a sourceless right half's keys shift by −(time − start) because its local time restarts at 0.
   const d = time - clip.start;
   const [lo, hi] = isSourceless(clip) ? [0, clipDuration(clip)] : [clip.in, clip.out];
   const mid = lo + d;

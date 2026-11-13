@@ -2,7 +2,7 @@
 // mutated; split/shift results hold fresh key objects so no two clips (or halves) ever share a key.
 import { repairEase } from './easing';
 import { MAX_KEYS, tooClose } from './keyframes';
-import type { Keyframe, PositionKeyframe, TransformKeys, VideoEffect } from './model';
+import type { KeyLoop, Keyframe, PositionKeyframe, TransformKeys, VideoEffect } from './model';
 
 export type AnyKey = Keyframe | PositionKeyframe;
 
@@ -38,30 +38,35 @@ export function splitKeys<K extends AnyKey>(list: readonly K[], lo: number, hi: 
 export const shiftKeys = <K extends AnyKey>(list: readonly K[], d: number): K[] => list.map((k) => ({ ...copyKey(k), t: k.t + d }));
 
 /**
- * A clip's transform keys with every list mapped by `num` / `pos`; undefined stays undefined. v7 `loops` (copied) and
- * `orient` are carried unchanged (5B Task 3 decides how split treats looped lists, D4).
+ * A clip's transform keys with every list mapped by `num` / `pos`, which also learn whether the list is looped (5B D4:
+ * a split keeps a looped list whole); undefined stays undefined. `loops` (copied) and `orient` are carried unchanged.
  */
 export function mapTransformKeys(
   keys: TransformKeys | undefined,
-  num: (l: Keyframe[]) => Keyframe[],
-  pos: (l: PositionKeyframe[]) => PositionKeyframe[],
+  num: (l: Keyframe[], looped: boolean) => Keyframe[],
+  pos: (l: PositionKeyframe[], looped: boolean) => PositionKeyframe[],
 ): TransformKeys | undefined {
   if (!keys) return undefined;
   const out: TransformKeys = {};
-  if (keys.position) out.position = pos(keys.position);
+  if (keys.position) out.position = pos(keys.position, keys.loops?.position !== undefined);
   for (const prop of ['scale', 'rotation', 'opacity'] as const) {
     const l = keys[prop];
-    if (l) out[prop] = num(l);
+    if (l) out[prop] = num(l, keys.loops?.[prop] !== undefined);
   }
-  if (keys.loops) out.loops = Object.fromEntries(Object.entries(keys.loops).map(([q, l]) => [q, { ...l }]));
+  if (keys.loops) out.loops = copyLoops(keys.loops);
   if (keys.orient) out.orient = true;
   return out;
 }
 
-/** An effect with every param key list mapped by `fn` (no `keys` field when it had none). */
-export function mapEffectKeys(e: VideoEffect, fn: (l: Keyframe[]) => Keyframe[]): VideoEffect {
+/** A fresh copy of a loops record. */
+const copyLoops = <T extends Record<string, KeyLoop | undefined>>(loops: T): T =>
+  Object.fromEntries(Object.entries(loops).map(([q, l]) => [q, l && { mode: l.mode, count: l.count }])) as T;
+
+/** An effect with every param key list mapped by `fn` (told whether the param is looped) and its loops copied (no `keys` field when it had none). */
+export function mapEffectKeys(e: VideoEffect, fn: (l: Keyframe[], looped: boolean) => Keyframe[]): VideoEffect {
   if (!e.keys) return e;
-  return { ...e, keys: Object.fromEntries(Object.entries(e.keys).map(([param, l]) => [param, fn(l)])) };
+  const keys = Object.fromEntries(Object.entries(e.keys).map(([param, l]) => [param, fn(l, e.loops?.[param] !== undefined)]));
+  return e.loops ? { ...e, keys, loops: copyLoops(e.loops) } : { ...e, keys };
 }
 
 /** A key's value part: `{ v }` for numeric targets, `{ x, y }` for position. */
