@@ -75,7 +75,7 @@ export default function TransformFields({ clip, editable, locked, only }: { clip
   const props = only ? ALL_PROPS.filter((prop) => only.some((k) => propOf(k) === prop)) : ALL_PROPS;
   return (
     <div className="inspector-field">
-      <span className="inspector-label" id="inspector-transform-label">
+      <span className="visually-hidden" id="inspector-transform-label">
         {only ? 'Layer' : 'Position and size'}
       </span>
       <div className="tf-grid" role="group" aria-labelledby="inspector-transform-label" data-testid="inspector-transform">

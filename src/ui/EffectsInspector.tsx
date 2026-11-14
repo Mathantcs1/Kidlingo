@@ -33,8 +33,8 @@ export default function EffectsInspector({ clip, editable, locked }: Props) {
   return (
     <section className="inspector-field fx-panel" data-testid="fx-panel" aria-label="Picture effects">
       <LooksGallery clipId={clip.id} disabled={disabled} />
-      <span className="inspector-label" id="fx-label">
-        Effects
+      <span className="inspector-label inspector-sub" id="fx-label">
+        Add effect
       </span>
       <div className="effect-tools" role="group" aria-labelledby="fx-label">
         <select

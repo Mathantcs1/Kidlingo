@@ -1,0 +1,279 @@
+/* Clip inspector, laid out like Premiere's Effect Controls: a fixed-width column, a header strip that stays put, and
+   collapsible groups separated by thin dividers. Tokens (--sp-*, --fs-*, --r-*, --ctl-h) live in styles.css :root. */
+.inspector {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  font-size: var(--fs-sm);
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+}
+
+.inspector-clip-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+  padding: 6px var(--sp-3);
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.inspector-clip {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.inspector-kind {
+  flex: none;
+  padding: 1px 6px;
+  font-size: var(--fs-xs);
+  text-transform: capitalize;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+.inspector-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.inspector-hint {
+  margin: 0;
+  color: var(--muted);
+}
+
+.inspector-pad {
+  padding: var(--sp-3);
+}
+
+/* One collapsible group */
+.isec {
+  flex: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.isec-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 28px;
+  padding: 0 var(--sp-3);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+}
+
+.isec-head:hover:not(:disabled) {
+  background: var(--panel-2);
+}
+
+.isec-chevron {
+  flex: none;
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--muted);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.1s;
+}
+
+.isec[data-open='true'] .isec-chevron {
+  transform: rotate(90deg);
+}
+
+.isec-title {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.isec-summary {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.isec-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-1) var(--sp-3) var(--sp-3);
+}
+
+.isec-body[hidden] {
+  display: none;
+}
+
+/* Fields inside a group */
+.inspector-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.inspector-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.inspector-sub {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.inspector-label output {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.inspector-field input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+/* Native controls: one height, selects at full width of their row */
+.inspector select,
+.inspector button:not(.kf-btn):not(.isec-head):not(.kf-strip-key),
+.overlay-text-input {
+  min-height: var(--ctl-h);
+  padding-top: 0;
+  padding-bottom: 0;
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+}
+
+.inspector select {
+  width: 100%;
+  min-width: 0;
+}
+
+.inspector .isec-head {
+  min-height: 28px;
+}
+
+/* Numeric fields: label left, value right; two per row (X/Y, Scale/Rotation, Fade in/out). */
+.tf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2) var(--sp-3);
+  align-items: center;
+}
+
+.tf-field {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.tf-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tf-input {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.tf-input input {
+  width: 100%;
+  min-width: 0;
+  height: var(--ctl-h);
+  padding: 0 20px 0 6px;
+  font: inherit;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.tf-input input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.tf-input input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.tf-input input:disabled {
+  opacity: 0.5;
+}
+
+.tf-unit {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--fs-xs);
+  pointer-events: none;
+}
+
+.tf-reset {
+  justify-self: stretch;
+}
+
+.segmented {
+  display: flex;
+}
+
+.segmented button {
+  flex: 1;
+  padding: 0 6px;
+  border-radius: 0;
+}
+
+.segmented button + button {
+  margin-left: -1px;
+}
+
+.segmented button:first-child {
+  border-radius: var(--r-md) 0 0 var(--r-md);
+}
+
+.segmented button:last-child {
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+}
+
+.segmented button[aria-pressed='true'] {
+  position: relative;
+  background: var(--accent-2);
+  border-color: var(--accent);
+}
+
+/* Fit and blend are label-left rows as well */
+.isec-body > .inspector-field:has(> .segmented, > select[data-testid='blend-mode-select']),
+.isec-body > label.inspector-field:has(> select[data-testid='blend-mode-select']) {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  align-items: center;
+}

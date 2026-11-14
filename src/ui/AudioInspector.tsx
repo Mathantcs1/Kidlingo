@@ -27,7 +27,7 @@ export default function AudioInspector({ clip, media, editable, locked }: Props)
   const dur = clipDuration(clip);
   return (
     <div className="inspector-field audio-fields" data-testid="inspector-audio" tabIndex={-1}>
-      <span className="inspector-label" id="inspector-audio-label">
+      <span className="visually-hidden" id="inspector-audio-label">
         Fades and pan
       </span>
       <div className="tf-grid" role="group" aria-labelledby="inspector-audio-label">
@@ -70,10 +70,10 @@ export default function AudioInspector({ clip, media, editable, locked }: Props)
           title={title ?? 'Pan: −100 full left, 0 centre, +100 full right'}
           onCommit={(v) => setSelectedClipAudio({ pan: v / 100 })}
         />
+        <span className="audio-pan-label" data-testid="audio-pan-label">
+          Pan {formatPan(clip.audio.pan)}
+        </span>
       </div>
-      <span className="audio-pan-label" data-testid="audio-pan-label">
-        Pan {formatPan(clip.audio.pan)}
-      </span>
       <EffectList clip={clip} disabled={disabled} title={title} />
       {detached && (
         <div className="audio-actions">

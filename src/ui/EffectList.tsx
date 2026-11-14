@@ -26,7 +26,7 @@ export default function EffectList({ clip, disabled, title }: Props) {
   return (
     <div className="inspector-field effect-list" data-testid="effect-list" title={title}>
       <span className="inspector-label" id="effect-list-label">
-        Effects
+        Audio effects
       </span>
       <div className="effect-tools" role="group" aria-labelledby="effect-list-label">
         <select

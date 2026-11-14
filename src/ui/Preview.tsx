@@ -114,6 +114,9 @@ export default function Preview({ editable }: { editable: boolean }) {
 
   return (
     <section className="preview" aria-label="Preview">
+      <div className="panel-head">
+        <h2>Program</h2>
+      </div>
       <div className="preview-stage" ref={stageRef} {...(editable && !failure ? ghostSelect : {})}>
         <canvas
           key={attempt}

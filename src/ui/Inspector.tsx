@@ -3,12 +3,15 @@ import { ADJUSTMENT_LABEL } from '../core/adjustment';
 import { overlayLabel } from '../core/overlays';
 import { findClip } from '../core/timeline';
 import { useEditor } from '../state/store';
+import { hasAnimation } from '../core/animPayload';
 import { liveSelection } from './edits';
 import AnimationInspector from './AnimationInspector';
 import AudioInspector from './AudioInspector';
 import BlendModeSelect from './BlendModeSelect';
 import { FitControl, VolumeControl } from './ClipBasics';
 import EffectsInspector from './EffectsInspector';
+import './inspector.css';
+import InspectorSection from './InspectorSection';
 import OverlayInspector from './OverlayInspector';
 import TransformFields from './TransformFields';
 
@@ -32,24 +35,39 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
   // layers take effects, a blend mode and opacity, but no fit or position (full frame).
   const picture = clip.kind === 'video' || clip.kind === 'image';
   const adjustment = clip.kind === 'adjustment';
-  const name = clip.kind === 'overlay' ? overlayLabel(clip) : adjustment ? ADJUSTMENT_LABEL : media?.name;
+  const fxCount = clip.effects.length;
+  const audioFx = clip.audio.effects.length;
   return (
     <>
-      <p className="inspector-clip" title={name}>
-        {name ?? 'Unknown media'}
-      </p>
-      {audible ? (
-        <VolumeControl clip={clip} disabled={!editable} />
-      ) : (
-        <p className="inspector-hint">{NO_SOUND[clip.kind] ?? 'This clip has no sound.'}</p>
+      {clip.kind === 'overlay' && (
+        <InspectorSection name="overlay" title="Overlay">
+          <OverlayInspector clip={clip} editable={editable} locked={locked} />
+        </InspectorSection>
       )}
-      {audible && <AudioInspector clip={clip} media={media} editable={editable} locked={locked} />}
-      {picture && <FitControl clip={clip} disabled={!editable} />}
-      {clip.kind === 'overlay' && <OverlayInspector clip={clip} editable={editable} locked={locked} />}
-      {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} only={adjustment ? OPACITY_ONLY : undefined} />}
-      {clip.kind !== 'audio' && <AnimationInspector clip={clip} editable={editable} locked={locked} />}
-      {(picture || adjustment) && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
-      {(picture || adjustment) && <EffectsInspector clip={clip} editable={editable} locked={locked} />}
+      {clip.kind !== 'audio' && (
+        <InspectorSection name="transform" title={adjustment ? 'Layer' : 'Transform'}>
+          {picture && <FitControl clip={clip} disabled={!editable} />}
+          <TransformFields clip={clip} editable={editable} locked={locked} only={adjustment ? OPACITY_ONLY : undefined} />
+          {(picture || adjustment) && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
+        </InspectorSection>
+      )}
+      {clip.kind !== 'audio' && (
+        <InspectorSection name="animation" title="Animation" summary={hasAnimation(clip) ? 'Animated' : undefined}>
+          <AnimationInspector clip={clip} editable={editable} locked={locked} />
+        </InspectorSection>
+      )}
+      {(picture || adjustment) && (
+        <InspectorSection name="effects" title="Effects" summary={fxCount > 0 ? `${fxCount} applied` : undefined}>
+          <EffectsInspector clip={clip} editable={editable} locked={locked} />
+        </InspectorSection>
+      )}
+      {audible && (
+        <InspectorSection name="audio" title="Audio" summary={clip.audio.silent ? 'Detached' : audioFx > 0 ? `${audioFx} effect${audioFx === 1 ? '' : 's'}` : undefined}>
+          <VolumeControl clip={clip} disabled={!editable} />
+          <AudioInspector clip={clip} media={media} editable={editable} locked={locked} />
+        </InspectorSection>
+      )}
+      {!audible && <p className="inspector-hint inspector-pad">{NO_SOUND[clip.kind] ?? 'This clip has no sound.'}</p>}
     </>
   );
 }
@@ -64,22 +82,32 @@ export default function Inspector({ editable }: { editable: boolean }) {
   const live = liveSelection(project, selection);
   const found = live.length === 1 ? findClip(project, live[0]) : null;
   const clip = found?.clip ?? null;
+  const media = clip ? project.media[clip.mediaId] : undefined;
+  const name = !clip ? null : clip.kind === 'overlay' ? overlayLabel(clip) : clip.kind === 'adjustment' ? ADJUSTMENT_LABEL : media?.name;
   return (
     <aside className="inspector" aria-label="Clip settings" data-testid="inspector">
       <div className="panel-head">
-        <h2>Clip</h2>
+        <h2>Effect Controls</h2>
       </div>
+      {clip && (
+        <div className="inspector-clip-row">
+          <p className="inspector-clip" title={name ?? undefined}>
+            {name ?? 'Unknown media'}
+          </p>
+          <span className="inspector-kind">{clip.kind}</span>
+        </div>
+      )}
       <div className="inspector-body">
         {clip ? (
           <ClipControls
             key={clip.id}
             clip={clip}
-            media={project.media[clip.mediaId]}
+            media={media}
             editable={editable}
             locked={found?.track.locked ?? false}
           />
         ) : (
-          <p className="inspector-hint">{live.length > 1 ? 'Select a single clip to change its settings.' : 'Select a clip'}</p>
+          <p className="inspector-hint inspector-pad">{live.length > 1 ? 'Select a single clip to change its settings.' : 'Select a clip'}</p>
         )}
       </div>
     </aside>

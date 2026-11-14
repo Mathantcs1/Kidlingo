@@ -1,12 +1,11 @@
 import { detachDisabledReason } from '../core/audioQueries';
-import { timelineDuration } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { detachSelectedAudio } from './audioCommands';
 import { copyClipsCmd, duplicateClipsCmd, pasteClipsCmd } from './clipClipboardCommands';
 import { useClipClipboard } from './clipClipboard';
 import { deleteSelected, mergeSelected, redo, rippleDeleteSelected, splitAtPlayhead, togglePlay, undo } from './commands';
 import { videoClipCount } from './edits';
-import { openExport, startMerge } from './exportJob';
+import { startMerge } from './exportJob';
 import { formatTimecode } from './layout';
 import OverlayMenu from './OverlayMenu';
 import RecordButton from './RecordButton';
@@ -19,7 +18,6 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
   const playing = useEditor((s) => s.playing);
   const playhead = useEditor((s) => s.playhead);
   const selected = useEditor((s) => s.selection.length);
-  const hasContent = useEditor((s) => timelineDuration(s.history.present) > 0);
   const canMergeAll = useEditor((s) => videoClipCount(s.history.present) >= 2);
   const detachReason = useEditor((s) => detachDisabledReason(s.history.present, s.selection));
   const hasCopy = useClipClipboard((s) => s.payload !== null);
@@ -157,16 +155,6 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
             Not saved
           </span>
         )}
-        <button
-          type="button"
-          data-testid="btn-export"
-          className="btn-primary"
-          disabled={!editable || !hasContent || recording}
-          onClick={openExport}
-          title={recording ? busyTitle : 'Export the timeline as an MP4'}
-        >
-          Export
-        </button>
       </div>
     </div>
   );

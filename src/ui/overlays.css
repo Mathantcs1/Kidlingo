@@ -38,11 +38,16 @@
 .overlay-text-input {
   width: 100%;
   min-width: 0;
+  padding: 0 6px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
 }
 
 .overlay-colour-field input[type='color'] {
   width: 100%;
-  height: 24px;
+  height: var(--ctl-h);
   padding: 0;
   background: none;
   border: 1px solid var(--border);

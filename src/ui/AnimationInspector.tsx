@@ -24,7 +24,7 @@ export default function AnimationInspector({ clip, editable, locked }: Props) {
   const title = locked ? 'Track is locked' : undefined;
   return (
     <section className="inspector-field anim-section" data-testid="anim-section" aria-labelledby="anim-section-label">
-      <span className="inspector-label" id="anim-section-label">
+      <span className="visually-hidden" id="anim-section-label">
         Animation
       </span>
       <p className="anim-hint">Presets move the picture from the position above.</p>

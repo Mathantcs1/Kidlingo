@@ -1,17 +1,11 @@
 /* Audio editing UI: clip fades/pan in the inspector, track volume in track headers, detached badge. */
 .audio-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.audio-fields .tf-grid {
-  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
 }
 
 .audio-pan-label {
-  margin-left: 6px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  text-align: right;
   color: var(--muted);
 }
 
@@ -88,13 +82,12 @@
 
 /* Effect chain in the inspector (EffectList / EffectRow). */
 .effect-tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px;
+  gap: var(--sp-2);
 }
 
 .effect-tools select {
-  flex: 1 1 0;
   min-width: 0;
 }
 

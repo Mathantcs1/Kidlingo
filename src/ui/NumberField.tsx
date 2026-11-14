@@ -49,6 +49,7 @@ interface Props {
  */
 export default function NumberField({ testId, label, unit, ariaLabel, value, step, min, max, disabled, title, onCommit }: Props) {
   const shown = formatNumber(value);
+  const tip = title ?? ariaLabel;
   const [draft, setDraft] = useState<string | null>(null);
   const [invalid, setInvalid] = useState(false);
   useEffect(() => setDraft(null), [shown]);
@@ -81,7 +82,7 @@ export default function NumberField({ testId, label, unit, ariaLabel, value, ste
   };
 
   return (
-    <label className="tf-field" title={title}>
+    <label className="tf-field" title={tip}>
       <span className="tf-label">{label}</span>
       <span className="tf-input">
         <input
@@ -96,7 +97,7 @@ export default function NumberField({ testId, label, unit, ariaLabel, value, ste
           aria-valuemin={Number(formatNumber(min))}
           aria-valuemax={Number(formatNumber(max))}
           aria-invalid={invalid || undefined}
-          title={title}
+          title={tip}
           disabled={disabled}
           value={draft ?? shown}
           onChange={(e) => {
