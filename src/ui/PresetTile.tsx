@@ -89,7 +89,9 @@ export default function PresetTile(props: Props) {
   }, [animate, key, slot]);
   const disabled = props.disabledReason !== null;
   return (
-    <div className="preset-tile-wrap" onPointerEnter={() => props.onHover(true)} onPointerLeave={() => props.onHover(false)}>
+    // The wrapper is layout only (presentation) so the listbox's children are options. The star is a mouse shortcut for
+    // the F key (aria-keyshortcuts below), hidden from assistive technology and out of the tab order.
+    <div className="preset-tile-wrap" role="presentation" onPointerEnter={() => props.onHover(true)} onPointerLeave={() => props.onHover(false)}>
       <div
         ref={props.setRef}
         role="option"
@@ -100,7 +102,8 @@ export default function PresetTile(props: Props) {
         tabIndex={props.tabbable ? 0 : -1}
         aria-selected={props.current}
         aria-disabled={disabled || undefined}
-        aria-label={disabled ? `${label} (${props.disabledReason})` : label}
+        aria-label={`${label}${props.favourite ? ', favourite' : ''}${disabled ? ` (${props.disabledReason})` : ''}`}
+        aria-keyshortcuts="F"
         title={props.disabledReason ?? label}
         onClick={() => !disabled && props.onApply()}
         onFocus={() => props.onFocus(true)}
@@ -115,6 +118,7 @@ export default function PresetTile(props: Props) {
         className="preset-fav"
         data-testid={`preset-fav-${key}`}
         tabIndex={-1}
+        aria-hidden="true"
         aria-pressed={props.favourite}
         aria-label={props.favourite ? `Remove ${label} from favourites` : `Add ${label} to favourites`}
         title={props.favourite ? 'Remove from favourites (F)' : 'Add to favourites (F)'}

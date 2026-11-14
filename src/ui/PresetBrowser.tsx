@@ -2,29 +2,24 @@
 // of animated preview tiles. Click or Enter applies a tile to ITS slot (the tab's category) in ONE step, closes and
 // returns focus to the opener; Escape closes without change. The grid is ONE tab stop (roving tabindex; arrows,
 // Home/End move; F stars the focused tile). Keys pressed inside never reach the global shortcuts.
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { Clip } from '../core/model';
-import { ADJUSTMENT_ONLY_FADE } from '../core/motionEdits';
-import { MOTION_SLOTS } from '../core/motionTypes';
-import type { MotionSlot, PresetKey } from '../core/motionTypes';
-import { PRESETS, presetsForSlot } from '../core/presets';
+import type { MotionSlot } from '../core/motionTypes';
+import { presetsForSlot } from '../core/presets';
 import { setPresetCmd, slotUse } from './presetCommands';
 import { useFavourites } from './presetFavourites';
+import { CAT_LABEL, EMPTY, reasonFor } from './presetCategories';
+import type { Category } from './presetCategories';
 import { searchPresets } from './presetSearch';
 import type { PresetEntry } from './presetSearch';
+import PresetTabs from './PresetTabs';
 import PresetTile from './PresetTile';
+import { usePresetPopover } from './usePresetPopover';
 import './presets.css';
 
-export type Category = MotionSlot | 'mine' | 'favourites';
-const CATEGORIES: readonly Category[] = [...MOTION_SLOTS, 'mine', 'favourites'];
-const CAT_LABEL: Record<Category, string> = { in: 'Entrance', emphasis: 'Emphasis', loop: 'Continuous', out: 'Exit', mine: 'My presets', favourites: 'Favourites' };
-const EMPTY: Partial<Record<Category, string>> = {
-  mine: 'Presets you save from a clip appear here.',
-  favourites: 'Star a preset to keep it here.',
-};
+export type { Category };
 const COLS = 3;
-const MARGIN = 8;
 
 interface Props {
   clip: Clip;
@@ -34,16 +29,12 @@ interface Props {
   onClose(): void;
 }
 
-/** Why `key` cannot go on this clip, or null. */
-const reasonFor = (clip: Clip, key: PresetKey): string | null => (clip.kind === 'adjustment' && !PRESETS[key].opacityOnly ? ADJUSTMENT_ONLY_FADE : null);
-
 export default function PresetBrowser({ clip, slot, anchor, onClose }: Props) {
   const [cat, setCat] = useState<Category>(slot);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const [hovered, setHovered] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const tiles = useRef<(HTMLDivElement | null)[]>([]);
@@ -58,44 +49,12 @@ export default function PresetBrowser({ clip, slot, anchor, onClose }: Props) {
     if (refocus) anchor?.focus();
   };
 
-  useLayoutEffect(() => {
-    const place = (): void => {
-      const panel = root.current;
-      const ref = (anchor?.closest('.inspector') as HTMLElement | null) ?? anchor;
-      if (!panel || !ref) return;
-      const r = ref.getBoundingClientRect();
-      const a = anchor?.getBoundingClientRect() ?? r;
-      const h = panel.offsetHeight;
-      setPos({
-        left: Math.max(MARGIN, r.left - panel.offsetWidth - MARGIN),
-        top: Math.min(Math.max(MARGIN, a.top - 40), Math.max(MARGIN, window.innerHeight - h - MARGIN)),
-      });
-    };
-    place();
-    window.addEventListener('resize', place);
-    return () => window.removeEventListener('resize', place);
-  }, [anchor]);
-
-  // Focus the search once the panel is placed (a visibility: hidden field cannot take focus).
-  const placed = pos !== null;
-  useEffect(() => {
-    if (placed) search.current?.focus();
-  }, [placed]);
-
-  useEffect(() => {
-    const onDown = (e: Event): void => {
-      const t = e.target as Node;
-      if (root.current?.contains(t) || anchor?.contains(t)) return;
-      onClose();
-    };
-    document.addEventListener('pointerdown', onDown, true);
-    return () => document.removeEventListener('pointerdown', onDown, true);
-  }, [anchor, onClose]);
+  const pos = usePresetPopover(root, search, anchor, onClose);
 
   const apply = (e: PresetEntry): void => {
     if (reasonFor(clip, e.key)) return;
-    setPresetCmd(clip.id, e.slot, e.key);
-    close(true);
+    // A refused edit (locked track ...) keeps the browser open: the toast says why and another tile can be tried.
+    if (setPresetCmd(clip.id, e.slot, e.key)) close(true);
   };
 
   const move = (i: number): void => {
@@ -106,7 +65,8 @@ export default function PresetBrowser({ clip, slot, anchor, onClose }: Props) {
 
   const onTileKey = (e: KeyboardEvent<HTMLDivElement>, i: number): void => {
     const steps: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: COLS, ArrowUp: -COLS };
-    if (e.key in steps) move(i + steps[e.key]);
+    if (e.key === 'ArrowUp' && i < COLS) search.current?.focus();
+    else if (e.key in steps) move(i + steps[e.key]);
     else if (e.key === 'Home') move(0);
     else if (e.key === 'End') move(shown.length - 1);
     else if (e.key === 'Enter' || e.key === ' ') apply(shown[i]);
@@ -143,36 +103,18 @@ export default function PresetBrowser({ clip, slot, anchor, onClose }: Props) {
       style={pos ? { left: pos.left, top: pos.top } : { visibility: 'hidden' }}
       onKeyDown={onRootKey}
     >
-      <input
-        ref={search}
-        type="search"
-        className="preset-search"
-        data-testid="preset-search"
-        placeholder="Search presets"
-        aria-label="Search presets"
-        value={query}
-        onChange={(e) => { setQuery(e.target.value); setActive(0); }}
-        onKeyDown={onSearchKey}
+      <PresetTabs
+        slot={slot}
+        cat={cat}
+        query={query}
+        searchRef={search}
+        onQuery={(q) => { setQuery(q); setActive(0); }}
+        onCat={(c) => { setCat(c); setActive(0); }}
+        onSearchKey={onSearchKey}
       />
-      <div className="preset-cats" role="tablist" aria-label="Preset categories">
-        {CATEGORIES.map((c) => (
-          <button
-            key={c}
-            type="button"
-            role="tab"
-            className="preset-cat"
-            data-testid={`preset-cat-${c}`}
-            aria-selected={c === cat}
-            onClick={() => { setCat(c); setActive(0); }}
-          >
-            {CAT_LABEL[c]}
-          </button>
-        ))}
-      </div>
-      {cat !== slot && MOTION_SLOTS.includes(cat as MotionSlot) && <p className="preset-note">Applies as the {CAT_LABEL[cat].toLowerCase()} preset.</p>}
-      <p className="preset-note">Choosing another preset resets its settings (its timing and direction are kept).</p>
+      {shown.length === 0 && <p className="preset-empty" data-testid="preset-empty">{query ? 'No preset matches.' : EMPTY[cat] ?? 'No presets.'}</p>}
+      {shown.length > 0 && (
       <div className="preset-grid" role="listbox" aria-label={`${CAT_LABEL[cat]} presets`}>
-        {shown.length === 0 && <p className="preset-empty" data-testid="preset-empty">{query ? 'No preset matches.' : EMPTY[cat] ?? 'No presets.'}</p>}
         {shown.map((e, i) => (
           <PresetTile
             key={id(e)}
@@ -195,6 +137,7 @@ export default function PresetBrowser({ clip, slot, anchor, onClose }: Props) {
           />
         ))}
       </div>
+      )}
     </div>
   );
 }

@@ -131,3 +131,33 @@ test('prefers-reduced-motion keeps every tile still, hovered included', async ({
   expect(a).not.toBe(blank);
   expect(errors).toEqual([]);
 });
+
+test('ArrowUp from the first row returns to the search field', async ({ page }) => {
+  const errors = trackErrors(page);
+  await setupOverlay(page);
+  await openBrowser(page, 'in');
+  // ArrowUp on the first row (any of the three columns) goes back to the search field.
+  await page.getByTestId('preset-search').press('ArrowDown');
+  await expect(page.getByTestId('preset-tile-fade')).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByTestId('preset-search')).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
+test('the grid is a valid listbox: only presentation wrappers holding options; the empty note sits outside', async ({ page }) => {
+  const errors = trackErrors(page);
+  await setupOverlay(page);
+  await openBrowser(page, 'in');
+  const shape = await page.getByRole('listbox').evaluate((lb) => ({
+    kids: Array.from(lb.children).map((c) => ({ role: c.getAttribute('role'), options: c.querySelectorAll('[role="option"]').length })),
+    empty: lb.querySelector('[data-testid="preset-empty"]') !== null,
+  }));
+  expect(shape.kids.length).toBe(8);
+  for (const k of shape.kids) expect(k).toEqual({ role: 'presentation', options: 1 });
+  expect(shape.empty).toBe(false);
+  await page.getByTestId('preset-search').fill('zzz');
+  await expect(page.getByTestId('preset-empty')).toBeVisible();
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

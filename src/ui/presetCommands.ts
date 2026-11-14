@@ -12,6 +12,7 @@ import { swapPreset } from '../core/presetSwap';
 import { TimelineError, findClip } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { onClip } from './keyframeCommands';
+import { applyOk } from './applyOk';
 import { guard } from './Toast';
 
 const editor = () => useEditor.getState();
@@ -24,10 +25,10 @@ export const slotUse = (clip: Clip, slot: MotionSlot): SlotUse | undefined => cl
 /** The stored value of param `key` of a slot (undefined when the preset has no such param). */
 export const paramOf = (use: PresetUse, key: string): number | undefined => use.params[key];
 
-/** Chooses `key` for `slot` of the clip (a filled slot keeps its timing and direction: swapPreset, T7-1). */
-export const setPresetCmd = (clipId: Id, slot: MotionSlot, key: PresetKey): void => {
+/** Chooses `key` for `slot` of the clip (a filled slot keeps its timing and direction: swapPreset, T7-1). True unless refused. */
+export const setPresetCmd = (clipId: Id, slot: MotionSlot, key: PresetKey): boolean => {
   const { playhead } = editor();
-  apply((p) => swapPreset(p, clipId, slot, key, playhead));
+  return applyOk((p) => swapPreset(p, clipId, slot, key, playhead));
 };
 
 /** Empties `slot` (ONE step; undo restores it exactly). */
