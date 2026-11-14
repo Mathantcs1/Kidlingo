@@ -1,5 +1,5 @@
 import { resolveClip } from '../core/animate';
-import { maxScale } from '../core/keyframes';
+import { maxDrawnScale } from '../core/drawnScale';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { createTexture, frameOrientation, rotatedSize, uploadTexture, uvMatrix } from './gl';
@@ -89,9 +89,12 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
     }
     if (clip.kind === 'overlay') {
       // No media: drawn with Canvas2D (synchronous), never looked up in p.media or decoded. The texture is sized for
-      // the largest scale the clip ever reaches, so an animated scale neither re-draws it per frame nor blurs it.
+      // the largest scale the clip can be drawn at (keys, key loops, presets: the RAW clip, capped), so an animated
+      // scale or a preset neither re-draws it per frame nor blurs it. A lower third's built-in slide is off at an edge
+      // that has an in/out preset (5B D13): the resolved clip has no `motion`, so the RAW clip decides.
       ctx.assertUsable();
-      const o = ctx.overlays.get(clip, p.format, t, p.format.fps, ctx.pixelScale(p.format), maxScale(raw));
+      const builtIn = { in: !raw.motion?.in, out: !raw.motion?.out };
+      const o = ctx.overlays.get(clip, p.format, t, p.format.fps, ctx.pixelScale(p.format), maxDrawnScale(raw), builtIn);
       if (o) draws.push({ clip, ...o, uv: UPRIGHT });
       shownOverlays.add(clip.id);
       continue;

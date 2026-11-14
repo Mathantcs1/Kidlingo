@@ -20,13 +20,26 @@ export const OVERLAY_FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helv
 
 const clamp01 = (v: number): number => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
 
+/** Which built-in lower-third slides run: off at an edge whose clip has an in/out animation preset (5B D13). */
+export interface BuiltInSlide {
+  in: boolean;
+  out: boolean;
+}
+
+export const BUILT_IN_SLIDES: Readonly<BuiltInSlide> = { in: true, out: true };
+
 /**
  * The animated state at clip time `time` of a clip lasting `duration` s: `slide` (lower third: 0 = out, 1 = in;
- * smoothstep over SLIDE_SECONDS at both ends) and `fill` (progress bar: time / duration). Static types get 1 and 1.
+ * smoothstep over SLIDE_SECONDS at the edges `builtIn` keeps, fully in at an edge it turns off) and `fill` (progress
+ * bar: time / duration). Static types get 1 and 1.
  */
-export function overlayAnimation(type: OverlayType, time: number, duration: number): { slide: number; fill: number } {
+export function overlayAnimation(
+  type: OverlayType, time: number, duration: number, builtIn: Readonly<BuiltInSlide> = BUILT_IN_SLIDES,
+): { slide: number; fill: number } {
   if (type === 'lowerThird') {
-    const e = clamp01(Math.min(time, duration - time) / SLIDE_SECONDS);
+    const fromIn = builtIn.in ? time : SLIDE_SECONDS;
+    const fromOut = builtIn.out ? duration - time : SLIDE_SECONDS;
+    const e = clamp01(Math.min(fromIn, fromOut) / SLIDE_SECONDS);
     return { slide: e * e * (3 - 2 * e), fill: 1 };
   }
   if (type === 'progressBar') return { slide: 1, fill: duration > 0 ? clamp01(time / duration) : 1 };
@@ -34,8 +47,10 @@ export function overlayAnimation(type: OverlayType, time: number, duration: numb
 }
 
 /** overlayAnimation at `progress` (0..1, clamped) of a clip lasting `duration` s: what drawOverlay draws. */
-export function animationAt(type: OverlayType, progress: number, duration: number): { slide: number; fill: number } {
-  return overlayAnimation(type, clamp01(progress) * duration, duration);
+export function animationAt(
+  type: OverlayType, progress: number, duration: number, builtIn: Readonly<BuiltInSlide> = BUILT_IN_SLIDES,
+): { slide: number; fill: number } {
+  return overlayAnimation(type, clamp01(progress) * duration, duration, builtIn);
 }
 
 function roundRect(ctx: OverlayContext, x: number, y: number, w: number, h: number, r: number): void {
@@ -133,14 +148,15 @@ function progressBar(ctx: OverlayContext, s: OverlaySpec, w: number, h: number, 
 /**
  * Draws `spec` into the whole of `size` (cleared first; transparent where nothing is drawn). `progress` is the
  * clip time as a fraction of the clip (0..1) and `duration` the clip length in seconds (the lower third's slide is
- * timed in seconds).
+ * timed in seconds); `builtIn` turns the lower third's slide off at an edge with a preset.
  */
 export function drawOverlay(
   ctx: OverlayContext, spec: OverlaySpec, size: Size, progress: number, duration = DEFAULT_OVERLAY_DURATION,
+  builtIn: Readonly<BuiltInSlide> = BUILT_IN_SLIDES,
 ): void {
   const { width: w, height: h } = size;
   ctx.clearRect(0, 0, w, h);
-  const { slide, fill } = animationAt(spec.type, progress, duration);
+  const { slide, fill } = animationAt(spec.type, progress, duration, builtIn);
   switch (spec.type) {
     case 'lowerThird': return lowerThird(ctx, spec, w, h, slide);
     case 'subscribe': return subscribe(ctx, spec, w, h);

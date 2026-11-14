@@ -1,4 +1,5 @@
-// Plan 5 D7 reader audit: every read of `.transform`, `.params` or `.effects` (and every destructuring of them) in
+// Plan 5 D7 reader audit: every read of `.transform`, `.params`, `.effects` (and, Plan 5B, of the animation data
+// `.motion`, `.loops`, `.orient`: the resolved clip has none of them) (and every destructuring of them) in
 // src/render/** and src/ui/** must be listed below with why it is right. Pictures are evaluated in ONE place
 // (collectDraws resolves each clip once per frame), so a render-side reader must see a RESOLVED clip; a UI reader either
 // reads the resolved value at the playhead or reads the stored value on purpose. A new, unlisted reader fails this test:
@@ -30,6 +31,8 @@ const ALLOWED: Allowed[] = [
   ['src/render/effects/unavailable.ts', "if (c.kind !== 'overlay') for (const e of c.effects ?? [])", 'reads stored value on purpose: effect types in use (not animated)'],
   ['src/render/effects/unavailable.ts', 'if (s.effects.length > 0)', 'not a clip: ExportSkips summary'],
   ['src/render/effects/unavailable.ts', 's.effects.map((t) => VIDEO_EFFECTS[t].label)', 'not a clip: ExportSkips summary'],
+  // 5B: the resolved clip carries no `motion`; the lower third's built-in slide is decided from the RAW clip's in/out slots.
+  ['src/render/drawCollect.ts', 'const builtIn = { in: !raw.motion?.in, out: !raw.motion?.out }', 'reads stored value on purpose: the RAW clip\'s in/out preset slots switch the lower third\'s built-in slide off (D13); the picture itself comes from the resolved clip'],
   // ---- src/ui: inspectors, on-canvas handles and commands.
   ['src/ui/effectParams.tsx', '(effect.params[key] ?? fallback)', 'reads resolved value at the playhead when animated (targetValueAt), the stored value on purpose when not'],
   ['src/ui/VideoEffectRow.tsx', 'schema.params.filter(', 'not a clip: effect schema'],
@@ -51,10 +54,11 @@ const ALLOWED: Allowed[] = [
 ];
 
 /** A property read (`x.transform`, `x?.params`, not a call like `this.effects.run`) or a destructuring of one. */
-const READ = /\??\.(transform|params|effects)\b(?!\s*\()/;
-const DESTRUCTURE = /\{[^}]*\b(transform|params|effects)\b[^}]*\}\s*=[^=>]/;
+const FIELDS = '(transform|params|effects|motion|loops|orient)';
+const READ = new RegExp(`\\??\\.${FIELDS}\\b(?!\\s*\\()(?!-)`);
+const DESTRUCTURE = new RegExp(`\\{[^}]*\\b${FIELDS}\\b[^}]*\\}\\s*=[^=>]`);
 /** Parameter destructuring: `({ transform }: Clip) =>`, `function f({ effects }: P)`. */
-const PARAM_DESTRUCTURE = /[(,]\s*\{[^}]*\b(transform|params|effects)\b[^}]*\}\s*:/;
+const PARAM_DESTRUCTURE = new RegExp(`[(,]\\s*\\{[^}]*\\b${FIELDS}\\b[^}]*\\}\\s*:`);
 /** Members of the compositor/pipeline objects named `effects`, not clip data. */
 const NOT_CLIP = /\bthis\.effects\b/g;
 
@@ -120,6 +124,14 @@ describe('transform/params/effects reader audit (D7)', () => {
     expect(fake('function g(a: number, { effects }: Props) {')).toHaveLength(1);
     expect(fake('this.effects.run(a);\n// clip.transform in a comment\n * clip.transform in a doc')).toHaveLength(0);
     expect(fake('return { ...rest, transform: t };')).toHaveLength(0);
+    // 5B animation data: a `.motion` / `.loops` / `.orient` read or destructuring is a reader too; a CSS class is not.
+    expect(fake('const m = raw.motion?.in;')).toHaveLength(1);
+    expect(fake('const l = clip.keys?.loops;')).toHaveLength(1);
+    expect(fake('if (k.orient) turn();')).toHaveLength(1);
+    expect(fake('const { motion } = clip;')).toHaveLength(1);
+    expect(fake("el.querySelector('.motion-key');")).toHaveLength(0);
+    const motionRead = { file: 'src/render/overlays/textures.ts', line: 997, text: 'const slide = clip.motion?.in ? 1 : anim.slide;' };
+    expect(audit([...scan(), motionRead], ALLOWED).unlisted).toHaveLength(1);
     // A dummy read in a real render file is unlisted.
     const { unlisted } = audit([...scan(), { file: 'src/render/compositor.ts', line: 999, text: 'const s = clip.transform.scale;' }], ALLOWED);
     expect(unlisted).toHaveLength(1);

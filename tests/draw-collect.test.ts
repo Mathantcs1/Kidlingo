@@ -128,6 +128,44 @@ describe('collectDraws resolves clips once per frame', () => {
   });
 });
 
+describe('Plan 5B Task 6: presets, loops and the lower-third built-in slide in collectDraws', () => {
+  const overlay = { type: 'sticker' } as Clip['overlay'];
+  const lowerThird = { type: 'lowerThird' } as Clip['overlay'];
+  const slot = (preset: 'pop' | 'fade') => ({ preset, duration: 0.5, delay: 0, ease: lin, params: (preset === 'pop' ? { intensity: 0.2 } : {}) as Record<string, number> });
+
+  it('overlay textures are sized by maxDrawnScale (keys × offset loop × presets) of the RAW clip', async () => {
+    const pop = clip('pop', { kind: 'overlay', overlay, keys: { scale: [k(0, 1), k(1, 2)] }, motion: { in: slot('pop') } });
+    const climbing = clip('loop', { kind: 'overlay', overlay, keys: { scale: [k(0, 1), k(0.5, 1.5)], loops: { scale: { mode: 'offset', count: 2 } } } });
+    const got: unknown[][] = [];
+    for (const t of [0, 0.2, 1.5]) await collect(project([[pop], [climbing]]), t, got);
+    expect(got.filter((a) => (a[0] as Clip).id === 'pop').map((a) => a[5])).toEqual([2.4, 2.4, 2.4]);
+    expect(got.filter((a) => (a[0] as Clip).id === 'loop').map((a) => a[5])).toEqual([2.5, 2.5, 2.5]);
+    // The drawn clip carries the preset (scale 0 at the Pop's first frame) and no motion.
+    const first = got[0][0] as Clip;
+    expect(first.transform.scale).toBe(0);
+    expect(first.motion).toBeUndefined();
+  });
+
+  it('the built-in slide flags follow the RAW clip: off at an edge with an in/out preset, on otherwise', async () => {
+    const plain = clip('plain', { kind: 'overlay', overlay: lowerThird });
+    const withIn = clip('in', { kind: 'overlay', overlay: lowerThird, motion: { in: slot('fade') } });
+    const both = clip('both', { kind: 'overlay', overlay: lowerThird, motion: { in: slot('fade'), out: slot('fade') } });
+    const got: unknown[][] = [];
+    await collect(project([[plain], [withIn], [both]]), 0.1, got);
+    expect(got.map((a) => a[6])).toEqual([{ in: true, out: true }, { in: false, out: true }, { in: false, out: false }]);
+  });
+
+  it('a hidden track with motion is never resolved (counter); a visible static clip with an empty stack is the SAME object', async () => {
+    const motion = { in: slot('fade') };
+    const empty = clip('empty', { kind: 'image', mediaId: 'img', motion: {} });
+    const p = project([[clip('shown', { motion })], [clip('hidden', { motion }), clip('hidden-img', { kind: 'image', mediaId: 'img', motion })], [empty]], [1]);
+    const draws = await collect(p, 0.1);
+    expect(calls).toEqual(['shown', 'empty']);
+    expect(draws.find((d) => d.clip.id === 'empty')!.clip).toBe(empty);
+    expect(draws.find((d) => d.clip.id === 'shown')!.clip.transform.opacity).toBeCloseTo(0.2, 12);
+  });
+});
+
 describe('scale 0 (Ruling P5-3, Task 4 note M2): an invisible picture, never a NaN', () => {
   it('clipMatrix and the overlay texture size stay finite at scale 0', async () => {
     const { clipMatrix } = await import('../src/render/geometry');

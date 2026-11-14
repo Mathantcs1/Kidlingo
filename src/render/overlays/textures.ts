@@ -9,8 +9,8 @@ import { overlayBaseSize } from '../../core/overlays';
 import { snapToFrame } from '../effects/pipeline';
 import { createTexture, uploadTexture } from '../gl';
 import type { Size, TextureSlot } from '../gl';
-import { animationAt, drawOverlay } from './draw';
-import type { OverlayContext } from './draw';
+import { BUILT_IN_SLIDES, animationAt, drawOverlay } from './draw';
+import type { BuiltInSlide, OverlayContext } from './draw';
 
 /** Longest side of an overlay texture (a 20× sticker on a 4K export is drawn at this size and scaled up). */
 export const MAX_OVERLAY_SIDE = 2048;
@@ -86,18 +86,23 @@ export class OverlayTextures {
   /**
    * The overlay clip's picture at timeline time `t` (clip time snapped to the project frame, like effects), drawn at
    * `pixelScale` output px per format px; null when it has no spec or 2D canvas drawing is unavailable. The texture
-   * is sized for `textureScale` (REQUIRED: the compositor passes the clip's maximum scale over its keys, Plan 5 Task 5), so it
-   * is independent of the scale at `t`: an animated scale reuses one texture, sharp at its largest size.
+   * is sized for `textureScale` (REQUIRED: the compositor passes the largest scale the clip can be drawn at, maxDrawnScale:
+   * keys, key loops and presets, Plan 5 Task 5 / 5B Task 6), so it is independent of the scale at `t`: an animated scale
+   * reuses one texture, sharp at its largest size. `builtIn` (in the texture key) turns a lower third's built-in slide
+   * off at an edge with an in/out preset (5B D13), so a preset-driven lower third is one still texture.
    */
-  get(clip: Clip, format: Size, t: number, fps: number, pixelScale: number, textureScale: number): OverlayDraw | null {
+  get(
+    clip: Clip, format: Size, t: number, fps: number, pixelScale: number, textureScale: number,
+    builtIn: Readonly<BuiltInSlide> = BUILT_IN_SLIDES,
+  ): OverlayDraw | null {
     const spec = clip.overlay;
     if (!spec) return null;
     const size = overlayBaseSize(spec.type, format);
     const tex = overlayTextureSize(size, textureScale, pixelScale, this.cap);
     const duration = clipDuration(clip);
     const progress = duration > 0 ? snapToFrame(t - clip.start, fps) / duration : 0;
-    const anim = animationAt(spec.type, progress, duration);
-    const key = `${JSON.stringify(spec)}|${tex.width}x${tex.height}|${anim.slide}|${anim.fill}|${duration}`;
+    const anim = animationAt(spec.type, progress, duration, builtIn);
+    const key = `${JSON.stringify(spec)}|${tex.width}x${tex.height}|${anim.slide}|${anim.fill}|${duration}|${+builtIn.in}${+builtIn.out}`;
     let entry = this.entries.get(clip.id);
     if (entry?.key !== key) {
       if (!entry) {
@@ -107,7 +112,7 @@ export class OverlayTextures {
       }
       if (entry.scratch.width !== tex.width) entry.scratch.width = tex.width;
       if (entry.scratch.height !== tex.height) entry.scratch.height = tex.height;
-      drawOverlay(entry.ctx, spec, tex, progress, duration);
+      drawOverlay(entry.ctx, spec, tex, progress, duration, builtIn);
       uploadTexture(this.gl, entry.slot, entry.scratch, tex.width, tex.height);
       this.uploadCount++;
       entry.key = key;
