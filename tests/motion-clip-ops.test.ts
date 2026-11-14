@@ -1,7 +1,7 @@
 // Plan 5B Task 5 (D12): the animation stack under clip operations. Split: left keeps in / loop / an emphasis starting
 // before the cut, right keeps out / loop / an emphasis starting after it (sourceless right halves shift `at` and
 // `phase`), so every frame of both halves equals the original when the cut is outside the in/out/emphasis windows; a
-// cut inside an entrance window leaves the right half at rest (the left fits the entrance, P5B-5). Trims: in/out follow the
+// cut inside an entrance window leaves the right half at rest (the left half keeps every frame, P5B-6). Trims: in/out follow the
 // edges, sourceless start trims shift `at`/`phase`. Move/ripple/join/reframe/reset keep the stack; the detached audio
 // twin gets none.
 import { describe, expect, it } from 'vitest';
@@ -52,15 +52,12 @@ describe('split (D12)', () => {
     expect(x.motion!.loop).not.toBe(y.motion!.loop);
   });
 
-  it('a cut inside an entrance window: the left half fits the whole entrance (P5B-5), the right half starts at rest', () => {
+  it('a cut inside an entrance window: the left half is frame-exact, the right half starts at rest (accepted discontinuity)', () => {
     const slide = { preset: 'slide', duration: 1, delay: 0, ease: { kind: 'linear' }, params: { direction: 0, distance: 1 } } as const;
     const c = mk('c', { motion: { in: { ...slide } } });
     const [left, right] = splitClip(withClip(c), 'c', 10.5).tracks[0].clips;
-    // The 1 s entrance no longer fits the 0.5 s left half: it is scaled to [0, 0.5] (stored value kept), so it
-    // finishes at the cut and meets the right half's rest state (the cut is continuous, the entrance faster).
-    expect(left.motion!.in).toEqual(slide);
-    expect(motionWindows(left).in).toEqual({ start: 0, end: 0.5 });
-    for (const f of frames(0, 0.5)) expect(resolveClip(left, 10 + f, FMT).transform.x, `left ${f}`).toBeCloseTo(-1920 * (1 - f / 0.5), 9);
+    expect(motionWindows(left).in).toEqual({ start: 0, end: 1 }); // a lone slot is never fitted (P5B-6)
+    for (const f of frames(0, 0.5)) same(resolveClip(left, 10 + f, FMT), resolveClip(c, 10 + f, FMT), `left ${f}`);
     expect(resolveClip(c, 10.5, FMT).transform.x).toBe(-960);
     expect(resolveClip(right, 10.5, FMT).transform).toBe(right.transform);
   });

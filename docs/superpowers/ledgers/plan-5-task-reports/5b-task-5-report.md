@@ -156,10 +156,12 @@ Rise is "Sink" in the exit list, "Spin 360", "Spin loop", "Ken Burns".
   that frame. Tests: tests/motion-split-edge.test.ts (sourceless 20.1 / 21.3, sourced off-grid start, trim, frame-aligned
   property with half the cuts at the emphasis start).
 - M1 (P5B-4): Shake and Jitter amplitude intensity·min(W, H) on both axes (table above). Concern 2 closed.
-- M2 (P5B-5): a lone in or out longer than the clip is scaled by D / (duration + delay). Concern 4 closed.
+- M2 (P5B-5): a lone in or out longer than the clip was scaled by D / (duration + delay). SUPERSEDED by P5B-6 (corrective commit): lone slots are NOT scaled; only overlapping in+out are (D2).
 - M4: resolveClip returns the clip itself for a static clip with `motion: {}`.
 - M5: tests split (presets-shapes, preset-fixtures, motion-resolve, motion-split-fixtures).
-- Consequence of P5B-5: a split (or end trim) inside an entrance window now FITS the whole entrance into the shorter
-  left half (faster, finishes at the cut and meets the right half's rest state: no jump), where before the left half
-  was frame-exact with the original up to the cut and jumped to rest. Same for a start trim / right half inside an exit.
-  The motion-clip-ops entrance-cut test is updated to that behaviour.
+- Consequence of P5B-5 (reversed by P5B-6): scaling a lone slot squeezed the whole entrance into the shorter left half of a
+  split (and a lone exit into the right half), changing the frames the halves KEEP, against P5-5/D12. P5B-6 restores the
+  original D2 behaviour: fitFactor scales only when both an in and an out slot exist and overlap. A 0.5 s Fade Out on a
+  0.3 s clip starts partly faded (what the user set). Tests: tests/motion.test.ts (lone slot not scaled),
+  tests/motion-clip-ops.test.ts (cut inside an entrance: left half frame-exact), tests/motion-lone-slot.test.ts
+  (property, fails if lone slots are scaled; mutation-checked).

@@ -24,19 +24,21 @@ export function blendOffsets(a: MotionOffsets, b: MotionOffsets): MotionOffsets 
 
 const fold = (acc: MotionOffsets | null, o: MotionOffsets | null): MotionOffsets | null => (acc === null ? o : o === null ? acc : blendOffsets(acc, o));
 
-/** The in/out windows in clip-relative seconds, scaled by D / total when they (with delays) do not fit (D2, P5B-5). */
+/** The in/out windows in clip-relative seconds, scaled by D / total when they (with delays) do not fit (D2, P5B-6). */
 export interface MotionWindows {
   in?: { start: number; end: number };
   out?: { start: number; end: number };
 }
 
 /**
- * The factor that shrinks the in/out windows when they do not fit: D / total when total = (din + delayIn) + (dout +
- * delayOut) (an absent slot counts 0) exceeds D, else 1. Ruling P5B-5: a LONE slot longer than the clip is scaled too,
- * so a 0.5 s Fade Out on a 0.3 s clip is not already faded on frame 0 and a long entrance finishes at the clip end.
+ * The factor that shrinks the in/out windows when they do not fit: D / total when BOTH slots exist and total = (din +
+ * delayIn) + (dout + delayOut) exceeds D, else 1. Ruling P5B-6 (supersedes P5B-5 for lone slots): a LONE slot is never
+ * scaled, because scaling it would squeeze an entrance on the halves of a split or end trim and change the frames they
+ * keep (D12). A 0.5 s Fade Out on a 0.3 s clip therefore starts partly faded: that is what the user set.
  */
 function fitFactor(m: ClipMotion, d: number): number {
-  const total = (m.in ? m.in.duration + m.in.delay : 0) + (m.out ? m.out.duration + m.out.delay : 0);
+  if (!m.in || !m.out) return 1;
+  const total = m.in.duration + m.in.delay + m.out.duration + m.out.delay;
   return total > d ? (d > 0 ? d / total : 0) : 1;
 }
 
@@ -60,7 +62,7 @@ const timing = (u: PresetUse, seconds: number) => ({ ease: u.ease, seconds });
 /**
  * The stack's offsets at timeline time `t` (D2), or null when no slot is active. Clip time s = snapToFrame(t − start)
  * (frame grid). `in`: p = (s − delay)/duration, its start state before the delay, inactive from p = 1. `out`: ends at
- * the clip end, its end state from s = D − delay. Windows that do not fit are scaled (fitFactor; stored values kept).
+ * the clip end, its end state from s = D − delay. Windows that do not fit are scaled (fitFactor, only when in and out overlap; stored values kept).
  * `emphasis`: identity outside [at, at + duration) in LOCAL time (footage-anchored). `loop`: τ = (local + phase) /
  * period, active for every τ (count null) or 0 ≤ τ < count; each cycle runs p = frac(τ) (cycle starts read with a
  * 1e-9-cycle tolerance). Ken Burns (loop slot) spans

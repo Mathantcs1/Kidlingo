@@ -82,25 +82,22 @@ describe('timing (D2)', () => {
     expect(c.motion).toEqual({ in: inUse, out: outUse });
   });
 
-  it('a LONE in or out longer than the clip is scaled to fit (P5B-5): factor D / (duration + delay)', () => {
-    // A 0.5 s Fade Out (delay 0.1) on a 0.3 s clip: window [0, 0.25] (k = 0.5), not already faded on frame 0.
+  it('a LONE in or out is NOT scaled to the clip (P5B-6): it keeps its stored window, even past the clip edge', () => {
+    // A 0.5 s Fade Out (delay 0.1) on a 0.3 s clip: window [-0.3, 0.2]; the clip starts partly faded (what the user set).
     const fo = use('fade', 'out', { duration: 0.5, delay: 0.1 });
     const c = clip({ out: fo }, { in: 0, out: 0.3 });
     const w = motionWindows(c);
-    expect([w.out!.start, w.out!.end].map((v) => Math.round(v * 1e12) / 1e12)).toEqual([0, 0.25]);
-    expect(motionAt(c, 10, FMT)).toBeNull();
-    expect(motionAt(c, 10 + 5 / 30, FMT)!.kOpacity).toBeCloseTo(off('fade', 'out', (5 / 30) / 0.25, fo).kOpacity, 9);
-    expect(motionAt(c, 10 + 8 / 30, FMT)!.kOpacity).toBe(0);
-    // A lone entrance longer than the clip finishes exactly at the clip end: frame 0 its start state, last frame p < 1.
+    expect([w.out!.start, w.out!.end].map((v) => Math.round(v * 1e12) / 1e12)).toEqual([-0.3, 0.2]);
+    expect(motionAt(c, 10, FMT)!.kOpacity).toBeCloseTo(off('fade', 'out', 0.3 / 0.5, fo).kOpacity, 9);
+    expect(motionAt(c, 10, FMT)!.kOpacity).toBeLessThan(1);
+    expect(motionAt(c, 10 + 5 / 30, FMT)!.kOpacity).toBeCloseTo(off('fade', 'out', (5 / 30 + 0.3) / 0.5, fo).kOpacity, 9);
+    // A lone entrance longer than the clip is cut off at the clip end (last frame p < 1), never squeezed in.
     const zi = use('zoom', 'in', { duration: 0.8, delay: 0.2 });
-    const z = clip({ in: zi }, { in: 0, out: 0.5 }); // k = 0.5: delay 0.1, duration 0.4, end 0.5 = D
+    const z = clip({ in: zi }, { in: 0, out: 0.5 });
     const wz = motionWindows(z);
-    expect([wz.in!.start, wz.in!.end].map((v) => Math.round(v * 1e12) / 1e12)).toEqual([0.1, 0.5]);
-    expect(motionAt(z, 10, FMT)).toEqual(off('zoom', 'in', 0, zi));
-    expect(motionAt(z, 10 + 14 / 30, FMT)!.kOpacity).toBeCloseTo(off('zoom', 'in', (14 / 30 - 0.1) / 0.4, zi).kOpacity, 9);
+    expect([wz.in!.start, wz.in!.end].map((v) => Math.round(v * 1e12) / 1e12)).toEqual([0.2, 1]);
+    expect(motionAt(z, 10 + 14 / 30, FMT)!.kOpacity).toBeCloseTo(off('zoom', 'in', (14 / 30 - 0.2) / 0.8, zi).kOpacity, 9);
     expect(motionAt(z, 10 + 14 / 30, FMT)!.kOpacity).toBeLessThan(1);
-    // Fitting slots are untouched; stored values are kept.
-    expect(motionWindows(clip({ in: zi }, { in: 0, out: 1 })).in).toEqual({ start: 0.2, end: 1 });
     expect(z.motion).toEqual({ in: zi });
   });
 

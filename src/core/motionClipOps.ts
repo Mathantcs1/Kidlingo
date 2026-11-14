@@ -33,8 +33,8 @@ const orNone = (m: ClipMotion): ClipMotion | undefined => (Object.keys(m).length
  * time shift, −d for a sourceless clip, 0 for a sourced one). Left: `in`, the emphasis when its window starts before
  * `mid` (by more than EDGE: an emphasis set at the playhead and cut there starts on the right half), the loop. Right: `out`, the emphasis when it starts at or after `mid`, the loop (shifted when sourceless). A
  * cut inside the entrance (or exit, or an emphasis window) leaves the other half at rest there: the accepted
- * discontinuity (D12, like Plan 4 time-based effects); the half keeping a cut entrance/exit fits it into its own length
- * (P5B-5 short-clip scaling, stored values kept). Ken Burns spans each half on its own.
+ * discontinuity (D12, like Plan 4 time-based effects); the half keeping a cut entrance/exit keeps it unscaled, so
+ * every frame it keeps equals the original's (a lone slot is never fitted, P5B-6). Ken Burns spans each half on its own.
  */
 export function splitMotion(m: ClipMotion | undefined, mid: number, shift: number): [ClipMotion | undefined, ClipMotion | undefined] {
   if (!m) return [undefined, undefined];
