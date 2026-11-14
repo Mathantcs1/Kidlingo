@@ -1,0 +1,16 @@
+CLIPFORGE END-USER LICENCE (DRAFT: have it reviewed before you rely on it)
+
+Copyright (c) [year] [your name or company]. All rights reserved.
+
+1. Licence. If you bought ClipForge, you get a personal, non-exclusive, non-transferable licence to install
+   and use it on your own computers, for personal and commercial video projects. Videos you make are yours.
+2. Not allowed. You may not resell, share, sublicense or publicly redistribute ClipForge or this download,
+   and you may not remove licence notices.
+3. Open-source parts. ClipForge includes open-source software under their own licences (see app/licenses/).
+   Those licences apply to those parts.
+4. Your files. ClipForge does not upload your media or projects. You are responsible for keeping backups.
+5. MVP, no warranty. ClipForge is an early version provided "as is", without warranties of any kind. To the
+   extent the law allows, the seller is not liable for lost data, lost profits or indirect damages, and total
+   liability is limited to the price you paid.
+6. Updates. New versions may be offered as new downloads. Features may change or be removed.
+7. Refunds follow the policy stated on the product page where you bought it.
