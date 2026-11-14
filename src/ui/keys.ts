@@ -1,6 +1,6 @@
 // DOM-free keyboard helpers for the editor shortcuts.
 
-export type Shortcut = 'play' | 'split' | 'delete' | 'rippleDelete' | 'undo' | 'redo' | 'prevKey' | 'nextKey' | 'deleteKeys' | 'copy' | 'paste' | 'duplicate';
+export type Shortcut = 'play' | 'split' | 'delete' | 'rippleDelete' | 'undo' | 'redo' | 'prevKey' | 'nextKey' | 'deleteKeys' | 'copy' | 'paste' | 'duplicate' | 'copyKeys' | 'copyAnim' | 'pasteAnim';
 
 /** The parts of a KeyboardEvent the shortcut map reads. */
 export interface KeyLike {
@@ -31,13 +31,15 @@ export function isTextEntry(t: TargetLike): boolean {
 }
 
 const OWNS_EDITING_KEYS = new Set(['range', 'color']);
+/** The only shortcuts a focused slider or colour picker leaves to the editor (undo/redo and play/pause, prev/next key). */
+const EDIT_ALLOWED = new Set<Shortcut>(['play', 'undo', 'redo', 'prevKey', 'nextKey']);
 
 /**
  * Range sliders and colour pickers own the editing keys: Delete/Backspace (and S) pressed on a focused slider or
  * picker must not delete or split clips. Undo/redo and Space keep their usual behaviour.
  */
 export function shortcutBlockedByRange(t: TargetLike, s: Shortcut): boolean {
-  return t.tagName.toUpperCase() === 'INPUT' && OWNS_EDITING_KEYS.has((t.type ?? '').toLowerCase()) && (s === 'delete' || s === 'rippleDelete' || s === 'deleteKeys' || s === 'split' || s === 'copy' || s === 'paste' || s === 'duplicate');
+  return t.tagName.toUpperCase() === 'INPUT' && OWNS_EDITING_KEYS.has((t.type ?? '').toLowerCase()) && !EDIT_ALLOWED.has(s);
 }
 
 /** The parts of an element that decide whether Space activates it natively. */
@@ -74,6 +76,12 @@ export function shortcutFor(e: KeyLike): Shortcut | null {
     }
     return null;
   }
+  // Whole-animation copy/paste: Ctrl/Cmd+Alt+C / V (by physical key: Alt changes the character on a Mac).
+  if ((e.metaKey || e.ctrlKey) && e.altKey && !e.shiftKey && !e.repeat) {
+    if (e.code === 'KeyC') return 'copyAnim';
+    if (e.code === 'KeyV') return 'pasteAnim';
+    return null;
+  }
   if (e.altKey || e.ctrlKey || e.metaKey || e.repeat) return null;
   if (e.code === 'Space' || e.key === ' ') return 'play';
   if (key === 's' && !e.shiftKey) return 'split';
@@ -85,5 +93,7 @@ export function shortcutFor(e: KeyLike): Shortcut | null {
 
 /** O15: while timeline keyframes are selected, Delete/Backspace (with or without Shift) removes them, not the clips. */
 export function keyRouted(s: Shortcut, keysSelected: boolean): Shortcut {
-  return keysSelected && (s === 'delete' || s === 'rippleDelete') ? 'deleteKeys' : s;
+  if (!keysSelected) return s;
+  if (s === 'delete' || s === 'rippleDelete') return 'deleteKeys';
+  return s === 'copy' ? 'copyKeys' : s;
 }

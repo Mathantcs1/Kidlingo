@@ -124,6 +124,7 @@ describe('shortcut claims', () => {
     expect(shortcutFor(k('d'))).toBe('duplicate');
     expect(shortcutFor(k('c', { shiftKey: true }))).toBeNull();
     expect(shortcutFor(k('c', { repeat: true }))).toBeNull();
-    expect(shortcutFor(k('c', { altKey: true }))).toBeNull();
+    expect(shortcutFor(k('c', { altKey: true }))).toBe('copyAnim'); // Ctrl/Cmd+Alt+C is the whole-animation copy
+    expect(shortcutFor(k('x', { altKey: true }))).toBeNull();
   });
 });

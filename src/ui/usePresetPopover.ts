@@ -40,7 +40,8 @@ export function usePresetPopover(
   useEffect(() => {
     const onDown = (e: Event): void => {
       const t = e.target as Node;
-      if (root.current?.contains(t) || anchor?.contains(t)) return;
+      // Presses in a modal opened from the browser (delete confirmation) are not "outside" either.
+      if (root.current?.contains(t) || anchor?.contains(t) || (t instanceof Element && t.closest('.modal-backdrop'))) return;
       onClose();
     };
     document.addEventListener('pointerdown', onDown, true);

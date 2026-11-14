@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react';
 import type { Clip } from '../core/model';
 import { MOTION_SLOTS } from '../core/motionTypes';
 import type { MotionSlot } from '../core/motionTypes';
+import AnimTransferBar from './AnimTransferBar';
 import PresetBrowser from './PresetBrowser';
 import PresetSlot from './PresetSlot';
 import './presets.css';
@@ -38,6 +39,7 @@ export default function AnimationInspector({ clip, editable, locked }: Props) {
           onChoose={(anchor) => setOpen((o) => (o?.slot === slot ? null : { slot, anchor }))}
         />
       ))}
+      <AnimTransferBar clip={clip} disabled={disabled} lockTitle={title} />
       {open && !disabled && <PresetBrowser clip={clip} slot={open.slot} anchor={open.anchor} onClose={close} />}
     </section>
   );

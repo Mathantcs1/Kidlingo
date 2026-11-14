@@ -247,3 +247,54 @@
   opacity: 0.4;
   pointer-events: none;
 }
+
+/* Animation transfer footer, My presets tiles, save dialog (Plan 5B Task 9). */
+.anim-transfer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.anim-transfer button {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.preset-tile-user {
+  min-height: 52px;
+  justify-content: center;
+}
+
+.preset-user-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  min-width: 0;
+}
+
+.preset-user-cat {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.preset-user-input {
+  width: 100%;
+  font: inherit;
+}
+
+.preset-user-actions {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: flex;
+  gap: 2px;
+}
+
+.preset-user-actions button {
+  padding: 0 4px;
+  line-height: 1.2;
+  background: rgb(0 0 0 / 0.4);
+  border-color: transparent;
+}
