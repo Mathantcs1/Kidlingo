@@ -44,6 +44,13 @@ export function pasteClipsCmd(): void {
   addingEdit((p) => pasteClips(p, payload, { time: playhead, trackId }));
 }
 
+/** Pastes the copied clips with the earliest clip at `time` on `trackId` (the empty-lane context menu), ONE step. */
+export function pasteClipsAtCmd(trackId: Id, time: number): void {
+  const payload = clipPayload();
+  if (!payload) return;
+  addingEdit((p) => pasteClips(p, payload, { time, trackId }));
+}
+
 /** Duplicates the selected clips right after the end of the selection, on their own tracks, ONE step. */
 export function duplicateClipsCmd(): void {
   const ids = selected();

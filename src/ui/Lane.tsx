@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import type { DragEvent, PointerEvent } from 'react';
+import type { DragEvent, MouseEvent, PointerEvent } from 'react';
 import type { Id, Project, Track } from '../core/model';
 import { useEditor } from '../state/store';
 import ClipView from './ClipView';
 import KeyframeRow from './KeyframeRow';
+import { laneMenuItems } from './contextMenuItems';
+import { openContextMenu } from './contextMenuOpen';
 import { dropStart, laneRejects } from './drag';
 import { dropMedia } from './edits';
-import { timeToPx } from './layout';
+import { pxToTime, timeToPx } from './layout';
 import { MEDIA_MIME, draggedMedia, isMediaDrag, setDraggedMedia } from './mediaDrag';
 import { guard } from './Toast';
 import { trackHeight } from './trackLayout';
@@ -57,6 +59,13 @@ export default function Lane({ project, track, label, pps, selected, preview, on
     if (selection.length > 0) select([]);
     setActiveTrack(track.id);
   };
+  const onContextMenu = (e: MouseEvent<HTMLDivElement>): void => {
+    const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
+    openContextMenu(e, 'Track actions', () => {
+      useEditor.getState().setActiveTrack(track.id);
+      return laneMenuItems(track, pxToTime(x, pps));
+    });
+  };
   const classes = ['lane', `lane-${track.kind}`];
   if (drop) classes.push(drop === 'true' ? 'is-drop-target' : 'is-drop-reject');
   if (track.locked) classes.push('is-locked');
@@ -72,6 +81,7 @@ export default function Lane({ project, track, label, pps, selected, preview, on
       data-drop-target={drop ?? undefined}
       aria-label={track.locked ? `${label} (locked)` : label}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       onDragEnter={onDragOver}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}

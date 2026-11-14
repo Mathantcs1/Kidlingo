@@ -1,3 +1,5 @@
+import { mediaMenuItems } from './contextMenuItems';
+import { openContextMenu } from './contextMenuOpen';
 import { useState } from 'react';
 import type { DragEvent } from 'react';
 import type { MediaRef } from '../core/model';
@@ -30,6 +32,7 @@ function MediaItem({ m, editable }: { m: MediaRef; editable: boolean }) {
       data-kind={m.kind}
       data-has-audio={String(m.hasAudio)}
       draggable={editable}
+      onContextMenu={(e) => openContextMenu(e, `${m.name} actions`, () => mediaMenuItems(m.id))}
       onDragStart={(e) => {
         e.dataTransfer.setData(MEDIA_MIME, m.id);
         e.dataTransfer.effectAllowed = 'copy';

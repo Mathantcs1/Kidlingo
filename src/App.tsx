@@ -14,6 +14,7 @@ import { startSessionOnce, useSessionState } from './ui/session';
 import Timeline from './ui/Timeline';
 import EaseEditor from './ui/EaseEditor';
 import Toasts from './ui/Toast';
+import ContextMenu from './ui/ContextMenu';
 import Toolbar from './ui/Toolbar';
 import TopBar from './ui/TopBar';
 import { usePlayback } from './ui/usePlayback';
@@ -63,6 +64,7 @@ export default function App() {
       {dialogOpen && <ExportDialog />}
       {savePresetClip !== null && <SavePresetDialog clipId={savePresetClip} onClose={closeSavePreset} />}
       {confirmOpen && <ConfirmDialog />}
+      <ContextMenu />
       <EaseEditor />
       <Toasts />
     </>

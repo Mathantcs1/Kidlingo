@@ -7,6 +7,8 @@ import { useEditor } from '../state/store';
 import './audio.css';
 import './overlays.css';
 import './presets.css';
+import { openContextMenu } from './contextMenuOpen';
+import { clipMenuItems } from './contextMenuItems';
 import { toggleSelection } from './edits';
 import { timeToPx } from './layout';
 import MotionBands from './MotionBands';
@@ -34,6 +36,14 @@ export default function ClipView({ clip, media, pps, selected, locked, dragging,
     const { selection, select } = useEditor.getState();
     select(toggleSelection(selection, clip.id, e.shiftKey || e.metaKey || e.ctrlKey));
   };
+  // Right-click selects an unselected clip first (as Premiere does), then opens its menu.
+  const onContextMenu = (e: MouseEvent): void => {
+    openContextMenu(e, 'Clip actions', () => {
+      const { selection, select } = useEditor.getState();
+      if (!selection.includes(clip.id)) select([clip.id]);
+      return clipMenuItems(clip.id);
+    });
+  };
   const classes = ['clip', `clip-${clip.kind}`];
   if (selected) classes.push('is-selected');
   if (missing) classes.push('is-missing');
@@ -51,6 +61,7 @@ export default function ClipView({ clip, media, pps, selected, locked, dragging,
       aria-pressed={selected}
       title={missing ? `${name} (missing media)` : name}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       onPointerDown={(e) => onDragStart(e, clip.id, 'move')}
     >
       {media && !missing && (clip.kind === 'audio' || (clip.kind === 'video' && media.hasAudio && !clip.audio.silent)) && (

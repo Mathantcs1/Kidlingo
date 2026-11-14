@@ -3,6 +3,8 @@ import type { MouseEvent, ReactNode } from 'react';
 import type { Track } from '../core/model';
 import { useEditor } from '../state/store';
 import './audio.css';
+import { trackMenuItems } from './contextMenuItems';
+import { openContextMenu } from './contextMenuOpen';
 import DuckControls from './DuckControls';
 import TrackVolume from './TrackVolume';
 import { lastInputWasKeyboard } from './inputModality';
@@ -84,6 +86,7 @@ export default function TrackHeader({ track, label, active, canMoveUp, canMoveDo
       role="group"
       aria-label={`${label}${active ? ' (active)' : ''}`}
       onClick={onClick}
+      onContextMenu={(e) => openContextMenu(e, `${label} actions`, () => trackMenuItems(track))}
       onFocus={onFocus}
     >
       <div className="track-header-main">
