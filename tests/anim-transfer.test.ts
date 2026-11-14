@@ -217,6 +217,12 @@ describe('user presets', () => {
     expect(clipOf(start, 'V').keys!.opacity!.map((x) => x.t)).toEqual([0, 0.5]);
   });
 
+  it('a damaged stored preset fails as a TimelineError (a toast), never an uncaught throw', () => {
+    const preset = presetFromAnimation(copyAnimation(slide(), 'V'), 'Glide', 'in', 1, 'id1');
+    (preset.payload.keys as Record<string, unknown>).position = 5;
+    expect(refusal(() => applyUserPreset(project(), 'V', preset, 0))).toMatch(/damaged/);
+  });
+
   it('validates the name, refuses empty animations and audio clips', () => {
     const pl = copyAnimation(slide(), 'V');
     expect(refusal(() => presetFromAnimation(pl, '   ', 'in'))).toMatch(/name/);

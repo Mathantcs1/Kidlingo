@@ -108,18 +108,78 @@ describe('pasteClips', () => {
     expect(on(r, 'v2').map((c) => c.start)).toEqual([11, 41]);
   });
 
-  it('a multi-track payload near the last track moves up to fit; refuses when a kind would not match', () => {
+  it('a multi-track payload near the last track moves up to fit', () => {
     const three = proj({ tracks: [track('v1', 'video', [rich('A', 10)]), track('v2', 'video', [mk('C', 11, 1)]), track('v3', 'video', [])] });
     // Payload v1+v2 pasted with target v3: base would be v3/(none) -> moved up to v2/v3.
     const r = pasteClips(three, copyClips(three, ['A', 'C']), at(40, 'v3'));
     expect(on(r, 'v2').map((c) => c.start)).toEqual([11, 40]);
     expect(on(r, 'v3').map((c) => c.start)).toEqual([41]);
-    // Payload v1+v2 with target v2 in the video/audio project: the second clip would land on the audio track.
+  });
+
+  it('kind mismatches map each payload track to the nearest track of the same kind, in order, atomically', () => {
     const p = proj();
-    expect(refusal(() => pasteClips(p, copyClips(p, ['A', 'C']), at(40, 'v2')))).toMatch(/Cannot paste a video clip onto the audio track/);
-    // Payload v2+a1 (video above audio): pasting with target v1 puts the audio clip on v2 -> kind refusal, atomic.
-    expect(refusal(() => pasteClips(p, copyClips(p, ['C', 'D']), at(40, 'v1')))).toMatch(/Cannot paste an audio clip onto the video track/);
+    // Video v1+v2 with target v2 (v3 would be audio): moves up onto v1/v2.
+    const up = pasteClips(p, copyClips(p, ['A', 'C']), at(40, 'v2'));
+    expect(on(up, 'v1').map((c) => c.start)).toEqual([10, 14, 40]);
+    expect(on(up, 'v2').map((c) => c.start)).toEqual([11, 41]);
+    // Video v2 + audio a1 pasted with target v1: video on v1, its audio on the next audio track.
+    const va = pasteClips(p, copyClips(p, ['C', 'D']), at(40, 'v1'));
+    expect(on(va, 'v1').map((c) => c.start)).toEqual([10, 14, 41]);
+    expect(on(va, 'a1').map((c) => c.start)).toEqual([10, 40]);
+    expect(on(va, 'v2').map((c) => c.start)).toEqual([11]);
     expect(all(p)).toHaveLength(4);
+  });
+
+  const inter = (): Project => proj({
+    tracks: [
+      track('v1', 'video', [mk('A', 10, 2)]), track('a1', 'audio', [mk('AA', 10, 2, { kind: 'audio' })]),
+      track('v2', 'video', []), track('a2', 'audio', []), track('v3', 'video', []), track('a3', 'audio', []),
+    ],
+  });
+
+  it('interleaved video/audio tracks: a clip and its detached audio keep their order on any target; one copy pastes at several places', () => {
+    const p = inter();
+    const pl = copyClips(p, ['A', 'AA']); // raw offsets 0 and 1
+    let r = pasteClips(p, pl, at(30, 'v2'));
+    expect(on(r, 'v2').map((c) => c.start)).toEqual([30]);
+    expect(on(r, 'a2').map((c) => c.start)).toEqual([30]);
+    r = pasteClips(r, pl, at(40, 'v3'));
+    expect(on(r, 'v3').map((c) => c.start)).toEqual([40]);
+    expect(on(r, 'a3').map((c) => c.start)).toEqual([40]);
+    r = pasteClips(r, pl, at(50, 'v1'));
+    expect(on(r, 'v1').map((c) => c.start)).toEqual([10, 50]);
+    expect(on(r, 'a1').map((c) => c.start)).toEqual([10, 50]);
+    // Target the AUDIO track a2: the video clip goes to the nearest following video track (v3), its audio after it (a3).
+    const s = pasteClips(p, pl, at(60, 'a2'));
+    expect(on(s, 'v3').map((c) => c.start)).toEqual([60]);
+    expect(on(s, 'a3').map((c) => c.start)).toEqual([60]);
+    // Payload with a gap between tracks (v1 and v2 only, a1 skipped) still maps in order.
+    const gap = copyClips(r, ['A', on(r, 'v2')[0].id]);
+    expect(gap.trackSpan).toBe(2);
+    const g = pasteClips(inter(), gap, at(70, 'v3'));
+    expect(on(g, 'v2').map((c) => c.start)).toEqual([70]); // moved up so both video tracks fit
+    expect(on(g, 'v3').map((c) => c.start)).toEqual([90]);
+  });
+
+  it('refuses atomically with a clear message when no matching track exists', () => {
+    const onlyVideo = proj({ tracks: [track('v1', 'video', [mk('A', 10, 2)]), track('v2', 'video', [])] });
+    const pl = copyClips(proj(), ['C', 'D']); // video + audio
+    expect(refusal(() => pasteClips(onlyVideo, pl, at(40, 'v1')))).toMatch(/Not enough tracks of the right kind/);
+    expect(all(onlyVideo)).toHaveLength(1);
+    const audioFirst = proj({ tracks: [track('a1', 'audio', []), track('v1', 'video', [])] });
+    expect(refusal(() => pasteClips(audioFirst, pl, at(40, 'v1')))).toMatch(/Not enough tracks of the right kind/);
+  });
+
+  it('atomic when the LAST planned clip is the refused one: the earlier tracks are untouched', () => {
+    const p = proj({ tracks: [track('v1', 'video', []), track('v2', 'video', [mk('X', 41, 2)])] });
+    const pl = copyClips(proj(), ['A', 'C']); // A on v1 at 0, C on v2 at +1
+    const before = JSON.stringify(p);
+    expect(refusal(() => pasteClips(p, pl, at(40)))).toMatch(/overlap a clip on track 2/);
+    expect(JSON.stringify(p)).toBe(before);
+    expect(on(p, 'v1')).toHaveLength(0);
+    const locked = proj({ tracks: [track('v1', 'video', []), track('v2', 'video', [], { locked: true })] });
+    expect(refusal(() => pasteClips(locked, pl, at(40)))).toMatch(/locked/);
+    expect(on(locked, 'v1')).toHaveLength(0);
   });
 
   it('refuses a payload that needs more tracks than the project has', () => {
@@ -137,7 +197,8 @@ describe('pasteClips', () => {
     const msg = refusal(() => pasteClips(q, pl, at(6)));
     expect(msg).toMatch(/Cannot paste: it would overlap a clip on track 1\. Move the playhead/);
     expect(all(q)).toHaveLength(4);
-    expect(refusal(() => pasteClips(q, copyClips(q, ['D']), at(40, 'v1')))).toMatch(/audio clip onto the video track/);
+    const noAudio = proj({ tracks: q.tracks.slice(0, 2) });
+    expect(refusal(() => pasteClips(noAudio, copyClips(q, ['D']), at(40, 'v1')))).toMatch(/Not enough tracks of the right kind/);
   });
 
   it('refuses when the media of a copied clip is gone', () => {

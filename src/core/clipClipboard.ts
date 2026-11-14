@@ -53,15 +53,40 @@ function fresh({ clip }: PayloadClip, start: number): Clip {
   return { ...c, id: newId(), start, effects: c.effects.map((e) => ({ ...e, id: newId() })), audio: { ...c.audio, effects: c.audio.effects.map((e) => ({ ...e, id: newId() })) } };
 }
 
+/**
+ * Maps each payload track (by its offset from the topmost) to a project track index. The raw layout (offsets kept, the
+ * block moved up near the last track) is used when every kind matches; otherwise each payload track goes to the nearest
+ * following (then preceding) track of the SAME kind relative to `target`, in order. Throws when no such mapping exists.
+ */
+function mapTracks(p: Project, payload: ClipPayload, target: number): Map<number, number> {
+  const kinds = new Map<number, Track['kind']>();
+  for (const pc of payload.clips) kinds.set(pc.trackOffset, trackKindFor(pc.clip));
+  const offsets = [...kinds.keys()].sort((a, b) => a - b);
+  const raw = Math.min(target, p.tracks.length - 1 - payload.trackSpan);
+  if (raw >= 0 && offsets.every((o) => p.tracks[raw + o].kind === kinds.get(o))) return new Map(offsets.map((o) => [o, raw + o]));
+  const starts = [...p.tracks.keys()].filter((i) => i >= target).concat([...p.tracks.keys()].filter((i) => i < target).reverse());
+  for (const s of starts) {
+    if (p.tracks[s].kind !== kinds.get(offsets[0])) continue;
+    const map = new Map<number, number>([[offsets[0], s]]);
+    let prev = s;
+    for (const o of offsets.slice(1)) {
+      const j = p.tracks.findIndex((t, i) => i > prev && t.kind === kinds.get(o));
+      if (j < 0) break;
+      map.set(o, j);
+      prev = j;
+    }
+    if (map.size === offsets.length) return map;
+  }
+  throw new TimelineError('Not enough tracks of the right kind here to paste these clips');
+}
+
 /** Places the payload with its earliest clip at `start` (exact, no snapping) and its topmost track at `anchorId`. */
 function place(p: Project, payload: ClipPayload, start: number, anchorId: Id): Project {
   const target = p.tracks.findIndex((t) => t.id === anchorId);
   if (target < 0) throw new TimelineError('Choose a track to paste onto');
-  // A payload spanning several tracks keeps its offsets; near the last track the whole block moves up to fit.
-  const base = Math.min(target, p.tracks.length - 1 - payload.trackSpan);
-  if (base < 0) throw new TimelineError('Not enough tracks here to paste these clips');
+  const map = mapTracks(p, payload, target);
   const planned = payload.clips.map((pc) => {
-    const index = base + pc.trackOffset;
+    const index = map.get(pc.trackOffset)!;
     const track = p.tracks[index];
     const clip = fresh(pc, start + pc.offset);
     if (trackKindFor(clip) !== track.kind) throw new TimelineError(`Cannot paste ${clip.kind === 'video' ? 'a' : 'an'} ${clip.kind} clip onto the ${track.kind} track ${trackLabel(track, index)}`);

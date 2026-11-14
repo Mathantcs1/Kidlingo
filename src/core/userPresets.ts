@@ -56,7 +56,13 @@ export const anchorOf = (c: PresetCategory): Anchor => ANCHOR[c];
 /** Applies `preset` to the clip in ONE project (replacing its animation); `t` is the playhead (emphasis presets). */
 export function applyUserPreset(p: Project, clipId: Id, preset: UserPreset, t: number): Project {
   findClip(p, clipId);
-  const r = pasteAnimation(p, [clipId], preset.payload, { anchor: ANCHOR[preset.category], t });
+  let r;
+  try {
+    r = pasteAnimation(p, [clipId], preset.payload, { anchor: ANCHOR[preset.category], t });
+  } catch (e) {
+    if (e instanceof TimelineError) throw e;
+    throw new TimelineError('This preset is damaged and cannot be applied');
+  }
   if (r.project === p && r.skipped > 0) throw new TimelineError('This clip cannot take that preset');
   return r.project;
 }

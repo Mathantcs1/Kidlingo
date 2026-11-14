@@ -21,7 +21,15 @@ export default function SavePresetDialog({ clipId, onClose }: Props) {
   const [category, setCategory] = useState<PresetCategory>('custom');
   const [busy, setBusy] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const mounted = useRef(true);
   const [{ opener, modality }] = useState(() => ({ opener: document.activeElement, modality: currentModality() }));
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     root.current?.querySelector<HTMLElement>('[data-testid="preset-save-name"]')?.focus();
@@ -43,8 +51,8 @@ export default function SavePresetDialog({ clipId, onClose }: Props) {
       const preset = presetFromAnimation(copyAnimation(useEditor.getState().history.present, clipId), name, category);
       setBusy(true);
       void saveUserPreset(preset).then((ok) => {
-        setBusy(false);
-        if (ok) onClose();
+        if (mounted.current) setBusy(false);
+        if (ok && mounted.current) onClose();
       });
     });
   };

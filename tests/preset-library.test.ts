@@ -9,11 +9,13 @@ import type { KV } from '../src/state/presetLibrary';
 import { k, pk, project } from './anim-transfer.fixtures';
 
 function fake(initial?: unknown) {
-  const calls = { get: 0, set: 0 };
+  const calls = { get: 0, set: 0, update: 0 };
   let value = initial;
   const kv: KV = {
     get: async (key) => { calls.get++; expect(key).toBe(LIBRARY_KEY); return value; },
     set: async (key, v) => { calls.set++; expect(key).toBe(LIBRARY_KEY); value = v; },
+    // Atomic like idb-keyval's update: read, run the updater, write only if it returns; a throw writes nothing.
+    update: async (key, fn) => { calls.update++; expect(key).toBe(LIBRARY_KEY); const next = fn(value); if (next !== value) { calls.set++; value = next; } },
   };
   return { kv, calls, value: () => value };
 }
@@ -64,7 +66,7 @@ describe('createLibrary: never overwrites an unusable record', () => {
     const lib = createLibrary(f.kv, () => false);
     expect((await lib.load()).status).toBe('unavailable');
     expect(await fails(lib.save(preset()))).toMatch(/no storage/);
-    expect(f.calls.get + f.calls.set).toBe(0);
+    expect(f.calls.get + f.calls.set + f.calls.update).toBe(0);
   });
 });
 
@@ -111,6 +113,47 @@ describe('createLibrary: operations', () => {
     expect(JSON.stringify(big).length).toBeGreaterThan(64 * 1024);
     expect(await fails(small.save(big))).toMatch(/too large/);
     expect(g.calls.set).toBe(0);
+  });
+
+  it('the 64 kB cap counts bytes, not UTF-16 units', async () => {
+    const f = fake();
+    const lib = createLibrary(f.kv, () => true);
+    const wide = preset();
+    // 3-byte characters: the UTF-16 length stays under the cap while the bytes pass it.
+    wide.id = '\u20ac'.repeat(30000);
+    expect(JSON.stringify(wide).length).toBeLessThan(64 * 1024);
+    expect(new TextEncoder().encode(JSON.stringify(wide)).length).toBeGreaterThan(64 * 1024);
+    expect(await fails(lib.save(wide))).toMatch(/too large/);
+    expect(f.calls.set).toBe(0);
+  });
+
+  it('two tabs: each write is one atomic update that sees the other tab\'s record (no lost preset)', async () => {
+    const f = fake();
+    const tabA = createLibrary(f.kv, () => true);
+    const tabB = createLibrary(f.kv, () => true);
+    await Promise.all([tabA.save(preset('A', 'a')), tabB.save(preset('B', 'b'))]);
+    const s = await tabA.load();
+    expect(s.status === 'ok' && s.record.presets.map((p) => p.id).sort()).toEqual(['a', 'b']);
+    expect(f.calls.update).toBe(2);
+  });
+
+  it('a newer-version record written by another tab is refused inside the updater (no write)', async () => {
+    const f = fake({ version: 2, presets: [], favourites: [] });
+    const lib = createLibrary(f.kv, () => true);
+    expect(await fails(lib.save(preset()))).toMatch(/read-only/);
+    expect(f.calls.set).toBe(0);
+  });
+
+  it('classifyLibrary rejects presets whose key lists are damaged', () => {
+    const base = preset();
+    const bad = (mut: (p: UserPreset) => void): unknown => { const p = structuredClone(base); mut(p); return { version: 1, presets: [p], favourites: [] }; };
+    const keys = (p: UserPreset) => p.payload.keys as Record<string, unknown>;
+    expect(classifyLibrary(bad(() => {})).status).toBe('ok');
+    expect(classifyLibrary(bad((p) => { keys(p).position = 5; })).status).toBe('readOnly');
+    expect(classifyLibrary(bad((p) => { keys(p).opacity = [{ t: 'x', v: 1 }]; })).status).toBe('readOnly');
+    expect(classifyLibrary(bad((p) => { keys(p).scale = []; })).status).toBe('readOnly');
+    expect(classifyLibrary(bad((p) => { p.payload.effects = [{ type: 'colour', occurrence: 0, keys: { brightness: 'no' } }] as never; })).status).toBe('readOnly');
+    expect(classifyLibrary(bad((p) => { (p.payload as unknown as Record<string, unknown>).motion = 3; })).status).toBe('readOnly');
   });
 
   it('writers run one at a time: concurrent saves lose nothing', async () => {

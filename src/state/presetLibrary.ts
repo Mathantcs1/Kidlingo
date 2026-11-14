@@ -1,12 +1,14 @@
 // The personal preset library (Plan 5B D9): one IndexedDB record `clipforge:presets` = { version: 1, presets,
 // favourites }, separate from the project. A record this build cannot use (a NEWER version, or malformed) is shown
 // read-only and NEVER overwritten (the project rule): every writer refuses in that state and no `set` happens.
-// Writers re-read the stored record, change it and write it back, one at a time, so tabs do not lose each other's edits.
-import { get, set } from 'idb-keyval';
+// Writers change the record through the store's atomic `update` (ONE IndexedDB readwrite transaction, validated inside
+// the updater), so two tabs saving at once cannot lose each other's edits; the updater throwing means nothing is written.
+import { get, set, update } from 'idb-keyval';
 import { PRESET_CATEGORIES, cleanPresetName } from '../core/userPresets';
 import type { UserPreset } from '../core/userPresets';
 import type { Id } from '../core/model';
 import type { MotionSlot, PresetKey } from '../core/motionTypes';
+import { repairKeyList, repairPositionKeys } from '../core/migrateKeys';
 
 export const LIBRARY_KEY = 'clipforge:presets';
 export const LIBRARY_VERSION = 1;
@@ -30,6 +32,8 @@ export class LibraryError extends Error {}
 export interface KV {
   get(key: string): Promise<unknown>;
   set(key: string, value: unknown): Promise<void>;
+  /** Atomic read-modify-write: `fn` sees the stored value and returns the new one; if it throws, nothing is written. */
+  update(key: string, fn: (old: unknown) => unknown): Promise<void>;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -40,7 +44,16 @@ function isPreset(v: unknown): v is UserPreset {
   if (!(PRESET_CATEGORIES as readonly unknown[]).includes(v.category)) return false;
   const p = v.payload;
   return isObj(p) && p.kind === 'anim' && finite(p.fit) && finite(p.lo) && finite(p.span) && Array.isArray(p.effects)
-    && p.effects.every((e) => isObj(e) && typeof e.type === 'string' && finite(e.occurrence) && isObj(e.keys));
+    && (p.keys === undefined || (isObj(p.keys) && keyListsOk(p.keys))) && (p.motion === undefined || isObj(p.motion))
+    && p.effects.every((e) => isObj(e) && typeof e.type === 'string' && finite(e.occurrence) && isObj(e.keys)
+      && Object.values(e.keys).every((l) => listOk(l, (x) => repairKeyList(x, -Infinity, Infinity))));
+}
+
+/** A stored key list is sound when the repair functions of saved data drop none of its keys. */
+const listOk = (l: unknown, repair: (x: unknown) => unknown[] | undefined): boolean => Array.isArray(l) && l.length > 0 && repair(l)?.length === l.length;
+function keyListsOk(keys: Record<string, unknown>): boolean {
+  return (['position', 'scale', 'rotation', 'opacity'] as const).every((q) => keys[q] === undefined
+    || listOk(keys[q], q === 'position' ? repairPositionKeys : (x) => repairKeyList(x, -Infinity, Infinity)));
 }
 
 const isFav = (v: unknown): v is FavRef =>
@@ -68,7 +81,7 @@ export interface Library {
   setFavourite(ref: FavRef, on: boolean): Promise<LibraryRecord>;
 }
 
-const idbStore: KV = { get: (k) => get(k), set: (k, v) => set(k, v) };
+const idbStore: KV = { get: (k) => get(k), set: (k, v) => set(k, v), update: (k, fn) => update(k, fn) };
 
 /** The library over a key-value store (IndexedDB by default; tests pass a fake). */
 export function createLibrary(kv: KV = idbStore, available: () => boolean = () => typeof indexedDB !== 'undefined'): Library {
@@ -76,15 +89,19 @@ export function createLibrary(kv: KV = idbStore, available: () => boolean = () =
 
   const load = async (): Promise<LibraryState> => (available() ? classifyLibrary(await kv.get(LIBRARY_KEY)) : { status: 'unavailable' });
 
-  // Serialised read-modify-write; refuses (throws, no write) unless the stored record is usable.
+  // One atomic read-modify-write; refuses (throws, no write) unless the stored record is usable. Calls also queue
+  // in this tab so their results arrive in order.
   function change(fn: (r: LibraryRecord) => LibraryRecord): Promise<LibraryRecord> {
     const run = chain.then(async () => {
-      const s = await load();
-      if (s.status === 'unavailable') throw new LibraryError('Presets cannot be saved: this browser has no storage available.');
-      if (s.status === 'readOnly') throw new LibraryError(`The preset library is read-only: ${s.reason}`);
-      const next = fn(s.record);
-      if (next !== s.record) await kv.set(LIBRARY_KEY, next);
-      return next;
+      if (!available()) throw new LibraryError('Presets cannot be saved: this browser has no storage available.');
+      let result!: LibraryRecord;
+      await kv.update(LIBRARY_KEY, (old) => {
+        const s = classifyLibrary(old);
+        if (s.status !== 'ok') throw new LibraryError(`The preset library is read-only: ${s.status === 'readOnly' ? s.reason : 'unavailable.'}`);
+        result = fn(s.record);
+        return result === s.record && old !== undefined ? old : result;
+      });
+      return result;
     });
     chain = run.catch(() => undefined);
     return run;
@@ -94,7 +111,7 @@ export function createLibrary(kv: KV = idbStore, available: () => boolean = () =
     load,
     save: (preset) => change((r) => {
       if (r.presets.length >= MAX_PRESETS) throw new LibraryError(`The library holds at most ${MAX_PRESETS} presets: delete one first.`);
-      if (JSON.stringify(preset).length > MAX_PRESET_BYTES) throw new LibraryError('This animation is too large to save as a preset.');
+      if (new TextEncoder().encode(JSON.stringify(preset)).length > MAX_PRESET_BYTES) throw new LibraryError('This animation is too large to save as a preset.');
       return { ...r, presets: [...r.presets, preset] };
     }),
     rename: (id, name) => change((r) => {

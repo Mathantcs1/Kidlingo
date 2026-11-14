@@ -78,3 +78,11 @@ It is the source for Part 5A; later parts (5B/5E/5D/5C) get their own sections.
 - [ ] Double-clicking the clip body near a key dot toggles that key corner/smooth (a hidden gesture): check it is not triggered by accident while moving a picture.
 - [ ] The "Smooth path" chip at the canvas top-left can cover the picture: check on a small canvas and a picture at the top-left.
 - [ ] The 600 ms "just clicked" window on key dots (a survivor mutation): click a dot, then press it again quickly and after a pause; both behave as expected.
+
+## 11. 5B (Task 9): copy, paste, duplicate, animation transfer, user presets
+- [ ] Ctrl/Cmd+D duplicates the selected clip, so the browser's bookmark shortcut is suppressed on the editor page whenever a clip is selected (even with focus outside a text field). By design (T9-5); check it feels acceptable and that D still types normally in text fields.
+- [ ] Cmd+Option+C (Inspect / copy animation chord on macOS) conflicts with the browser's DevTools Inspect shortcut: check which one wins on Chrome and Safari on a Mac and note it.
+- [ ] Paste a video clip together with its detached audio on interleaved video/audio tracks, on a video and on an audio target track: each lands on the nearest track of its own kind, in order; a refusal names the problem and changes nothing.
+- [ ] Save as preset, close the dialog with Escape while it is saving: the preset still appears in My presets and nothing errors.
+- [ ] Two browser tabs saving presets at the same moment: both presets are in the library after a reload.
+- Known flake (not a product bug): e2e `keyframes-loops-ui.spec.ts` "Repeat, a count, Ping-pong and back to until the end" fails about 1 run in 5 under load; it passes on re-run.
