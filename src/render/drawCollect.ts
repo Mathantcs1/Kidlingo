@@ -80,6 +80,7 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
   const uses = new Map<VideoSource, number>();
   const shownImages = new Set<Id>();
   const shownOverlays = new Set<Id>();
+  ctx.overlays.beginFrame();
   for (const raw of visualClipsAt(p, t)) {
     const clip = resolveClip(raw, t, p.format);
     if (clip.kind === 'adjustment') {

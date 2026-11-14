@@ -15,6 +15,15 @@ import type { BuiltInSlide, OverlayContext } from './draw';
 /** Longest side of an overlay texture (a 20× sticker on a 4K export is drawn at this size and scaled up). */
 export const MAX_OVERLAY_SIDE = 2048;
 
+/**
+ * Total bytes of overlay TEXTURES drawn in one frame (Plan 5B Task 10): N overlays at the 2048 cap would cost N × 16 MiB
+ * (and as much again in their scratch canvases). Overlays asked for after the budget is spent are drawn from a smaller
+ * texture (same shape and place on screen, less sharp); 128 MiB fits eight capped overlays, far past any ordinary
+ * project, so preview and export match unless a frame needs more than that. Each texture is at least 1×1, so the bound
+ * is the budget plus 4 bytes per overlay that arrives after it is gone.
+ */
+export const OVERLAY_BYTE_BUDGET = 128 * 2 ** 20;
+
 type Scratch = OffscreenCanvas | HTMLCanvasElement;
 
 interface Entry {
@@ -63,8 +72,9 @@ export class OverlayTextures {
   private readonly cap: number;
   private warned = false;
   private uploadCount = 0;
+  private used = 0;
 
-  constructor(private readonly gl: WebGL2RenderingContext) {
+  constructor(private readonly gl: WebGL2RenderingContext, private readonly budget = OVERLAY_BYTE_BUDGET) {
     this.cap = Math.min(MAX_OVERLAY_SIDE, gl.getParameter(gl.MAX_TEXTURE_SIZE) as number);
   }
 
@@ -76,6 +86,11 @@ export class OverlayTextures {
     let n = 0;
     for (const e of this.entries.values()) n += e.slot.width * e.slot.height * 4;
     return n;
+  }
+
+  /** Starts a frame's byte accounting (the compositor calls it before collecting the frame's draws). */
+  beginFrame(): void {
+    this.used = 0;
   }
 
   /** Texture uploads since creation (instrumentation: an animated scale must not re-upload every frame). */
@@ -98,7 +113,7 @@ export class OverlayTextures {
     const spec = clip.overlay;
     if (!spec) return null;
     const size = overlayBaseSize(spec.type, format);
-    const tex = overlayTextureSize(size, textureScale, pixelScale, this.cap);
+    const tex = this.withinBudget(overlayTextureSize(size, textureScale, pixelScale, this.cap));
     const duration = clipDuration(clip);
     const progress = duration > 0 ? snapToFrame(t - clip.start, fps) / duration : 0;
     const anim = animationAt(spec.type, progress, duration, builtIn);
@@ -121,8 +136,21 @@ export class OverlayTextures {
     return { slot: entry.slot, size, texels: tex };
   }
 
+  /** `tex`, shrunk (aspect kept) to what is left of this frame's byte budget, and counted against it. */
+  private withinBudget(tex: Size): Size {
+    const bytes = tex.width * tex.height * 4;
+    let out = tex;
+    if (this.used + bytes > this.budget) {
+      const f = Math.sqrt(Math.max(0, this.budget - this.used) / bytes);
+      out = { width: Math.max(1, Math.floor(tex.width * f)), height: Math.max(1, Math.floor(tex.height * f)) };
+    }
+    this.used += out.width * out.height * 4;
+    return out;
+  }
+
   /** Deletes the textures of overlays not in `drawn` (call once per frame after collecting its draws). */
   prune(drawn: ReadonlySet<Id>): void {
+    this.used = 0;
     for (const [id, e] of this.entries) {
       if (drawn.has(id)) continue;
       this.release(e);

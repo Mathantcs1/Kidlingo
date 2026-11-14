@@ -1,14 +1,16 @@
 // Plan 5B Task 10: performance and memory guards for presets on SwiftShader. A 1080p preview frame of the 8-clip preset
 // project (4 presets + curved path + loops per clip) costs about what the same project frozen at one time costs
 // (interleaved medians, Plan 4's method, <= 1.2x, reported); the same effect targets; presets on overlays neither
-// change the overlay texture count/bytes nor re-upload per frame.
+// change the overlay texture count/bytes nor re-upload per frame; and the total overlay texture memory is bounded
+// (Task 10 budget) however many overlay clips are drawn.
 import { test, expect } from '@playwright/test';
 import { openHarness } from './harness-helpers';
 import { frames } from './keyframe-helpers';
-import { overlayClip } from './overlay-helpers';
+import { layered, overlayClip, renderFrames } from './overlay-helpers';
 import { emphasis, loop, use } from './preset-helpers';
 import { LEN, eightPresetClips } from './preset-harness-helpers';
 import { frozen } from './robust-harness-helpers';
+import { OVERLAY_BYTE_BUDGET } from '../../src/render/overlays/textures';
 import type { Clip, Project } from '../../src/core/model';
 
 test.setTimeout(300_000);
@@ -57,4 +59,23 @@ test('memory: preset overlays keep one texture each, sized once, and upload noth
   // Sized once for the largest scale the presets reach; the lower third's In preset turns its built-in slide off (one
   // still), so nothing is re-uploaded after the first frames.
   expect(out.at(-1)!.overlayUploads - out[2].overlayUploads).toBe(0);
+});
+
+test('memory: many big overlay clips never exceed the total overlay texture budget; their draw stays valid', async ({ page }) => {
+  await openHarness(page);
+  const count = 40;
+  const ovs = Array.from({ length: count }, (_, i) => overlayClip('sticker', 0, 2, {
+    id: `big-${i}`, transform: { x: (i % 6) * 20 - 50, y: Math.floor(i / 6) * 20 - 30, scale: 20, rotation: 0, opacity: 0.5 },
+  }));
+  const [one] = await renderFrames(page, [layered([[ovs[0]]])], [0.5]);
+  const all = await renderFrames(page, [layered(ovs.map((o) => [o]))], [0.5, 1, 1.5]);
+  const note = `${count} stickers at scale 20: one texture ${(one.overlayTextures.bytes / 2 ** 20).toFixed(1)} MiB; all ${all.map((f) => `${f.overlayTextures.count} textures ${(f.overlayTextures.bytes / 2 ** 20).toFixed(1)} MiB`).join(', ')}; budget ${(OVERLAY_BYTE_BUDGET / 2 ** 20).toFixed(0)} MiB`;
+  console.log(note);
+  test.info().annotations.push({ type: 'memory', description: note });
+  expect(count * one.overlayTextures.bytes).toBeGreaterThan(OVERLAY_BYTE_BUDGET); // without a budget this would be over it
+  for (const f of all) {
+    expect(f.glError).toBe(0);
+    expect(f.overlayTextures.count).toBe(count);
+    expect(f.overlayTextures.bytes).toBeLessThanOrEqual(OVERLAY_BYTE_BUDGET + 4 * count); // + the 1x1 floor of the late ones
+  }
 });

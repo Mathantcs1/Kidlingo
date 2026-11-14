@@ -54,6 +54,7 @@ function context(overlayCalls: unknown[][]): DrawContext {
         return { slot, size: { width: 54, height: 54 }, texels: { width: 54, height: 54 } };
       },
       prune: () => undefined,
+      beginFrame: () => undefined,
     } as unknown as DrawContext['overlays'],
     pixelScale: () => 1,
     videoSlots: new Map(),
