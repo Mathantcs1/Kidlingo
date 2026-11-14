@@ -9,7 +9,8 @@ import AnimationInspector from './AnimationInspector';
 import AudioInspector from './AudioInspector';
 import BlendModeSelect from './BlendModeSelect';
 import { FitControl, VolumeControl } from './ClipBasics';
-import EffectsInspector from './EffectsInspector';
+import { audioEffectsSummary } from './EffectList';
+import EffectsInspector, { effectsSummary } from './EffectsInspector';
 import './inspector.css';
 import InspectorSection from './InspectorSection';
 import OverlayInspector from './OverlayInspector';
@@ -35,8 +36,6 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
   // layers take effects, a blend mode and opacity, but no fit or position (full frame).
   const picture = clip.kind === 'video' || clip.kind === 'image';
   const adjustment = clip.kind === 'adjustment';
-  const fxCount = clip.effects.length;
-  const audioFx = clip.audio.effects.length;
   return (
     <>
       {clip.kind === 'overlay' && (
@@ -57,12 +56,12 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
         </InspectorSection>
       )}
       {(picture || adjustment) && (
-        <InspectorSection name="effects" title="Effects" summary={fxCount > 0 ? `${fxCount} applied` : undefined}>
+        <InspectorSection name="effects" title="Effects" summary={effectsSummary(clip)}>
           <EffectsInspector clip={clip} editable={editable} locked={locked} />
         </InspectorSection>
       )}
       {audible && (
-        <InspectorSection name="audio" title="Audio" summary={clip.audio.silent ? 'Detached' : audioFx > 0 ? `${audioFx} effect${audioFx === 1 ? '' : 's'}` : undefined}>
+        <InspectorSection name="audio" title="Audio" summary={clip.audio.silent ? 'Detached' : audioEffectsSummary(clip)}>
           <VolumeControl clip={clip} disabled={!editable} />
           <AudioInspector clip={clip} media={media} editable={editable} locked={locked} />
         </InspectorSection>

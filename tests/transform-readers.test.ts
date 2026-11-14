@@ -38,8 +38,8 @@ const ALLOWED: Allowed[] = [
   ['src/ui/VideoEffectRow.tsx', 'schema.params.filter(', 'not a clip: effect schema'],
   ['src/ui/EffectRow.tsx', 'const stored = effect.params[def.key]', 'reads stored value on purpose: audio effects are not animated in 5A'],
   ['src/ui/EffectRow.tsx', 'schema.params.map(', 'not a clip: audio effect schema'],
-  ['src/ui/EffectList.tsx', 'clip.audio.effects', 'reads stored value on purpose: audio effects are not animated in 5A'],
-  ['src/ui/EffectsInspector.tsx', 'clip.effects.length > 0', 'reads stored value on purpose: the stack itself (ids, order), not params'],
+  ['src/ui/EffectList.tsx', 'clip.audio.effects', 'reads stored value on purpose: audio effects are not animated in 5A (also the Audio group summary)', 2],
+  ['src/ui/EffectsInspector.tsx', 'clip.effects.length > 0', 'reads stored value on purpose: the stack itself (ids, order), not params (also the Effects group summary)', 2],
   ['src/ui/EffectsInspector.tsx', 'clip.effects.map((e, i)', 'reads stored value on purpose: the stack itself (ids, order), not params'],
   ['src/ui/EffectsInspector.tsx', 'count={clip.effects.length}', 'reads stored value on purpose: the stack itself (ids, order), not params'],
   // Task 6: TransformFields shows `resolvedTransform(clip, playhead, fps)` (no direct read); Preview previews a drag

@@ -10,6 +10,9 @@ import { GROUP_LABEL, addMenuGroups, addVideoEffectCmd } from './videoEffectComm
 
 const GROUPS = addMenuGroups();
 
+/** Header summary of the Effects group. */
+export const effectsSummary = (clip: Clip): string | undefined => (clip.effects.length > 0 ? `${clip.effects.length} applied` : undefined);
+
 interface Props {
   clip: Clip;
   editable: boolean;

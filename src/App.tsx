@@ -14,6 +14,8 @@ import { startSessionOnce, useSessionState } from './ui/session';
 import Timeline from './ui/Timeline';
 import EaseEditor from './ui/EaseEditor';
 import Toasts from './ui/Toast';
+import HelpPanel from './ui/HelpPanel';
+import { useHelp } from './ui/helpStore';
 import ContextMenu from './ui/ContextMenu';
 import Toolbar from './ui/Toolbar';
 import TopBar from './ui/TopBar';
@@ -31,7 +33,8 @@ export default function App() {
   const dialogOpen = useExportUi((s) => s.open !== null);
   const confirmOpen = useConfirm((s) => s.request !== null);
   const savePresetClip = useSavePresetUi((s) => s.clipId);
-  const modal = dialogOpen || confirmOpen || savePresetClip !== null;
+  const helpOpen = useHelp((s) => s.open);
+  const modal = dialogOpen || confirmOpen || savePresetClip !== null || helpOpen;
   const locked = session === 'locked';
   // Editing stays inert until the saved session is restored (a restore never discards new edits), forever in a tab
   // that does not own the editor (another tab has it open), and while a modal is open (the editor is `inert`).
@@ -64,6 +67,7 @@ export default function App() {
       {dialogOpen && <ExportDialog />}
       {savePresetClip !== null && <SavePresetDialog clipId={savePresetClip} onClose={closeSavePreset} />}
       {confirmOpen && <ConfirmDialog />}
+      {helpOpen && <HelpPanel />}
       <ContextMenu />
       <EaseEditor />
       <Toasts />

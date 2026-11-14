@@ -10,6 +10,10 @@ export interface MenuAction {
   disabled?: boolean;
   /** Tooltip, e.g. why the item is disabled. */
   title?: string;
+  /** A link item (opens in a new tab); `onSelect` is not called for it. */
+  href?: string;
+  /** Overrides the default test id `ctx-<id>`. */
+  testId?: string;
   onSelect(): void;
 }
 

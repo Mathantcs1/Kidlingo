@@ -8,6 +8,9 @@ import { addClipEffect, applyClipPreset, normaliseClip } from './effectCommands'
 
 const ADDABLE = (Object.keys(EFFECT_SCHEMAS) as AudioEffectType[]).filter((t) => EFFECT_SCHEMAS[t].available);
 
+/** Header summary of the Audio group. */
+export const audioEffectsSummary = (clip: Clip): string | undefined => { const n = clip.audio.effects.length; return n > 0 ? `${n} effect${n === 1 ? '' : 's'}` : undefined; };
+
 interface Props {
   clip: Clip;
   disabled: boolean;

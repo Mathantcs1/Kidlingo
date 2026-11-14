@@ -34,7 +34,8 @@ test('production build loads, falls back to the app shell, and exports a 1 s MP4
   // The dev-only test hook must not ship in the production bundle.
   expect(await page.evaluate(() => '__clipforge' in window)).toBe(false);
 
-  // The third-party licence notices ship with the build and the app links to them.
+  // The third-party licence notices ship with the build and the app links to them (in the Help menu).
+  await page.getByTestId('btn-help').click();
   const [notices] = await Promise.all([page.waitForEvent('popup'), page.getByTestId('link-licenses').click()]);
   await expect(notices.locator('body')).toContainText('mediabunny 1.65.2 (MPL-2.0)');
   await expect(notices.locator('body')).toContainText('60a2818f76dcd1fee3155b1791304af104a0fc1b');

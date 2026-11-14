@@ -64,7 +64,7 @@ export default function ContextMenu() {
       else if ((e.key === 'Enter' || e.key === ' ') && from !== null) {
         e.preventDefault();
         const item = menu.items[from];
-        if (item !== 'separator' && !item.disabled) select(item);
+        if (item !== 'separator' && !item.disabled) (document.activeElement as HTMLElement).click();
         return;
       }
       if (to !== null) {
@@ -116,6 +116,20 @@ export default function ContextMenu() {
       {menu.items.map((item, i) =>
         item === 'separator' ? (
           <div key={`sep-${i}`} className="ctx-sep" role="separator" />
+        ) : item.href ? (
+          <a
+            key={item.id}
+            role="menuitem"
+            tabIndex={-1}
+            className="ctx-item"
+            href={item.href}
+            target="_blank"
+            rel="noopener"
+            data-testid={item.testId ?? `ctx-${item.id}`}
+            onClick={() => closeMenu()}
+          >
+            <span>{item.label}</span>
+          </a>
         ) : (
           <button
             key={item.id}
@@ -123,7 +137,7 @@ export default function ContextMenu() {
             role="menuitem"
             tabIndex={-1}
             className="ctx-item"
-            data-testid={`ctx-${item.id}`}
+            data-testid={item.testId ?? `ctx-${item.id}`}
             aria-disabled={item.disabled || undefined}
             title={item.title}
             onClick={() => !item.disabled && select(item)}
