@@ -1,37 +1,12 @@
 // Plan 5B Task 5: the preset library and every preset's maths (presetMath.ts): exact rest/start/end states, params at
-// their limits, opacity-only presets, Ken Burns in log space, seeded Shake/Jitter, and the scale bound used for overlay
-// textures (maxMotionScale).
+// their limits and opacity-only presets. Ken Burns, Shake/Jitter and the scale bound: presets-shapes.test.ts.
 import { describe, expect, it } from 'vitest';
 import { easeAt } from '../src/core/easing';
-import type { Ease } from '../src/core/easing';
 import type { MotionOffsets, MotionSlot, PresetKey } from '../src/core/motionTypes';
-import { WHIP_TILT, easeRange, presetMaxScale, presetOffsets } from '../src/core/presetMath';
+import { WHIP_TILT, presetMaxScale, presetOffsets } from '../src/core/presetMath';
 import { PRESETS, PRESET_KEYS, PRESET_SCHEMA, presetEase, presetLabel, presetParams, presetsForSlot } from '../src/core/presets';
 import { rng } from './keyframe-fixtures';
-
-const F = { width: 1920, height: 1080 };
-const W = F.width;
-const H = F.height;
-const ID: MotionOffsets = { dx: 0, dy: 0, drot: 0, kScale: 1, kOpacity: 1 };
-const EASES: Ease[] = [
-  { kind: 'linear' }, { kind: 'hold' }, { kind: 'easeIn' }, { kind: 'easeOut' }, { kind: 'easeInOut' }, { kind: 'back' },
-  { kind: 'elastic' }, { kind: 'bounce' }, { kind: 'bezier', bezier: [0.3, -1, 0.7, 2] }, { kind: 'bezier', bezier: [0.36, 0, 0.66, -0.56] },
-  { kind: 'spring', spring: { stiffness: 170, damping: 26, mass: 1 } }, { kind: 'spring', spring: { stiffness: 1000, damping: 0, mass: 0.1 } },
-  { kind: 'spring', spring: { stiffness: 180, damping: 8, mass: 1 } },
-];
-const randomEase = (r: () => number): Ease => {
-  const e = EASES[Math.floor(r() * EASES.length)];
-  if (e.kind === 'spring' && r() < 0.5) return { kind: 'spring', spring: { stiffness: 1 + r() * 999, damping: r() * 100, mass: 0.1 + r() * 9.9 } };
-  if (e.kind === 'bezier' && r() < 0.5) return { kind: 'bezier', bezier: [r(), -1 + 3 * r(), r(), -1 + 3 * r()] };
-  return e;
-};
-const randomParams = (key: PresetKey, r: () => number): Record<string, number> => Object.fromEntries(PRESET_SCHEMA[key].params.map((d) => {
-  const v = d.min + r() * (d.max - d.min);
-  return [d.key, d.integer ? Math.round(v) : v];
-}));
-const entries = (): [PresetKey, MotionSlot][] => PRESET_KEYS.flatMap((k) => PRESET_SCHEMA[k].slots.map((s): [PresetKey, MotionSlot] => [k, s]));
-const restP = (slot: MotionSlot): number[] => (slot === 'in' ? [1] : slot === 'out' ? [0] : slot === 'emphasis' ? [0, 1] : [0]);
-const finite = (o: MotionOffsets) => Object.values(o).every(Number.isFinite);
+import { EASES, F, H, ID, W, entries, finite, randomEase, randomParams, restP } from './preset-fixtures';
 
 describe('the library (Q1)', () => {
   it('has 20 definitions giving 28 entries: 8 entrances, 8 exits, 6 emphases, 6 loops', () => {
@@ -180,74 +155,6 @@ describe('params and kinds', () => {
         other ||= moves;
       }
       if (!PRESETS[key].opacityOnly) expect(other, `${key} ${slot}`).toBe(true);
-    }
-  });
-});
-
-describe('Ken Burns (D11) and the seeded presets', () => {
-  it('zooms in log space: the value at p = 0.5 is sqrt(z0 z1); pans linearly in format fractions', () => {
-    for (const [z0, z1] of [[1, 1.2], [0.5, 3], [3, 0.5], [1.7, 1.7]]) {
-      const o = presetOffsets('kenBurns', 'loop', 0.5, { from: z0, to: z1, direction: 5, distance: 0.2 }, F);
-      expect(o.kScale / Math.sqrt(z0 * z1)).toBeCloseTo(1, 12);
-      expect(presetOffsets('kenBurns', 'loop', 0, { from: z0, to: z1 }, F).kScale).toBe(z0);
-      expect(presetOffsets('kenBurns', 'loop', 1, { from: z0, to: z1 }, F).kScale).toBeCloseTo(z1, 12);
-      expect(o.dx).toBeCloseTo(0.2 * W * 0.5, 9);
-      expect(o.dy).toBeCloseTo(-0.2 * H * 0.5, 9);
-    }
-  });
-
-  it('Shake is deterministic for a seed, differs between seeds, and depends only on the time since the window start', () => {
-    const at = (seed: number, p: number, seconds: number) => presetOffsets('shake', 'emphasis', p, { intensity: 0.05, frequency: 8, seed }, F, { seconds });
-    expect(at(42, 0.3, 0.6)).toEqual(at(42, 0.3, 0.6));
-    expect(at(42, 0.3, 0.6).dx).not.toBe(at(43, 0.3, 0.6).dx);
-    // The same instant of a 0.6 s window, sampled on a 25 and a 30 fps grid (0.2 s is a frame of both).
-    expect(at(7, 5 / 25 / 0.6, 0.6)).toEqual(at(7, 6 / 30 / 0.6, 0.6));
-    // The wave follows real seconds since the window start (not the eased progress): 0.2 s into a 0.8 s and a 0.4 s
-    // window give the same wave (dx : dy), only the envelope differs.
-    const ratio = (p: number, seconds: number) => {
-      const o = presetOffsets('shake', 'emphasis', p, { intensity: 0.05, frequency: 8, seed: 3 }, F, { seconds, ease: { kind: 'easeInOut' } });
-      return (o.dx / W) / (o.dy / H);
-    };
-    expect(ratio(0.25, 0.8)).toBeCloseTo(ratio(0.5, 0.4), 9);
-  });
-
-  it('Jitter is seamless over its cycle and seeded', () => {
-    const j = (seed: number, f: number) => presetOffsets('jitter', 'loop', f, { intensity: 0.05, seed }, F);
-    for (const seed of [0, 1, 99, 2147483647]) {
-      expect(j(seed, 0)).toEqual(ID);
-      expect(Math.abs(j(seed, 1 - 1e-12).dx)).toBeLessThan(1e-6);
-      expect(j(seed, 0.37)).toEqual(j(seed, 0.37));
-    }
-    expect(j(1, 0.37).dx).not.toBe(j(2, 0.37).dx);
-  });
-});
-
-describe('scale bound (overlay texture sizing)', () => {
-  it('easeRange contains every ease value', () => {
-    const r = rng(3);
-    for (let n = 0; n < 300; n++) {
-      const e = randomEase(r);
-      const [lo, hi] = easeRange(e);
-      for (let i = 0; i <= 200; i++) {
-        const v = easeAt(e, i / 200, 0.05 + r() * 3);
-        expect(v, `${JSON.stringify(e)}`).toBeGreaterThanOrEqual(lo - 1e-12);
-        expect(v).toBeLessThanOrEqual(hi + 1e-12);
-      }
-    }
-  });
-
-  it('presetMaxScale bounds the sampled scale of every preset over its param range (500 random draws)', () => {
-    const r = rng(500);
-    for (let n = 0; n < 500; n++) {
-      const [key, slot] = entries()[Math.floor(r() * entries().length)];
-      const params = randomParams(key, r);
-      const ease = randomEase(r);
-      const bound = presetMaxScale(key, slot, params, ease);
-      expect(bound).toBeGreaterThanOrEqual(1);
-      for (let i = 0; i <= 100; i++) {
-        const k = presetOffsets(key, slot, i / 100, params, F, { ease, seconds: 0.1 + r() * 5 }).kScale;
-        expect(k, `${key} ${slot} ${JSON.stringify(params)} ${JSON.stringify(ease)}`).toBeLessThanOrEqual(bound * (1 + 1e-12));
-      }
     }
   });
 });

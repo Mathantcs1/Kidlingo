@@ -42,7 +42,7 @@ Commit: `6670f72 feat: animation presets, stack timing and blending` (+ this rep
 | whip | in/out | 0.4 | back / back-in bezier [0.36, 0, 0.66, −0.56] | as slide | slide + drot = −(ux + uy)·a·12° |
 | rise (Sink) | in/out | 0.6 | easeOut / easeIn | distance 0..0.5 (0.1) | dy = +a·d·H, kOpacity = 1 − a |
 | pulse | emphasis | 0.6 | easeInOut | intensity 0..1 (0.15) | kScale = 1 + i·sinπ(q) |
-| shake | emphasis | 0.6 | linear | intensity 0..0.2 (0.02), frequency 1..30 Hz (8), seed int | dx, dy = i·(W, H)·sinπ(q)·wave(seed, frequency·seconds since window start) |
+| shake | emphasis | 0.6 | linear | intensity 0..0.2 (0.02), frequency 1..30 Hz (8), seed int | dx, dy = i·min(W, H)·sinπ(q)·wave(seed, frequency·seconds since window start) (isotropic, P5B-4, fix round 1) |
 | wobble | emphasis | 0.8 | linear | intensity 0..90° (10) | drot = A·sinπ(6q)·(1 − q) |
 | flash | emphasis | 0.6 | linear | flashes int 1..10 (2) | kOpacity = 1 − abs(sinπ(n q)) (opacity-only) |
 | hop | emphasis | 0.5 | **linear** (was easeOut) | distance 0..1 (0.1) | dy = −d·H·(full arc to 0.65, quarter arc to 1) |
@@ -50,7 +50,7 @@ Commit: `6670f72 feat: animation presets, stack timing and blending` (+ this rep
 | breathe | loop | 3 | easeInOut | intensity 0..0.5 (0.05) | kScale = 1 + i(1 − cosπ(2q))/2 |
 | float | loop | 3 | easeInOut | distance 0..0.5 (0.03) | dy = −d·H·sinπ(2q) |
 | spinLoop | loop | 4 | linear | turns **int** −10..10 (1) (was step 0.25) | drot = 360·T·wrapTurn(q) |
-| jitter | loop | 0.5 | linear | intensity 0..0.1 (0.01), seed int | seamless seeded harmonics per cycle |
+| jitter | loop | 0.5 | linear | intensity 0..0.1 (0.01), seed int | dx, dy = i·min(W, H)·wave(seed, q): seamless seeded harmonics per cycle (isotropic, P5B-4, fix round 1) |
 | blink | loop | 1 | **linear** (was hold: hold made it always on) | duty 0.05..0.95 (0.5) | kOpacity = q < duty ? 1 : 0 (opacity-only) |
 | kenBurns | loop (span) | 5 (unused) | linear | from 0.5..3 (1), to 0.5..3 (1.2), direction int 0..7 (+ diagonals), distance 0..0.5 (0.05) | kScale = z0·(z1/z0)^q (D11 log space), pan linear q·distance·(W, H) |
 
@@ -61,8 +61,8 @@ Rise is "Sink" in the exit list, "Spin 360", "Spin loop", "Ken Burns".
 
 ## Rulings (proposed for the ledger)
 - R5-1 Timing (D2): s = snapToFrame(t − start); in active while s < delay + duration (start state before the delay);
-  out active from s > D − delay − duration, end state from s ≥ D − delay; short-clip scaling ONLY when both in and out
-  exist and din + delayIn + dout + delayOut > D (factor D / total; D = 0 ⇒ 0); emphasis window [at, at + duration) in
+  out active from s > D − delay − duration, end state from s ≥ D − delay; short-clip scaling when (din + delayIn) + (dout + delayOut)
+  > D, an absent slot counting 0 (factor D / total; D = 0 ⇒ 0; fix round 1, P5B-5: a lone slot is scaled too); emphasis window [at, at + duration) in
   LOCAL time; loop τ = (local + phase)/period, cycle index floor(τ + 1e-9) (tolerance like frameIndex: a frame on an exact
   cycle start reads cycle start whatever the rounding), count null ⇒ every τ (also before 0), count n ⇒ 0 ≤ index < n;
   Ken Burns ignores period/phase/count and spans the visible clip p = s/D.
@@ -149,3 +149,17 @@ Rise is "Sink" in the exit list, "Spin 360", "Spin loop", "Ken Burns".
    finish (no scaling without an exit), as specified.
 5. `presetMaxScale` with spring eases is conservative (q up to 3): Zoom with a spring and from 3 bounds at 5×; textures
    may be oversized in that corner (Task 6's cap applies).
+
+## Fix round 1
+- I1: an emphasis starting exactly at the cut now goes to the right half (`at < mid − 1e-9` keeps it left); the
+  emphasis window reads [at − 1e-9, at + duration − 1e-9), so a split/trim-shifted `at` a hair after a frame starts on
+  that frame. Tests: tests/motion-split-edge.test.ts (sourceless 20.1 / 21.3, sourced off-grid start, trim, frame-aligned
+  property with half the cuts at the emphasis start).
+- M1 (P5B-4): Shake and Jitter amplitude intensity·min(W, H) on both axes (table above). Concern 2 closed.
+- M2 (P5B-5): a lone in or out longer than the clip is scaled by D / (duration + delay). Concern 4 closed.
+- M4: resolveClip returns the clip itself for a static clip with `motion: {}`.
+- M5: tests split (presets-shapes, preset-fixtures, motion-resolve, motion-split-fixtures).
+- Consequence of P5B-5: a split (or end trim) inside an entrance window now FITS the whole entrance into the shorter
+  left half (faster, finishes at the cut and meets the right half's rest state: no jump), where before the left half
+  was frame-exact with the original up to the cut and jumped to rest. Same for a start trim / right half inside an exit.
+  The motion-clip-ops entrance-cut test is updated to that behaviour.

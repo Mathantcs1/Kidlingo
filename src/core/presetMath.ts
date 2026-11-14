@@ -85,6 +85,8 @@ function away(key: PresetKey, slot: MotionSlot, a: number, P: Readonly<Record<st
 function shaped(key: PresetKey, q: number, p: number, seconds: number, P: Readonly<Record<string, number>>, f: PresetFormat): MotionOffsets {
   const W = f.width;
   const H = f.height;
+  // Ruling P5B-4: Shake and Jitter move the same px on both axes (isotropic): intensity × min(W, H).
+  const M = Math.min(W, H);
   const g = (k: string) => param(key, P, k);
   switch (key) {
     case 'pulse': return offsets(0, 0, 0, pos(1 + g('intensity') * sinPi(q)), 1);
@@ -92,7 +94,7 @@ function shaped(key: PresetKey, q: number, p: number, seconds: number, P: Readon
       const env = g('intensity') * sinPi(q);
       const cycles = g('frequency') * p * seconds;
       const seed = g('seed');
-      return offsets(env * W * shakeWave(seed, 0, cycles), env * H * shakeWave(seed, 1, cycles), 0, 1, 1);
+      return offsets(env * M * shakeWave(seed, 0, cycles), env * M * shakeWave(seed, 1, cycles), 0, 1, 1);
     }
     case 'wobble': return offsets(0, 0, g('intensity') * sinPi(6 * q) * (1 - q), 1, 1);
     case 'flash': return offsets(0, 0, 0, 1, 1 - Math.abs(sinPi(g('flashes') * q)));
@@ -104,7 +106,7 @@ function shaped(key: PresetKey, q: number, p: number, seconds: number, P: Readon
     case 'jitter': {
       const i = g('intensity');
       const seed = g('seed');
-      return offsets(i * W * jitterWave(seed, 0, q), i * H * jitterWave(seed, 1, q), 0, 1, 1);
+      return offsets(i * M * jitterWave(seed, 0, q), i * M * jitterWave(seed, 1, q), 0, 1, 1);
     }
     case 'blink': return offsets(0, 0, 0, 1, q < g('duty') ? 1 : 0);
     case 'kenBurns': {

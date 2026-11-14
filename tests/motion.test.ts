@@ -1,15 +1,15 @@
-// Plan 5B Task 5: stack timing (D2) on the clip's frame grid, the blending rule (D3), the clamps, maxMotionScale and the
-// resolver's fast path / composition (resolveClip).
+// Plan 5B Task 5: stack timing (D2) on the clip's frame grid, the blending rule (D3) and the clamps. maxMotionScale
+// and the resolver's fast path / composition: motion-resolve.test.ts.
 import { describe, expect, it } from 'vitest';
 import { resolveClip, resolvedTransform } from '../src/core/animate';
-import { blendOffsets, composeMotion, maxMotionScale, motionAt, motionWindows } from '../src/core/motion';
+import { blendOffsets, composeMotion, motionAt, motionWindows } from '../src/core/motion';
 import type { Clip } from '../src/core/model';
 import type { ClipMotion, EmphasisUse, LoopUse, MotionOffsets, MotionSlot, PresetUse } from '../src/core/motionTypes';
-import { presetMaxScale, presetOffsets } from '../src/core/presetMath';
+import { presetOffsets } from '../src/core/presetMath';
 import { presetEase, presetParams } from '../src/core/presets';
 import type { PresetKey } from '../src/core/motionTypes';
 import { clipMatrix } from '../src/render/geometry';
-import { k, mk, pk, rng } from './keyframe-fixtures';
+import { k, mk, pk } from './keyframe-fixtures';
 
 const FMT = { width: 1920, height: 1080, fps: 30 };
 const ID: MotionOffsets = { dx: 0, dy: 0, drot: 0, kScale: 1, kOpacity: 1 };
@@ -80,6 +80,28 @@ describe('timing (D2)', () => {
     const long = motionWindows({ ...c, out: 10 });
     expect([long.in!.start, long.in!.end, long.out!.start, long.out!.end].map((v) => Math.round(v * 1e12) / 1e12)).toEqual([0.2, 1.2, 8.2, 9.6]);
     expect(c.motion).toEqual({ in: inUse, out: outUse });
+  });
+
+  it('a LONE in or out longer than the clip is scaled to fit (P5B-5): factor D / (duration + delay)', () => {
+    // A 0.5 s Fade Out (delay 0.1) on a 0.3 s clip: window [0, 0.25] (k = 0.5), not already faded on frame 0.
+    const fo = use('fade', 'out', { duration: 0.5, delay: 0.1 });
+    const c = clip({ out: fo }, { in: 0, out: 0.3 });
+    const w = motionWindows(c);
+    expect([w.out!.start, w.out!.end].map((v) => Math.round(v * 1e12) / 1e12)).toEqual([0, 0.25]);
+    expect(motionAt(c, 10, FMT)).toBeNull();
+    expect(motionAt(c, 10 + 5 / 30, FMT)!.kOpacity).toBeCloseTo(off('fade', 'out', (5 / 30) / 0.25, fo).kOpacity, 9);
+    expect(motionAt(c, 10 + 8 / 30, FMT)!.kOpacity).toBe(0);
+    // A lone entrance longer than the clip finishes exactly at the clip end: frame 0 its start state, last frame p < 1.
+    const zi = use('zoom', 'in', { duration: 0.8, delay: 0.2 });
+    const z = clip({ in: zi }, { in: 0, out: 0.5 }); // k = 0.5: delay 0.1, duration 0.4, end 0.5 = D
+    const wz = motionWindows(z);
+    expect([wz.in!.start, wz.in!.end].map((v) => Math.round(v * 1e12) / 1e12)).toEqual([0.1, 0.5]);
+    expect(motionAt(z, 10, FMT)).toEqual(off('zoom', 'in', 0, zi));
+    expect(motionAt(z, 10 + 14 / 30, FMT)!.kOpacity).toBeCloseTo(off('zoom', 'in', (14 / 30 - 0.1) / 0.4, zi).kOpacity, 9);
+    expect(motionAt(z, 10 + 14 / 30, FMT)!.kOpacity).toBeLessThan(1);
+    // Fitting slots are untouched; stored values are kept.
+    expect(motionWindows(clip({ in: zi }, { in: 0, out: 1 })).in).toEqual({ start: 0.2, end: 1 });
+    expect(z.motion).toEqual({ in: zi });
   });
 
   it('snaps to the clip frame grid: a between-frame time equals the frame start', () => {
@@ -165,54 +187,5 @@ describe('blending (D3)', () => {
     const tr = resolveClip(clip({ in: use('pop', 'in') }), 10, FMT).transform;
     expect(tr.scale).toBe(0);
     expect(clipMatrix({ width: 200, height: 100 }, tr, FMT).every(Number.isFinite)).toBe(true);
-  });
-});
-
-describe('maxMotionScale', () => {
-  it('is 1 without motion and the product of the slot bounds otherwise; it bounds every sampled frame', () => {
-    expect(maxMotionScale(mk('c'))).toBe(1);
-    const r = rng(77);
-    for (let n = 0; n < 40; n++) {
-      const m: ClipMotion = {
-        in: use('zoom', 'in', { params: { from: 3 * r() } }), emphasis: emph('pulse', 2 + r() * 3, { params: { intensity: r() } }),
-        loop: r() < 0.5 ? loop('breathe', { params: { intensity: r() / 2 }, duration: 0.5 }) : loop('kenBurns', { params: { from: 0.5 + 2.5 * r(), to: 0.5 + 2.5 * r(), direction: 0, distance: 0 } }),
-        out: use('pop', 'out', { params: { intensity: r() / 2 }, ease: { kind: 'spring', spring: { stiffness: 300, damping: 2, mass: 1 } } }),
-      };
-      const c = clip(m, { in: 0, out: 2 });
-      const bound = maxMotionScale(c);
-      expect(bound).toBeCloseTo(presetMaxScale('zoom', 'in', m.in!.params, m.in!.ease) * presetMaxScale('pulse', 'emphasis', m.emphasis!.params)
-        * presetMaxScale(m.loop!.preset, 'loop', m.loop!.params, m.loop!.ease) * presetMaxScale('pop', 'out', m.out!.params, m.out!.ease), 12);
-      for (let f = 0; f < 60; f++) expect(motionAt(c, 10 + f / 30, FMT)?.kScale ?? 1).toBeLessThanOrEqual(bound * (1 + 1e-12));
-    }
-  });
-});
-
-describe('resolveClip (fast path and composition)', () => {
-  it('a static clip without motion is returned as-is', () => {
-    const c = mk('c');
-    expect(resolveClip(c, 11, FMT)).toBe(c);
-  });
-
-  it('an active slot gives a fresh object with the composed transform and no motion; the input is unchanged', () => {
-    const c = clip({ in: use('slide', 'in', { duration: 2 }) });
-    const snap = JSON.stringify(c);
-    const r = resolveClip(c, 11, FMT);
-    expect(r).not.toBe(c);
-    expect('motion' in r).toBe(false);
-    expect(r.transform.x).toBe(-960);
-    expect(r.effects).toBe(c.effects);
-    expect(JSON.stringify(c)).toBe(snap);
-  });
-
-  it('no active slot: the keys-only result (static: the stored transform itself), never carrying motion', () => {
-    const c = clip({ in: use('slide', 'in', { duration: 1 }) });
-    const r = resolveClip(c, 12, FMT);
-    expect('motion' in r).toBe(false);
-    expect(r.transform).toBe(c.transform);
-    const keyed = clip({ in: use('slide', 'in', { duration: 1 }) }, { keys: { opacity: [k(2, 0), k(6, 1)] } });
-    const rk = resolveClip(keyed, 12, FMT);
-    const { motion: _m, ...plain } = keyed;
-    expect(rk).toEqual(resolveClip(plain as Clip, 12, FMT));
-    expect('motion' in rk || 'keys' in rk).toBe(false);
   });
 });

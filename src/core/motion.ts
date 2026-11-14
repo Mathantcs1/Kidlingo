@@ -24,16 +24,19 @@ export function blendOffsets(a: MotionOffsets, b: MotionOffsets): MotionOffsets 
 
 const fold = (acc: MotionOffsets | null, o: MotionOffsets | null): MotionOffsets | null => (acc === null ? o : o === null ? acc : blendOffsets(acc, o));
 
-/** The in/out windows in clip-relative seconds, both scaled by D / total when they (with delays) do not fit (D2). */
+/** The in/out windows in clip-relative seconds, scaled by D / total when they (with delays) do not fit (D2, P5B-5). */
 export interface MotionWindows {
   in?: { start: number; end: number };
   out?: { start: number; end: number };
 }
 
-/** The factor that shrinks overlapping in/out windows: D / (din + delayIn + dout + delayOut) when that sum exceeds D, else 1. */
+/**
+ * The factor that shrinks the in/out windows when they do not fit: D / total when total = (din + delayIn) + (dout +
+ * delayOut) (an absent slot counts 0) exceeds D, else 1. Ruling P5B-5: a LONE slot longer than the clip is scaled too,
+ * so a 0.5 s Fade Out on a 0.3 s clip is not already faded on frame 0 and a long entrance finishes at the clip end.
+ */
 function fitFactor(m: ClipMotion, d: number): number {
-  if (!m.in || !m.out) return 1;
-  const total = m.in.duration + m.in.delay + m.out.duration + m.out.delay;
+  const total = (m.in ? m.in.duration + m.in.delay : 0) + (m.out ? m.out.duration + m.out.delay : 0);
   return total > d ? (d > 0 ? d / total : 0) : 1;
 }
 
@@ -49,12 +52,15 @@ export function motionWindows(clip: Clip): MotionWindows {
   return w;
 }
 
+/** Local-time tolerance of the emphasis window edges (the 1e-9 EDGE of keyframes.ts). */
+const EDGE = 1e-9;
+
 const timing = (u: PresetUse, seconds: number) => ({ ease: u.ease, seconds });
 
 /**
  * The stack's offsets at timeline time `t` (D2), or null when no slot is active. Clip time s = snapToFrame(t − start)
  * (frame grid). `in`: p = (s − delay)/duration, its start state before the delay, inactive from p = 1. `out`: ends at
- * the clip end, its end state from s = D − delay. Overlapping in/out windows are scaled (fitFactor; stored values kept).
+ * the clip end, its end state from s = D − delay. Windows that do not fit are scaled (fitFactor; stored values kept).
  * `emphasis`: identity outside [at, at + duration) in LOCAL time (footage-anchored). `loop`: τ = (local + phase) /
  * period, active for every τ (count null) or 0 ≤ τ < count; each cycle runs p = frac(τ) (cycle starts read with a
  * 1e-9-cycle tolerance). Ken Burns (loop slot) spans
@@ -84,7 +90,8 @@ export function motionAt(clip: Clip, t: number, format: MotionFormat): MotionOff
   const loop = m.loop;
   if (!e && !loop) return acc;
   const u = localTime(clip, t, format.fps);
-  if (e && e.duration > 0 && u >= e.at && u < e.at + e.duration) {
+  // The window [at, at + duration) read with EDGE: a split or trim moves `at` by a non-snapped amount (I1).
+  if (e && e.duration > 0 && u >= e.at - EDGE && u < e.at + e.duration - EDGE) {
     acc = fold(acc, presetOffsets(e.preset, 'emphasis', (u - e.at) / e.duration, e.params, format, timing(e, e.duration)));
   }
   if (loop) {

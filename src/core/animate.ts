@@ -68,13 +68,15 @@ function resolveEffect(e: VideoEffect, u: number): VideoEffect {
 
 /**
  * The clip as seen at timeline time `t` (D7), DRAWN: the base (keys, loops, path, orient) with the animation stack
- * composed on top (5B D3). The SAME object when nothing is animated and there is no `motion`; otherwise a shallow copy
- * whose `transform` and `effects[].params` hold the evaluated values and which carries no `keys` (on the clip or its
- * effects), no effect `loops` and no `motion`. When no preset slot is active at `t` the transform is the base itself.
+ * composed on top (5B D3). The SAME object when nothing is animated and there is no `motion` (or an empty one, no
+ * slot); otherwise a shallow copy whose `transform` and `effects[].params` hold the evaluated values and which carries
+ * no `keys` (on the clip or its effects), no effect `loops` and no `motion`. When no preset slot is active at `t` the transform is the base itself.
  * Effects without keys and an unanimated transform are shared with the input, which is never mutated.
  */
 export function resolveClip(clip: Clip, t: number, format: ResolveFormat): Clip {
-  const motion = clip.motion;
+  const m = clip.motion;
+  // An empty stack (`motion: {}`, no slot) draws nothing: the fast path, like no stack (M4).
+  const motion = m && (m.in || m.emphasis || m.loop || m.out) ? m : undefined;
   if (!isAnimated(clip)) {
     if (motion === undefined) return clip;
     const { motion: _motion, ...still } = clip;

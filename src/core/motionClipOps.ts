@@ -23,14 +23,18 @@ export function shiftMotion(m: ClipMotion, d: number): ClipMotion {
   return out;
 }
 
+/** Local-time tolerance (the 1e-9 EDGE of keyframes.ts): `at` is frame-snapped, the cut's local time is not exactly. */
+const EDGE = 1e-9;
+
 const orNone = (m: ClipMotion): ClipMotion | undefined => (Object.keys(m).length > 0 ? m : undefined);
 
 /**
  * The stacks of the two halves of a split at local time `mid` (original local time; `shift` = the right half's local
  * time shift, −d for a sourceless clip, 0 for a sourced one). Left: `in`, the emphasis when its window starts before
- * `mid`, the loop. Right: `out`, the emphasis when it starts at or after `mid`, the loop (shifted when sourceless). A
+ * `mid` (by more than EDGE: an emphasis set at the playhead and cut there starts on the right half), the loop. Right: `out`, the emphasis when it starts at or after `mid`, the loop (shifted when sourceless). A
  * cut inside the entrance (or exit, or an emphasis window) leaves the other half at rest there: the accepted
- * discontinuity (D12, like Plan 4 time-based effects); Ken Burns spans each half on its own.
+ * discontinuity (D12, like Plan 4 time-based effects); the half keeping a cut entrance/exit fits it into its own length
+ * (P5B-5 short-clip scaling, stored values kept). Ken Burns spans each half on its own.
  */
 export function splitMotion(m: ClipMotion | undefined, mid: number, shift: number): [ClipMotion | undefined, ClipMotion | undefined] {
   if (!m) return [undefined, undefined];
@@ -38,7 +42,7 @@ export function splitMotion(m: ClipMotion | undefined, mid: number, shift: numbe
   const right: ClipMotion = {};
   if (m.in) left.in = copyUse(m.in);
   if (m.emphasis) {
-    if (m.emphasis.at < mid) left.emphasis = copyUse(m.emphasis);
+    if (m.emphasis.at < mid - EDGE) left.emphasis = copyUse(m.emphasis);
     else right.emphasis = copyUse(m.emphasis);
   }
   if (m.loop) {
