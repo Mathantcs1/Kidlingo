@@ -12,6 +12,7 @@ import {
   localTime, tooClose,
 } from './keyframes';
 import type { Clip, Id, Project } from './model';
+import { bakeDroppedHeading } from './orientBake';
 import { scaleBounds } from './scale';
 import { EPS, TimelineError, assertFinite } from './timeline';
 import { REACH, clamp } from './transformLimits';
@@ -51,7 +52,8 @@ function keyValue(p: Project, clip: Clip, target: AnimTarget, v: AnimValue, cur?
 /**
  * Turns animation of `target` on or off at timeline time `t` (the playhead, which must be on the clip). On: one
  * `linear` key at the local time holding the current value. Off: the value shown at `t` becomes the static value
- * (rotation normalised to (−180, 180], P5-3) and the keys are removed. The same project when already in that state.
+ * (rotation normalised to (−180, 180], P5-3) and the keys are removed; position off with orient bakes the heading at
+ * `t` into the stored rotation (5B M5, orientBake.ts). The same project when already in that state.
  */
 export function setAnimated(p: Project, clipId: Id, target: AnimTarget, on: boolean, t: number): Project {
   assertFinite('playhead time', t);
@@ -61,7 +63,7 @@ export function setAnimated(p: Project, clipId: Id, target: AnimTarget, on: bool
   const u = localTime(clip, t, p.format.fps);
   const next = on
     ? withTargetKeys(clip, target, [{ t: u, ...keyValue(p, clip, target, staticValue(clip, target)), ease: { kind: 'linear' } } as AnyKey])
-    : withTargetKeys(withStaticValue(clip, target, valueAtLocal(clip, target, u)), target, undefined);
+    : bakeDroppedHeading(clip, withTargetKeys(withStaticValue(clip, target, valueAtLocal(clip, target, u)), target, undefined), u);
   return commitClip(p, clipId, next);
 }
 
@@ -98,9 +100,11 @@ export function setValueAt(p: Project, clipId: Id, target: AnimTarget, value: An
 
 /**
  * Removes the referenced keys. A property that loses its last key becomes static at its EARLIEST key's value (the
- * removed key itself when it was alone; rotation normalised). Same project when no ref matches a key.
+ * removed key itself when it was alone; rotation normalised). Leaving an oriented path with fewer than two position
+ * keys bakes the heading at the playhead `t` (clamped onto the clip; its start when absent) into the stored rotation
+ * (5B M5); other frames change. Same project when no ref matches a key.
  */
-export function removeKeys(p: Project, clipId: Id, refs: readonly KeyRef[]): Project {
+export function removeKeys(p: Project, clipId: Id, refs: readonly KeyRef[], t?: number): Project {
   const clip = locate(p, clipId);
   let next = clip;
   for (const { target, list, picked } of selection(clip, refs)) {
@@ -108,7 +112,10 @@ export function removeKeys(p: Project, clipId: Id, refs: readonly KeyRef[]): Pro
     next = kept.length > 0 ? withTargetKeys(next, target, kept)
       : withTargetKeys(withStaticValue(next, target, keyToValue(list[0])), target, undefined);
   }
-  return next === clip ? p : commitClip(p, clipId, next);
+  if (next === clip) return p;
+  const [lo, hi] = localRange(clip);
+  const u = Math.min(hi, Math.max(lo, localTime(clip, t ?? clip.start, p.format.fps)));
+  return commitClip(p, clipId, bakeDroppedHeading(clip, next, u));
 }
 
 /**

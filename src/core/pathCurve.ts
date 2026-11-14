@@ -124,7 +124,7 @@ export function unit(v: Vec, w?: Vec): Vec | null {
 /**
  * The position on curved segment a → b at eased fraction `f` (D6): the point at arc-length fraction `f`, so a linear
  * ease moves at constant speed; exactly `a` at 0 and `b` at 1; an overshoot (f < 0 or > 1, `back`/`elastic`)
- * continues straight along the end tangent at the same speed. A segment without finite length falls back to the
+ * continues straight along the end direction (C1, `endDirection`) at the same speed. A segment without finite length falls back to the
  * straight formula.
  */
 export function curvedPoint(a: End, b: End, f: number): Vec {
@@ -136,9 +136,19 @@ export function curvedPoint(a: End, b: End, f: number): Vec {
   if (!(len > 0) || !Number.isFinite(len)) return { x: a.x + chord.x * f, y: a.y + chord.y * f };
   if (f > 0 && f < 1) return bezierPoint(a, b, paramAt(a, b, cum, f));
   const end = f < 0 ? a : b;
-  const near = bezierPoint(a, b, f < 0 ? 1 / ARC_SAMPLES : 1 - 1 / ARC_SAMPLES);
-  const step = f < 0 ? { x: near.x - a.x, y: near.y - a.y } : { x: b.x - near.x, y: b.y - near.y };
-  const d = unit(bezierTangent(a, b, f < 0 ? 0 : 1), step) ?? unit(chord) ?? { x: 0, y: 0 };
+  const d = endDirection(a, b, f > 1) ?? { x: 0, y: 0 };
   const over = (f < 0 ? f : f - 1) * len;
   return { x: end.x + d.x * over, y: end.y + d.y * over };
+}
+
+/**
+ * The unit direction of travel at the start (`atEnd` false) or end of the cubic, so an overshoot is C1: the derivative
+ * there, or, where it is zero (P1 on P0 / P2 on P3), its limit direction - towards the first control point that differs
+ * from the end (P0 → P2, else P0 → P3; P1 → P3, else P0 → P3). Null for a segment without any length.
+ */
+function endDirection(a: End, b: End, atEnd: boolean): Vec | null {
+  const p1 = { x: a.x + (a.out?.x ?? 0), y: a.y + (a.out?.y ?? 0) };
+  const p2 = { x: b.x + (b.in?.x ?? 0), y: b.y + (b.in?.y ?? 0) };
+  if (atEnd) return unit({ x: b.x - p2.x, y: b.y - p2.y }, { x: b.x - p1.x, y: b.y - p1.y }) ?? unit({ x: b.x - a.x, y: b.y - a.y });
+  return unit({ x: p1.x - a.x, y: p1.y - a.y }, { x: p2.x - a.x, y: p2.y - a.y }) ?? unit({ x: b.x - a.x, y: b.y - a.y });
 }

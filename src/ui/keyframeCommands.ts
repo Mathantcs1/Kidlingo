@@ -86,7 +86,7 @@ export function toggleKeyAtPlayheadCmd(clipId: Id, target: AnimTarget, group: re
     if (!onClip(clip, playhead)) throw new TimelineError(OUTSIDE_REFUSAL);
     if (keyAtPlayhead(clip, target, playhead, p.format.fps)) {
       const refs = group.flatMap((g) => keyAtPlayhead(clip, g, playhead, p.format.fps) ?? []);
-      return removeKeys(p, clipId, refs);
+      return removeKeys(p, clipId, refs, playhead);
     }
     const entries = group.map((g) => ({ target: g, value: targetValueAt(clip, g, playhead, p.format.fps) }));
     return setTargetsAt(p, clipId, entries, playhead);

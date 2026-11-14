@@ -7,6 +7,7 @@ import type { Ease } from '../src/core/easing';
 import type { PositionKeyframe } from '../src/core/model';
 import { bezierPoint } from '../src/core/pathCurve';
 import { orientHeading, pathHeading } from '../src/core/spatialPath';
+import { localTime } from '../src/core/keyframes';
 import { setTransformAt, withLiveValue } from '../src/core/transformKeyEdits';
 import { clipOf, k, mk, pk, project } from './keyframe-fixtures';
 
@@ -106,5 +107,24 @@ describe('orient along path in the resolver (D7)', () => {
     const r = setTransformAt(pk2, 'c', { rotation: 150 }, 11);
     expect(resolvedTransform(clipOf(r, 'c'), 11, 30).rotation).toBeCloseTo(150, 9);
     expect(clipOf(withLiveValue(pk2, 'c', { rotation: 150 }, 11), 'c').keys?.rotation).toEqual(clipOf(r, 'c').keys?.rotation);
+  });
+  it('on a CURVED path the write-back subtracts the heading at the snapped playhead time (static, keyed, live)', () => {
+    // The heading turns from 0 to 90 along this curve, so a heading read at any other time fails.
+    const curve: PositionKeyframe[] = [{ ...pk(2, 0, 0), out: { x: 300, y: 0 } }, { ...pk(4, 400, 400), in: { x: 0, y: -300 } }];
+    for (const t of [10.61, 11.37, 11.83]) {
+      const u = localTime(clipOf(project(), 'c'), t, 30); // the frame start (floor)
+      const h = pathHeading(curve, undefined, u);
+      expect(Math.abs(h - pathHeading(curve, undefined, t - 8))).toBeGreaterThan(1e-6); // snapped ≠ raw time here
+      const st = setTransformAt(project({ keys: { position: curve, orient: true } }), 'c', { rotation: 120 }, t);
+      expect(clipOf(st, 'c').transform.rotation).toBeCloseTo(120 - h, 9);
+      expect(resolvedTransform(clipOf(st, 'c'), t, 30).rotation).toBeCloseTo(120, 9);
+      const keyed = project({ keys: { position: curve, rotation: [k(2, 5), k(6, 25)], orient: true } });
+      const kq = setTransformAt(keyed, 'c', { rotation: -70 }, t);
+      expect(resolvedTransform(clipOf(kq, 'c'), t, 30).rotation).toBeCloseTo(-70, 9);
+      expect(clipOf(kq, 'c').keys!.rotation!.find((x) => Math.abs(x.t - u) < 1e-9)!.v).toBeCloseTo(-70 - h, 9);
+      expect(clipOf(withLiveValue(keyed, 'c', { rotation: -70 }, t), 'c').keys?.rotation).toEqual(clipOf(kq, 'c').keys?.rotation);
+      expect(clipOf(withLiveValue(project({ keys: { position: curve, orient: true } }), 'c', { rotation: 120 }, t), 'c').transform.rotation)
+        .toBeCloseTo(120 - h, 9);
+    }
   });
 });

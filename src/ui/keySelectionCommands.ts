@@ -42,7 +42,8 @@ export function deleteSelectedKeysCmd(): void {
     const sel = selected();
     if (!sel) return;
     const before = editor().history.present;
-    editor().apply((p) => removeKeys(p, sel.clip.id, sel.refs));
+    const { playhead } = editor();
+    editor().apply((p) => removeKeys(p, sel.clip.id, sel.refs, playhead));
     if (editor().history.present !== before) setKeySel(NO_KEYS);
   });
 }
