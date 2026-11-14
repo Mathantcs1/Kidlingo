@@ -2,6 +2,8 @@ import { detachDisabledReason } from '../core/audioQueries';
 import { timelineDuration } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { detachSelectedAudio } from './audioCommands';
+import { copyClipsCmd, duplicateClipsCmd, pasteClipsCmd } from './clipClipboardCommands';
+import { useClipClipboard } from './clipClipboard';
 import { deleteSelected, mergeSelected, redo, rippleDeleteSelected, splitAtPlayhead, togglePlay, undo } from './commands';
 import { videoClipCount } from './edits';
 import { openExport, startMerge } from './exportJob';
@@ -20,6 +22,7 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
   const hasContent = useEditor((s) => timelineDuration(s.history.present) > 0);
   const canMergeAll = useEditor((s) => videoClipCount(s.history.present) >= 2);
   const detachReason = useEditor((s) => detachDisabledReason(s.history.present, s.selection));
+  const hasCopy = useClipClipboard((s) => s.payload !== null);
   const buffering = usePlaybackStatus((s) => s.buffering);
   const saveError = useEditor((s) => s.saveError);
   const recording = useRecording((s) => s.status !== 'idle');
@@ -113,6 +116,35 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
           title={recording ? busyTitle : 'Render the whole timeline into a single clip'}
         >
           Merge all into one clip
+        </button>
+      </div>
+      <div className="toolbar-group">
+        <button
+          type="button"
+          data-testid="copy-clip"
+          onClick={copyClipsCmd}
+          disabled={!editable || selected === 0}
+          title={selected === 0 ? 'Select a clip to copy it' : 'Copy the selected clips (Ctrl/Cmd+C)'}
+        >
+          Copy
+        </button>
+        <button
+          type="button"
+          data-testid="paste-clip"
+          onClick={pasteClipsCmd}
+          disabled={!editable || !hasCopy}
+          title={hasCopy ? 'Paste the copied clips at the playhead (Ctrl/Cmd+V); paste again for more copies' : 'Copy a clip first'}
+        >
+          Paste
+        </button>
+        <button
+          type="button"
+          data-testid="duplicate-clip"
+          onClick={duplicateClipsCmd}
+          disabled={!editable || selected === 0}
+          title={selected === 0 ? 'Select a clip to duplicate it' : 'Duplicate the selected clips right after them (Ctrl/Cmd+D)'}
+        >
+          Duplicate
         </button>
       </div>
       <div className="toolbar-group">

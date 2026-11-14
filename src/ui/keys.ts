@@ -1,6 +1,6 @@
 // DOM-free keyboard helpers for the editor shortcuts.
 
-export type Shortcut = 'play' | 'split' | 'delete' | 'rippleDelete' | 'undo' | 'redo' | 'prevKey' | 'nextKey' | 'deleteKeys';
+export type Shortcut = 'play' | 'split' | 'delete' | 'rippleDelete' | 'undo' | 'redo' | 'prevKey' | 'nextKey' | 'deleteKeys' | 'copy' | 'paste' | 'duplicate';
 
 /** The parts of a KeyboardEvent the shortcut map reads. */
 export interface KeyLike {
@@ -37,7 +37,7 @@ const OWNS_EDITING_KEYS = new Set(['range', 'color']);
  * picker must not delete or split clips. Undo/redo and Space keep their usual behaviour.
  */
 export function shortcutBlockedByRange(t: TargetLike, s: Shortcut): boolean {
-  return t.tagName.toUpperCase() === 'INPUT' && OWNS_EDITING_KEYS.has((t.type ?? '').toLowerCase()) && (s === 'delete' || s === 'rippleDelete' || s === 'deleteKeys' || s === 'split');
+  return t.tagName.toUpperCase() === 'INPUT' && OWNS_EDITING_KEYS.has((t.type ?? '').toLowerCase()) && (s === 'delete' || s === 'rippleDelete' || s === 'deleteKeys' || s === 'split' || s === 'copy' || s === 'paste' || s === 'duplicate');
 }
 
 /** The parts of an element that decide whether Space activates it natively. */
@@ -66,6 +66,12 @@ export function shortcutFor(e: KeyLike): Shortcut | null {
   if ((e.metaKey || e.ctrlKey) && !e.altKey) {
     if (key === 'z') return e.shiftKey ? 'redo' : 'undo';
     if (key === 'y' && e.ctrlKey && !e.shiftKey) return 'redo';
+    // Clipboard chords (never held down: one press, one action).
+    if (!e.shiftKey && !e.repeat) {
+      if (key === 'c') return 'copy';
+      if (key === 'v') return 'paste';
+      if (key === 'd') return 'duplicate';
+    }
     return null;
   }
   if (e.altKey || e.ctrlKey || e.metaKey || e.repeat) return null;

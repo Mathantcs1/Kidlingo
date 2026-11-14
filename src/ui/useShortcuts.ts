@@ -4,7 +4,7 @@ import { TRANSFORMING_CLASS } from './useTransformDrag';
 import { isTextEntry, nativeSpaceTarget } from './keys';
 import { shortcutBlockedByRange, shortcutFor } from './keys';
 import { dropKeySelectionOnEscape } from './keySelectionCommands';
-import { COMMANDS, routeShortcut } from './shortcutCommands';
+import { COMMANDS, claims, routeShortcut } from './shortcutCommands';
 
 function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && isTextEntry(target as HTMLElement & { type?: string });
@@ -49,6 +49,7 @@ export function useShortcuts(enabled: boolean): void {
       // O15: selected keyframes take Delete/Backspace before clips.
       const shortcut = routeShortcut(found);
       if (e.target instanceof HTMLInputElement && shortcutBlockedByRange(e.target, shortcut)) return;
+      if (!claims(shortcut, hasTextSelection())) return;
       e.preventDefault();
       // Held Space/S/Delete keys are swallowed rather than repeated (shortcutFor drops their repeats).
       if (shortcutFor(parts)) COMMANDS[shortcut]();
@@ -65,6 +66,9 @@ export function useShortcuts(enabled: boolean): void {
     };
   }, []);
 }
+
+/** Text selected on the page (a toast, a label): Ctrl/Cmd+C then means "copy this text", not "copy the clips". */
+const hasTextSelection = (): boolean => (window.getSelection()?.toString() ?? '') !== '';
 
 function keyParts(e: KeyboardEvent) {
   return {

@@ -18,6 +18,8 @@ export interface EditorState {
   lastError: string | null;
   /** Why the last autosave failed, or null while saving works (set by the autosave below). */
   saveError: string | null;
+  /** Counts loadProject calls (New project, session restore): UI stores holding project-bound data reset on a change. */
+  epoch: number;
 }
 
 export interface EditorActions {
@@ -40,6 +42,7 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
   playing: false,
   lastError: null,
   saveError: null,
+  epoch: 0,
 
   apply(fn) {
     const { history } = get();
@@ -94,6 +97,7 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
       playhead: 0,
       playing: false,
       lastError: null,
+      epoch: get().epoch + 1,
     });
   },
 }));
