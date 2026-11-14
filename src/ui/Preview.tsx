@@ -10,6 +10,7 @@ import { toGlUnavailable } from '../render/glErrors';
 import { buildDetailsText, describeGlFailure, probeRenderer } from './previewFailure';
 import { PreviewFailure } from './PreviewFailure';
 import type { GlFailureView } from './PreviewFailure';
+import MotionGhost, { useGhostSelect } from './MotionGhost';
 import TransformOverlay from './TransformOverlay';
 import { withLiveValue } from './transformEdits';
 import { useElementSize } from './useElementSize';
@@ -56,6 +57,7 @@ export default function Preview({ editable }: { editable: boolean }) {
   // The canvas is centred in the stage (flex), so its content box starts half the spare room in.
   const canvasBox = { left: (size.width - box.width) / 2, top: (size.height - box.height) / 2, ...box };
   const pixels = previewSize(project.format);
+  const ghostSelect = useGhostSelect(project, playhead, canvasBox);
 
   // One renderer per mount (and per Try again); StrictMode's extra mount/unmount disposes the first, so no GL
   // objects leak. Try again disposes the old renderer (cleanup) before creating one on the fresh canvas.
@@ -106,7 +108,7 @@ export default function Preview({ editable }: { editable: boolean }) {
 
   return (
     <section className="preview" aria-label="Preview">
-      <div className="preview-stage" ref={stageRef}>
+      <div className="preview-stage" ref={stageRef} {...(editable && !failure ? ghostSelect : {})}>
         <canvas
           key={attempt}
           ref={canvasRef}
@@ -116,6 +118,7 @@ export default function Preview({ editable }: { editable: boolean }) {
           height={pixels.height}
           style={{ width: box.width, height: box.height, display: failure ? 'none' : undefined }}
         />
+        {editable && !failure && <MotionGhost project={project} playhead={playhead} box={canvasBox} />}
         {editable && !failure && (
           <TransformOverlay project={project} playhead={playhead} box={canvasBox} canvasRef={canvasRef} live={live} onLive={setLive} />
         )}

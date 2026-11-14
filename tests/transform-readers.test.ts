@@ -51,6 +51,14 @@ const ALLOWED: Allowed[] = [
   ['src/ui/TransformOverlay.tsx', 'clipCorners(target.size, target.transform, format)', 'handles at the target transform (resolved at the playhead, or the live drag)'],
   ['src/ui/edits.ts', 'rotation: c.transform.rotation, opacity: c.transform.opacity', 'reads stored value on purpose: setClipFit keeps the static rotation/opacity'],
   ['src/ui/mediaEdits.ts', '(c.effects ?? []).some((e) => e.ref === mediaId)', 'reads stored value on purpose: LUT media in use (not animated)'],
+  // 5B Task 7: the animation inspector, browser and timeline bands read the RAW clip's stack in ONE place (the resolved
+  // clip has no `motion`); the ghost and the preview tiles read the DRAWN transform from resolveClip.
+  ['src/ui/presetCommands.ts', 'clip.motion?.[slot]', 'reads stored value on purpose: the RAW clip\'s preset slot (inspector, browser, timeline bands: the stack itself, edited by its own commands)'],
+  ['src/ui/presetCommands.ts', 'use.params[key]', 'reads stored value on purpose: a preset slot\'s stored param (presets are not keyframed; the slider edits this value)'],
+  ['src/ui/PresetParams.tsx', "schema.params.find((d) => d.key === 'direction')", 'not a clip: preset schema (PRESET_SCHEMA)'],
+  ['src/ui/PresetParams.tsx', 'schema.params.filter((d) => !HIDDEN.has(d.key))', 'not a clip: preset schema (PRESET_SCHEMA)'],
+  ['src/ui/motionGhost.ts', 'resolveClip(clip, t, p.format).transform', 'reads resolved clip: the DRAWN transform for the motion ghost outline and its selection hit region (D3)'],
+  ['src/ui/presetPreview.ts', 'resolveClip(cardClip(key, slot), t,', 'reads resolved clip: the preview tile card drawn by the same resolver (D10)'],
 ];
 
 /**

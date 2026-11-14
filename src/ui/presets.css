@@ -1,0 +1,249 @@
+/* Animation presets (Plan 5B Task 7): inspector section, preset browser, timeline bands, motion ghost. */
+.anim-section {
+  gap: 4px;
+}
+
+.anim-hint,
+.preset-note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.anim-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+  border-top: 1px solid var(--border);
+}
+
+.anim-slot-head {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.anim-slot-label {
+  color: var(--muted);
+}
+
+.anim-slot-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anim-remove {
+  padding: 0 6px;
+}
+
+.anim-params {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 8px;
+}
+
+.anim-param {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.anim-param > span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.anim-at {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.anim-direction {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.anim-direction button {
+  width: 26px;
+  padding: 2px 0;
+}
+
+.anim-direction button[aria-checked='true'] {
+  background: var(--accent, #4f7cff);
+  color: #fff;
+}
+
+/* The browser floats beside the inspector (fixed: the inspector body scrolls and would clip it). */
+.preset-browser {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 412px;
+  max-height: calc(100vh - 16px);
+  padding: 10px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+.preset-search {
+  width: 100%;
+}
+
+.preset-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.preset-cat {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.preset-cat[aria-selected='true'] {
+  background: var(--panel-2);
+  border-color: var(--accent, #4f7cff);
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 124px);
+  gap: 8px;
+}
+
+.preset-empty {
+  grid-column: 1 / -1;
+  margin: 8px 0;
+  color: var(--muted);
+}
+
+.preset-tile-wrap {
+  position: relative;
+}
+
+.preset-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-2);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.preset-tile.is-current {
+  border-color: var(--accent, #4f7cff);
+}
+
+.preset-tile[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.preset-tile:focus-visible {
+  outline: 2px solid var(--accent, #4f7cff);
+  outline-offset: 1px;
+}
+
+.preset-preview {
+  display: block;
+  background: rgb(0 0 0 / 0.35);
+  border-radius: 3px;
+}
+
+.preset-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset-fav {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 0 4px;
+  line-height: 1.2;
+  background: rgb(0 0 0 / 0.4);
+  border-color: transparent;
+}
+
+.preset-fav[aria-pressed='true'] {
+  color: var(--warn, #ffd166);
+}
+
+/* Timeline bands: purely visual, never take a clip drag, trim or click. */
+.motion-bands,
+.motion-band {
+  pointer-events: none;
+}
+
+.motion-bands {
+  position: absolute;
+  inset: 0;
+}
+
+.motion-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.motion-band-in {
+  background: linear-gradient(to right, rgb(255 255 255 / 0.35), rgb(255 255 255 / 0.05));
+}
+
+.motion-band-out {
+  background: linear-gradient(to left, rgb(255 255 255 / 0.35), rgb(255 255 255 / 0.05));
+}
+
+.motion-band-emphasis {
+  background: rgb(255 209 102 / 0.35);
+  border-left: 2px solid rgb(255 209 102 / 0.9);
+}
+
+.motion-band-loop {
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: 0;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.7) 0 6px, transparent 6px 10px);
+}
+
+/* The ghost of a preset-moved picture: where it is drawn while the handles stay at rest. */
+.motion-ghost-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.motion-ghost {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  opacity: 0.4;
+  pointer-events: none;
+}

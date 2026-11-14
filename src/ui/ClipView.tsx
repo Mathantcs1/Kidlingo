@@ -6,8 +6,10 @@ import type { Clip, Id, MediaRef } from '../core/model';
 import { useEditor } from '../state/store';
 import './audio.css';
 import './overlays.css';
+import './presets.css';
 import { toggleSelection } from './edits';
 import { timeToPx } from './layout';
+import MotionBands from './MotionBands';
 import Waveform from './Waveform';
 import type { DragKind } from './useClipDrag';
 
@@ -54,6 +56,7 @@ export default function ClipView({ clip, media, pps, selected, locked, dragging,
       {media && !missing && (clip.kind === 'audio' || (clip.kind === 'video' && media.hasAudio && !clip.audio.silent)) && (
         <Waveform clip={clip} mediaId={clip.mediaId} width={timeToPx(clipDuration(clip), pps)} />
       )}
+      {clip.kind !== 'audio' && <MotionBands clip={clip} pps={pps} />}
       <span className="clip-name">{name}</span>
       {missing && <span className="clip-missing">missing media</span>}
       {clip.kind === 'video' && clip.audio.silent && (

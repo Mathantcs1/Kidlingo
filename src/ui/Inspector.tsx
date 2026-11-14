@@ -4,6 +4,7 @@ import { overlayLabel } from '../core/overlays';
 import { findClip } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { liveSelection } from './edits';
+import AnimationInspector from './AnimationInspector';
 import AudioInspector from './AudioInspector';
 import BlendModeSelect from './BlendModeSelect';
 import { FitControl, VolumeControl } from './ClipBasics';
@@ -46,6 +47,7 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
       {picture && <FitControl clip={clip} disabled={!editable} />}
       {clip.kind === 'overlay' && <OverlayInspector clip={clip} editable={editable} locked={locked} />}
       {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} only={adjustment ? OPACITY_ONLY : undefined} />}
+      {clip.kind !== 'audio' && <AnimationInspector clip={clip} editable={editable} locked={locked} />}
       {(picture || adjustment) && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
       {(picture || adjustment) && <EffectsInspector clip={clip} editable={editable} locked={locked} />}
     </>
