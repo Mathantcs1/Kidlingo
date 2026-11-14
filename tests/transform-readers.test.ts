@@ -46,8 +46,14 @@ const ALLOWED: Allowed[] = [
   // through `withLiveValue(project, clipId, patch, t)` (no direct read).
   ['src/ui/overlayHit.ts', 'clipCorners(target.size, target.transform, format)', 'hit box from the target transform: resolved at the playhead by TransformOverlay (or the live drag)'],
   ['src/ui/useTransformDrag.ts', 'storeTransform: clip.transform', 'reads stored value on purpose: detects an external store change (drag start = resolvedTransform at the playhead)'],
-  ['src/ui/dragStale.ts', 'now.transform !== g.storeTransform', 'reads stored value on purpose: detects an external store change (moved from useTransformDrag.ts, 5B Task 1)'],
-  ['src/ui/TransformOverlay.tsx', 'live ? live.transform : resolvedTransform(target.clip', 'handles at the live drag transform, else the resolved transform at the playhead'],
+  ['src/ui/dragStale.ts', 'now.transform !== g.storeTransform', 'reads stored value on purpose: detects an external store change of the transform, keys or preset stack (moved from useTransformDrag.ts, 5B Task 1; motion 5B Task 8)'],
+  ['src/ui/dragStale.ts', "storeMotion?: Clip['motion'];", 'reads stored value on purpose: the type of the snapshotted stack (drag stale check)'],
+  ['src/ui/useTransformDrag.ts', "storeMotion: Clip['motion'];", 'reads stored value on purpose: the type of the snapshotted stack (drag stale check)'],
+  ['src/ui/useTransformDrag.ts', 'storeMotion: clip.motion,', 'reads stored value on purpose: detects an external store change of the preset stack (drag stale check)'],
+  // 5B Task 8: motion path drags snapshot the RAW clip to end on external edits; the orient toggle shows the stored flag.
+  ['src/ui/usePathDrag.ts', 'storeTransform: clip.transform, storeKeys: clip.keys, storeMotion: clip.motion', 'reads stored value on purpose: detects an external store change during a path drag (isStaleDrag)'],
+  ['src/ui/OrientToggle.tsx', 'const on = keys.orient === true;', 'reads stored value on purpose: the stored orient flag the toggle edits (the heading itself comes from resolvedTransform)'],
+  ['src/ui/TransformOverlay.tsx', 'if (!clip.keys) return live.transform;', 'handles at the live drag transform (static clip); a keyed clip resolves the live project at the drag playhead (5B M4)'],
   ['src/ui/TransformOverlay.tsx', 'clipCorners(target.size, target.transform, format)', 'handles at the target transform (resolved at the playhead, or the live drag)'],
   ['src/ui/edits.ts', 'rotation: c.transform.rotation, opacity: c.transform.opacity', 'reads stored value on purpose: setClipFit keeps the static rotation/opacity'],
   ['src/ui/mediaEdits.ts', '(c.effects ?? []).some((e) => e.ref === mediaId)', 'reads stored value on purpose: LUT media in use (not animated)'],

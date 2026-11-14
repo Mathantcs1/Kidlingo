@@ -13,6 +13,7 @@ import type { MotionSlot } from '../core/motionTypes';
 import { PRESET_SCHEMA } from '../core/presets';
 import { formatNumber } from './NumberField';
 import { emphasisHereCmd, paramOf, setPresetParamsCmd } from './presetCommands';
+import SpringFields from './SpringFields';
 import type { SlotUse } from './presetCommands';
 
 const DIRECTIONS = ['Left', 'Right', 'Up', 'Down', 'Up-left', 'Up-right', 'Down-left', 'Down-right'];
@@ -150,6 +151,9 @@ export default function PresetParams({ clip, slot, use, disabled }: Props) {
           ))}
         </select>
       </label>
+      {use.ease.kind === 'spring' && (
+        <SpringFields spring={use.ease.spring ?? SPRING_DEFAULT} seconds={use.duration} disabled={disabled} prefix={id('spring')} onCommit={(spring) => set({ ease: { kind: 'spring', spring } })} />
+      )}
     </div>
   );
 }

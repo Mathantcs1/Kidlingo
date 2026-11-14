@@ -3,6 +3,7 @@ import type { AnimTarget, TransformProp } from '../core/keyframeEdits';
 import type { Clip } from '../core/model';
 import { useEditor } from '../state/store';
 import KeyframeStrip from './KeyframeStrip';
+import KeyLoopControl from './KeyLoopControl';
 import { openEase } from './easeEditorStore';
 import { groupRefsAt, jumpToKeyCmd, keyAtPlayhead, keyJumpTime, toggleAnimatedCmd, toggleKeyAtPlayheadCmd } from './keyframeCommands';
 import './animation.css';
@@ -14,6 +15,9 @@ export interface KeyframeIds {
   next: string;
   key: string;
   strip: string;
+  /** The loop select and its cycle count (5B Task 8). */
+  loop: string;
+  loopCount: string;
 }
 
 export const transformKeyIds = (prop: TransformProp): KeyframeIds => ({
@@ -22,6 +26,8 @@ export const transformKeyIds = (prop: TransformProp): KeyframeIds => ({
   next: `kf-next-${prop}`,
   key: `kf-key-${prop}`,
   strip: `kf-strip-${prop}`,
+  loop: `kf-loop-${prop}`,
+  loopCount: `kf-loop-count-${prop}`,
 });
 
 interface Props {
@@ -119,6 +125,9 @@ export default function KeyframeControls({ clip, target, group, label, ids, disa
         <span aria-hidden="true">∿</span>
       </button>
       {animated && <KeyframeStrip clip={clip} target={target} group={group} label={label} testId={ids.strip} playhead={playhead} fps={fps} />}
+      {animated && (
+        <KeyLoopControl clip={clip} target={target} group={group ?? [target]} label={label} ids={{ loop: ids.loop, count: ids.loopCount }} disabled={disabled} title={title} playhead={playhead} fps={fps} />
+      )}
     </div>
   );
 }

@@ -21,6 +21,7 @@ interface Gesture extends DragInput {
   /** The store's transform and keys objects at the press (see dragStale.ts): if anything else replaces them, the drag's start is stale. */
   storeTransform: Transform;
   storeKeys: Clip['keys'];
+  storeMotion: Clip['motion'];
   /** The playhead at the press: the drag edits the clip as seen then, and commits there (a key when animated). */
   at: number;
   /** Press position (viewport CSS px); the gesture stays a click until the pointer is past the drag threshold. */
@@ -79,6 +80,7 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
       start,
       storeTransform: clip.transform,
       storeKeys: clip.keys,
+      storeMotion: clip.motion,
       at,
       startPointer: cssToFormat({ x: e.clientX, y: e.clientY }, canvasBoxOf(canvas), format),
       last: { x: e.clientX, y: e.clientY, alt: e.altKey, shift: e.shiftKey },

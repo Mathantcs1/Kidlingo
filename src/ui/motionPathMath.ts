@@ -1,10 +1,12 @@
 // DOM-free motion-path sampling (Plan 5 Task 10, read-only in 5A): the position keys of a clip, evaluated through
 // positionAt (one eased fraction for x and y; curved segments along their Bezier, 5B D6) at one sample per frame, in
-// FORMAT px (centre + offset, like the handles). Loops (5B D4) are not drawn: the path shows the keyed span, which
-// every repeat/ping-pong cycle retraces (an offset cycle draws the same shape shifted).
+// FORMAT px (centre + offset, like the handles). Loops (5B D4): the path shows the keyed span, which every
+// repeat/ping-pong cycle retraces; a Continue (offset) loop draws the same shape shifted, so its next cycles are given
+// as shifts (`cycles`, at most MAX_DRAWN_CYCLES; `moreCycles` when the loop continues beyond them, 5B Task 8).
 import { keyVisible, localRange, positionAt, segmentIndex } from '../core/keyframes';
 import { isCurved } from '../core/pathCurve';
 import type { Clip, PositionKeyframe, Project } from '../core/model';
+import { targetLoop } from '../core/targetLoops';
 import { findClip } from '../core/timeline';
 import { clipCentre } from '../render/overlayGeometry';
 import type { Point } from '../render/overlayGeometry';
@@ -19,6 +21,9 @@ const EDGE = 1e-9;
 /** Radius of a key dot in CSS px, and how far from the displayed clip centre a dot lets a press through to the move handle. */
 export const DOT_R = 5;
 export const PASS_THROUGH_PX = DOT_R + 4;
+/** Offset-loop cycles drawn (faintly) after the keyed span. */
+export const MAX_DRAWN_CYCLES = 3;
+const POSITION = { kind: 'transform', prop: 'position' } as const;
 
 /** Whether the key dot at `dot` (CSS px) must ignore the pointer because it sits on the clip centre (a press there drags the clip). */
 export function dotPassesThrough(dot: Point, centre: Point | null): boolean {
@@ -28,10 +33,39 @@ const ZERO = { scale: 1, rotation: 0, opacity: 1 };
 
 /** A position key as drawn: local time `u` and its position in format px. */
 export interface PathKey extends Point { u: number }
-/** `runs`: polylines in format px; a hold segment ends one run and starts the next (a jump, not a line). */
-export interface MotionPathData { runs: Point[][]; keys: PathKey[] }
+/**
+ * `runs`: polylines in format px; a hold segment ends one run and starts the next (a jump, not a line). `cycles`: the
+ * shifts (format px) of the next offset-loop cycles to draw; `moreCycles`: the loop goes on beyond them.
+ */
+export interface MotionPathData { runs: Point[][]; keys: PathKey[]; cycles: Point[]; moreCycles: boolean }
 
-const toFormat = (p: { x: number; y: number }, format: Size): Point => clipCentre({ x: p.x, y: p.y, ...ZERO }, format);
+/** A position (offset from the canvas centre) in format px, where the handles place a clip centred there. */
+export const toFormat = (p: { x: number; y: number }, format: Size): Point => clipCentre({ x: p.x, y: p.y, ...ZERO }, format);
+
+/**
+ * The shifts of the Continue (offset) loop cycles that START inside the visible range (D4: cycle c adds c × (last −
+ * first)), at most MAX_DRAWN_CYCLES and the loop's count; `more` when further cycles would start in range.
+ */
+export function offsetCycles(clip: Clip): { cycles: Point[]; more: boolean } {
+  const list = clip.keys?.position ?? [];
+  const loop = targetLoop(clip, POSITION);
+  const none = { cycles: [], more: false };
+  if (!loop || loop.mode !== 'offset' || list.length < 2) return none;
+  const first = list[0];
+  const last = list[list.length - 1];
+  const period = last.t - first.t;
+  const d = { x: last.x - first.x, y: last.y - first.y };
+  if (!(period > 0) || (d.x === 0 && d.y === 0)) return none;
+  const hi = localRange(clip)[1];
+  const max = loop.count ?? Infinity;
+  const cycles: Point[] = [];
+  let c = 1;
+  for (; c <= max && first.t + c * period < hi - EDGE; c++) {
+    if (cycles.length === MAX_DRAWN_CYCLES) return { cycles, more: true };
+    cycles.push({ x: c * d.x, y: c * d.y });
+  }
+  return { cycles, more: false };
+}
 
 /**
  * The path of `clip`'s position keys over the part of its visible local range between the first and last key (an end
@@ -42,7 +76,8 @@ const toFormat = (p: { x: number; y: number }, format: Size): Point => clipCentr
  */
 export function sampleMotionPath(clip: Clip, fps: number, format: Size): MotionPathData {
   const list = clip.keys?.position ?? [];
-  const out: MotionPathData = { runs: [], keys: [] };
+  const loop = offsetCycles(clip);
+  const out: MotionPathData = { runs: [], keys: [], cycles: loop.cycles, moreCycles: loop.more };
   if (list.length === 0) return out;
   for (const k of list) if (keyVisible(clip, k.t)) out.keys.push({ u: k.t, ...toFormat(k, format) });
   const [lo, hi] = localRange(clip);
@@ -92,13 +127,14 @@ const cache = new WeakMap<PositionKeyframe[], { sig: string; data: MotionPathDat
 /**
  * `sampleMotionPath` memoised on the position key list (an edit makes a new array, so playback frames, selection and
  * moves reuse the same object; every path edit (key move, tangents, smooth) makes a new list too, 5B D6); the
- * signature covers what else the result depends on: the visible range, fps, format.
+ * signature covers what else the result depends on: the visible range, fps, format and the position loop.
  */
 export function cachedMotionPath(clip: Clip, fps: number, format: Size): MotionPathData {
   const list = clip.keys?.position;
   if (!list) return sampleMotionPath(clip, fps, format);
   const [lo, hi] = localRange(clip);
-  const sig = `${lo}|${hi}|${fps}|${format.width}x${format.height}`;
+  const loop = targetLoop(clip, POSITION);
+  const sig = `${lo}|${hi}|${fps}|${format.width}x${format.height}|${loop?.mode}:${loop?.count}`;
   const hit = cache.get(list);
   if (hit && hit.sig === sig) return hit.data;
   const data = sampleMotionPath(clip, fps, format);

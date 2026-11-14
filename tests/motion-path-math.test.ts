@@ -52,7 +52,7 @@ describe('sampleMotionPath', () => {
   });
 
   it('no keys: nothing', () => {
-    expect(sampleMotionPath(mk('c'), FPS, F)).toEqual({ runs: [], keys: [] });
+    expect(sampleMotionPath(mk('c'), FPS, F)).toEqual({ runs: [], keys: [], cycles: [], moreCycles: false });
   });
 
   it('keys outside the visible range: no dots for them; the path is cut at the clip edges (position there, not a key)', () => {
@@ -71,8 +71,8 @@ describe('sampleMotionPath', () => {
   });
 
   it('all keys before or after the visible range: constant position, no path and no dots', () => {
-    expect(sampleMotionPath(withKeys([pk(0, 0, 0), pk(1, 9, 9)], { in: 2, out: 6 }), FPS, F)).toEqual({ runs: [], keys: [] });
-    expect(sampleMotionPath(withKeys([pk(7, 0, 0), pk(8, 9, 9)], { in: 2, out: 6 }), FPS, F)).toEqual({ runs: [], keys: [] });
+    expect(sampleMotionPath(withKeys([pk(0, 0, 0), pk(1, 9, 9)], { in: 2, out: 6 }), FPS, F)).toEqual({ runs: [], keys: [], cycles: [], moreCycles: false });
+    expect(sampleMotionPath(withKeys([pk(7, 0, 0), pk(8, 9, 9)], { in: 2, out: 6 }), FPS, F)).toEqual({ runs: [], keys: [], cycles: [], moreCycles: false });
   });
 
   it('a sourceless clip (overlay/local range 0..duration) maps keys the same way', () => {

@@ -17,7 +17,8 @@ export const KEY_HINT = 'A white, grey or black key colour removes all whites, g
 
 const effectKeyIds = (effectId: string, param: string) => {
   const base = `fx-${effectId}-${param}-kf`;
-  return { toggle: base, prev: `${base}-prev`, next: `${base}-next`, key: `${base}-key`, strip: `${base}-strip` };
+  const loop = `fx-${effectId}-${param}-loop`;
+  return { toggle: base, prev: `${base}-prev`, next: `${base}-next`, key: `${base}-key`, strip: `${base}-strip`, loop, loopCount: `${loop}-count` };
 };
 
 /** The value of `param` seen at the playhead: evaluated while animated, else the stored value. */

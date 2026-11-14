@@ -106,8 +106,8 @@ export function setKeyPosition(p: Project, clipId: Id, u: number, xy: Vec): Proj
   return commit(p, clipId, clip, changed(p, clip, { u, xy }));
 }
 
-/** Catmull-Rom tangents of key i (D6): along prev → next, each one third of the chord to its own neighbour. */
-function smoothKey(list: readonly PositionKeyframe[], i: number): PositionKeyframe {
+/** Catmull-Rom tangents of key i (D6): along prev → next, each one third of the chord to its own neighbour (also the canvas handles' defaults). */
+export function smoothKey(list: readonly PositionKeyframe[], i: number): PositionKeyframe {
   const k = list[i];
   const prev = list[i - 1];
   const next = list[i + 1];

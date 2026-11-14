@@ -123,3 +123,26 @@
   padding: 2px 3px;
   font-size: 11px;
 }
+
+/* Spring (Plan 5B Task 8): four preset chips, three numeric fields, the "still moving" note. */
+.spring-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spring-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.spring-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.spring-note {
+  color: var(--warn);
+}

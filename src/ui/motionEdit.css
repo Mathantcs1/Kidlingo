@@ -1,0 +1,99 @@
+/* Plan 5B Task 8: the key loop control under a keyframe row, and on-canvas motion path editing (tangent handles,
+   the Smooth path chip, offset-loop cycles). */
+.kf-loop {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.kf-loop-mode {
+  font-size: 11px;
+  padding: 1px 2px;
+}
+
+.kf-loop-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.kf-loop-count input {
+  width: 44px;
+  padding: 1px 3px;
+  font-size: 11px;
+}
+
+.kf-loop-hint {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--warn);
+}
+
+/* A dot just clicked keeps the pointer for a moment (a double-click's second press), even on the clip centre. */
+.motion-keys-layer .motion-key[data-armed='true'] {
+  pointer-events: auto;
+}
+
+/* A smooth key (both tangents, not broken) reads lighter than a corner. */
+.motion-key:not([data-corner='true']):not([data-current='true']) {
+  fill: #dff;
+}
+
+.mp-tangent-stem {
+  stroke: var(--accent);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.motion-tangent {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 1.5;
+  pointer-events: auto;
+  cursor: grab;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.8));
+}
+
+.motion-tangent[data-empty='true'] {
+  fill: transparent;
+  stroke-dasharray: 2 2;
+}
+
+.mp-cycle {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.mp-toolbar {
+  position: absolute;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.mp-toolbar button {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 10px;
+}
+
+.mp-loop-hint {
+  color: #fff;
+  text-shadow: 0 0 2px #000;
+}
+
+.kf-orient {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}

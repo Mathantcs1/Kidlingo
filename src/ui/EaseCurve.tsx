@@ -7,6 +7,8 @@ import type { Bezier } from './easeEditorMath';
 interface Props {
   /** The curve to draw (the live draft while dragging). */
   ease: Ease;
+  /** The segment's physical seconds (a spring's curve depends on them, 5B D5). */
+  seconds?: number;
   /** Handles of `ease` when it is a cubic Bézier equivalent; null (hold, back, elastic, bounce) shows no handles. */
   bezier: Bezier | null;
   disabled: boolean;
@@ -24,7 +26,7 @@ const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
  * draggable handles (focusable sliders: arrows nudge by 0.01, Shift by 0.1). Handles are clamped to x in [0, 1],
  * y in [-1, 2]. A drag or nudge only drafts; the release commits (parent).
  */
-export default function EaseCurve({ ease, bezier, disabled, onDraft, onRelease, onCancel }: Props) {
+export default function EaseCurve({ ease, seconds = 1, bezier, disabled, onDraft, onRelease, onCancel }: Props) {
   const svg = useRef<SVGSVGElement>(null);
   const dragging = useRef<1 | 2 | null>(null);
   const nudged = useRef(false);
@@ -118,7 +120,7 @@ export default function EaseCurve({ ease, bezier, disabled, onDraft, onRelease, 
     <svg ref={svg} className="ease-plot" data-testid="ease-plot" viewBox={`0 0 ${v.w} ${v.h}`} width={v.w} height={v.h} role="group" aria-label="Ease curve">
       <rect className="ease-unit" x={origin.px} y={end.py} width={end.px - origin.px} height={origin.py - end.py} />
       <line className="ease-diagonal" x1={origin.px} y1={origin.py} x2={end.px} y2={end.py} />
-      <path className="ease-curve" data-testid="ease-curve" data-kind={ease.kind} d={curvePath(ease, FRAME)} />
+      <path className="ease-curve" data-testid="ease-curve" data-kind={ease.kind} d={curvePath(ease, FRAME, 64, seconds)} />
       {handle(1)}
       {handle(2)}
       <circle className="ease-end" cx={origin.px} cy={origin.py} r={3} />

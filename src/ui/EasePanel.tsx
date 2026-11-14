@@ -1,6 +1,6 @@
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { EASE_KINDS, isSameEase } from '../core/easing';
+import { useEffect, useRef, useState } from 'react';
+import { EASE_KINDS, SPRING_DEFAULT, isSameEase } from '../core/easing';
 import type { Ease, EaseKind } from '../core/easing';
 import { targetKeys } from '../core/keyframeEdits';
 import type { KeyRef } from '../core/keyframeEdits';
@@ -8,18 +8,18 @@ import { tooClose } from '../core/keyframes';
 import type { Clip, Project } from '../core/model';
 import { useEditor } from '../state/store';
 import EaseCurve from './EaseCurve';
-import { bezierOf, clampHandle, parseField, round3 } from './easeEditorMath';
+import { bezierOf, clampHandle, parseField, round3, segmentSeconds } from './easeEditorMath';
 import type { Bezier } from './easeEditorMath';
-import { closeEase, useEaseEditor } from './easeEditorStore';
+import { closeEase } from './easeEditorStore';
 import type { EaseOpen } from './easeEditorStore';
 import { setEaseCmd } from './keyframeCommands';
+import SpringFields from './SpringFields';
+import { useEasePanelChrome } from './useEasePanelChrome';
 import './ease.css';
 
 const LABELS: Record<EaseKind, string> = {
   linear: 'Linear', hold: 'Hold', easeIn: 'Ease in', easeOut: 'Ease out', easeInOut: 'Ease in-out', back: 'Back', elastic: 'Elastic', bounce: 'Bounce', bezier: 'Custom', spring: 'Spring',
 };
-/** The preset buttons: 'spring' is offered with its parameter fields in 5B Task 8 (it is stored data from v7). */
-const OFFERED = EASE_KINDS.filter((k) => k !== 'spring');
 const FIELDS = ['x1', 'y1', 'x2', 'y2'] as const;
 const CSS_EASE: Bezier = [0.25, 0.1, 0.25, 1];
 
@@ -52,52 +52,16 @@ export default function EasePanel({ open }: { open: EaseOpen }) {
   const lastCount = found ? open.refs.filter((r) => { const l = targetKeys(found.clip, r.target) ?? []; return l.length > 0 && tooClose(l[l.length - 1].t, r.t); }).length : 0;
   const shown = draft ?? committed;
   const handles = bezierOf(shown);
+  // The segment each key owns, in physical seconds (a spring's shape depends on it, D5); the curve shows the first.
+  // (A last key owns no segment and does not count; none at all reads as 1 s.)
+  const secs = found ? open.refs.flatMap((r) => segmentSeconds(targetKeys(found.clip, r.target), r.t) ?? []) : [];
+  const seconds = secs[0] ?? 1;
+  const mixedSeconds = secs.some((x) => Math.abs(x - seconds) > 1e-9);
 
   useEffect(() => {
     if (gone) closeEase();
   }, [gone]);
-  // Escape closes without committing anything pending (capture: the global shortcuts and drags never see it);
-  // a press outside commits a pending number (blur) and closes.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape') return;
-      // Only when focus is in the panel, on its opener, or nowhere: other consumers (a number draft, a dialog) own their Escape.
-      const a = document.activeElement;
-      const mine = !a || a === document.body || !!panel.current?.contains(a) || a === useEaseEditor.getState().open?.returnTo;
-      if (!mine) return;
-      cancelled.current = true;
-      e.preventDefault();
-      e.stopPropagation();
-      closeEase();
-    };
-    const onDown = (e: Event): void => {
-      if (panel.current?.contains(e.target as Node)) return;
-      if (panel.current?.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
-      closeEase();
-    };
-    window.addEventListener('keydown', onKey, true);
-    document.addEventListener('pointerdown', onDown, true);
-    return () => {
-      window.removeEventListener('keydown', onKey, true);
-      document.removeEventListener('pointerdown', onDown, true);
-    };
-  }, []);
-  useEffect(() => {
-    (panel.current?.querySelector<HTMLElement>('[aria-pressed="true"]') ?? panel.current?.querySelector<HTMLElement>('button'))?.focus();
-  }, []);
-  // Placed under (or over) the diamond that opened it, kept inside the window.
-  useLayoutEffect(() => {
-    const el = panel.current;
-    if (!el) return;
-    const w = el.offsetWidth;
-    const h = el.offsetHeight;
-    const a = open.anchor;
-    const left = a ? Math.min(Math.max(8, a.left - w / 2), window.innerWidth - w - 8) : (window.innerWidth - w) / 2;
-    const below = a ? a.bottom + 8 : 8;
-    const top = a && below + h > window.innerHeight - 8 ? Math.max(8, a.top - h - 8) : below;
-    el.style.left = `${Math.max(8, left)}px`;
-    el.style.top = `${top}px`;
-  }, [open]);
+  useEasePanelChrome(panel, open, cancelled);
 
   // Keys pressed inside the panel (preset buttons, handles) must not reach the global shortcuts (delete, space, nudge);
   // number inputs already own theirs.
@@ -119,7 +83,8 @@ export default function EasePanel({ open }: { open: EaseOpen }) {
   };
   const choose = (kind: EaseKind): void => {
     setDraft(null);
-    commit(kind === 'bezier' ? { kind, bezier: bezierOf(shown) ?? [...CSS_EASE] } : { kind });
+    if (kind === 'spring') commit({ kind, spring: { ...(shown.kind === 'spring' && shown.spring ? shown.spring : SPRING_DEFAULT) } });
+    else commit(kind === 'bezier' ? { kind, bezier: bezierOf(shown) ?? [...CSS_EASE] } : { kind });
   };
   const commitField = (i: number): void => {
     const text = texts[i];
@@ -142,11 +107,11 @@ export default function EasePanel({ open }: { open: EaseOpen }) {
           ×
         </button>
       </div>
-      <p className="ease-note">The curve shapes the segment from this key to the next.{mixed && ' The keys differ; showing the first.'}{locked && ' Track is locked.'}
+      <p className="ease-note">The curve shapes the segment from this key to the next.{mixed && ' The keys differ; showing the first.'}{shown.kind === 'spring' && mixedSeconds && ' The segments differ in length; the curve shows the first.'}{locked && ' Track is locked.'}
         {lastCount > 0 && (lastCount === open.refs.length ? ' Last key: its ease only applies if a key is added after it.' : ' Some keys are last in their list: their ease only applies if a key is added after them.')}
       </p>
       <div className="ease-presets" role="group" aria-label="Ease presets">
-        {OFFERED.map((kind) => (
+        {EASE_KINDS.map((kind) => (
           <button
             key={kind}
             type="button"
@@ -160,8 +125,9 @@ export default function EasePanel({ open }: { open: EaseOpen }) {
           </button>
         ))}
       </div>
-      <EaseCurve ease={shown} bezier={handles} disabled={locked} onDraft={(b: Bezier) => setDraft({ kind: 'bezier', bezier: b })} onRelease={release} onCancel={() => setDraft(null)} />
-      <div className="ease-fields">
+      <EaseCurve ease={shown} seconds={seconds} bezier={handles} disabled={locked} onDraft={(b: Bezier) => setDraft({ kind: 'bezier', bezier: b })} onRelease={release} onCancel={() => setDraft(null)} />
+      {shown.kind === 'spring' && <SpringFields spring={shown.spring ?? SPRING_DEFAULT} seconds={seconds} disabled={locked} onCommit={(spring) => commit({ kind: 'spring', spring })} />}
+      {shown.kind !== 'spring' && <div className="ease-fields">
         {FIELDS.map((name, i) => (
           <label key={name} className="ease-field">
             <span>{name}</span>
@@ -185,7 +151,7 @@ export default function EasePanel({ open }: { open: EaseOpen }) {
             />
           </label>
         ))}
-      </div>
+      </div>}
     </div>
   );
 }

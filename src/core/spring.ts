@@ -48,5 +48,13 @@ export function springEase(s: SpringParams, u: number, seconds: number): number 
   return springAt(s, u * S) - u * springAt(s, S) + u;
 }
 
-/** How far the spring is from rest at the end of a `seconds` segment, |1 − x(S)| (the ease editor's "does not settle" note). */
-export const springResidual = (s: SpringParams, seconds: number): number => Math.abs(1 - springAt(s, seconds));
+/**
+ * How far the spring is from rest at the end of a `seconds` segment, |1 − x(S)| (the ease editor's "does not settle"
+ * note). Never NaN (P5B-3): infinite time settles any damped spring (0) but not an undamped one (1, it oscillates
+ * forever, where cos(∞) would be NaN); other invalid seconds read as 1 like springEase.
+ */
+export function springResidual(s: SpringParams, seconds: number): number {
+  if (seconds === Infinity) return s.damping > 0 ? 0 : 1;
+  const r = Math.abs(1 - springAt(s, seconds > 0 && Number.isFinite(seconds) ? seconds : 1));
+  return Number.isFinite(r) ? r : 1;
+}

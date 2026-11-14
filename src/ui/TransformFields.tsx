@@ -7,6 +7,7 @@ import { useEditor } from '../state/store';
 import { TransformKeyframes } from './KeyframeControls';
 import { setTransformAtCmd } from './keyframeCommands';
 import NumberField from './NumberField';
+import OrientToggle from './OrientToggle';
 import { guard } from './Toast';
 import { resetClipTransform } from './transformEdits';
 
@@ -109,6 +110,7 @@ export default function TransformFields({ clip, editable, locked, only }: { clip
         </button>}
       </div>
       <TransformKeyframes clip={clip} props={props} disabled={disabled} title={title} />
+      {!only && <OrientToggle clip={clip} disabled={disabled} title={title} />}
     </div>
   );
 }

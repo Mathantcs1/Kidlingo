@@ -13,6 +13,8 @@ import type { GlFailureView } from './PreviewFailure';
 import MotionGhost, { useGhostSelect } from './MotionGhost';
 import TransformOverlay from './TransformOverlay';
 import { withLiveValue } from './transformEdits';
+import { withLivePath } from '../core/pathEdits';
+import type { LivePath } from './usePathDrag';
 import { useElementSize } from './useElementSize';
 import type { LiveTransform } from './overlayHit';
 
@@ -49,8 +51,12 @@ export default function Preview({ editable }: { editable: boolean }) {
   const [generation, setGeneration] = useState(0);
 
   const [live, setLive] = useState<LiveTransform | null>(null);
+  const [livePath, setLivePath] = useState<LivePath | null>(null);
+  // A motion path drag (5B Task 8) exactly as its release commits it (withLivePath, unguarded): the overlay, the path
+  // and the ghost follow it too.
+  const pathShown = useMemo(() => (livePath ? withLivePath(project, livePath.clipId, livePath.change) : project), [project, livePath]);
   // The drag's patch written at its playhead exactly as the release commits it (a key when animated), unguarded.
-  const shown = useMemo(() => (live ? withLiveValue(project, live.clipId, live.patch, live.t) : project), [project, live]);
+  const shown = useMemo(() => (live ? withLiveValue(pathShown, live.clipId, live.patch, live.t) : pathShown), [pathShown, live]);
 
   const room = { width: Math.max(0, size.width - 2 * HANDLE_ROOM), height: Math.max(0, size.height - 2 * HANDLE_ROOM) };
   const box = fitBox(room, project.format);
@@ -118,9 +124,9 @@ export default function Preview({ editable }: { editable: boolean }) {
           height={pixels.height}
           style={{ width: box.width, height: box.height, display: failure ? 'none' : undefined }}
         />
-        {editable && !failure && <MotionGhost project={project} playhead={playhead} box={canvasBox} />}
+        {editable && !failure && <MotionGhost project={pathShown} playhead={playhead} box={canvasBox} />}
         {editable && !failure && (
-          <TransformOverlay project={project} playhead={playhead} box={canvasBox} canvasRef={canvasRef} live={live} onLive={setLive} />
+          <TransformOverlay project={pathShown} playhead={playhead} box={canvasBox} canvasRef={canvasRef} live={live} onLive={setLive} onLivePath={setLivePath} />
         )}
         {failure && 'message' in failure && (
           <p className="preview-message" role="status" data-testid="preview-unavailable">

@@ -2,10 +2,12 @@
 // position stopwatch off, or key removal down to fewer than two position keys) the heading at the playhead is baked
 // into the STORED rotation in that same edit, so the playhead frame keeps its rotation (the 5A stopwatch-off rule).
 // Other frames change: the heading no longer follows the path there. Pure.
-import { KEYED_ROTATION_LIMIT } from './keyframes';
-import type { Clip, TransformKeys } from './model';
+import { commitClip } from './keyEditHelpers';
+import { KEYED_ROTATION_LIMIT, localRange, localTime } from './keyframes';
+import type { Clip, Id, Project, TransformKeys } from './model';
+import { setOrient } from './pathEdits';
 import { orientHeading } from './spatialPath';
-import { TimelineError } from './timeline';
+import { TimelineError, findClip } from './timeline';
 import { normaliseDegrees } from './transformLimits';
 
 export const BAKE_RANGE_REFUSAL = 'The rotation keyframes would leave their range: change them before removing the motion path';
@@ -34,4 +36,18 @@ export function bakeDroppedHeading(before: Clip, after: Clip, u: number): Clip {
     return { ...next, keys: { ...next.keys!, rotation: moved } };
   }
   return { ...next, transform: { ...next.transform, rotation: normaliseDegrees(next.transform.rotation + h) } };
+}
+
+/**
+ * The inspector's orient toggle (5B Task 8): `on` is setOrient; OFF also bakes the heading at the playhead `t` (clamped
+ * onto the clip's local range, like removeKeys) into the stored rotation, so the frame at the playhead keeps its
+ * picture (the stopwatch-off rule; setOrient(false) alone does not bake). Lock guard and no-ops as setOrient.
+ */
+export function setOrientAt(p: Project, clipId: Id, on: boolean, t: number): Project {
+  const q = setOrient(p, clipId, on);
+  if (on || q === p) return q;
+  const before = findClip(p, clipId).clip;
+  const [lo, hi] = localRange(before);
+  const u = Math.min(hi, Math.max(lo, localTime(before, t, p.format.fps)));
+  return commitClip(q, clipId, bakeDroppedHeading(before, findClip(q, clipId).clip, u));
 }

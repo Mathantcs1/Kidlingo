@@ -2,6 +2,7 @@
 // fraction [0, 1]; y is the progress [-1, 2] (overshoot allowed); the unit square sits inside the taller plot.
 import { easeAt } from '../core/easing';
 import type { Ease } from '../core/easing';
+import { tooClose } from '../core/keyframes';
 
 export type Bezier = [number, number, number, number];
 export interface Handle {
@@ -80,8 +81,11 @@ export function parseField(text: string): number | null {
 
 const num = (v: number): string => String(Math.round(v * 1000) / 1000);
 
-/** The SVG path of the eased progress curve; `hold` is the step it really is (flat, then a jump at the next key). */
-export function curvePath(e: Ease, f: Frame = FRAME, samples = 64): string {
+/**
+ * The SVG path of the eased progress curve; `hold` is the step it really is (flat, then a jump at the next key).
+ * `seconds` is the segment's real duration: a spring's shape depends on it (D5, physical seconds).
+ */
+export function curvePath(e: Ease, f: Frame = FRAME, samples = 64, seconds = 1): string {
   const at = (x: number, y: number): string => {
     const p = toSvg({ x, y }, f);
     return `${num(p.px)} ${num(p.py)}`;
@@ -92,7 +96,13 @@ export function curvePath(e: Ease, f: Frame = FRAME, samples = 64): string {
   const pts: string[] = [];
   for (let i = 0; i <= samples; i++) {
     const u = i / samples;
-    pts.push(at(u, Math.min(Y_MAX, Math.max(Y_MIN, easeAt(e, u)))));
+    pts.push(at(u, Math.min(Y_MAX, Math.max(Y_MIN, easeAt(e, u, seconds)))));
   }
   return `M${pts[0]}${pts.slice(1).map((p) => `L${p}`).join('')}`;
+}
+
+/** The seconds of the segment a key at local time `t` owns (to the next key, D5), as valueAt passes them; null for a last key (no segment). */
+export function segmentSeconds(list: readonly { t: number }[] | undefined, t: number): number | null {
+  const i = (list ?? []).findIndex((k) => tooClose(k.t, t));
+  return list && i >= 0 && i + 1 < list.length ? list[i + 1].t - list[i].t : null;
 }

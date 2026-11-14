@@ -7,7 +7,8 @@ import { OUTSIDE_REFUSAL, keyTimes, removeKeys, setKeyEase, setValueAt, targetKe
 import type { AnimTarget, AnimValue, KeyRef } from '../core/keyframeEdits';
 import type { Ease } from '../core/easing';
 import { clipEnd } from '../core/model';
-import type { Clip, Id, Project, Transform } from '../core/model';
+import { setKeyLoop } from '../core/loopEdits';
+import type { Clip, Id, KeyLoop, Project, Transform } from '../core/model';
 import { TimelineError, findClip } from '../core/timeline';
 import { setTargetsAnimated, setTargetsAt } from '../core/targetGroups';
 import { setTransformAt } from '../core/transformKeyEdits';
@@ -124,3 +125,7 @@ export function groupRefsAt(clip: Clip, group: readonly AnimTarget[], u: number)
     return k ? [{ target, t: k.t }] : [];
   });
 }
+
+/** Sets (or removes, null) the loop of `group`'s targets (the chroma colour's three params loop together), ONE step. */
+export const setLoopCmd = (clipId: Id, group: readonly AnimTarget[], loop: KeyLoop | null): void =>
+  apply((p) => group.reduce((q, target) => setKeyLoop(q, clipId, target, loop), p));
