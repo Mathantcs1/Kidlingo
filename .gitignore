@@ -6,3 +6,5 @@ playwright-report
 *.tsbuildinfo
 tests/e2e/.fixtures/
 public/licenses/
+# Local secrets written by `elevenlabs onboard`
+/.env.local
