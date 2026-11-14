@@ -3,6 +3,7 @@
 import { evalKeys } from './keyLoops';
 import { localTime } from './keyframes';
 import type { Clip, Keyframe, Transform, VideoEffect } from './model';
+import { composeMotion, motionAt } from './motion';
 import { evalPosition, orientHeading } from './spatialPath';
 import { animatableParam } from './videoEffects';
 
@@ -66,19 +67,29 @@ function resolveEffect(e: VideoEffect, u: number): VideoEffect {
 }
 
 /**
- * The clip as seen at timeline time `t` (D7): the SAME object when nothing is animated; otherwise a shallow copy
+ * The clip as seen at timeline time `t` (D7), DRAWN: the base (keys, loops, path, orient) with the animation stack
+ * composed on top (5B D3). The SAME object when nothing is animated and there is no `motion`; otherwise a shallow copy
  * whose `transform` and `effects[].params` hold the evaluated values and which carries no `keys` (on the clip or its
- * effects) and no effect `loops`. Effects without keys and an unanimated transform are shared with the input, which is never mutated.
+ * effects), no effect `loops` and no `motion`. When no preset slot is active at `t` the transform is the base itself.
+ * Effects without keys and an unanimated transform are shared with the input, which is never mutated.
  */
 export function resolveClip(clip: Clip, t: number, format: ResolveFormat): Clip {
-  if (!isAnimated(clip)) return clip;
-  const { keys: _keys, ...rest } = clip;
+  const motion = clip.motion;
+  if (!isAnimated(clip)) {
+    if (motion === undefined) return clip;
+    const { motion: _motion, ...still } = clip;
+    const o = motionAt(clip, t, format);
+    return o ? { ...still, transform: composeMotion(clip.transform, o) } : still;
+  }
+  const { keys: _keys, motion: _motion, ...rest } = clip;
   const anyEffect = clip.effects.some((e) => e.keys !== undefined);
   const { fps } = format;
   const u = anyEffect ? localTime(clip, t, fps) : 0;
+  const base = resolvedTransform(clip, t, fps);
+  const o = motion === undefined ? null : motionAt(clip, t, format);
   return {
     ...rest,
-    transform: resolvedTransform(clip, t, fps),
+    transform: o ? composeMotion(base, o) : base,
     effects: anyEffect ? clip.effects.map((e) => resolveEffect(e, u)) : clip.effects,
   };
 }

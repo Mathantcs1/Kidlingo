@@ -101,8 +101,8 @@ describe('spring eases on keys (D5)', () => {
   });
 });
 
-describe('clip operations keep v7 data until Tasks 3-5 refine them', () => {
-  it('split keeps loops, orient, tangents, effect loops and motion on both halves; the result re-migrates unchanged', () => {
+describe('clip operations keep v7 data (Tasks 3-5 rules)', () => {
+  it('split keeps loops, orient, tangents, effect loops on both halves, the entrance on the left (D12); the result re-migrates unchanged', () => {
     const two = [num(0, 0), num(2, 1)];
     const keys = { position: [pos(0, { out: { x: 5, y: 5 } }), pos(2, { in: { x: -5, y: 0 }, broken: true })], opacity: two, loops: { opacity: loop('repeat', 2) }, orient: true };
     const fx = colour({ keys: { brightness: two }, loops: { brightness: loop('offset') } });
@@ -114,8 +114,9 @@ describe('clip operations keep v7 data until Tasks 3-5 refine them', () => {
       expect(c.keys!.loops).toEqual({ opacity: loop('repeat', 2) });
       expect(c.keys!.orient).toBe(true);
       expect(c.effects[0].loops).toEqual({ brightness: loop('offset') });
-      expect(c.motion).toEqual(motion);
     }
+    expect(left.motion).toEqual(motion);
+    expect('motion' in right).toBe(false);
     expect(left.keys!.position![0].out).toEqual({ x: 5, y: 5 });
     expect(right.keys!.position!.at(-1)).toMatchObject({ in: { x: -5, y: 0 }, broken: true });
     expect(ok(q)).toEqual(q);

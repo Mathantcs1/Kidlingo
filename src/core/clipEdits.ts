@@ -2,7 +2,9 @@ import { cloneEffects, fitFades, withAudio } from './clipAudio';
 import { cloneVideoEffects } from './clipEffects';
 import { copyKey, mapEffectKeys, mapTransformKeys, shiftKeys, splitKeys } from './keyLists';
 import type { AnyKey } from './keyLists';
+import { withMotion } from './migrateMotion';
 import { clipDuration, clipEnd, isSourceless, newId } from './model';
+import { shiftMotion, splitMotion } from './motionClipOps';
 import type { Clip, Id, Project, TransformKeys } from './model';
 import { EPS, MIN_CLIP, TimelineError, assertFinite, assertFree, assertUnlocked, findClip, mapClips, replaceClip } from './timeline';
 
@@ -36,10 +38,10 @@ export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: nu
   if (edge === 'start') {
     const delta = time - clip.start;
     // An overlay or adjustment clip has no source: its start can move either way; `in` stays 0 (an overlay's
-    // animation runs from `start`). Its keys shift by −Δ so they stay put in timeline time (Plan 5 D3); a sourced
-    // clip's keys stay on their footage frame unchanged.
+    // animation runs from `start`). Its keys shift by −Δ so they stay put in timeline time (Plan 5 D3), and so do its
+    // emphasis and loop cycles (5B D12: at −= Δ, phase += Δ); a sourced clip's keys and stack stay on their footage.
     next = isSourceless(clip)
-      ? { ...shiftClipKeys(clip, -delta), start: time, in: 0, out: clipDuration(clip) - delta }
+      ? { ...withMotion(shiftClipKeys(clip, -delta), clip.motion && shiftMotion(clip.motion, delta)), start: time, in: 0, out: clipDuration(clip) - delta }
       : { ...clip, start: time, in: clip.in + delta };
     if (next.in < -EPS || next.start < -EPS) throw new TimelineError('Trim extends beyond source');
   } else {
@@ -68,14 +70,17 @@ export function splitClip(p: Project, clipId: Id, time: number): Project {
   const shift = isSourceless(clip) ? -d : 0;
   const leftKeys = part(lo, mid, 0);
   const rightKeys = part(mid, hi, shift);
+  // The animation stack (5B D12): left keeps in/loop and an emphasis starting before the cut, right keeps out/loop and
+  // an emphasis starting after it (a sourceless right half's emphasis/loop shift with its local time).
+  const [leftMotion, rightMotion] = splitMotion(clip.motion, mid, shift);
   // The left half keeps the fade-in, the right half the fade-out; effects are copied with new ids to both.
   // Each half's fade is re-clamped to the half's own duration.
   const left: Clip = {
-    ...withClipKeys(clip, mapTransformKeys(clip.keys, leftKeys, leftKeys)), out: cut, effects: cloneVideoEffects(clip.effects, leftKeys),
+    ...withMotion(withClipKeys(clip, mapTransformKeys(clip.keys, leftKeys, leftKeys)), leftMotion), out: cut, effects: cloneVideoEffects(clip.effects, leftKeys),
     audio: fitFades({ ...clip.audio, fadeOut: 0, effects: cloneEffects(clip.audio.effects) }, cut - clip.in),
   };
   const right: Clip = {
-    ...withClipKeys(clip, mapTransformKeys(clip.keys, rightKeys, rightKeys)), id: newId(), start: time, in: cut,
+    ...withMotion(withClipKeys(clip, mapTransformKeys(clip.keys, rightKeys, rightKeys)), rightMotion), id: newId(), start: time, in: cut,
     effects: cloneVideoEffects(clip.effects, rightKeys),
     audio: fitFades({ ...clip.audio, fadeIn: 0, effects: cloneEffects(clip.audio.effects) }, clip.out - cut),
   };

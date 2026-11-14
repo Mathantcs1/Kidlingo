@@ -44,10 +44,29 @@ export interface ClipMotion {
   out?: PresetUse;
 }
 
-/** D14 limits (seconds). */
+/** D14 limits (seconds). `time` bounds the stored emphasis `at` and loop `phase` (Task 5, review M6). */
 export const MOTION_LIMITS = {
   duration: [0.05, 30],
   delay: [0, 30],
   period: [0.1, 60],
   count: [1, 1000],
+  time: [-1e6, 1e6],
 } as const;
+
+/** An emphasis `at` or loop `phase` bounded to MOTION_LIMITS.time (finite input; −0 becomes 0). */
+export function boundMotionTime(v: number): number {
+  const [lo, hi] = MOTION_LIMITS.time;
+  return (v < lo ? lo : v > hi ? hi : v) + 0;
+}
+
+/** What one preset slot does to the picture at one instant (D3): position/rotation offsets add, factors multiply. */
+export interface MotionOffsets {
+  /** Format px, added to x / y. */
+  dx: number;
+  dy: number;
+  /** Degrees (clockwise), added to the rotation. */
+  drot: number;
+  /** Factors, multiplied into scale and opacity. */
+  kScale: number;
+  kOpacity: number;
+}

@@ -1,12 +1,13 @@
 // Repairs a hand-edited animation preset stack (`Clip.motion`, data v7) when a save is opened (Plan 5B D14): unknown
 // slots and presets (or a preset in a slot it does not support) are dropped; durations, delays, loop periods and params
-// are clamped (non-finite => the preset's default, delay 0); the ease is repaired; an emphasis needs a finite `at`;
+// are clamped (non-finite => the preset's default, delay 0; only in/out read a delay, emphasis and loop store 0); the
+// ease is repaired; an emphasis needs a finite `at`; `at` and the loop `phase` are bounded to ±1e6 s (Task 5);
 // loop `count` is an integer 1..1000 or null. Per kind (D13): audio clips have no motion, adjustment clips keep only
 // opacity-only presets. Slots are rebuilt (extra fields dropped); an emptied stack is removed. Never mutates input.
 import { repairEase } from './easing';
 import { repairCount } from './migrateKeys';
 import type { Clip } from './model';
-import { MOTION_LIMITS } from './motionTypes';
+import { MOTION_LIMITS, boundMotionTime } from './motionTypes';
 import type { ClipMotion, EmphasisUse, LoopUse, MotionSlot, PresetUse } from './motionTypes';
 import { PRESET_SCHEMA, isPresetKey } from './presets';
 import type { PresetSchema } from './presets';
@@ -32,10 +33,11 @@ function repairUse(raw: unknown, slot: MotionSlot, adjustment: boolean): PresetU
   const schema = PRESET_SCHEMA[raw.preset];
   if (!schema.slots.includes(slot) || (adjustment && !schema.opacityOnly)) return null;
   const loop = slot === 'loop';
+  const timed = slot === 'in' || slot === 'out';
   return {
     preset: raw.preset,
     duration: finite(raw.duration) ? clamp(raw.duration, loop ? MOTION_LIMITS.period : MOTION_LIMITS.duration) : schema.duration,
-    delay: !loop && finite(raw.delay) ? clamp(raw.delay, MOTION_LIMITS.delay) : 0,
+    delay: timed && finite(raw.delay) ? clamp(raw.delay, MOTION_LIMITS.delay) : 0,
     ease: isObject(raw.ease) ? repairEase(raw.ease) : repairEase(schema.ease),
     params: repairParams(raw.params, schema),
   };
@@ -44,13 +46,13 @@ function repairUse(raw: unknown, slot: MotionSlot, adjustment: boolean): PresetU
 function repairEmphasis(raw: unknown, adjustment: boolean): EmphasisUse | undefined {
   const use = repairUse(raw, 'emphasis', adjustment);
   const at = isObject(raw) ? raw.at : undefined;
-  return use && finite(at) ? { ...use, at: at + 0 } : undefined;
+  return use && finite(at) ? { ...use, at: boundMotionTime(at) } : undefined;
 }
 
 function repairLoopUse(raw: unknown, adjustment: boolean): LoopUse | undefined {
   const use = repairUse(raw, 'loop', adjustment);
   if (!use || !isObject(raw)) return undefined;
-  return { ...use, phase: finite(raw.phase) ? raw.phase + 0 : 0, count: repairCount(raw.count) };
+  return { ...use, phase: finite(raw.phase) ? boundMotionTime(raw.phase) : 0, count: repairCount(raw.count) };
 }
 
 /** A clip's repaired preset stack by kind; undefined when nothing valid remains (the field is then removed). */
