@@ -163,12 +163,7 @@ It is a static site built with React, TypeScript and Vite.
 ## Roadmap (planned, not implemented yet)
 
 The multi-layer timeline (Plan 2), audio editing (Plan 3), visual effects (Plan 4) and the animation engine (Plan 5, Parts
-5A and 5B) are implemented. Production runs `c9caebe` (deployed 2026-11-12): Plans 2 and 3, all of Plan 4 (Part B overlays and
-adjustment layers included) and Plan 5 Part 5A (keyframes; data v6). **Plan 5 Part 5B (presets, springs, loops, curved
-paths, copy/paste, personal presets; data v7) is implemented on the feature branch `feature/plan-5-animation` and is NOT
-deployed yet.** The previous deployment (`1379e01`, Plan 4 complete, data v5) is the rollback candidate; saves from v6 are
-one-way (an older tab shows "saved by a newer version" and leaves the data untouched) and so will saves from v7 be once
-5B is deployed: a v6 build cannot open a v7 project. The manual QA checklists of Plans 4, 5A and 5B are still unrun on a
+5A and 5B) are implemented. Production (deployed 2026-11-14) includes Plans 2 and 3, all of Plan 4 (Part B overlays and adjustment layers included) and Plan 5 Parts 5A (keyframes; data v6) and 5B (presets, springs, loops, curved paths, copy/paste of clips and animations, personal presets; data v7). The previous deployment (`c9caebe`, Plan 5A, data v6) is the rollback candidate; saves are one-way (an older tab shows "saved by a newer version" and leaves the data untouched): a v6 build cannot open a v7 project. The manual QA checklists of Plans 4, 5A and 5B are still unrun on a
 real GPU/Mac/Safari/QuickTime. The rest of Plan 5 is outlined in
 [docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md](docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md):
 
