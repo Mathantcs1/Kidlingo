@@ -76,10 +76,42 @@ It is a static site built with React, TypeScript and Vite.
   - **Timeline diamonds**: a selected animated clip shows a row of key diamonds. Click to select a key (Shift-click for
     several), drag to retime (whole frames, one undo step, Escape cancels), Delete or Backspace removes the selected
     keys; `[` and `]` jump the playhead to the previous/next key.
-  - **Motion path**: a selected clip with position keys shows its path on the preview (read-only dots at the keys;
-    clicking a dot moves the playhead to that key).
+  - **Motion path**: a selected clip with position keys shows its path on the preview (dots at the keys; clicking a
+    dot moves the playhead to that key; with Plan 5B the dots and tangent handles can be dragged, see below).
   - Splitting, trimming, moving, ripple-deleting, joining, merging all and changing the project format keep the
     animation where it was (the keys follow the clip or the format).
+- **Animation presets, springs, loops and curved paths** (Plan 5, Part 5B; saved data version 7):
+  - **Presets**: the Inspector's Animation section has four slots per clip, In, Emphasis, Loop and Out, one preset
+    each, chosen in a browser with animated previews (tabs Entrance, Emphasis, Continuous, Exit, My presets, Favourites;
+    search by name or synonym; only the hovered tile moves, and with "reduce motion" on every tile is a still).
+    Entrance/exit: Fade, Slide (four directions), Zoom, Pop, Spin, Drop, Whip, Rise (Sink on the way out). Emphasis:
+    Pulse, Shake, Wobble, Flash, Hop, Spin 360 (the window starts at the playhead). Continuous: Breathe, Float, Spin
+    loop, Jitter, Blink, Ken Burns. Each has its duration, delay, ease and parameters (direction, distance, intensity,
+    turns...), one undo step per change. A preset is a procedural layer on top of the clip's own values (position and
+    rotation add, scale and opacity multiply), so presets and keyframes combine, the fields and handles keep editing
+    the clip's own (rest) transform, and a faint outline (the motion ghost) shows where a preset actually draws the
+    picture. Adjustment layers only take the opacity presets (Fade, Flash, Blink); audio clips take none. A lower third
+    with an In or Out preset turns its built-in slide off at that edge. Presets follow the clip when it is split,
+    trimmed, moved, reframed or merged; the data stays small (about 150 bytes per slot).
+  - **Spring easing**: a spring ease (stiffness, damping, mass, or Gentle / Snappy / Bouncy / Wobbly) in the ease
+    editor, computed in real seconds so the same spring feels the same on a short and a long segment.
+  - **Key loops**: after the last key a property can Repeat, Ping-pong or Continue (add each cycle's change: a steady
+    spin), with a cycle count or until the end of the clip; one undo step per change.
+  - **Curved motion paths**: drag the dots and the tangent handles of a clip's position keys on the preview (smooth
+    keys mirror the other handle; Alt or Option breaks it; double-click a dot to switch corner/smooth; Escape cancels a
+    drag; one undo step per drag), **Smooth path** curves the whole path in one step, and **Orient along path** turns
+    the picture to face the way it moves. Speed along a curve is even (the ease maps to distance).
+  - **Copy and paste**: Ctrl/Cmd+C copies the selected keyframes (or, with none selected, the selected clips),
+    Ctrl/Cmd+V pastes what was copied last (keys at the playhead; clips at the playhead on the active track, one step per
+    paste, so one copy can be pasted at several places), Ctrl/Cmd+D duplicates the selected clips right after them.
+    **Copy animation / Paste animation** (buttons, or Ctrl/Cmd+Alt+C / V) replace a clip's whole animation (keys, loops,
+    orient, effect keys and presets) with another's, adapting the scale when the pictures differ in size. Text fields
+    keep native copy and paste.
+  - **Personal presets**: Save as preset stores a clip's animation (name up to 40 characters, a category) in a library
+    in the browser (IndexedDB, up to 100 presets of 64 kB; it survives New project and is not part of the project
+    file); applying one copies it into the clip in one undo step, relative to the clip's own position. Rename, delete
+    (asks first; clips keep their animation) and favourites are in the browser. A library written by a newer version is
+    shown read-only and never overwritten.
 - **Numeric position/scale/rotation/opacity fields** in the inspector for a video, image or overlay clip (adjustment clips get opacity only): X and Y in
   pixels from the frame centre (0 = centred), scale and opacity in percent, rotation in degrees clockwise. Type a
   value and press Enter (or leave the field) to apply it as one undo step; Up/Down step the value (Shift ×10) and
@@ -130,17 +162,20 @@ It is a static site built with React, TypeScript and Vite.
 
 ## Roadmap (planned, not implemented yet)
 
-The multi-layer timeline (Plan 2), audio editing (Plan 3), visual effects (Plan 4) and the keyframe engine (Plan 5,
-Part 5A) are implemented. Production runs `c9caebe` (deployed 2026-11-12): Plans 2 and 3, all of Plan 4 (Part B overlays and adjustment
-layers included) and Plan 5 Part 5A (keyframes; data v6). The previous deployment (`1379e01`, Plan 4 complete, data v5)
-is the rollback candidate; saves from v6 are one-way (an older tab shows "saved by a newer version" and leaves the data
-untouched). The manual QA checklists of Plans 4 and 5A are still unrun on a real GPU/Mac/Safari/QuickTime. The rest of Plan 5 is outlined in
+The multi-layer timeline (Plan 2), audio editing (Plan 3), visual effects (Plan 4) and the animation engine (Plan 5, Parts
+5A and 5B) are implemented. Production runs `c9caebe` (deployed 2026-11-12): Plans 2 and 3, all of Plan 4 (Part B overlays and
+adjustment layers included) and Plan 5 Part 5A (keyframes; data v6). **Plan 5 Part 5B (presets, springs, loops, curved
+paths, copy/paste, personal presets; data v7) is implemented on the feature branch `feature/plan-5-animation` and is NOT
+deployed yet.** The previous deployment (`1379e01`, Plan 4 complete, data v5) is the rollback candidate; saves from v6 are
+one-way (an older tab shows "saved by a newer version" and leaves the data untouched) and so will saves from v7 be once
+5B is deployed: a v6 build cannot open a v7 project. The manual QA checklists of Plans 4, 5A and 5B are still unrun on a
+real GPU/Mac/Safari/QuickTime. The rest of Plan 5 is outlined in
 [docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md](docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md):
 
-- **5B presets and motion**: entrance/emphasis/exit animation presets, springs, loops, spatial Bezier paths with
-  on-canvas key dragging, copy/paste of keyframes, save-as-preset.
 - **5E crop, flip, anchor point**, **5D speed** (constant speed, reverse, ramps, freeze frame, pitch-preserving
   audio) and **5C transitions** (crossfade, wipe, slide, zoom on a cut).
+- Later: text stagger/typewriter presets, effect-parameter presets, motion blur, loop-in, "convert preset to keyframes",
+  library export/import, and a professional UI pass (a visual and usability polish of the whole editor; no data change).
 
 There is currently no transition, speed, crop or text-clip tool (overlays carry fixed text only).
 
@@ -217,6 +252,10 @@ Shortcuts are ignored while you type in a text field or select, and while the ex
 | Delete or Backspace | Delete the selected keyframes if any are selected, otherwise the selected clips |
 | Shift+Delete or Shift+Backspace | Same for keyframes; otherwise ripple delete: delete the selected clips and close the gaps |
 | `[` / `]` | Jump the playhead to the previous / next keyframe of the selected clip (needs a key selected when several clips are selected) |
+| Ctrl+C / Cmd+C | Copy the selected keyframes, or (none selected) the selected clips |
+| Ctrl+V / Cmd+V | Paste what was copied last: keyframes at the playhead, or clips at the playhead on the active track |
+| Ctrl+D / Cmd+D | Duplicate the selected clips right after them |
+| Ctrl+Alt+C / Ctrl+Alt+V (Cmd+Option on a Mac) | Copy / paste the whole animation of a clip (buttons in the Animation section do the same) |
 | Ctrl+Z / Cmd+Z | Undo |
 | Shift+Ctrl+Z / Shift+Cmd+Z, or Ctrl+Y | Redo |
 
@@ -283,8 +322,8 @@ Layers and the preview:
 - **Animation limits** (Plan 5, Part 5A):
   - At most **500 keys per property** (a further key is refused; a hand-edited project is trimmed to the earliest 500).
     A key costs about 55 to 60 bytes of saved project.
-  - There are no animation presets, springs or loops yet, no speed change, no transitions and no crop/flip yet
-    (Parts 5B, 5E, 5D and 5C). The motion path is display only (key dots are not draggable on the preview).
+  - No speed change, transitions or crop/flip yet (Parts 5E, 5D and 5C). (Presets, springs, loops and draggable paths
+    arrived in Part 5B, below.)
   - A split or trim that is not a whole number of frames from the clip's start can move the animation's frame grid by
     less than one frame. A static edit of an animated property is refused ("This setting is animated: change it at the
     playhead"); turn the stopwatch off first.
@@ -294,6 +333,27 @@ Layers and the preview:
   - Overlay text uses the device's system font; the animation measurements (preview frame time, memory, parity with
     the export) were made with the software renderer (SwiftShader) in headless Chromium on Linux, not on a real GPU,
     in Safari or in QuickTime (see `docs/superpowers/ledgers/plan-5a-manual-qa-checklist.md`).
+- **Presets, loops and paths limits** (Plan 5, Part 5B; data v7 is one-way, a v6 build cannot open a v7 project):
+  - One preset per slot (In, Emphasis, Loop, Out); no second emphasis, no per-letter text animation, no effect-parameter
+    presets (blur-in), no motion blur, no loop before the first key and no "convert preset to keyframes" yet.
+  - A preset's duration is 0.05 to 30 s, its delay 0 to 30 s, a loop's period 0.1 to 60 s, a key loop's count 1 to 1000
+    or until the end; a clip with a shorter length than its In and Out windows together shrinks both. A split inside an
+    entrance leaves the right half starting at rest (the left half is exact); an emphasis that straddles a cut stays
+    whole on the half where it starts.
+  - Presets act on position, rotation, scale and opacity only, never on effect parameters. Pop overshoots, so
+    a Pop on an overlay draws it from a larger texture (sharp at the overshoot); overlay textures have no mipmaps, so a
+    sticker shrinking a lot can show slight aliasing.
+  - **Overlay texture budget**: the overlay textures drawn in one frame share 128 MiB (about eight at the 2048 px cap);
+    past that, later overlays in the frame are drawn from smaller, softer textures (same size and place on screen).
+    Preview and export use the same rule.
+  - The library holds at most 100 presets of 64 kB each, lives in this browser only (no export or import yet) and is
+    shared by every project; a private window may not be able to save to it.
+  - Cmd+Option+C (copy animation) is also Chrome's Inspect shortcut on a Mac and may not be claimed (the buttons always
+    work). Ctrl/Cmd+D is claimed whenever a clip is selected.
+  - After a reload a project is restored exactly except that the order of fields inside a clip's `keys` may be
+    normalised (no visible difference).
+  - Like 5A: measurements (frame time, memory, parity) are from headless Chromium with a software renderer, not a real GPU,
+    Safari or QuickTime (see `docs/superpowers/ledgers/plan-5b-manual-qa-checklist.md`).
 - No transitions, speed change, crop or text clips yet (see the roadmap).
 
 ## Development
