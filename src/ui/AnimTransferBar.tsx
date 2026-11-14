@@ -1,12 +1,12 @@
 // The footer of the inspector's Animation section (Plan 5B §7, D8): copy / paste the selected timeline keys, copy /
 // paste the whole animation, and Save as preset. All disabled on a locked track (pastes) or when there is nothing to do.
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { hasAnimation } from '../core/animPayload';
 import type { Clip } from '../core/model';
 import { useAnimClipboard } from './animClipboard';
 import { useKeySelection } from './keySelection';
 import { ensureLibrary, useLibrary } from './presetLibraryStore';
-import SavePresetDialog from './SavePresetDialog';
+import { openSavePreset } from './savePresetUi';
 import { copyAnimCmd, copyKeysCmd, pasteAnimCmd, pasteKeysCmd } from './transferCommands';
 
 interface Props {
@@ -16,7 +16,6 @@ interface Props {
 }
 
 export default function AnimTransferBar({ clip, disabled, lockTitle }: Props) {
-  const [saving, setSaving] = useState(false);
   const keysCopied = useAnimClipboard((s) => s.keys !== null);
   const animCopied = useAnimClipboard((s) => s.anim !== null);
   const keysSelected = useKeySelection((s) => s.sel.times.length > 0);
@@ -38,10 +37,9 @@ export default function AnimTransferBar({ clip, disabled, lockTitle }: Props) {
       <button type="button" data-testid="anim-paste" disabled={disabled || !animCopied} title={lockTitle ?? (animCopied ? 'Replace the selected clips\' animation with the copied one (Ctrl/Cmd+Alt+V)' : 'Copy an animation first')} onClick={() => pasteAnimCmd()}>
         Paste animation
       </button>
-      <button type="button" data-testid="preset-save" disabled={!animated || saveBlocked !== null} title={saveBlocked ?? (animated ? 'Save this animation to your preset library' : 'This clip has no animation')} onClick={() => setSaving(true)}>
+      <button type="button" data-testid="preset-save" disabled={!animated || saveBlocked !== null} title={saveBlocked ?? (animated ? 'Save this animation to your preset library' : 'This clip has no animation')} onClick={() => openSavePreset(clip.id)}>
         Save as preset…
       </button>
-      {saving && <SavePresetDialog clipId={clip.id} onClose={() => setSaving(false)} />}
     </div>
   );
 }

@@ -37,6 +37,14 @@ export default function SavePresetDialog({ clipId, onClose }: Props) {
       if (e.key === 'Escape') {
         e.preventDefault();
         onClose();
+      } else if (e.key === 'Tab' && root.current) {
+        // Trap Tab inside the dialog (it wraps around its enabled controls).
+        const items = [...root.current.querySelectorAll<HTMLElement>('input, select, button')].filter((x) => !x.matches(':disabled'));
+        if (items.length === 0) return;
+        const i = items.indexOf(document.activeElement as HTMLElement);
+        const next = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : (i < 0 || i === items.length - 1 ? 0 : i + 1);
+        e.preventDefault();
+        items[next].focus();
       }
     };
     window.addEventListener('keydown', onKey, true);

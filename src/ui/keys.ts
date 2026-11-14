@@ -70,9 +70,11 @@ export function shortcutFor(e: KeyLike): Shortcut | null {
     if (key === 'y' && e.ctrlKey && !e.shiftKey) return 'redo';
     // Clipboard chords (never held down: one press, one action).
     if (!e.shiftKey && !e.repeat) {
-      if (key === 'c') return 'copy';
-      if (key === 'v') return 'paste';
-      if (key === 'd') return 'duplicate';
+      // On a non-Latin layout (Cyrillic, Hebrew, ...) `key` is not a Latin letter: use the physical key instead.
+      const letter = /^[a-z]$/.test(key) ? key : /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : '';
+      if (letter === 'c') return 'copy';
+      if (letter === 'v') return 'paste';
+      if (letter === 'd') return 'duplicate';
     }
     return null;
   }

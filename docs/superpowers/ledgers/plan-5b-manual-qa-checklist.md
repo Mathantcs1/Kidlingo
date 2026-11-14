@@ -77,3 +77,4 @@ well as a mouse, and a screen reader (VoiceOver) for section 7.
 - [ ] Safari: unverified. Do not claim support; if tried, note what fails.
 - [ ] Real GPU numbers: the 1.2x preview frame-time guard, the 2.5x resolver guard and the memory budgets are SwiftShader measurements; recheck on a real GPU and note the frame times.
 - Known flake (not a product bug): e2e `keyframes-loops-ui.spec.ts` "Repeat, a count, Ping-pong and back to until the end" fails about 1 run in 5 under load; it passes on re-run.
+- Known limitation (Ruling T-final-1): splitting a clip whose In and Out presets overlap (they were scaled to fit the clip) leaves each half with a lone, unscaled slot, so the left half's kept frames change too (e.g. Fade In 3 s + Fade Out 3 s on a 4 s clip, split at +1 s). Visual only and undoable. Check it once and note whether it is acceptable.

@@ -339,7 +339,8 @@ Layers and the preview:
   - A preset's duration is 0.05 to 30 s, its delay 0 to 30 s, a loop's period 0.1 to 60 s, a key loop's count 1 to 1000
     or until the end; a clip with a shorter length than its In and Out windows together shrinks both. A split inside an
     entrance leaves the right half starting at rest (the left half is exact); an emphasis that straddles a cut stays
-    whole on the half where it starts.
+    whole on the half where it starts. If an entrance and an exit overlapped (both were shortened to fit the clip), a
+    split also changes the kept frames of the left half, because each half then holds a lone, unscaled preset.
   - Presets act on position, rotation, scale and opacity only, never on effect parameters. Pop overshoots, so
     a Pop on an overlay draws it from a larger texture (sharp at the overshoot); overlay textures have no mipmaps, so a
     sticker shrinking a lot can show slight aliasing.

@@ -5,6 +5,7 @@
 // saved-data ones. Locked tracks refuse the whole paste (nothing is produced); targets a clip cannot take are skipped
 // and counted. One call = one project = one undo step, whatever the number of destination clips.
 import { animatableParam } from './videoEffects';
+import { restPositionAt } from './animate';
 import { withTargetKeys } from './animTargets';
 import type { AnimTarget } from './animTargets';
 import { fitRatio, fitScale } from './animPayload';
@@ -141,7 +142,7 @@ function pasteAnimInto(p: Project, clip: Clip, a: AnimPayload, anchor: Anchor, t
   }
   const s: Shape = { time: (x) => origin + x };
   const ratio = fitRatio(fitScale(p, clip), a.fit);
-  const rest = a.positionRelative ? { x: clip.transform.x, y: clip.transform.y } : null;
+  const rest = a.positionRelative ? restPositionAt(clip, origin) : null; // a keyed position anchors at its resolved value there
   let skipped = 0;
   const { keys: _k, motion: _m, ...bare } = clip;
   let out: Clip = { ...bare, effects: clip.effects.map(({ keys: _a, loops: _b, ...e }) => e) };
@@ -179,12 +180,16 @@ function pasteAnimInto(p: Project, clip: Clip, a: AnimPayload, anchor: Anchor, t
 /**
  * Pastes a whole animation onto every clip of `clipIds`, REPLACING the destination's keys, loops, orient, effect keys and
  * preset stack. Keys keep their place relative to the clip's visible start (`anchor` 'start'); user presets use 'end'
- * (exits) or 'playhead' (emphasis). Audio clips and locked tracks refuse; settings a clip cannot take are counted.
+ * (exits) or 'playhead' (emphasis). Audio clips are skipped and counted (refused only when no other clip is selected), locked tracks refuse; settings a clip cannot take are counted.
  */
 export function pasteAnimation(p: Project, clipIds: readonly Id[], payload: AnimPayload, opts: { anchor?: Anchor; t?: number } = {}): TransferResult {
   assertTargets(p, clipIds);
   let skipped = 0;
-  const edits = clipIds.map((id) => {
+  // Audio clips take no animation: skipped and counted (like Paste keys); refused only when nothing else is selected.
+  const valid = clipIds.filter((id) => findClip(p, id).clip.kind !== 'audio');
+  if (valid.length === 0) throw new TimelineError(AUDIO);
+  skipped += clipIds.length - valid.length;
+  const edits = valid.map((id) => {
     const r = pasteAnimInto(p, findClip(p, id).clip, payload, opts.anchor ?? 'start', opts.t ?? 0);
     skipped += r.skipped;
     return { id, next: r.clip };

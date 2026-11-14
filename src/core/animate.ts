@@ -53,6 +53,12 @@ export function resolvedTransform(clip: Clip, t: number, fps: number): Transform
   };
 }
 
+/** The base position at LOCAL time `u` (keyed position with its loop and path, else the static x/y): where a relative preset anchors. */
+export function restPositionAt(clip: Clip, u: number): { x: number; y: number } {
+  const list = clip.keys?.position;
+  return has(list) ? evalPosition(list!, clip.keys!.loops?.position, u) : { x: clip.transform.x, y: clip.transform.y };
+}
+
 /** One effect with its animated params evaluated (with their loops) at local time `u`, clamped to the schema range; no `keys`/`loops`. */
 function resolveEffect(e: VideoEffect, u: number): VideoEffect {
   if (e.keys === undefined) return e;
