@@ -14,11 +14,13 @@ export interface DragSnapshot {
 /**
  * True when a store change (`prev` -> `p`) invalidates a running drag (a transform drag, or a motion path drag: its
  * key list lives in `keys`): the clip is gone, its transform, keys (the path) or, when snapshotted, preset stack were
- * replaced, the format size changed, or the frame rate changed. Unrelated edits leave the drag running.
+ * replaced, its track was locked, the format size changed, or the frame rate changed. Unrelated edits leave the drag running.
  */
 export function isStaleDrag(g: DragSnapshot, p: Project, prev: Project): boolean {
   if (p === prev) return false;
-  const now = p.tracks.flatMap((t) => t.clips).find((c) => c.id === g.clipId);
-  const stale = !now || now.transform !== g.storeTransform || now.keys !== g.storeKeys || ('storeMotion' in g && now.motion !== g.storeMotion);
+  const track = p.tracks.find((t) => t.clips.some((c) => c.id === g.clipId));
+  const now = track?.clips.find((c) => c.id === g.clipId);
+  // A layer locked mid-drag (e.g. by a shortcut) refuses the commit, so the drag ends with no preview and no step.
+  const stale = !now || track!.locked || now.transform !== g.storeTransform || now.keys !== g.storeKeys || ('storeMotion' in g && now.motion !== g.storeMotion);
   return stale || p.format.width !== g.format.width || p.format.height !== g.format.height || p.format.fps !== prev.format.fps;
 }

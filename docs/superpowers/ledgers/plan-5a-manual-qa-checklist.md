@@ -72,3 +72,9 @@ It is the source for Part 5A; later parts (5B/5E/5D/5C) get their own sections.
 ## 9. Not covered / unverified
 - [ ] Safari: unverified. Do not claim support; if tried, note what fails (WebCodecs, OPFS writes, `AudioDecoder`).
 - [ ] Real GPU numbers: the performance guards (resolver cost, 1.2x preview frame time, memory) are SwiftShader measurements; recheck on a real GPU and note the frame times.
+
+## 10. 5B (Task 8): path editing on the canvas
+- [ ] The default tangent handle (a 4.5 px disc) can take a press meant for a corner, rotate or scale handle near it: try each handle on a clip whose key is under the playhead.
+- [ ] Double-clicking the clip body near a key dot toggles that key corner/smooth (a hidden gesture): check it is not triggered by accident while moving a picture.
+- [ ] The "Smooth path" chip at the canvas top-left can cover the picture: check on a small canvas and a picture at the top-left.
+- [ ] The 600 ms "just clicked" window on key dots (a survivor mutation): click a dot, then press it again quickly and after a pause; both behave as expected.

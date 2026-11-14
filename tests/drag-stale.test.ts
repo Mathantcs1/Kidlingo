@@ -30,4 +30,10 @@ describe('isStaleDrag', () => {
     expect(isStaleDrag(g, { ...base, format: { ...base.format, width: 1080 } }, base)).toBe(true);
     expect(isStaleDrag(g, { ...base, format: { ...base.format, fps: 25 } }, base)).toBe(true);
   });
+  it('a locked track ends the drag; an unlocked one is unchanged (M1)', () => {
+    const g = snap(base);
+    const lock = (p: Project, locked: boolean): Project => ({ ...p, tracks: p.tracks.map((t) => (t.clips.some((c) => c.id === 'c') ? { ...t, locked } : t)) });
+    expect(isStaleDrag(g, lock(base, true), base)).toBe(true);
+    expect(isStaleDrag(g, lock(base, false), base)).toBe(false);
+  });
 });
