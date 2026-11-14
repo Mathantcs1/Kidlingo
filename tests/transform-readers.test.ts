@@ -1,6 +1,6 @@
 // Plan 5 D7 reader audit: every read of `.transform`, `.params`, `.effects` (and, Plan 5B, of the animation data
 // `.motion`, `.loops`, `.orient`: the resolved clip has none of them) (and every destructuring of them) in
-// src/render/** and src/ui/** must be listed below with why it is right. Pictures are evaluated in ONE place
+// src/render/**, src/ui/**, src/export/**, src/media/** and src/audio/** must be listed below with why it is right. Pictures are evaluated in ONE place
 // (collectDraws resolves each clip once per frame), so a render-side reader must see a RESOLVED clip; a UI reader either
 // reads the resolved value at the playhead or reads the stored value on purpose. A new, unlisted reader fails this test:
 // decide which it is, then list it. Each entry must match EXACTLY ONE source line (or carry an explicit count as a 4th
@@ -53,12 +53,23 @@ const ALLOWED: Allowed[] = [
   ['src/ui/mediaEdits.ts', '(c.effects ?? []).some((e) => e.ref === mediaId)', 'reads stored value on purpose: LUT media in use (not animated)'],
 ];
 
-/** A property read (`x.transform`, `x?.params`, not a call like `this.effects.run`) or a destructuring of one. */
-const FIELDS = '(transform|params|effects|motion|loops|orient)';
-const READ = new RegExp(`\\??\\.${FIELDS}\\b(?!\\s*\\()(?!-)`);
-const DESTRUCTURE = new RegExp(`\\{[^}]*\\b${FIELDS}\\b[^}]*\\}\\s*=[^=>]`);
-/** Parameter destructuring: `({ transform }: Clip) =>`, `function f({ effects }: P)`. */
-const PARAM_DESTRUCTURE = new RegExp(`[(,]\\s*\\{[^}]*\\b${FIELDS}\\b[^}]*\\}\\s*:`);
+/**
+ * Detectors for the given fields: a property read (`x.transform`, `x?.params`, not a call like `this.effects.run`),
+ * bracket access (`clip['motion']`, `k?.['loops']`), a destructuring, and parameter destructuring
+ * (`({ transform }: Clip) =>`, `function f({ effects }: P)`).
+ */
+function detectors(fields: string): RegExp[] {
+  const f = `(${fields})`;
+  return [
+    new RegExp(`\\??\\.${f}\\b(?!\\s*\\()(?!-)`),
+    new RegExp(`\\[\\s*['"\`]${f}['"\`]\\s*\\]`),
+    new RegExp(`\\{[^}]*\\b${f}\\b[^}]*\\}\\s*=[^=>]`),
+    new RegExp(`[(,]\\s*\\{[^}]*\\b${f}\\b[^}]*\\}\\s*:`),
+  ];
+}
+const ALL = detectors('transform|params|effects|motion|loops|orient');
+/** src/export, src/media and src/audio: audio effects/params are everywhere there, so only the animation data is audited. */
+const ANIM = detectors('motion|loops|orient');
 /** Members of the compositor/pipeline objects named `effects`, not clip data. */
 const NOT_CLIP = /\bthis\.effects\b/g;
 
@@ -72,13 +83,13 @@ function files(dir: string): string[] {
 
 interface Finding { file: string; line: number; text: string }
 
-function findReaders(sources: { file: string; text: string }[]): Finding[] {
+function findReaders(sources: { file: string; text: string }[], rules: RegExp[] = ALL): Finding[] {
   const out: Finding[] = [];
   for (const { file, text } of sources) {
     text.split('\n').forEach((raw, i) => {
       const code = raw.replace(/\/\/.*$/, '').replace(NOT_CLIP, '');
       if (/^\s*(\*|\/\*)/.test(raw)) return; // doc comments
-      if (READ.test(code) || DESTRUCTURE.test(code) || PARAM_DESTRUCTURE.test(code)) out.push({ file, line: i + 1, text: raw.trim() });
+      if (rules.some((r) => r.test(code))) out.push({ file, line: i + 1, text: raw.trim() });
     });
   }
   return out;
@@ -97,14 +108,17 @@ function audit(findings: Finding[], allowed: Allowed[]): { unlisted: Finding[]; 
   return { unlisted, stale };
 }
 
-function scan(): Finding[] {
-  const sources = ['src/render', 'src/ui'].flatMap((d) => files(join(ROOT, d)))
+function read(dirs: string[]): { file: string; text: string }[] {
+  return dirs.flatMap((d) => files(join(ROOT, d)))
     .map((path) => ({ file: relative(ROOT, path).split('\\').join('/'), text: readFileSync(path, 'utf8') }));
-  return findReaders(sources);
+}
+
+function scan(): Finding[] {
+  return [...findReaders(read(['src/render', 'src/ui'])), ...findReaders(read(['src/export', 'src/media', 'src/audio']), ANIM)];
 }
 
 describe('transform/params/effects reader audit (D7)', () => {
-  it('every reader in src/render and src/ui is listed, and every listed entry still exists', () => {
+  it('every reader in src/render, src/ui, src/export, src/media and src/audio is listed, and every listed entry still exists', () => {
     const { unlisted, stale } = audit(scan(), ALLOWED);
     expect(unlisted.map((f) => `${f.file}:${f.line}: ${f.text}`), 'unlisted readers').toEqual([]);
     expect(stale, 'stale allowlist entries').toEqual([]);
@@ -130,6 +144,16 @@ describe('transform/params/effects reader audit (D7)', () => {
     expect(fake('if (k.orient) turn();')).toHaveLength(1);
     expect(fake('const { motion } = clip;')).toHaveLength(1);
     expect(fake("el.querySelector('.motion-key');")).toHaveLength(0);
+    // Bracket access is a read too.
+    expect(fake("const m = clip['motion'];")).toHaveLength(1);
+    // The export/media/audio scan only looks for animation data (audio effects/params live there).
+    const anim = (text: string) => findReaders([{ file: 'src/export/new.ts', text }], ANIM);
+    expect(anim("const m = clip['motion'];")).toHaveLength(1);
+    expect(anim('const l = c.keys?.loops;')).toHaveLength(1);
+    expect(anim('const e = clip.audio.effects;')).toHaveLength(0);
+    expect(fake("const l = k?.['loops'];")).toHaveLength(1);
+    expect(fake('const o = c["orient"];')).toHaveLength(1);
+    expect(fake("const v = map['motionless'];")).toHaveLength(0);
     const motionRead = { file: 'src/render/overlays/textures.ts', line: 997, text: 'const slide = clip.motion?.in ? 1 : anim.slide;' };
     expect(audit([...scan(), motionRead], ALLOWED).unlisted).toHaveLength(1);
     // A dummy read in a real render file is unlisted.

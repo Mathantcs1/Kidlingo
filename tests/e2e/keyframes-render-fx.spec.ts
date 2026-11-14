@@ -1,13 +1,14 @@
 // Keyframed effect params, adjustment layers and overlays through the real compositor (Plan 5 Task 5): an animated
 // param renders like the static render of its evaluated value; overlay textures stay put while their scale animates;
 // static projects are byte-identical to before; a playhead between frames shows the frame's start.
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { valueAt } from '../../src/core/keyframes';
 import { defaultParams } from '../../src/core/videoEffects';
 import type { Clip, Keyframe, VideoEffect, VideoEffectType } from '../../src/core/model';
 import { openHarness } from './harness-helpers';
 import { adjustmentClip, at, frames, hash, imageClip, key, maxDiff, pos, samePixels, solid, stack } from './keyframe-helpers';
 import { overlayClip } from './overlay-helpers';
+import { STATIC_HASHES_GL, glIdentity } from './preset-helpers';
 
 const FMT = { width: 320, height: 180, fps: 30 };
 let n = 0;
@@ -91,17 +92,6 @@ function constantKeys(c: Clip): Clip {
 // one they were recorded on; elsewhere that assertion is skipped (the constant-keys byte equality below and the Plan 4
 // pixel specs stay the machine-independent oracle).
 const STATIC_HASHES = ['4f10cb1ca94d7347', 'f9c4a2b2dc2466c4'];
-const STATIC_HASHES_GL = 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver) | WebGL 2.0 (OpenGL ES 3.0 Chromium)';
-
-async function glIdentity(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const gl = document.createElement('canvas').getContext('webgl2');
-    if (!gl) return 'no webgl2';
-    const ext = gl.getExtension('WEBGL_debug_renderer_info');
-    const renderer = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
-    return `${renderer} | ${String(gl.getParameter(gl.VERSION))}`;
-  });
-}
 
 test('a static project renders byte-identically to before (hash), and constant single keys change nothing', async ({ page }) => {
   await openHarness(page);

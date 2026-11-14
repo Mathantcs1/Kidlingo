@@ -32,6 +32,18 @@ function sampledMax(c: Clip): number {
 }
 
 describe('maxDrawnScale', () => {
+  it('includes the overshoot of a spring-eased scale segment (above the key, below the cap) and still bounds every frame', () => {
+    const bouncy = { kind: 'spring' as const, spring: { stiffness: 400, damping: 3, mass: 1 } };
+    const c = clip({ keys: { scale: [k(0, 1, bouncy), k(1, 2)] } });
+    const b = maxDrawnScale(c);
+    expect(b).toBeGreaterThan(2);
+    expect(b).toBeLessThan(MAX_DRAWN_SCALE);
+    expect(sampledMax(c)).toBeGreaterThan(2);
+    expect(b).toBeGreaterThanOrEqual(sampledMax(c) - 1e-9);
+    // A non-spring ease keeps the 5A bound (textures unchanged).
+    expect(maxDrawnScale(clip({ keys: { scale: [k(0, 1, { kind: 'easeOut' }), k(1, 2)] } }))).toBe(2);
+  });
+
   it('is exactly maxScale for 5A clips (static, keyed, eased) and multiplies the preset bound', () => {
     const cases = [clip(), clip({ transform: { x: 0, y: 0, scale: 0.4, rotation: 0, opacity: 1 } }), clip({ keys: { scale: [k(0, 1, { kind: 'back' }), k(1, 3), k(2, 0.5)] } })];
     for (const c of cases) expect(maxDrawnScale(c)).toBe(maxScale(c));

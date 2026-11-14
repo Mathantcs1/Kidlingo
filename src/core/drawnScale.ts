@@ -4,6 +4,7 @@
 import { KEYED_SCALE_LIMIT, localRange, maxScale } from './keyframes';
 import type { Clip } from './model';
 import { maxMotionScale } from './motion';
+import { easeRange } from './presetMath';
 
 /** The bound is capped here (finite); the texture itself is capped at its own pixel limit (MAX_OVERLAY_SIDE). */
 export const MAX_DRAWN_SCALE = KEYED_SCALE_LIMIT;
@@ -30,12 +31,29 @@ function offsetLoopGrowth(clip: Clip): number {
 }
 
 /**
+ * The highest value a SPRING-eased scale segment can reach (D5: a spring overshoots, easeRange allows up to 3 × the
+ * delta): per segment `v + (next − v) × hi` (or `× lo` for a falling segment). Other eases are not included.
+ */
+function springPeak(clip: Clip): number {
+  const list = clip.keys?.scale ?? [];
+  let m = 0;
+  for (let i = 0; i + 1 < list.length; i++) {
+    if (list[i].ease.kind !== 'spring') continue;
+    const [lo, hi] = easeRange(list[i].ease);
+    const d = list[i + 1].v - list[i].v;
+    const peak = list[i].v + Math.max(d * lo, d * hi);
+    if (peak > m) m = peak;
+  }
+  return m;
+}
+
+/**
  * An upper bound of the clip's drawn scale: (its static scale and every scale key, plus an offset loop's climb) × the
  * preset stack's largest factor (maxMotionScale), finite and at most MAX_DRAWN_SCALE (a non-finite or NaN bound reads
- * as the cap). Eased overshoot between keys is not included (5A Task 5 Minor 3, accepted). For a clip without key
- * loops and presets this is exactly `maxScale(clip)` (5A projects size their textures as before).
+ * as the cap). A spring-eased scale segment's overshoot is included; other eased overshoot is not (5A Task 5 Minor 3, accepted). For a clip without key
+ * loops, presets and springs this is exactly `maxScale(clip)` (5A projects size their textures as before).
  */
 export function maxDrawnScale(clip: Clip): number {
-  const k = (maxScale(clip) + offsetLoopGrowth(clip)) * maxMotionScale(clip);
+  const k = (Math.max(maxScale(clip), springPeak(clip)) + offsetLoopGrowth(clip)) * maxMotionScale(clip);
   return k <= MAX_DRAWN_SCALE ? k : MAX_DRAWN_SCALE;
 }

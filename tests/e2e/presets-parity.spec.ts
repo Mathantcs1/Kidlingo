@@ -2,13 +2,15 @@
 // repeat scale loop, a keyed colour effect and all four preset slots (Slide In, Pulse, Breathe, Fade Out), at 30 and
 // 25 fps. 1080p export frame N vs preview frame N within 3/255 per pixel; the export path is deterministic frame for
 // frame at a 320 px long side (Ruling T11-2: Chromium's software H.264 is not bit-reproducible at 1080p); a playhead
-// between frames shows the frame start.
+// between frames shows the frame start. The stack also carries a lower third with an In preset and a Pop sticker, so the
+// built-in flags and the overlay texture sizing (maxDrawnScale) are covered in the export path too (another pixelScale).
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { ffmpegFrame } from './fixtures';
 import { openHarness } from './harness-helpers';
+import { overlayClip } from './overlay-helpers';
 import { frames, imageClip, key, samePixels, solid, stack } from './keyframe-helpers';
 import { emphasis, loop, use } from './preset-helpers';
 import { defaultParams } from '../../src/core/videoEffects';
@@ -40,7 +42,10 @@ function animated(bg: MediaRef, m: MediaRef, fps: number): Project {
       out: use('fade', 'out', { duration: 0.3 }),
     },
   }, 0, LEN);
-  return stack({ width: W, height: H, fps }, [[imageClip(bg, { id: 'bg' }, 0, LEN)], [top]], [bg, m]);
+  // A lower third (Slide In: its built-in slide is off) and a Pop sticker: texture size comes from maxDrawnScale.
+  const lower = overlayClip('lowerThird', 0, LEN, { id: 'lower', motion: { in: use('slide', 'in', { duration: 0.4, params: { distance: 0.3 } }) } });
+  const sticker = overlayClip('sticker', 0, LEN, { id: 'sticker', transform: { x: -600, y: -250, scale: 1, rotation: 0, opacity: 1 }, motion: { in: use('pop', 'in', { duration: 0.4 }) } });
+  return stack({ width: W, height: H, fps }, [[imageClip(bg, { id: 'bg' }, 0, LEN)], [top], [lower], [sticker]], [bg, m]);
 }
 
 async function exportFile(page: Page, p: Project, name: string, maxLongSide?: number): Promise<string> {
