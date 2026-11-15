@@ -67,6 +67,27 @@ export const CONTROL_TOPICS: HelpTopic[] = [
     ],
   },
   {
+    id: 'controls-speed',
+    title: 'Speed, reverse and freeze frame',
+    group: 'Effect Controls',
+    keywords: 'speed slow motion fast reverse ramp bullet time freeze frame pitch duration retime',
+    blocks: [
+      {
+        t: 'rows',
+        rows: [
+          ['Speed', 'How fast the clip plays, from 25% to 400%. The clip keeps its start and its length changes (rounded to whole frames). Typing a speed replaces a speed ramp.'],
+          ['Duration', 'How long the clip lasts on the timeline; changing it changes the speed to fit (25%-400%).'],
+          ['Push later clips', 'When the clip gets longer, move the clips after it on the same track instead of refusing the overlap. Clips on other tracks never move.'],
+          ['Reverse', 'Play the clip backwards. Reversing a long clip with widely spaced key frames can use a lot of memory and play with dropped frames in the preview; the export is exact.'],
+          ['Preserve pitch', 'Keep the pitch of the sound when the speed changes (on by default). Off, a faster clip sounds higher and a slower one lower.'],
+          ['Freeze frame', 'Split the clip at the playhead and insert a still of that frame for 2 seconds; the clips after it on the track move later. A freeze frame has no sound.'],
+          ['Speed ramp presets', 'Speed up, Slow down, Bullet time and Flash forward change the speed smoothly through the clip. Each point of a ramp has its own percent; Remove ramp returns to a constant speed.'],
+        ],
+      },
+      { t: 'p', text: 'Animation presets In and Out keep their length in timeline seconds; emphasis and loop presets and keyframes stay on the footage they were placed on. A speed badge on the clip shows its retiming.' },
+    ],
+  },
+  {
     id: 'controls-animation',
     title: 'Animation and keyframes',
     group: 'Effect Controls',

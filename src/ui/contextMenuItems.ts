@@ -14,6 +14,7 @@ import { addToTimeline, deleteSelected, mergeSelected, rippleDeleteSelected, spl
 import type { MenuItem } from './contextMenuModel';
 import { resetCropCmd, setFlipCmd } from './cropCommands';
 import { toggleCropMode } from './cropModeStore';
+import { freezeFrameCmd, setReverseCmd, setSpeedCmd } from './speedCommands';
 import { liveSelection } from './edits';
 import { onClip } from './keyframeCommands';
 import { removeMediaItem } from './projectCommands';
@@ -64,6 +65,18 @@ export function clipMenuItems(clipId: Id): MenuItem[] {
     const onPlayhead = onClip(clip, editor().playhead);
     items.push({ id: 'crop-mode', label: 'Crop on canvas', disabled: !canEdit || !single || !onPlayhead, title: lockTitle ?? (onPlayhead ? undefined : 'Move the playhead onto the clip'), onSelect: () => toggleCropMode(clipId) });
     items.push({ id: 'reset-crop', label: 'Reset crop', disabled: !canEdit || !single || !clip.crop, title: lockTitle ?? (clip.crop ? undefined : 'This clip has no crop'), onSelect: () => resetCropCmd(clipId) });
+  }
+  if ((clip.kind === 'video' || clip.kind === 'audio') && clip.freeze === undefined) {
+    const ids = sel.filter((id) => { const f = findClip(p, id); return f && (f.clip.kind === 'video' || f.clip.kind === 'audio') && f.clip.freeze === undefined; });
+    items.push('separator');
+    items.push({ id: 'speed-half', label: 'Speed 50%', disabled: !canEdit, title: lockTitle, onSelect: () => setSpeedCmd(ids, 0.5) });
+    items.push({ id: 'speed-double', label: 'Speed 200%', disabled: !canEdit, title: lockTitle, onSelect: () => setSpeedCmd(ids, 2) });
+    items.push({ id: 'speed-normal', label: 'Normal speed', disabled: !canEdit || (clip.speed === undefined && !clip.speedKeys), title: lockTitle, onSelect: () => setSpeedCmd(ids, 1) });
+    items.push({ id: 'reverse', label: clip.reverse ? 'Play forwards' : 'Reverse', disabled: !canEdit, title: lockTitle, onSelect: () => setReverseCmd(ids, clip.reverse !== true) });
+    if (clip.kind === 'video') {
+      const on = onClip(clip, editor().playhead);
+      items.push({ id: 'freeze-frame', label: 'Freeze frame', disabled: !canEdit || !single || !on, title: lockTitle ?? (on ? undefined : 'Move the playhead onto the clip'), onSelect: () => freezeFrameCmd(clipId) });
+    }
   }
   if (clip.kind !== 'audio') {
     items.push('separator');

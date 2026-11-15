@@ -30,6 +30,9 @@ type Allowed = [string, string, string];
 const ALLOWED: Allowed[] = [
   // Routed by the task named in each entry (identity-timed clips are unaffected until then); a routed site makes its
   // entry stale, which fails this test, so the entry must be deleted with the change.
+  ['src/ui/SpeedRamp.tsx', 'const span = clip.out - clip.in || 1;', 'the ramp graph is drawn over FOOTAGE time (the ramp keys live in footage seconds): a footage length, not a timeline one'],
+  ['src/ui/SpeedRamp.tsx', '((t - clip.in) / span) * W', 'the same graph: a key\'s footage time as a fraction of the footage range'],
+  ['src/ui/speedCommands.ts', 'const speed = (clip.out - clip.in) / seconds;', 'the Duration field: the speed that makes the footage length last the typed seconds (a footage length by design)'],
   ['src/core/migrateSpeed.ts', 'const d = (c.out - c.in) / speed;', 'raw saved JSON (not a Clip yet): the AUTHORED duration of a hand-edited speed, kept when the speed is clamped'],
   ['src/core/migrateSpeed.ts', 'const inn = c.out - length;', 'raw saved JSON: the footage edge played last in reverse, moved to keep the authored duration'],
   ['src/core/migrateSpeed.ts', 'out.out = c.in + length;', 'raw saved JSON: the footage edge played last going forward, moved to keep the authored duration'],

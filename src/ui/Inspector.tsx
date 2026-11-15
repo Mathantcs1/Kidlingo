@@ -16,6 +16,7 @@ import EffectsInspector, { effectsSummary } from './EffectsInspector';
 import './inspector.css';
 import InspectorSection from './InspectorSection';
 import OverlayInspector from './OverlayInspector';
+import SpeedFields from './SpeedFields';
 import TransformFields from './TransformFields';
 
 const NO_SOUND: Partial<Record<Clip['kind'], string>> = {
@@ -30,6 +31,15 @@ interface ControlsProps {
   media: MediaRef | undefined;
   editable: boolean;
   locked: boolean;
+}
+
+/** The Speed section's header summary: the clip's retiming at a glance (absent at normal speed). */
+export function speedSummary(c: Clip): string | undefined {
+  const parts: string[] = [];
+  if (c.speedKeys && c.speedKeys.length > 0) parts.push('Ramp');
+  else if (c.speed !== undefined) parts.push(`${Math.round(c.speed * 100)}%`);
+  if (c.reverse) parts.push('Reverse');
+  return parts.length > 0 ? parts.join(', ') : undefined;
 }
 
 function ClipControls({ clip, media, editable, locked }: ControlsProps) {
@@ -62,6 +72,12 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
           <AnchorFields clip={clip} disabled={!editable || locked} title={locked ? 'Track is locked' : undefined} />
         </InspectorSection>
       )}
+      {(clip.kind === 'video' || clip.kind === 'audio') && clip.freeze === undefined && (
+        <InspectorSection name="speed" title="Speed" summary={speedSummary(clip)}>
+          <SpeedFields clip={clip} media={media} disabled={!editable || locked} title={locked ? 'Track is locked' : undefined} />
+        </InspectorSection>
+      )}
+      {clip.freeze !== undefined && <p className="inspector-hint inspector-pad">Freeze frame: the picture at one moment, held. Trim it to change how long it lasts.</p>}
       {clip.kind !== 'audio' && (
         <InspectorSection name="animation" title="Animation" summary={hasAnimation(clip) ? 'Animated' : undefined}>
           <AnimationInspector clip={clip} editable={editable} locked={locked} />

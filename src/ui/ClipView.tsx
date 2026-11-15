@@ -7,11 +7,13 @@ import { useEditor } from '../state/store';
 import './audio.css';
 import './overlays.css';
 import './presets.css';
+import './speed.css';
 import { openContextMenu } from './contextMenuOpen';
 import { clipMenuItems } from './contextMenuItems';
 import { toggleSelection } from './edits';
 import { timeToPx } from './layout';
 import MotionBands from './MotionBands';
+import { speedBadge } from './speedBadge';
 import Waveform from './Waveform';
 import type { DragKind } from './useClipDrag';
 
@@ -70,7 +72,12 @@ export default function ClipView({ clip, media, pps, selected, locked, dragging,
       {clip.kind !== 'audio' && <MotionBands clip={clip} pps={pps} />}
       <span className="clip-name">{name}</span>
       {missing && <span className="clip-missing">missing media</span>}
-      {clip.kind === 'video' && clip.audio.silent && (
+      {speedBadge(clip) && (
+        <span className="clip-speed-badge" data-testid="clip-speed-badge">
+          {speedBadge(clip)}
+        </span>
+      )}
+      {clip.kind === 'video' && clip.audio.silent && clip.freeze === undefined && (
         <span className="clip-detached-badge" data-testid="clip-detached-badge">
           audio detached
         </span>
