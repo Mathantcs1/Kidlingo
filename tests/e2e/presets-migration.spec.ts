@@ -57,26 +57,26 @@ test('a v6 save with keyframes opens with the same picture and keys, and is re-s
   expect(p.tracks.find((t) => t.id === 'v2')!.clips[0].keys).toEqual(v6.tracks.find((t) => t.id === 'v2')!.clips[0].keys);
   for (const c of p.tracks.flatMap((t) => t.clips)) expect('motion' in c).toBe(false);
 
-  // The next save is v7 with the same clips (keys included) and the same picture.
+  // The next save is the current version with the same clips (keys included) and the same picture.
   await page.getByTestId('btn-add-video-layer').click();
   await page.evaluate(() => window.__clipforge!.flushAutosave());
   const after = await savedProject(page);
-  expect(after?.version).toBe(7);
+  expect(after?.version).toBe(CURRENT_VERSION);
   expect(after?.tracks.flatMap((t) => t.clips)).toEqual(v6.tracks.flatMap((t) => t.clips));
   expect(await at(page, 1)).toEqual(before.mid);
   expect(errors).toEqual([]);
 });
 
-test('a save from the next version (8) shows the newer-version notice and its stored bytes never change', async ({ page }) => {
+test('a save from the next version shows the newer-version notice and its stored bytes never change', async ({ page }) => {
   await setupPip(page);
   await page.evaluate(() => window.__clipforge!.flushAutosave());
   const cur = await savedProject(page);
-  // A future save: version 8 with data this build would otherwise "repair" (an unknown preset, a malformed loop).
+  // A future save: the next version with data this build would otherwise "repair" (an unknown preset, a malformed loop).
   const v8 = {
     ...cur!, version: CURRENT_VERSION + 1, futureField: { a: 1 },
     tracks: cur!.tracks.map((t) => ({ ...t, clips: t.clips.map((c) => ({ ...c, motion: { in: { preset: 'teleport', duration: 99 } }, keys: { loops: { opacity: { mode: 'bounce' } } } })) })),
   };
-  expect(v8.version).toBe(8);
+  expect(v8.version).toBe(CURRENT_VERSION + 1);
   await writeSaved(page, v8);
   const bytes = JSON.stringify(await savedProject(page));
 
