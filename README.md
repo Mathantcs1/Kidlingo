@@ -112,6 +112,15 @@ It is a static site built with React, TypeScript and Vite.
     file); applying one copies it into the clip in one undo step, relative to the clip's own position. Rename, delete
     (asks first; clips keep their animation) and favourites are in the browser. A library written by a newer version is
     shown read-only and never overwritten.
+- **Crop, flip and anchor point** (Plan 5, Part 5E; saved data version 8): the Inspector's "Crop & Flip" section has four
+  crop fields (percent from each edge), **Crop on canvas** (eight handles over the preview with a dashed outline of the
+  full picture, live while you drag, one undo step per gesture, Escape cancels), **Fit** and **Fill** (scale the visible
+  area to the canvas), Reset, and Flip horizontal / vertical (the mirror happens inside the crop, before the clip is
+  rotated). The "Anchor point" section sets the **pivot** that Scale, Rotation and animation presets turn about (X/Y in
+  percent of the picture from its centre; "To crop centre"; Reset) and has a keyframe row like Position, with loops,
+  copy/paste and presets carrying it. A small dot on the selected clip marks the pivot; **Shift + drag** moves the pivot
+  without moving the picture. The clip's right-click menu has Flip, Crop on canvas and Reset crop. Preview and export
+  use the same geometry; effects work on the cropped picture only, and the blurred frame mode fills from it.
 - **Numeric position/scale/rotation/opacity fields** in the inspector for a video, image or overlay clip (adjustment clips get opacity only): X and Y in
   pixels from the frame centre (0 = centred), scale and opacity in percent, rotation in degrees clockwise. Type a
   value and press Enter (or leave the field) to apply it as one undo step; Up/Down step the value (Shift ×10) and
@@ -328,6 +337,20 @@ Layers and the preview:
   - Overlay text uses the device's system font; the animation measurements (preview frame time, memory, parity with
     the export) were made with the software renderer (SwiftShader) in headless Chromium on Linux, not on a real GPU,
     in Safari or in QuickTime (see `docs/superpowers/ledgers/plan-5a-manual-qa-checklist.md`).
+- **Crop, flip and anchor limits** (Plan 5, Part 5E; saved data version 8 is one-way, a v7 build cannot open a v8 project):
+  - Crop is a mask on the full picture: the visible pixels never move and position, scale and rotation keep referring
+    to the uncropped frame (so a rotation turns about the picture's centre, not the visible area's; use "To crop
+    centre" or the Anchor fields to change the pivot). At least 8 source pixels (or 2 % of the picture) always stay.
+  - Crop and flip are static (no keyframes, no rounded or feathered masks). The anchor can be animated and looped.
+  - Crop, flip and anchor apply to video and image clips only; overlays, adjustment layers and audio clips refuse them
+    and a detached audio twin does not carry them.
+  - Changing the anchor with its fields moves the picture (X/Y are where the pivot lands); Shift + drag on the pivot dot
+    keeps the picture still and is only available while position, scale, rotation and the anchor are not animated.
+  - The on-canvas crop handles have no keyboard nudge (use the numeric fields). Moving a cropped clip snaps its visible
+    area to the canvas edges and centre, not the full picture.
+  - Measured in headless Chromium with software WebGL only (export vs preview mean difference 0.2/255 per pixel at 30
+    and 25 fps); not seen on a real GPU, in Safari or in QuickTime (see
+    `docs/superpowers/ledgers/plan-5e-manual-qa-checklist.md`).
 - **Presets, loops and paths limits** (Plan 5, Part 5B; data v7 is one-way, a v6 build cannot open a v7 project):
   - One preset per slot (In, Emphasis, Loop, Out); no second emphasis, no per-letter text animation, no effect-parameter
     presets (blur-in), no motion blur, no loop before the first key and no "convert preset to keyframes" yet.
