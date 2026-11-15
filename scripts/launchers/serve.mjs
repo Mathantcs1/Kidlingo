@@ -1,13 +1,19 @@
 // ClipForge local server (Node.js, built-in modules only).
 // Serves the app/ folder next to this file on 127.0.0.1 only. Port: CLIPFORGE_PORT (default 8123).
 // Content types come from the table below, not from the operating system.
-import { createServer } from 'node:http';
+import { createServer, get } from 'node:http';
 import { readFile, realpath, stat } from 'node:fs/promises';
 import { dirname, extname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = await realpath(join(dirname(fileURLToPath(import.meta.url)), 'app'));
 const port = Number(process.env.CLIPFORGE_PORT) || 8123;
+
+// --check: exit 0 only if a ClipForge server answers on the port (used by the launchers before opening the browser).
+if (process.argv.includes('--check')) {
+  get({ host: '127.0.0.1', port, timeout: 1000 }, (r) => process.exit(r.headers['x-clipforge'] === '1' ? 0 : 1)).on('error', () => process.exit(1));
+  await new Promise(() => {});
+}
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -30,7 +36,7 @@ const isFile = async (p) => (await stat(p).catch(() => null))?.isFile() ?? false
 const isDir = async (p) => (await stat(p).catch(() => null))?.isDirectory() ?? false;
 
 function send(res, status, body, type, head) {
-  res.writeHead(status, { 'Content-Type': type, 'Content-Length': body.length, 'Cache-Control': 'no-cache' });
+  res.writeHead(status, { 'Content-Type': type, 'Content-Length': body.length, 'Cache-Control': 'no-cache', 'X-ClipForge': '1' });
   res.end(head ? undefined : body);
 }
 

@@ -1,5 +1,5 @@
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
-import { readFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { request } from 'node:http';
 import { createServer } from 'node:net';
 import { networkInterfaces, tmpdir } from 'node:os';
@@ -11,6 +11,7 @@ import { buildZip } from '../scripts/package-clipforge.mjs';
 const work = mkdtempSync(join(tmpdir(), 'clipforge-servers-'));
 let dir = '';
 let jsAsset = '';
+const CANARY = 'CANARY-outside-the-app-folder-4f9a1c';
 
 const freePort = () =>
   new Promise<number>((ok) => {
@@ -36,6 +37,9 @@ beforeAll(async () => {
   const zip = await buildZip({ version: '1.0.0', out: work });
   dir = join(work, 'unzipped');
   execFileSync('unzip', ['-q', zip, '-d', dir]);
+  // A secret next to app/ (and a symlink to it inside app/) that must never be served.
+  writeFileSync(join(dir, 'secret.txt'), CANARY);
+  symlinkSync(join(dir, 'secret.txt'), join(dir, 'app', 'link.txt'));
   writeFileSync(join(dir, 'app', 'probe.wasm'), Buffer.from([0, 0x61, 0x73, 0x6d, 1, 0, 0, 0]));
   jsAsset = execFileSync('unzip', ['-Z1', zip], { encoding: 'utf8' }).split('\n').find((n) => /^app\/assets\/.*\.js$/.test(n))!.slice(4);
 }, 300_000);
@@ -82,11 +86,13 @@ describe.each(servers)('%s', (_name, cmd, args) => {
     for (const l of mine) expect(l.trim().split(/\s+/)[1]).toBe(`0100007F:${port.toString(16).toUpperCase().padStart(4, '0')}`);
   });
 
-  it('refuses path traversal', async () => {
-    for (const p of ['/../package.json', '/assets/../../package.json', '/%2e%2e/package.json', '/..%2f..%2fetc/passwd', '/..\\package.json']) {
+  it('refuses path traversal and symlinks that escape app/', async () => {
+    const canary = await get(port, '/../secret.txt');
+    expect([403, 404]).toContain(canary.status);
+    for (const p of ['/../secret.txt', '/assets/../../secret.txt', '/..%2fsecret.txt', '/%2e%2e/secret.txt', '/..\\secret.txt', '/link.txt']) {
       const r = await get(port, p);
       expect([403, 404], p).toContain(r.status);
-      expect(r.body).not.toContain('"scripts"');
+      expect(r.body, p).not.toContain(CANARY);
     }
   });
 

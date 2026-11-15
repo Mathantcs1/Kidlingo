@@ -42,6 +42,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-cache")
+        self.send_header("X-ClipForge", "1")  # lets the launcher tell this server from anything else on the port
         self.end_headers()
         if not head:
             self.wfile.write(body)
@@ -71,7 +72,21 @@ class Handler(BaseHTTPRequestHandler):
         self._serve(True)
 
 
+def check():
+    """--check: exit 0 only if a ClipForge server answers on PORT (used by the launchers before opening the browser)."""
+    import http.client
+
+    try:
+        conn = http.client.HTTPConnection("127.0.0.1", PORT, timeout=1)
+        conn.request("GET", "/")
+        return 0 if conn.getresponse().getheader("X-ClipForge") == "1" else 1
+    except Exception:
+        return 1
+
+
 def main():
+    if "--check" in sys.argv[1:]:
+        return check()
     try:
         httpd = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     except OSError as e:
