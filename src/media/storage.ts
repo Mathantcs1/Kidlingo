@@ -66,7 +66,7 @@ async function removeCreated(dir: FileSystemDirectoryHandle, id: Id): Promise<vo
       return;
     } catch (e) {
       if (isNotFound(e)) return;
-      await new Promise((resolve) => setTimeout(resolve, 5 * (attempt + 1)));
+      if (attempt < 7) await new Promise((resolve) => setTimeout(resolve, 5 * (attempt + 1)));
     }
   }
 }

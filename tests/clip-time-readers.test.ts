@@ -20,11 +20,24 @@ const PATTERNS: [string, RegExp][] = [
   ['duration', /\b[A-Za-z_]\w*\.out\s*-\s*[A-Za-z_]\w*\.in\b/],
   ['footage offset', /\b[A-Za-z_]\w*\.in\s*\+\s*[(A-Za-z_]/],
   ['timeline from footage', /\.start\s*\+\s*\([^)]*-\s*[A-Za-z_]\w*\.in\b/],
+  ['footage length from a time', /\b[A-Za-z_]\w*\s*-\s*[A-Za-z_]\w*\.in\b/],
+  ['footage length to a time', /\b[A-Za-z_]\w*\.out\s*-\s*[A-Za-z_]\w*\b(?!\.)/],
+  ['key time to timeline', /localRange\([^)]*\)\[0\]/],
 ];
 
 /** [file, a substring of the line, why]. */
 type Allowed = [string, string, string];
 const ALLOWED: Allowed[] = [
+  // Routed by the task named in each entry (identity-timed clips are unaffected until then); a routed site makes its
+  // entry stale, which fails this test, so the entry must be deleted with the change.
+  ['src/core/clipEdits.ts', 'cut - clip.in),', 'Task 4: the left half\'s fades fit its TIMELINE duration (clipDuration), reverse halves swap their footage ranges'],
+  ['src/core/clipEdits.ts', 'clip.out - cut),', 'Task 4: the right half\'s fades fit its TIMELINE duration (clipDuration)'],
+  ['src/core/keyframes.ts', 'const d = k - localRange(clip)[0];', 'Task 4: keyFrame counts frames from the key\'s TIMELINE offset (timelineTimeAt)'],
+  ['src/core/motionEdits.ts', '-localRange(clip)[0]', 'Task 5: a loop phase at the clip start is expressed in footage time through the map'],
+  ['src/ui/MotionBands.tsx', 'emphasis.at - localRange(clip)[0]', 'Task 11: preset bands positioned from timelineTimeAt'],
+  ['src/ui/keyDrag.ts', '(u - localRange(clip)[0]) * pps', 'Task 5: diamond position from timelineTimeAt'],
+  ['src/ui/keyDrag.ts', 'clip.start + (grabbed - localRange(clip)[0])', 'Task 5: snapping a key drag to the playhead through the map'],
+  ['src/ui/keyframeCommands.ts', 'clip.start + (u - localRange(clip)[0])', 'Task 5: keyTimelineTime = timelineTimeAt'],
   ['src/core/migrate.ts', 'c.out >= c.in ? c.out - c.in : null', 'raw saved JSON (not a Clip yet): the stored footage length used to fit audio fades; Task 3 (data v9) makes it speed-aware'],
 ];
 
@@ -38,7 +51,8 @@ function scan(sources?: { file: string; text: string }[]): Hit[] {
     text.split('\n').forEach((raw, i) => {
       const code = raw.replace(/\/\/.*$/, '');
       if (/^\s*(\*|\/\*)/.test(code)) return; // comments
-      for (const [kind, re] of PATTERNS) if (re.test(code)) hits.push({ file, line: i + 1, text: raw.trim(), kind });
+      const hit = PATTERNS.find(([, re]) => re.test(code)); // one hit per line, the first shape that matches
+      if (hit) hits.push({ file, line: i + 1, text: raw.trim(), kind: hit[0] });
     });
   }
   return hits;
