@@ -89,6 +89,32 @@ final class SeedClipforgeTest extends WPTestCase {
 		$this->assertCount( 1, get_posts( array( 'post_type' => 'product', 'post_status' => array( 'any', 'trash' ), 'numberposts' => -1 ) ) );
 	}
 
+	private function product_count(): int {
+		return count( get_posts( array( 'post_type' => 'product', 'post_status' => array( 'any', 'trash' ), 'numberposts' => -1, 'fields' => 'ids' ) ) );
+	}
+
+	public function test_rerun_restores_the_linked_product_when_it_is_trashed_even_without_a_tag(): void {
+		$id  = ideatoapps_seed_clipforge();
+		$pid = (int) get_post_meta( $id, 'woo_product_id', true );
+		delete_post_meta( $pid, '_ideatoapps_app_id' );
+		wp_trash_post( $pid );
+		$this->assertSame( $id, ideatoapps_seed_clipforge() );
+		$this->assertSame( $pid, (int) get_post_meta( $id, 'woo_product_id', true ) );
+		$this->assertSame( 'publish', get_post_status( $pid ) );
+		$this->assertSame( 1, $this->product_count() );
+	}
+
+	public function test_rerun_reuses_and_tags_a_legacy_untagged_product_when_the_link_is_lost(): void {
+		$id  = ideatoapps_seed_clipforge();
+		$pid = (int) get_post_meta( $id, 'woo_product_id', true );
+		delete_post_meta( $pid, '_ideatoapps_app_id' );
+		delete_post_meta( $id, 'woo_product_id' );
+		ideatoapps_seed_clipforge();
+		$this->assertSame( $pid, (int) get_post_meta( $id, 'woo_product_id', true ) );
+		$this->assertSame( $id, (int) get_post_meta( $pid, '_ideatoapps_app_id', true ) );
+		$this->assertSame( 1, $this->product_count() );
+	}
+
 	public function test_adds_no_versions_or_files(): void {
 		$id = ideatoapps_seed_clipforge();
 		$this->assertSame( array(), ideatoapps_get_versions( $id ) );

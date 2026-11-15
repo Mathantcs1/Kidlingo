@@ -58,7 +58,8 @@ function ideatoapps_seed_clipforge_product( $app_id ) {
 		return 0;
 	}
 	$linked = (int) get_post_meta( $app_id, 'woo_product_id', true );
-	if ( $linked > 0 && 'product' === get_post_type( $linked ) && 'trash' !== get_post_status( $linked ) ) {
+	if ( $linked > 0 && 'product' === get_post_type( $linked ) ) {
+		ideatoapps_seed_publish_product( $linked );
 		return $linked;
 	}
 	$found = get_posts(
@@ -71,12 +72,23 @@ function ideatoapps_seed_clipforge_product( $app_id ) {
 			'fields'         => 'ids',
 		)
 	);
+	if ( ! $found ) {
+		// A product from before products were tagged: same slug as the seed's product name.
+		$found = get_posts(
+			array(
+				'post_type'      => 'product',
+				'post_status'    => array( 'any', 'trash' ),
+				'post_name__in'  => array( 'clipforge', 'clipforge__trashed' ),
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
+	}
 	if ( $found ) {
-		if ( 'trash' === get_post_status( $found[0] ) ) {
-			wp_untrash_post( $found[0] );
-			wp_update_post( array( 'ID' => $found[0], 'post_status' => 'publish' ) );
-		}
-		return (int) $found[0];
+		$product_id = (int) $found[0];
+		ideatoapps_seed_publish_product( $product_id );
+		update_post_meta( $product_id, '_ideatoapps_app_id', $app_id );
+		return $product_id;
 	}
 	$product = new WC_Product_Simple();
 	$product->set_name( 'ClipForge' );
@@ -84,9 +96,20 @@ function ideatoapps_seed_clipforge_product( $app_id ) {
 	$product->set_regular_price( '24.99' );
 	$product->set_virtual( true );
 	$product->set_downloadable( true );
-	$product_id = (int) $product->save();
-	update_post_meta( $product_id, '_ideatoapps_app_id', $app_id );
-	return $product_id;
+	$product->update_meta_data( '_ideatoapps_app_id', $app_id );
+	return (int) $product->save();
+}
+
+/**
+ * Bring a trashed seed product back (published); other statuses are left as the owner set them.
+ *
+ * @param int $product_id Product post ID.
+ */
+function ideatoapps_seed_publish_product( $product_id ) {
+	if ( 'trash' === get_post_status( $product_id ) ) {
+		wp_untrash_post( $product_id );
+		wp_update_post( array( 'ID' => $product_id, 'post_status' => 'publish' ) );
+	}
 }
 
 /**
