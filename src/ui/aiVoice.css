@@ -1,0 +1,45 @@
+.ai-voice-text {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  min-height: 120px;
+  resize: vertical;
+}
+
+.modal-fields select {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+.ai-voice-count {
+  align-self: flex-end;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ai-voice-count.is-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.ai-voice-status {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ai-voice-status.is-error {
+  color: var(--danger);
+}
+
+.btn-ai-voice[aria-disabled='true'] {
+  opacity: 0.55;
+}

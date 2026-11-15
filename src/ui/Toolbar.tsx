@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { detachDisabledReason } from '../core/audioQueries';
 import { timelineDuration } from '../core/timeline';
 import { useEditor } from '../state/store';
@@ -6,9 +7,11 @@ import { deleteSelected, mergeSelected, redo, rippleDeleteSelected, splitAtPlayh
 import { videoClipCount } from './edits';
 import { openExport, startMerge } from './exportJob';
 import { formatTimecode } from './layout';
+import { openAiVoiceOrSettings } from './aiVoiceState';
 import OverlayMenu from './OverlayMenu';
 import RecordButton from './RecordButton';
 import { useRecording } from './recordCommands';
+import { useSettings } from './settingsState';
 import { usePlaybackStatus } from './usePlayback';
 
 export default function Toolbar({ editable, inert }: { editable: boolean; inert: boolean }) {
@@ -23,6 +26,10 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
   const buffering = usePlaybackStatus((s) => s.buffering);
   const saveError = useEditor((s) => s.saveError);
   const recording = useRecording((s) => s.status !== 'idle');
+  const hasKey = useSettings((s) => s.hasKey);
+  useEffect(() => {
+    void useSettings.getState().refreshHasKey();
+  }, []);
   const busyTitle = 'Stop the voice-over recording first';
 
   return (
@@ -117,6 +124,17 @@ export default function Toolbar({ editable, inert }: { editable: boolean; inert:
       </div>
       <div className="toolbar-group">
         <RecordButton editable={editable} />
+        <button
+          type="button"
+          data-testid="btn-ai-voice"
+          className="btn-ai-voice"
+          onClick={openAiVoiceOrSettings}
+          disabled={!editable || recording}
+          aria-disabled={!hasKey || undefined}
+          title={recording ? busyTitle : hasKey ? 'Generate a voice-over from text with ElevenLabs' : 'Add your ElevenLabs API key in Settings to use AI voice'}
+        >
+          AI voice
+        </button>
         <OverlayMenu editable={editable} />
       </div>
       <div className="toolbar-group toolbar-end">
