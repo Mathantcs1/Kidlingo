@@ -259,3 +259,19 @@ test('slider keys commit one step per press, Delete on a focused slider keeps th
   await expect(rows(page)).toHaveCount(2);
   expect(await clipFx(page, (await clipStates(page))[0].id)).toEqual(stack);
 });
+
+test('a colour parameter commits once when the picker closes (chroma key colour)', async ({ page }) => {
+  await setup(page, [png('still.png')], 'still.png');
+  await addFx(page, 'chroma');
+  const id = await rowId(page, 0);
+  const d0 = await undoDepth(page);
+  await f(page, `fx-${id}-key`).evaluate((el) => {
+    const input = el as HTMLInputElement;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '#00ffff');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  expect(await undoDepth(page)).toBe(d0 + 1);
+  expect((await clipFx(page, (await clipStates(page))[0].id))[0].params.key).toBe(0x00ffff);
+  await expect(f(page, `fx-${id}-key`)).toHaveValue('#00ffff');
+});

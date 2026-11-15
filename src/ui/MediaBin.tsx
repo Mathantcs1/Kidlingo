@@ -1,3 +1,4 @@
+import OverlayPanel from './OverlayPanel';
 import { useState } from 'react';
 import type { DragEvent } from 'react';
 import type { MediaRef } from '../core/model';
@@ -170,6 +171,7 @@ export default function MediaBin({ supported, ready }: { supported: boolean; rea
       {list.length === 0 && pending.length === 0 && (
         <p className="empty-hint">{supported ? 'Import or drop video, audio and images here.' : 'Import is unavailable.'}</p>
       )}
+      <OverlayPanel editable={ready} />
     </aside>
   );
 }

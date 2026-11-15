@@ -6,6 +6,7 @@ import { liveSelection, setClipFit, setClipVolume } from './edits';
 import { guard } from './Toast';
 import AudioInspector from './AudioInspector';
 import FxInspector from './FxInspector';
+import OverlayInspector from './OverlayInspector';
 import TransformFields from './TransformFields';
 
 const FIT_MODES: { mode: Clip['fit']; label: string; hint: string }[] = [
@@ -96,15 +97,16 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
   return (
     <>
       <p className="inspector-clip" title={media?.name}>
-        {media?.name ?? (clip.kind === 'overlay' ? 'Overlay' : 'Unknown media')}
+        {media?.name ?? (clip.kind === 'overlay' ? (clip.overlay?.text.trim() || 'Overlay') : 'Unknown media')}
       </p>
-      {audible ? (
+      {clip.kind === 'overlay' ? null : audible ? (
         <VolumeControl clip={clip} disabled={!editable} />
       ) : (
         <p className="inspector-hint">{clip.kind === 'image' ? 'Images have no sound.' : 'This clip has no sound.'}</p>
       )}
       {audible && <AudioInspector clip={clip} media={media} editable={editable} locked={locked} />}
-      {clip.kind !== 'audio' && <FitControl clip={clip} disabled={!editable} />}
+      {clip.kind === 'overlay' && <OverlayInspector clip={clip} editable={editable} locked={locked} />}
+      {clip.kind !== 'audio' && clip.kind !== 'overlay' && <FitControl clip={clip} disabled={!editable} />}
       {clip.kind !== 'audio' && <TransformFields clip={clip} editable={editable} locked={locked} />}
       {clip.kind !== 'audio' && <FxInspector clip={clip} editable={editable} locked={locked} />}
     </>

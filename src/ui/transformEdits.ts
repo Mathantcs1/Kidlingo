@@ -1,5 +1,6 @@
 // Pure edits of a clip's transform (position, scale, rotation, opacity), behind the inspector fields and the
 // on-canvas overlay.
+import { initialTransform } from '../overlays/spec';
 import { fitTransform } from '../core/merge';
 import type { Clip, Id, Project, Transform } from '../core/model';
 import { TimelineError, assertUnlocked, findClip } from '../core/timeline';
@@ -40,6 +41,7 @@ export function setClipTransform(p: Project, clipId: Id, patch: Partial<Transfor
  */
 export function resetClipTransform(p: Project, clipId: Id): Project {
   return writeTransform(p, clipId, (cur, clip) => {
+    if (clip.kind === 'overlay' && clip.overlay) return initialTransform(clip.overlay.type, p.format);
     const m = p.media[clip.mediaId];
     return m?.width && m.height
       ? fitTransform({ width: m.width, height: m.height }, p.format, clip.fit)

@@ -47,6 +47,10 @@ function NumberParam({ clipId, fx, def, disabled }: ParamProps) {
 function ColorParam({ clipId, fx, def, disabled }: ParamProps) {
   const ref = useRef<HTMLInputElement>(null);
   const stored = fx.params[def.key] ?? def.def;
+  // Uncontrolled: React would reset a controlled colour input on every `input` event and the picker could not be used.
+  useEffect(() => {
+    if (ref.current) ref.current.value = hex(stored);
+  }, [stored]);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -57,7 +61,7 @@ function ColorParam({ clipId, fx, def, disabled }: ParamProps) {
   return (
     <label className="effect-param fx-color">
       <span>{def.label}</span>
-      <input ref={ref} type="color" value={hex(stored)} disabled={disabled} data-testid={`fx-${fx.id}-${def.key}`} aria-label={def.label} onChange={() => undefined} />
+      <input ref={ref} type="color" defaultValue={hex(stored)} disabled={disabled} data-testid={`fx-${fx.id}-${def.key}`} aria-label={def.label} />
     </label>
   );
 }

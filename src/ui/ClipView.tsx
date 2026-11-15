@@ -21,10 +21,19 @@ interface ClipViewProps {
 }
 
 /** A clip on a lane: click selects, the body drags to move, the edge handles drag to trim. */
+const OVERLAY_NAMES = { lowerThird: 'Lower third', subscribe: 'Subscribe button', progress: 'Progress bar', sticker: 'Sticker' } as const;
+
+/** An overlay clip's timeline label: its title text when it has one, else its kind. */
+function overlayLabel(clip: Clip): string {
+  const spec = clip.overlay;
+  if (!spec) return 'Overlay';
+  return spec.text.trim() || OVERLAY_NAMES[spec.type];
+}
+
 export default function ClipView({ clip, media, pps, selected, locked, dragging, onDragStart }: ClipViewProps) {
   const missing = media?.missing === true;
   const fxCount = clip.fx.filter((e) => e.enabled).length;
-  const name = media?.name ?? (clip.kind === 'overlay' ? 'Overlay' : 'Unknown media');
+  const name = media?.name ?? (clip.kind === 'overlay' ? overlayLabel(clip) : 'Unknown media');
   const onClick = (e: MouseEvent): void => {
     e.stopPropagation();
     const { selection, select } = useEditor.getState();

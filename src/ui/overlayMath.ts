@@ -1,5 +1,6 @@
 // Pure, DOM-free maths for the on-canvas transform overlay: CSS pixels of the displayed preview canvas <-> FORMAT
 // pixels (origin at the canvas top-left, y down; see render/overlayGeometry.ts), and which clip the overlay edits.
+import { OVERLAY_SIZES } from '../overlays/spec';
 import type { Clip, MediaRef, Project } from '../core/model';
 import { findClip } from '../core/timeline';
 import type { Point } from '../render/overlayGeometry';
@@ -51,6 +52,7 @@ export function toleranceInFormatPx(cssPx: number, box: Box, format: Size): numb
  * audio clips and unknown dimensions (no overlay).
  */
 export function sourceSizeFor(clip: Clip, media: MediaRef | undefined, frameInfo?: Size): Size | null {
+  if (clip.kind === 'overlay' && clip.overlay) return { ...OVERLAY_SIZES[clip.overlay.type] };
   if (clip.kind === 'audio' || !media) return null;
   if (pos(media.width ?? NaN) && pos(media.height ?? NaN)) return { width: media.width!, height: media.height! };
   if (frameInfo && pos(frameInfo.width) && pos(frameInfo.height)) return { width: frameInfo.width, height: frameInfo.height };
