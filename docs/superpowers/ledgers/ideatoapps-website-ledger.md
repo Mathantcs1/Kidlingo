@@ -125,3 +125,11 @@ Task 9: CARRY: JSON-LD ideatoapps_app_jsonld must strip rating/review RECURSIVEL
 - Carry to Task 10 (do in T10): I1 add pageerror ("jQuery is not defined") assertion on /cart/ and /checkout/ + ENVIRONMENT.md note; I2 say fail-closed seam branch is verified by reading, not a test; M1 decide robots Disallow vs noindex for account/cart/checkout (document); M5 launch checklist: WordPress site address must be the apex; M6 exclude /.well-known/acme-challenge/ from the HTTPS redirect in HTACCESS_SNIPPET.md; owner todo: trash "Sample Page"; legal pages stay indexable while DRAFT.
 - Not re-run after the app-detail.spec fix: full e2e chain (do in the Task 10 full gate); zip-runs and screenshot specs not run.
 - Unverified: .htaccess on Apache/LiteSpeed, real gzip size, MySQL, Stripe, Google rich-result validation, PHP 8.0 runtime.
+
+## Task 10 (df5ab6b): APPROVED by independent review, no Critical/Important
+- Gate (implementer): PHPUnit 202 OK; full Playwright 285 passed / 9 pre-existing skips / 0 failed; ClipForge npm test 694, typecheck, build OK.
+- Missing: admin version-upload screenshot (classic meta box hidden under automation); described in words in ADMIN_GUIDE. Owner to eyeball.
+- Minor, left: symlink refusal in package-site.mjs untested; dotfiles (incl .htaccess) skipped from zips (intended); duplicate `package` script in site/package.json; G3 wording slightly muddled; WooCommerce 11.3.0 / WP 7.x "tested" versions asserted without independent evidence.
+- Fixed by controller: Theme URI .com -> .net.
+- Trailer Claude-Session ids differ across commits (history unpushed; left as is).
+- Next: final whole-branch review on the most capable model, then finishing-a-development-branch (NO push without a fresh explicit user "push").
