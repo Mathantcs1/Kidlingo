@@ -68,6 +68,12 @@ const ALLOWED: Allowed[] = [
   ['src/ui/AnchorFields.tsx', 'disabled={disabled || keyed || !clip.anchor}', 'reads stored value on purpose: the Reset button needs a stored static anchor'],
   ['src/ui/Inspector.tsx', "summary={clip.crop || clip.flip ? 'On' : undefined}", 'reads stored value on purpose: a summary of what is set'],
   ['src/ui/Inspector.tsx', "summary={clip.anchor || clip.keys?.anchor ? 'Moved' : undefined}", 'reads stored value on purpose: a summary of what is set'],
+  // 5E Task 6: the crop overlay draws at the target (resolved at the playhead, or the live crop) and starts a drag from the stored crop.
+  ['src/ui/CropOverlay.tsx', 'const visible = clipCorners(target.size, target.transform, format, view)', 'handles at the target transform (resolved at the playhead / live crop)'],
+  ['src/ui/CropOverlay.tsx', 'const frame = frameCorners(target.size, target.transform, format, view)', 'handles at the target transform (resolved at the playhead / live crop)'],
+  ['src/ui/CropOverlay.tsx', 'const g = { handle, start: clip.crop, last: clip.crop,', 'reads stored value on purpose: a crop drag starts from the stored mask (crop is static)'],
+  ['src/ui/CropOverlay.tsx', 'const f = frameFractionAt(p, target.transform, target.size, view.anchor, format)', 'handles at the target transform: resolved at the playhead, the pointer is mapped onto the frame it shows'],
+  ['src/ui/Preview.tsx', 'return liveCrop ? withLiveCrop(p, liveCrop.clipId, liveCrop.crop) : p;', 'not a clip read (not a stored value): the live crop override of a drag in progress'],
   ['src/ui/overlayHit.ts', 'clipCorners(target.size, target.transform, format, target.view)', 'hit box from the target transform: resolved at the playhead by TransformOverlay (or the live drag)'],
   ['src/ui/useTransformDrag.ts', 'storeTransform: clip.transform', 'reads stored value on purpose: detects an external store change (drag start = resolvedTransform at the playhead)'],
   ['src/ui/dragStale.ts', 'now.transform !== g.storeTransform', 'reads stored value on purpose: detects an external store change of the transform, keys or preset stack (moved from useTransformDrag.ts, 5B Task 1; motion 5B Task 8)'],
