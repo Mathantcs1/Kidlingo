@@ -103,6 +103,15 @@ It is a static site built with React, TypeScript and Vite.
   is no latency compensation, so the voice can land slightly early against the picture (by the microphone's
   start-up and input latency, usually tens of milliseconds). The
   take is stored as an uncompressed mono WAV on your device (about 6 MB per minute at 48 kHz) and never leaves it.
+- **AI voice (optional, bring your own ElevenLabs key)**: open **Settings** (top bar), paste your own ElevenLabs API key,
+  and press **Test key** to check it. The **AI voice** button (next to Record) opens a dialog where you pick one of the
+  voices from your own ElevenLabs account, choose a model, type a script (up to 5 000 characters) and press **Generate**.
+  The first time, ClipForge asks you to confirm that the script text will be sent to ElevenLabs. The result is an MP3
+  added as media named "AI voice N" and placed as an audio clip at the playhead (one undo step). **Cancel** stops a
+  request in progress and adds nothing. Without a key the button is disabled and opens Settings. Generating uses your
+  ElevenLabs credits; ClipForge shows the remaining characters when ElevenLabs reports them but never promises a price.
+  This feature was tested only against stubbed responses: how the real ElevenLabs API behaves from a browser (including
+  CORS and ad-blockers) is unverified, and a failed request shows a plain message and changes nothing.
 - **Export** to MP4 (H.264 video + AAC audio) at 1080p or 4K, with a progress bar, cancel, and a file name you
   choose. 1080p fits the video in a 1920x1080 frame of the project's orientation (so 1080 px on the short side
   for every preset, e.g. 1080x1080 for Square); 4K doubles that (3840x2160 frame). A project with no audible clip
@@ -170,7 +179,7 @@ keeps working; export needs WebGL2 too and says so in the export dialog if it is
 
 ## Privacy
 
-Everything stays on your device; nothing is uploaded. Voice-over recordings and the audio processing (effects, noise reduction, waveforms) stay in the browser too. Imported media files are copied into the browser's Origin
+Everything stays on your device; nothing is uploaded, with one opt-in exception: **AI voice**. ClipForge has no server. If you add an ElevenLabs key in Settings and generate speech, only the script text (plus the voice and model you chose) and your own key are sent, directly from your browser to `api.elevenlabs.io`; your video, audio files and project are never sent. The key is stored only in this browser's IndexedDB (a separate database from your projects), is shown masked, and is never written into projects, exports, logs or error messages; **Remove** in Settings deletes it. ElevenLabs handles the text under its own terms. This was tested only against stubs, so real-API behaviour and CORS are unverified. Voice-over recordings and the audio processing (effects, noise reduction, waveforms) stay in the browser too. Imported media files are copied into the browser's Origin
 Private File System, and the project (the timeline as JSON, which references media by ID) is saved in IndexedDB.
 Clearing this site's data in the browser deletes your projects and imported media. Imported files that no
 project state uses any more (removed media, undone imports, replaced merges) are deleted the next time ClipForge

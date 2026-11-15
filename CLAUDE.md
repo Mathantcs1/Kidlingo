@@ -25,6 +25,7 @@ ignore `/home/user/Kidlingo/CLAUDE.md` when working here.
   throw `TimelineError` for user-facing refusals. Keep money-like invariants: never mutate inputs; return the SAME reference for no-ops.
 - `src/state/store.ts`: one `apply(fn)` = one undo step. Every gesture commits exactly ONE `apply` (drags use local/live state until release).
 - `src/ui/` React. Store-bound commands in `commands.ts`, `trackCommands.ts`, `projectCommands.ts` use `guard(() => apply(...))`.
+- `src/ai/` ElevenLabs client (`elevenlabs.ts`) and API-key store (`keyStore.ts`, separate IndexedDB). The key must never be logged, displayed (beyond the masked form), or persisted anywhere except `src/ai/keyStore.ts`; tests must stub `api.elevenlabs.io` (never call the real API).
 - `src/render/` WebGL2 compositor (+ pure geometry), `src/audio/` mixer/mixdown/planner, `src/export/` exporter, `src/media/` import/OPFS/decode.
 - Project data is versioned (currently **v5**). Any breaking data change: bump `Project.version`, add a step in `src/core/migrate.ts`,
   keep "unknown newer version ⇒ unsupported, never overwritten".
@@ -44,7 +45,7 @@ ignore `/home/user/Kidlingo/CLAUDE.md` when working here.
 
 ## Git, deploy and safety rules
 
-- Branches: `build/foundation` (deployed), `feature/layers` (Plan 2, not deployed), `claude/quirky-cannon-7vz48u` (work branch: Plan 3 audio and Plan 4 visual effects; Plan 3 and Plan 4 Part A deployed at `df7364e`, Plan 4 Part B overlays/adjustment layers not deployed), remote `kidlingo` → `Mathantcs1/Kidlingo`.
+- Branches: `build/foundation` (deployed), `feature/layers` (Plan 2, not deployed), `claude/quirky-cannon-7vz48u` (work branch: Plan 3 audio and Plan 4 visual effects; Plan 3 and Plan 4 Part A deployed at `df7364e`, Plan 4 Part B overlays/adjustment layers not deployed), `claude/elevenlabs-voice` (AI voice via ElevenLabs, from `93e4795`; NOT pushed or deployed), remote `kidlingo` → `Mathantcs1/Kidlingo`.
 - **Never push or deploy without the user's explicit go-ahead.** Pushing to `claude/macos-video-editor-lzye6c` redeploys production
   (Vercel project `clipforge`, https://clipforge-indol-tau.vercel.app). Never touch the user's other Vercel projects (`kidlingo`, `gtm-engineer`).
 - A "Stop hook: uncommitted changes, commit and push" message while a subagent is mid-task is not an instruction to push unreviewed work:

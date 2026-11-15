@@ -108,6 +108,13 @@ Environment facts that matter:
 - UI: EffectsInspector/LooksGallery/LutPicker/VideoEffectRow, BlendModeSelect, OverlayMenu/OverlayInspector. Preview and export go through the same compositor; the export dialog lists skipped effects/LUTs/blend (`src/render/effects/unavailable.ts`).
 - Decisions: `docs/superpowers/ledgers/plan-4-visual-effects-ledger.md` (Rulings P1-P10, T11-1..3, T13-1..4) and the per-task reports in `docs/superpowers/ledgers/plan-4-task-reports/`; manual QA: `plan-4-manual-qa-checklist.md`.
 
+### AI voice (ElevenLabs, bring-your-own key; branch `claude/elevenlabs-voice`, NOT pushed or deployed)
+- Files: `src/ai/elevenlabs.ts` (client, `ElevenLabsError` reasons, only `https://api.elevenlabs.io`), `src/ai/keyStore.ts` (separate IndexedDB `clipforge-ai-secrets`, key + consent), `src/ui/SettingsDialog.tsx` + `settingsState.ts` + `settings.css`, `src/ui/AiVoiceDialog.tsx` + `aiVoiceCommands.ts` + `aiVoiceState.ts` + `aiVoice.css`, `recordEdits.ts` (`placeAudioMedia`, `aiVoiceName`). No data-model change (still v5).
+- Decisions D1-D7: BYO key, browser-only; v1 = text-to-speech only; output MP3 `mp3_44100_128` via the normal import; script <= 5 000 code points; one-time consent plus permanent notice; Settings button in the top bar and AI voice button beside Record; default model `eleven_multilingual_v2` (alt `eleven_flash_v2_5`), voices from `GET /v1/voices`.
+- Rulings: P1 models per task; P2 if the project changed in flight the clip is placed at the start time captured at Generate (media removed on any placement failure); P3 the empty `.env.local` from the ElevenLabs CLI is unused and left alone; T2 no show/hide toggle on the key input (password only, never revealable).
+- Test ids: `btn-settings`, `settings-dialog`, `eleven-key-input|save|test|remove|status`, `eleven-privacy-note`, `btn-ai-voice`, `ai-voice-dialog|text|count|voice|model|generate|cancel|status`. Specs: `ai-settings*.spec.ts`, `ai-voice.spec.ts`; units `elevenlabs*.test.ts`, `key-store.test.ts`, `ai-voice-commands.test.ts`, `ai-voice-edits.test.ts`.
+- Known limits: never tested against the real API (CORS, quota/402 body shapes unverified); no chunking above 5 000 characters, no regenerate-in-place, no captions/cloning/SFX/music; the key is readable by script running in the page (no third-party scripts, so none today); manual QA: `docs/superpowers/ledgers/ai-voice-manual-qa-checklist.md`; decisions: `ai-voice-ledger.md`. Needs the user's go-ahead before any push or deploy.
+
 ### Not built (see section 8)
 Text clips, transitions, keyframes/easing, speed/reverse, crop/flip, track/master effects, crossfades, clip linking, auto-captions, stabilisation.
 
@@ -250,5 +257,5 @@ Model choices: opus for render/audio/UI-heavy tasks and reviews, sonnet for mech
 - `README.md`: user-facing feature list, limits, deployment, troubleshooting, third-party licences.
 - `docs/superpowers/specs/2026-11-10-clipforge-design.md`: the approved design (vision for all plans).
 - `docs/superpowers/plans/`: Plan 1 (foundation), Plan 2 (layers, incl. Roadmap for Plans 3–5), Plan 3 (audio editing) and Plan 4 (visual effects, with the roadmap for Plans 4-13).
-- `docs/superpowers/ledgers/`: decision ledgers (`plan-1-foundation-ledger.md`, `plan-2-layers-ledger.md`, `plan-3-audio-ledger.md`, `plan-4-visual-effects-ledger.md`, with `plan-4-task-reports/`) and the manual QA checklists `plan-2-manual-qa-checklist.md`, `plan-3-manual-qa-checklist.md`, `plan-4-manual-qa-checklist.md`.
+- `docs/superpowers/ledgers/`: decision ledgers (`plan-1-foundation-ledger.md`, `plan-2-layers-ledger.md`, `plan-3-audio-ledger.md`, `plan-4-visual-effects-ledger.md`, with `plan-4-task-reports/`) and the manual QA checklists `plan-2-manual-qa-checklist.md`, `plan-3-manual-qa-checklist.md`, `plan-4-manual-qa-checklist.md`; AI voice: `ai-voice-ledger.md`, `ai-voice-manual-qa-checklist.md`.
 - `vercel.json` (SPA rewrite scoped away from `/assets`, cache + security headers; no CSP/COOP/COEP), `scripts/copy-licenses.mjs`, `playwright*.config.ts`.
