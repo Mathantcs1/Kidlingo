@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { applyMat3, clipMatrix } from '../src/render/geometry';
 import {
-  MAX_SCALE, MIN_SCALE, clipCentre, clipCorners, dragMove, dragRotate, dragScale, hitTest, rotateHandlePoint, scaleBounds,
-  snapToCanvas,
+  MAX_SCALE, MIN_SCALE, clipCentre, clipCorners, hitTest, rotateHandlePoint, scaleBounds,
 } from '../src/render/overlayGeometry';
+import { dragMove, dragRotate, dragScale, snapToCanvas } from '../src/render/overlayDrag';
 import type { Corners, Point } from '../src/render/overlayGeometry';
 import { defaultTransform } from '../src/core/model';
 import type { Transform } from '../src/core/model';

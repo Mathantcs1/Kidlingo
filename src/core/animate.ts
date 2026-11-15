@@ -2,7 +2,7 @@
 // per frame; the UI calls it at the playhead. Static clips take an allocation-free path and come back as-is.
 import { evalKeys } from './keyLoops';
 import { localTime } from './keyframes';
-import type { Clip, Keyframe, Transform, VideoEffect } from './model';
+import type { Anchor, Clip, Crop, Keyframe, Transform, VideoEffect } from './model';
 import { composeMotion, motionAt } from './motion';
 import { clampAnchor } from './animTargets';
 import { evalPosition, orientHeading } from './spatialPath';
@@ -52,6 +52,18 @@ export function resolvedTransform(clip: Clip, t: number, fps: number): Transform
     rotation: k.orient ? rotation + orientHeading(k, u) : rotation,
     opacity: has(k.opacity) ? evalKeys(k.opacity!, loops?.opacity, u, 0, 1) : clip.transform.opacity,
   };
+}
+
+/**
+ * The crop mask and pivot of `clip` as drawn at timeline time `t` (the on-canvas handles and the ghost use them with
+ * `clipCorners`): the stored crop, the anchor evaluated from its keys (5E D5) or the static one. Absent fields are
+ * left out, so a plain clip gives `{}`.
+ */
+export function resolvedView(clip: Clip, t: number, fps: number): { crop?: Crop; anchor?: Anchor } {
+  const anchor = has(clip.keys?.anchor)
+    ? clampAnchor(evalPosition(clip.keys!.anchor!, clip.keys!.loops?.anchor, localTime(clip, t, fps)))
+    : clip.anchor;
+  return { ...(clip.crop ? { crop: clip.crop } : {}), ...(anchor ? { anchor } : {}) };
 }
 
 /** The base position at LOCAL time `u` (keyed position with its loop and path, else the static x/y): where a relative preset anchors. */

@@ -3,7 +3,7 @@
 // drawn (`motion-ghost`), and that drawn quad is a hit region for SELECTION only (drags still edit the rest transform).
 // Pure and DOM-free; both read the resolver (resolveClip = drawn, resolvedTransform = base), never the stack itself.
 import { motionAt } from '../core/motion';
-import { resolveClip, resolvedTransform } from '../core/animate';
+import { resolveClip, resolvedTransform, resolvedView } from '../core/animate';
 import type { Clip, Id, Project, Transform } from '../core/model';
 import { clipCorners } from '../render/overlayGeometry';
 import type { Corners, Point } from '../render/overlayGeometry';
@@ -30,7 +30,7 @@ export function motionGhost(p: Project, clip: Clip, t: number): Corners | null {
   const size = sourceSizeFor(clip, p.media[clip.mediaId], undefined, p.format);
   if (!size) return null;
   const drawn = drawnAway(p, clip, t);
-  return drawn ? clipCorners(size, drawn, p.format) : null;
+  return drawn ? clipCorners(size, drawn, p.format, resolvedView(clip, t, p.format.fps)) : null;
 }
 
 /** Whether `pt` lies inside the convex quad `q` (either winding); false for a degenerate quad. */
@@ -59,7 +59,7 @@ export function ghostHitAt(p: Project, t: number, pt: Point): Id | null {
     const size = sourceSizeFor(clip, p.media[clip.mediaId], undefined, p.format);
     const drawn = size ? drawnAway(p, clip, t) : null;
     if (!size || !drawn || !(drawn.opacity > 0) || !(drawn.scale > 0)) continue;
-    if (pointInQuad(clipCorners(size, drawn, p.format), pt)) return clip.id;
+    if (pointInQuad(clipCorners(size, drawn, p.format, resolvedView(clip, t, p.format.fps)), pt)) return clip.id;
   }
   return null;
 }

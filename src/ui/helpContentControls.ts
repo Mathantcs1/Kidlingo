@@ -46,6 +46,27 @@ export const CONTROL_TOPICS: HelpTopic[] = [
     ],
   },
   {
+    id: 'controls-crop',
+    title: 'Crop, flip and anchor',
+    group: 'Effect Controls',
+    keywords: 'crop flip mirror anchor pivot point mask trim edges reframe',
+    blocks: [
+      {
+        t: 'rows',
+        rows: [
+          ['Crop: Left, Top, Right, Bottom', 'How much of each edge to hide, in percent of the picture. Cropping hides pixels; the rest of the picture stays exactly where it was.'],
+          ['Crop on canvas', 'Drag the crop edges and corners on the preview. The dashed outline is the full picture. Esc cancels the drag.'],
+          ['Fit, Fill', 'Scale and centre the visible (cropped) area to fit or fill the canvas.'],
+          ['Flip horizontal, Flip vertical', 'Mirror the cropped picture. Flipping happens before the clip is rotated.'],
+          ['Anchor X, Y', 'The pivot that Scale, Rotation and animation presets turn about, in percent of the full picture from its centre. Moving it moves the picture (X and Y are where the pivot lands).'],
+          ['To crop centre', 'Put the pivot at the centre of the visible area.'],
+          ['Pivot dot', 'The small dot on the picture is the pivot. Drag it to move the pivot without moving the picture.'],
+        ],
+      },
+      { t: 'p', text: 'The anchor has a keyframe row like Position and Scale: see Animation and keyframes. Crop and flip apply to video and image clips.' },
+    ],
+  },
+  {
     id: 'controls-animation',
     title: 'Animation and keyframes',
     group: 'Effect Controls',

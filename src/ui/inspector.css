@@ -277,3 +277,11 @@
   grid-template-columns: 50px minmax(0, 1fr);
   align-items: center;
 }
+
+/* Crop, flip and anchor (Plan 5E): button rows under the numeric fields. */
+.crop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}

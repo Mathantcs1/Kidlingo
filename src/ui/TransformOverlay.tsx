@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, RefObject } from 'react';
-import { resolvedTransform } from '../core/animate';
+import { resolvedTransform, resolvedView } from '../core/animate';
 import type { Project, Transform } from '../core/model';
 import { findClip } from '../core/timeline';
 import { clipCentre, clipCorners, rotateHandlePoint } from '../render/overlayGeometry';
@@ -71,7 +71,7 @@ export default function TransformOverlay(props: Props) {
     const live = props.live?.clipId === target.clip.id ? props.live : null;
     const transform = live ? liveHandles(props.project, live) : resolvedTransform(target.clip, props.playhead, props.project.format.fps);
     centre = formatToCss(clipCentre(transform, props.project.format), props.box, props.project.format);
-    quadTarget = { clipId: target.clip.id, size: target.size, transform };
+    quadTarget = { clipId: target.clip.id, size: target.size, transform, view: resolvedView(target.clip, props.playhead, props.project.format.fps) };
   }
   const editable = pathClip !== null && !findClip(props.project, pathClip.id).track.locked;
   // The dot of the key under the playhead lets presses through to the clip (it sits on its centre), so a double-click
@@ -98,7 +98,7 @@ function OverlayQuad({ project, box, canvasRef, onLive, target, centre, onDouble
   const [hover, setHover] = useState<Handle | null>(null);
   const format = project.format;
   const toCss = (p: Point): Point => formatToCss(p, box, format);
-  const corners = clipCorners(target.size, target.transform, format);
+  const corners = clipCorners(target.size, target.transform, format, target.view);
   const css = corners.map(toCss);
   const rot = toCss(rotateHandlePoint(corners, toleranceInFormatPx(ROTATE_PX, box, format)));
   const topMid = { x: (css[0].x + css[1].x) / 2, y: (css[0].y + css[1].y) / 2 };

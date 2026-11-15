@@ -1,11 +1,10 @@
 // Screen-side helpers of the transform overlay: on-screen sizes, the displayed canvas box, hit testing and the
 // transform for a pointer position (all geometry itself lives in render/overlayGeometry.ts, in format px).
 import type { Id, Transform } from '../core/model';
-import type { Size } from '../render/geometry';
+import type { ClipView, Size } from '../render/geometry';
 import { scaleBounds } from '../core/scale';
-import {
-  clipCentre, clipCorners, dragMove, dragRotate, dragScale, hitTest, normaliseDegrees, snapToCanvas,
-} from '../render/overlayGeometry';
+import { clipCentre, clipCorners, hitTest, normaliseDegrees } from '../render/overlayGeometry';
+import { dragMove, dragRotate, dragScale, snapToCanvas } from '../render/overlayDrag';
 import type { Handle, Point } from '../render/overlayGeometry';
 import { cssToFormat, toleranceInFormatPx } from './overlayMath';
 import type { Box } from './overlayMath';
@@ -32,6 +31,8 @@ export interface DragTarget {
   clipId: Id;
   size: Size;
   transform: Transform;
+  /** The clip's crop mask and pivot as drawn at the playhead (Plan 5E); absent = the whole frame about its centre. */
+  view?: ClipView;
 }
 
 /** What a pointer position means for a drag: the handle, its start, and the pointer with its modifiers. */
@@ -40,6 +41,8 @@ export interface DragInput {
   size: Size;
   format: Size;
   start: Transform;
+  /** The target's crop/pivot view (snapping uses the visible quad). */
+  view?: ClipView;
   /** Pointer at the press, format px. */
   startPointer: Point;
   /** Latest pointer (viewport CSS px) and modifiers. */
@@ -56,7 +59,7 @@ export function canvasBoxOf(canvas: HTMLCanvasElement): Box {
 export function handleAt(canvas: HTMLCanvasElement, format: Size, target: DragTarget, clientX: number, clientY: number): Handle | null {
   const box = canvasBoxOf(canvas);
   const p = cssToFormat({ x: clientX, y: clientY }, box, format);
-  const corners = clipCorners(target.size, target.transform, format);
+  const corners = clipCorners(target.size, target.transform, format, target.view);
   return hitTest(corners, p, toleranceInFormatPx(HIT_PX, box, format), toleranceInFormatPx(ROTATE_PX, box, format));
 }
 
@@ -66,7 +69,7 @@ export function transformFor(g: DragInput, canvas: HTMLCanvasElement): Transform
   const p = cssToFormat({ x: g.last.x, y: g.last.y }, box, g.format);
   if (g.handle === 'move') {
     const moved = dragMove(g.start, p.x - g.startPointer.x, p.y - g.startPointer.y);
-    return g.last.alt ? moved : snapToCanvas(moved, g.size, g.format, toleranceInFormatPx(SNAP_PX, box, g.format));
+    return g.last.alt ? moved : snapToCanvas(moved, g.size, g.format, toleranceInFormatPx(SNAP_PX, box, g.format), g.view);
   }
   if (g.handle === 'rotate') {
     const snap = g.last.shift ? ROTATE_SNAP_DEG : undefined;

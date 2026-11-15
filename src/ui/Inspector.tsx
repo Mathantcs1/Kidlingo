@@ -5,10 +5,12 @@ import { findClip } from '../core/timeline';
 import { useEditor } from '../state/store';
 import { hasAnimation } from '../core/animPayload';
 import { liveSelection } from './edits';
+import AnchorFields from './AnchorFields';
 import AnimationInspector from './AnimationInspector';
 import AudioInspector from './AudioInspector';
 import BlendModeSelect from './BlendModeSelect';
 import { FitControl, VolumeControl } from './ClipBasics';
+import CropFields from './CropFields';
 import { audioEffectsSummary } from './EffectList';
 import EffectsInspector, { effectsSummary } from './EffectsInspector';
 import './inspector.css';
@@ -48,6 +50,16 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
           {picture && <FitControl clip={clip} disabled={!editable} />}
           <TransformFields clip={clip} editable={editable} locked={locked} only={adjustment ? OPACITY_ONLY : undefined} />
           {(picture || adjustment) && <BlendModeSelect clip={clip} editable={editable} locked={locked} />}
+        </InspectorSection>
+      )}
+      {picture && (
+        <InspectorSection name="crop" title="Crop & Flip" summary={clip.crop || clip.flip ? 'On' : undefined}>
+          <CropFields clip={clip} disabled={!editable || locked} title={locked ? 'Track is locked' : undefined} />
+        </InspectorSection>
+      )}
+      {picture && (
+        <InspectorSection name="anchor" title="Anchor point" summary={clip.anchor || clip.keys?.anchor ? 'Moved' : undefined}>
+          <AnchorFields clip={clip} disabled={!editable || locked} title={locked ? 'Track is locked' : undefined} />
         </InspectorSection>
       )}
       {clip.kind !== 'audio' && (

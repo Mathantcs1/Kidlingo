@@ -75,6 +75,7 @@ export function useTransformDrag(canvasRef: RefObject<HTMLCanvasElement | null>,
     const g: Gesture = {
       clipId: target.clipId,
       size: target.size,
+      view: target.view,
       handle,
       format,
       start,
