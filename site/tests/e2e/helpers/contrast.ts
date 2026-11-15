@@ -33,7 +33,7 @@ export async function sampleBackground(page: Page, el: Locator): Promise<{ light
   await page.evaluate(() => document.fonts.ready); // fallback font -> Inter swap changes layout and the glow position
   await el.evaluate((node) => node.setAttribute('data-sample', ''));
   const style = await page.addStyleTag({
-    content: '[data-sample],[data-sample] *{color:transparent!important;-webkit-text-fill-color:transparent!important;background:none!important;text-shadow:none!important;border-color:transparent!important;outline:none!important;box-shadow:none!important}',
+    content: '[data-sample],[data-sample] *{color:transparent!important;-webkit-text-fill-color:transparent!important;background:none!important;text-shadow:none!important;border-color:transparent!important;outline:none!important;box-shadow:none!important}[data-sample] img,[data-sample] svg,[data-sample] video,[data-sample] canvas{visibility:hidden!important}',
   });
   const png = await el.screenshot({ animations: 'disabled' });
   await style.evaluate((n) => n.remove());

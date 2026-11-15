@@ -75,4 +75,7 @@ Turn the offline gateways **off** on the live site (WooCommerce > Settings > Pay
 1. Test-mode run-through with the cards above: success, decline, 3-D Secure, refund from WooCommerce, webhook resend.
 2. Legal pages reviewed (they are DRAFT today), tax handling decided, refund policy chosen.
 3. Owner confirms a working support mailbox.
-4. Owner approves; then switch Stripe to live keys and add the `IDEATOAPPS_ALLOW_LIVE_PAYMENTS` line. Make one small real purchase and refund it.
+4. Stripe Express Checkout (the Apple Pay / Google Pay buttons on product and cart pages) is a separate Stripe plugin feature. Disable it in the test
+   setup, or verify it against the live guard before go-live: the guard only hides the gateway at checkout, it does not turn off other Stripe surfaces.
+   A Stripe setting with no `testmode` value counts as LIVE (the Stripe plugin does the same).
+5. Owner approves; then switch Stripe to live keys and add the `IDEATOAPPS_ALLOW_LIVE_PAYMENTS` line. Make one small real purchase and refund it.

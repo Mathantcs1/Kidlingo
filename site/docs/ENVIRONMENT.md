@@ -95,3 +95,14 @@ fails it shows a fixed client-side message.
 - The Playground dev server serves static files straight from disk and ignores `.htaccess`. The raw-zip 403/404 check in the browser
   test therefore also depends on the unguessable directory name; on Bluehost (Apache/LiteSpeed) `.htaccess` denies the whole
   `woocommerce_uploads` folder. See `docs/STRIPE_SETUP.md` for payments.
+
+## Launch checklist items from Task 8
+
+- The raw release zip URL must return 403 in a private window on the real host (Apache `.htaccess`; nginx ignores it, so add a server rule there).
+- Real Stripe test-mode checkout and a webhook replay (the browser tests use Cash on delivery).
+- Run the order lookup (downloads/library queries) once on MySQL; PHPUnit and the dev server use SQLite.
+- Checkout drops the billing address and phone fields; revisit if tax-by-postcode or Stripe Radar is wanted.
+- Cart and checkout pages are converted to the classic shortcodes once per plugin version: the owner reloads a page or runs the seed to trigger it.
+- `delete_attachment` leaves a stale product file entry; the buy gate (`ideatoapps_app_is_sellable`) catches it, so the app just stops being sellable.
+- Version zips are moved to `woocommerce_uploads/ideatoapps/` on add/update even when no product is linked yet, but only while WooCommerce is active.
+- A version's file can only be set by an admin (`manage_options`) or by the user who uploaded it (review M-1).

@@ -24,13 +24,13 @@ function ideatoapps_download_id( int $app_id, string $version ): string {
 
 /**
  * The real path of a version file, or '' when the attachment is not an acceptable zip.
- * Acceptable: an attachment post, a file inside the uploads folder, extension .zip, ZIP signature in the first bytes.
+ * Acceptable: an attachment post with a zip mime type, a file inside the uploads folder, extension .zip, ZIP signature in the first bytes.
  *
  * @param int $attachment_id Attachment post ID.
  * @return string Absolute path or ''.
  */
 function ideatoapps_valid_zip_attachment( int $attachment_id ): string {
-	if ( $attachment_id <= 0 || 'attachment' !== get_post_type( $attachment_id ) ) {
+	if ( $attachment_id <= 0 || 'attachment' !== get_post_type( $attachment_id ) || ! in_array( get_post_mime_type( $attachment_id ), array( 'application/zip', 'application/x-zip-compressed' ), true ) ) {
 		return '';
 	}
 	$file = get_attached_file( $attachment_id );
@@ -49,6 +49,23 @@ function ideatoapps_valid_zip_attachment( int $attachment_id ): string {
 	$magic = fread( $handle, 4 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
 	fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 	return in_array( $magic, array( "PK\x03\x04", "PK\x05\x06" ), true ) ? $real : '';
+}
+
+/**
+ * May the current user put this attachment on a version? Ruling (review M-1): an editor of the app post could otherwise
+ * point a version at ANY zip in the media library (someone else's upload) and sell it. So: the attachment must be a valid
+ * zip, and the user must hold manage_options, or have uploaded it, or be keeping the value the version already has
+ * (or clearing it). The rule lives in the form save only; code paths (seed, tests) call ideatoapps_add_version directly.
+ *
+ * @param int $attachment_id Requested attachment ID (0 clears).
+ * @param int $current_id    The attachment the version has now (0 for a new version).
+ * @return bool
+ */
+function ideatoapps_can_use_version_attachment( int $attachment_id, int $current_id ): bool {
+	if ( $attachment_id <= 0 || $attachment_id === $current_id || current_user_can( 'manage_options' ) ) {
+		return true;
+	}
+	return (int) get_post_field( 'post_author', $attachment_id ) === get_current_user_id();
 }
 
 /**

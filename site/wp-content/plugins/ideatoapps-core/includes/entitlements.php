@@ -120,6 +120,27 @@ function ideatoapps_app_is_sellable( int $app_id ): bool {
 }
 
 /**
+ * Move a version's zip into the protected folder even when no product resolves yet (not linked, trashed, owned by another
+ * app, WooCommerce inactive), so it never sits in the public uploads folder. Ruling: only done while WooCommerce is active
+ * (its uploads folder convention and download handling are what protect the file); without it nothing is moved. Idempotent:
+ * a file already in the protected folder stays put, so the later product sync reuses the same path.
+ *
+ * @param int    $app_id  App post ID.
+ * @param string $version Version.
+ */
+function ideatoapps_protect_version_file( int $app_id, string $version ): void {
+	if ( ! ideatoapps_woocommerce_active() ) {
+		return;
+	}
+	foreach ( ideatoapps_get_versions( $app_id ) as $row ) {
+		if ( $row['version'] === $version ) {
+			$title = trim( wp_strip_all_tags( html_entity_decode( get_the_title( $app_id ), ENT_QUOTES ) ) );
+			ideatoapps_protect_attachment_file( $row['attachment_id'], $title . '-' . $version . '.zip' );
+		}
+	}
+}
+
+/**
  * A version was added, edited or removed: sync the product files, then give existing buyers the version.
  *
  * @param int    $app_id  App post ID.
@@ -127,6 +148,9 @@ function ideatoapps_app_is_sellable( int $app_id ): bool {
  * @param string $change  added|updated|removed.
  */
 function ideatoapps_on_version_changed( $app_id, $version, $change ): void {
+	if ( 'removed' !== $change ) {
+		ideatoapps_protect_version_file( (int) $app_id, (string) $version );
+	}
 	ideatoapps_sync_product_downloads( (int) $app_id );
 	if ( 'removed' !== $change ) {
 		ideatoapps_grant_new_version( (int) $app_id, (string) $version );

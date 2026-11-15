@@ -16,7 +16,8 @@ defined( 'ABSPATH' ) || exit;
  */
 function ideatoapps_stripe_is_live(): bool {
 	$settings = get_option( 'woocommerce_stripe_settings', array() );
-	return is_array( $settings ) && isset( $settings['enabled'], $settings['testmode'] ) && 'yes' === $settings['enabled'] && 'yes' !== $settings['testmode'];
+	// The Stripe plugin treats a missing testmode as live, so the guard does too.
+	return is_array( $settings ) && isset( $settings['enabled'] ) && 'yes' === $settings['enabled'] && 'yes' !== ( $settings['testmode'] ?? 'no' );
 }
 
 /**

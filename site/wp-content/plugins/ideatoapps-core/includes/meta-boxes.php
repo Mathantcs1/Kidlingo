@@ -141,6 +141,15 @@ function ideatoapps_save_versions( $post_id ) {
 		}
 		$changelog = isset( $row['changelog'] ) && is_string( $row['changelog'] ) ? sanitize_textarea_field( $row['changelog'] ) : '';
 		$attach    = isset( $row['attachment'] ) ? absint( $row['attachment'] ) : 0;
+		$current   = 0;
+		foreach ( ideatoapps_get_versions( $post_id ) as $existing ) {
+			if ( $existing['version'] === $version ) {
+				$current = $existing['attachment_id'];
+			}
+		}
+		if ( ! ideatoapps_can_use_version_attachment( $attach, $current ) ) {
+			$attach = $current;
+		}
 		ideatoapps_update_version( $post_id, $version, $changelog, $attach );
 	}
 
@@ -150,6 +159,7 @@ function ideatoapps_save_versions( $post_id ) {
 	}
 	$changelog = isset( $_POST['ita_new_changelog'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ita_new_changelog'] ) ) : '';
 	$attach    = isset( $_POST['ita_new_attachment'] ) ? absint( wp_unslash( $_POST['ita_new_attachment'] ) ) : 0;
+	$attach    = ideatoapps_can_use_version_attachment( $attach, 0 ) ? $attach : 0;
 	if ( ! ideatoapps_is_semver( $version ) ) {
 		/* translators: %s: the version the editor typed. */
 		ideatoapps_add_notice( $post_id, sprintf( __( "Version '%s' was not added: use the form 1.2.3.", 'ideatoapps-core' ), $version ) );
