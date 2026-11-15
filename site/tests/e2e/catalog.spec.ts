@@ -208,6 +208,7 @@ test.describe('populated catalog', () => {
 
 test.describe('pagination', () => {
   test.beforeAll(async () => {
+    test.setTimeout(240_000); // 13 admin-form saves at ~5 s each exceed the default 60 s hook timeout on a slow machine
     for (let i = 1; i <= 13; i++) await createApp(api, { title: `Numbered app ${String(i).padStart(2, '0')}`, tagline: `App number ${i}` });
   });
   test.afterAll(async () => { await cleanup(api); });
