@@ -86,6 +86,27 @@ It is a static site built with React, TypeScript and Vite.
   is no latency compensation, so the voice can land slightly early against the picture (by the microphone's
   start-up and input latency, usually tens of milliseconds). The
   take is stored as an uncompressed mono WAV on your device (about 6 MB per minute at 48 kHz) and never leaves it.
+- **Visual effects and looks** (the Inspector's Effects section for one selected video, image or overlay clip):
+  - Stack up to **12 effects per clip**, applied bottom to top in list order; each can be switched off, reset, moved
+    up or down, and removed. Every change is one undo step, and a slider commits once when you release it.
+  - **Colour** (exposure, brightness, contrast, saturation, hue, temperature, tint, shadows, highlights), **black &
+    white**, **sepia**, **invert**, **vignette**, **film grain**; **blur**, **sharpen**, **glow**, **pixelate**;
+    **RGB split**, **glitch**, **VHS**, **mirror**; **chroma key** (key colour, tolerance, softness, spill removal).
+  - **Looks**: one click applies Cinematic, Moody, Golden Hour, Teal-Orange, Fashion, Clean Vlog, Film 35mm, Cyberpunk
+    or Dreamy as a single effect, with an intensity slider. Applying another look replaces it.
+  - **LUTs**: add a LUT effect and import a `.cube` file (3D LUTs up to 65 points a side and 20 MB); it joins the
+    project's LUT library and can be reused on other clips. A 1D LUT or a damaged file is refused with the reason.
+  - **Copy / Paste** copies a clip's whole effect stack onto another clip (replacing its effects). **Effects off**
+    (button, or the backslash key) shows the preview without effects for comparing; it never changes the project, the
+    undo history or the export. A clip with effects shows a small **fx** badge on the timeline.
+  - Pixel-sized settings (blur radius, pixelate size, grain size) are in pixels of the clip's own picture, so they
+    scale with the clip, and the picture looks the same in the preview and in a 4K export. Effects are applied before
+    the clip's position, scale and rotation. Preview and export draw through the same code.
+- **Overlays** (the Overlays panel under the media list): **lower third** (title and subtitle), **subscribe button**,
+  **progress bar** (fills over its own length or over the whole video) and **12 built-in stickers**. An overlay is a
+  clip on a video layer, so it can be moved, trimmed, split, hidden, locked, positioned with the on-canvas handles and
+  given effects like any other picture clip. Text uses the system font; a title that is too long shrinks, then ends
+  with an ellipsis. Your own PNG works as a custom sticker (import it like any image).
 - **Export** to MP4 (H.264 video + AAC audio) at 1080p or 4K, with a progress bar, cancel, and a file name you
   choose. 1080p fits the video in a 1920x1080 frame of the project's orientation (so 1080 px on the short side
   for every preset, e.g. 1080x1080 for Square); 4K doubles that (3840x2160 frame). A project with no audible clip
@@ -93,16 +114,15 @@ It is a static site built with React, TypeScript and Vite.
 
 ## Roadmap (planned, not implemented yet)
 
-The multi-layer timeline (layers, track flags, picture-in-picture) is Plan 2 and audio editing is Plan 3; both are
-implemented. None of the following exist yet. They are planned as follow-up plans (outlined in the roadmap section of
+The multi-layer timeline (layers, track flags, picture-in-picture) is Plan 2, audio editing is Plan 3 and visual
+effects, looks and overlays are Plan 4; all are implemented. None of the following exist yet. They are planned as a
+follow-up plan (outlined in the roadmap section of
 [docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md](docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md)):
 
-- **Plan 4, visual effects and looks**: shader effects (color, blur, stylize, chroma key), LUT looks and `.cube`
-  import, overlays.
-- **Plan 5, animation and motion**: keyframes and easing, motion paths, text with animation presets,
-  transitions, speed ramps, reverse, crop/rotate/flip.
+- **Plan 5, animation and motion**: keyframes (effect settings and overlays included) and easing, motion paths, text
+  with animation presets, transitions, speed ramps, reverse, crop/rotate/flip.
 
-There is currently no transition, text or effects tool.
+There is currently no transition or text tool, and nothing animates except film grain, glitch, VHS and the progress bar.
 
 ## Supported files
 
@@ -176,6 +196,7 @@ Shortcuts are ignored while you type in a text field or select, and while the ex
 | S | Split at the playhead (the selected clips, or every clip under the playhead if none is selected) |
 | Delete or Backspace | Delete the selected clips |
 | Shift+Delete or Shift+Backspace | Ripple delete: delete the selected clips and close the gaps |
+| \\ (backslash) | Show the preview without effects (toggle) |
 | Ctrl+Z / Cmd+Z | Undo |
 | Shift+Ctrl+Z / Shift+Cmd+Z, or Ctrl+Y | Redo |
 
@@ -222,7 +243,23 @@ Layers and the preview:
     voice can land slightly early (no latency compensation), and without headphones the microphone hears the playback.
     It needs the browser's microphone permission, and the host must not block it (`Permissions-Policy: microphone=(self)`,
     see Deploying). Safari is unverified for all of this.
-- No visual effects, transitions or text yet (see the roadmap).
+- **Visual effects limits**:
+  - Effects belong to a clip (no track or adjustment-layer effects), nothing is keyframed, and overlays have no
+    animated entrances. A look cannot be saved as your own preset yet.
+  - At most 12 effects per clip. Blur, glow and the other multi-pass effects cost more on a slow graphics card: the
+    preview may drop frames with several effected layers, and export takes longer. This has only been tried in
+    software WebGL here, never on a real GPU.
+  - Effects work on 8-bit colour, so a very strong grade can show banding in smooth gradients.
+  - LUTs must be 3D `.cube` files (no 1D LUTs); a LUT file that goes missing leaves the clip ungraded instead of
+    failing. LUT files are only removed from browser storage by the same start-up cleanup as media, never while a
+    saved project might still use them.
+  - Not built: light leaks, lens flares, anamorphic streaks, halation, gate weave, camera shake, zoom punch,
+    letterbox bars, bokeh and animated stickers.
+  - Overlay text uses the system font and at most 60 (title) / 80 (subtitle) characters; it renders the same in the
+    preview and the export on the same computer, but fonts differ between computers.
+  - A project saved by this version cannot be opened by an older ClipForge tab: it shows "saved by a newer version"
+    and leaves the saved project alone.
+- No transitions or text clips yet (see the roadmap).
 
 ## Development
 

@@ -76,6 +76,22 @@ function readPixels(canvas: HTMLCanvasElement): { width: number; height: number;
   return { width, height, data };
 }
 
+/** Averages `box` x `box` blocks (RGBA, alpha 255) so large frames can be compared cheaply and noise averages out. */
+function boxAverage(f: { width: number; height: number; data: number[] }, box: number): { width: number; height: number; data: number[] } {
+  const width = Math.floor(f.width / box);
+  const height = Math.floor(f.height / box);
+  const data: number[] = new Array(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const sum = [0, 0, 0];
+      for (let dy = 0; dy < box; dy++) for (let dx = 0; dx < box; dx++) for (let k = 0; k < 3; k++) sum[k] += f.data[((y * box + dy) * f.width + x * box + dx) * 4 + k];
+      for (let k = 0; k < 3; k++) data[(y * width + x) * 4 + k] = sum[k] / (box * box);
+      data[(y * width + x) * 4 + 3] = 255;
+    }
+  }
+  return { width, height, data };
+}
+
 const cf = {
   importFile,
   putMedia,
@@ -129,7 +145,7 @@ const cf = {
   async renderPixels(
     p: Project,
     times: number[],
-    opts: { canvas?: { width: number; height: number }; sources?: boolean; bypassFx?: boolean } = {},
+    opts: { canvas?: { width: number; height: number }; sources?: boolean; bypassFx?: boolean; box?: number } = {},
   ): Promise<{ width: number; height: number; data: number[]; glError: number }[]> {
     const canvas = document.createElement('canvas');
     cf.fxErrors.length = 0;
@@ -146,7 +162,8 @@ const cf = {
       for (const t of times) {
         await compositor.renderFrame(p, t, sources, { bypassFx: opts.bypassFx });
         const glError = canvas.getContext('webgl2')?.getError() ?? -1;
-        out.push({ ...readPixels(canvas), glError });
+        const px = readPixels(canvas);
+        out.push({ ...(opts.box && opts.box > 1 ? boxAverage(px, opts.box) : px), glError });
       }
       return out;
     } finally {

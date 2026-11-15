@@ -122,7 +122,8 @@ const MAX_SIDE = 2048;
 
 /** Raster pixel size: the on-screen size rounded up to a 1.25x step (no re-raster on every resize pixel), 16..2048. */
 export function overlayRasterSize(intrinsic: { width: number; height: number }, clipScale: number, screenScale: number): { width: number; height: number } {
-  const want = Math.max(16, intrinsic.width * clipScale * screenScale);
+  const px = intrinsic.width * clipScale * screenScale;
+  const want = Math.max(16, Number.isFinite(px) ? px : 0);
   const width = Math.min(MAX_SIDE, Math.ceil(Math.pow(STEP, Math.ceil(Math.log(want) / Math.log(STEP)))));
   const height = Math.max(1, Math.min(MAX_SIDE, Math.round((width * intrinsic.height) / intrinsic.width)));
   return { width, height };

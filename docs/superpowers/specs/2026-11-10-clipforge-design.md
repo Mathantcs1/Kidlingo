@@ -2,7 +2,7 @@
 
 Date: 2026-11-10
 
-> **Status:** the multi-layer timeline (Plan 2: video layers and audio tracks with hide/mute/solo/lock, picture-in-picture via layered tracks with on-canvas and numeric position/scale/rotation/opacity, project data v2 with v1 migration) is shipped on branch `feature/layers`. The remaining roadmap is Plans 3–5: audio editing, visual effects and looks, and animation and motion (see the roadmap in `docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md`). The design below is unchanged.
+> **Status:** the multi-layer timeline (Plan 2: video layers and audio tracks with hide/mute/solo/lock, picture-in-picture via layered tracks with on-canvas and numeric position/scale/rotation/opacity, project data v2 with v1 migration) is shipped on branch `feature/layers`. Audio editing (Plan 3) and visual effects, looks and overlays (Plan 4, project data v4; premium extras such as light leaks and lens flares deferred) are implemented. The remaining roadmap is Plan 5: animation and motion (see the roadmap in `docs/superpowers/plans/2026-11-10-clipforge-plan-2-layers.md`). The design below is unchanged.
 
 ## Purpose and success criteria
 

@@ -22,9 +22,11 @@ export type FxErrorHandler = (type: FxType, log: string) => void;
 
 /** Target size for a clip: its on-screen size, never above the source nor 4096, at least 8 (E2). */
 export function targetSize(src: Size, clipScale: number, screenScale: number): Size {
+  // A non-finite scale (a hand-edited save) is treated as 1 rather than reaching the GL calls as NaN.
+  const k = Number.isFinite(clipScale * screenScale) && clipScale * screenScale > 0 ? clipScale * screenScale : 1;
   const fit = (side: number): number => {
     const cap = Math.max(1, Math.min(Math.ceil(side), MAX_TARGET_SIDE));
-    return Math.min(cap, Math.max(MIN_TARGET_SIDE, Math.ceil(side * clipScale * screenScale)));
+    return Math.min(cap, Math.max(MIN_TARGET_SIDE, Math.ceil(side * k)));
   };
   return { width: fit(src.width), height: fit(src.height) };
 }
@@ -72,13 +74,19 @@ export class FxEngine {
     const format: Size = { width: p.format.width, height: p.format.height };
     const screenScale = letterbox(format, canvas).width / format.width;
     const targets: Target[] = [];
-    const out = draws.map((d) => {
-      if (!this.active(d.clip)) return d;
-      const target = this.run(d, p, t, screenScale);
-      targets.push(target);
-      return { ...d, slot: target.slot, uv: FLIPPED };
-    });
-    return { draws: out, targets };
+    try {
+      const out = draws.map((d) => {
+        if (!this.active(d.clip)) return d;
+        const target = this.run(d, p, t, screenScale);
+        targets.push(target);
+        return { ...d, slot: target.slot, uv: FLIPPED };
+      });
+      return { draws: out, targets };
+    } catch (e) {
+      // Do not leak the targets of the clips already processed this frame.
+      this.release(targets);
+      throw e;
+    }
   }
 
   release(targets: Target[]): void {
@@ -115,7 +123,10 @@ export class FxEngine {
       try {
         cur = def.run(rc, cur, clampFxParams(e.type, e.params), e);
       } catch (err) {
-        if (!(err instanceof GlUnavailableError) || err.reason !== 'shader') throw err;
+        if (!(err instanceof GlUnavailableError) || err.reason !== 'shader') {
+          this.pool.release(cur);
+          throw err;
+        }
         this.failed.add(e.type);
         this.onError?.(e.type, err.log ?? err.message);
       }
