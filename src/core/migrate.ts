@@ -1,4 +1,6 @@
 import { fitFades } from './clipAudio';
+import { clipDuration } from './clipTime';
+import { repairSpeed } from './migrateSpeed';
 
 import { withCropFlipAnchor } from './migrateCrop';
 import { toBlend, toClipEffects } from './migrateEffects';
@@ -57,8 +59,11 @@ function toClipAudio(raw: unknown, duration: number | null): ClipAudio {
   return duration === null ? audio : fitFades(audio, duration);
 }
 
+// The clip's TIMELINE length from its (already speed-repaired) fields: out - in at speed 1, speed-aware otherwise (Plan 5D).
 const clipSeconds = (c: Record<string, unknown>): number | null =>
-  typeof c.in === 'number' && typeof c.out === 'number' && Number.isFinite(c.in) && Number.isFinite(c.out) && c.out >= c.in ? c.out - c.in : null;
+  typeof c.in === 'number' && typeof c.out === 'number' && Number.isFinite(c.in) && Number.isFinite(c.out) && c.out >= c.in
+    ? clipDuration(c as unknown as Clip)
+    : null;
 
 function toDuck(raw: unknown): TrackDuck | null {
   if (!isObject(raw) || typeof raw.sourceTrackId !== 'string') return null;
@@ -79,9 +84,12 @@ function toDuck(raw: unknown): TrackDuck | null {
  * (migrateKeys.ts) and so is the preset stack (v7, migrateMotion.ts); a clip without valid keys / presets has no `keys` /
  * `motion` field. Unknown extra keys are kept.
  */
-function toClip(c: Record<string, unknown>, trackKind: Track['kind']): Clip | null {
+function toClip(raw: Record<string, unknown>, trackKind: Track['kind']): Clip | null {
+  const c = repairSpeed(raw); // first: the fades below fit the speed-aware duration
   const fixed = toClipFields(c, trackKind);
-  return fixed && (withCropFlipAnchor(withMotion(withKeys(fixed, repairClipKeys(c.keys, c.kind)), repairMotion(c.motion, c.kind)), c) as unknown as Clip);
+  const clip = fixed && (withCropFlipAnchor(withMotion(withKeys(fixed, repairClipKeys(c.keys, c.kind)), repairMotion(c.motion, c.kind)), c) as unknown as Clip);
+  // A freeze clip never sounds.
+  return clip && clip.freeze !== undefined ? { ...clip, audio: { ...clip.audio, silent: true } } : clip;
 }
 
 function toClipFields(c: Record<string, unknown>, trackKind: Track['kind']): Record<string, unknown> | null {

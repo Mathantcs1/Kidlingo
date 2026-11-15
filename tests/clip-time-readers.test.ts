@@ -38,7 +38,9 @@ const ALLOWED: Allowed[] = [
   ['src/ui/keyDrag.ts', '(u - localRange(clip)[0]) * pps', 'Task 5: diamond position from timelineTimeAt'],
   ['src/ui/keyDrag.ts', 'clip.start + (grabbed - localRange(clip)[0])', 'Task 5: snapping a key drag to the playhead through the map'],
   ['src/ui/keyframeCommands.ts', 'clip.start + (u - localRange(clip)[0])', 'Task 5: keyTimelineTime = timelineTimeAt'],
-  ['src/core/migrate.ts', 'c.out >= c.in ? c.out - c.in : null', 'raw saved JSON (not a Clip yet): the stored footage length used to fit audio fades; Task 3 (data v9) makes it speed-aware'],
+  ['src/core/migrateSpeed.ts', 'const d = (c.out - c.in) / speed;', 'raw saved JSON (not a Clip yet): the AUTHORED duration of a hand-edited speed, kept when the speed is clamped'],
+  ['src/core/migrateSpeed.ts', 'const inn = c.out - length;', 'raw saved JSON: the footage edge played last in reverse, moved to keep the authored duration'],
+  ['src/core/migrateSpeed.ts', 'out.out = c.in + length;', 'raw saved JSON: the footage edge played last going forward, moved to keep the authored duration'],
 ];
 
 interface Hit { file: string; line: number; text: string; kind: string }

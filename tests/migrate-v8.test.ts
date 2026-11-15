@@ -9,23 +9,23 @@ import { base, ok, one, oneAudio, saved } from './migrate-v7-fixtures';
 const crop = { left: 0.1, top: 0.2, right: 0.3, bottom: 0.1 };
 
 describe('v7 -> v8', () => {
-  it('the current version is 8', () => expect(CURRENT_VERSION).toBe(8));
+  it('the current version is at least 8', () => expect(CURRENT_VERSION).toBeGreaterThanOrEqual(8));
 
   it('opens a v7 save JSON-equal apart from the version; input not mutated; idempotent', () => {
     const raw = saved(7, [base('v1', 'video'), base('i1', 'image', { start: 2 })], [base('a1', 'audio')]);
     const snap = JSON.stringify(raw);
     const p = ok(raw);
     expect(JSON.stringify(raw)).toBe(snap);
-    expect(p.version).toBe(8);
+    expect(p.version).toBe(CURRENT_VERSION);
     expect(JSON.stringify({ ...p, version: 7 })).toBe(snap);
     for (const c of p.tracks.flatMap((t) => t.clips)) expect(['crop', 'flip', 'anchor'].some((k) => k in c)).toBe(false);
     expect(JSON.stringify(ok(p))).toBe(JSON.stringify(p));
   });
 
-  it('accepts every integer version 1..8, refuses 9 as newer and never overwrites it', () => {
-    for (let v = 1; v <= 8; v++) expect(migrateProject(saved(v, [])).ok).toBe(true);
-    expect(migrateProject({ ...saved(9, []) })).toEqual({ ok: false, reason: 'newer' });
-    expect(classifySaved({ ...saved(9, []) }).status).toBe('unsupported');
+  it('accepts every integer version 1..current, refuses the next as newer and never overwrites it', () => {
+    for (let v = 1; v <= CURRENT_VERSION; v++) expect(migrateProject(saved(v, [])).ok).toBe(true);
+    expect(migrateProject({ ...saved(CURRENT_VERSION + 1, []) })).toEqual({ ok: false, reason: 'newer' });
+    expect(classifySaved({ ...saved(CURRENT_VERSION + 1, []) }).status).toBe('unsupported');
   });
 });
 

@@ -145,7 +145,7 @@ export interface MediaRef {
 }
 
 /** The project data version this build writes (see src/core/migrate.ts). */
-export const CURRENT_VERSION = 8;
+export const CURRENT_VERSION = 9;
 
 export interface Project {
   version: typeof CURRENT_VERSION;
