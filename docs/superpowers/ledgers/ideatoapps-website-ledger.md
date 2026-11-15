@@ -105,3 +105,5 @@ Task 7: fix round 1/5 submitted (71069d3): I1 fputcsv, I2 nonce refresh route + 
 Task 7: fix round 1/5 (3 addressed, 0 open; commits 589f5a6..71069d3); scoped re-review APPROVED
 Task 7: minor (deferred): add_option ON DUPLICATE KEY can reset counter in a narrow first-in-window race (use INSERT IGNORE then UPDATE); purge LIMIT 200 w/o ORDER BY may never reach stale rows; object-cache branch untested/no purge; fixed-window burst up to 10; nonce route unthrottled; SQL untested on real MySQL; fputcsv regex guard weak; catalog.spec:215 beforeAll 60s timeout pre-existing (raise timeout in T10 gate)
 Task 7: complete (commits 481cf2e..71069d3, review clean)
+Logo wiring: done (87c12b5): header/footer mark, favicons, apple-touch, default OG helper ideatoapps_default_og_image() + og:image guard; screenshots viewed. Carry to T9: consume the helper in full SEO output (og:image 1200x630), per-theme theme-color media pair, web manifest uses icon-192/512 (optional). Not yet independently reviewed beyond controller spot-check; covered by final whole-branch review.
+BASE_T8=87c12b5
