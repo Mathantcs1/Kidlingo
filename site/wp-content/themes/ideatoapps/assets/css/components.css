@@ -20,10 +20,13 @@
 .btn:active { transform: translateY(1px); }
 .btn--primary { background: var(--primary); color: var(--on-primary); }
 .btn--primary:hover { background: var(--primary-hover); }
+.btn--primary:active { background: var(--primary-active); }
 .btn--secondary { background: transparent; color: var(--ink); border-color: var(--line); }
 .btn--secondary:hover { background: var(--bg-alt); border-color: var(--muted); }
 .btn--ghost { background: transparent; color: var(--link); padding-inline: 12px; }
 .btn--ghost:hover { background: var(--bg-alt); }
+/* Disabled: opaque, still readable (>= 4.5:1), clearly not interactive. */
+.btn:disabled, .btn[aria-disabled="true"] { background: var(--bg-alt); color: var(--muted-on-alt); border-color: var(--line); cursor: not-allowed; transform: none; }
 .btn--sm { min-height: 40px; padding: 8px 16px; }
 
 /* Card */

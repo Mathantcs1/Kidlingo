@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import { axeProblems } from './helpers/a11y';
 
 const WIDTHS = [360, 390, 768, 1024, 1440];
 const themeOf = (page: Page) => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
@@ -152,9 +152,7 @@ for (const theme of ['dark', 'light'] as const) {
           const res = await page.goto(path);
           expect(res?.status()).toBe(path === '/' ? 200 : 404);
           expect(await themeOf(page)).toBe(theme);
-          const results = await new AxeBuilder({ page }).analyze();
-          const bad = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-          expect(bad.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' | ')}`)).toEqual([]);
+          expect(await axeProblems(page)).toEqual([]);
         });
       }
     }

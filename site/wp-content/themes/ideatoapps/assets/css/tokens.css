@@ -44,7 +44,8 @@
 	--muted: #a9b4d0;
 	--muted-on-alt: #a9b4d0;
 	--primary: #7357f5;
-	--primary-hover: #8268ff;
+	--primary-hover: #6648ec; /* white text 5.67:1 (the old lighter #8268FF was 3.91:1) */
+	--primary-active: #5a3de0;
 	--on-primary: #ffffff;
 	--accent: #367cf5;
 	--link: #b2a4ff;
@@ -67,6 +68,7 @@
 	--muted-on-alt: #536079;
 	--primary: #7357f5;
 	--primary-hover: #6446ea;
+	--primary-active: #5636d8;
 	--on-primary: #ffffff;
 	--accent: #367cf5;
 	--link: #5636d8;
