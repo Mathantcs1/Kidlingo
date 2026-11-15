@@ -125,3 +125,27 @@ fails it shows a fixed client-side message.
 - Payload budget (`tests/e2e/seo-perf.spec.ts`): HTML + CSS + JS of the home page under 250 kB, measured on the raw (decoded) bodies because the
   Playground dev server does not compress; a gzip estimate is printed with it. Real transfer size on Bluehost is unverified.
 - Accessibility: `tests/e2e/a11y.spec.ts` (axe, both themes, 360 and 1440). Server headers: see `HTACCESS_SNIPPET.md`.
+
+## Checks added in Task 10
+
+- **Script errors on cart and checkout (review I1).** The theme defers jQuery for speed, and WooCommerce's cart and checkout scripts need it.
+  `tests/e2e/script-errors.spec.ts` loads `/cart/` and `/checkout/` with ClipForge in the cart and fails on any page error
+  (including `jQuery is not defined` / `ReferenceError`) or when `window.jQuery` is not a function. It was mutation-checked by removing the
+  jQuery script tag. It runs against the Playground dev server only; load order on Bluehost with a caching or "optimise JavaScript" plugin
+  is unverified, so open `/cart/` and `/checkout/` with the browser console open once after launch and after installing any optimisation plugin.
+- **Fail-closed JSON-LD seam (review I2).** The branch of the single-app seam in `seo.php` that returns no structured data when the data
+  fails validation is **verified by reading the code, not by a test** (nothing in the suite can make that branch run). The rating/review stripping
+  and the offer rules are tested (`tests/php`, `seo-schema.spec.ts`).
+- **robots.txt `Disallow` versus `noindex` (review M1).** `/my-account/`, `/cart/` and `/checkout/` have both on purpose. `Disallow` in
+  `robots.txt` keeps crawlers from fetching private, per-visitor pages at all. `noindex, follow` in the page head is the stronger, per-page signal
+  that keeps a page out of search results, but a crawler only sees it if it may fetch the page. Search engines can occasionally list a
+  disallowed URL (address only, no text) when other sites link to it; for account, cart and checkout pages that is harmless and rare. Pages that
+  must be fetched to see their `noindex` (`/shop/`, `/product/clipforge/`, search, archives) are therefore **not** disallowed. If a disallowed
+  URL ever shows up in search results, remove its `Disallow` line for a few weeks so the crawler can read the `noindex`, then restore it.
+  Decision: keep as is.
+- **Packaging.** `npm run site:package` (repo root) writes `dist-site/ideatoapps-theme.zip` and `dist-site/ideatoapps-core.zip`
+  (git-ignored). It leaves out dotfiles, `node_modules`, tests, docs and screenshots, and fails (writing nothing) if any file that would ship
+  contains a Stripe key prefix, `whsec_`, an AWS/GitHub/Slack/Google key or a private key block. Test: `site/tests/package-site.test.ts`
+  (picked up by the root `npx vitest run`).
+- **Screenshots.** `SCREENSHOTS=1 npx playwright test tests/e2e/screenshots-task10.spec.ts` regenerates `docs/screenshots/task-10/`
+  (home, apps, ClipForge page and library; 1440 and 390 px; the admin Versions box could not be captured, see the Task 10 report; dark and light for public pages).

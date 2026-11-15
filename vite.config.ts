@@ -10,7 +10,7 @@ export default defineConfig({
   // AAC encoder, which is fetched only when the browser has no native AAC encoder.
   build: { chunkSizeWarningLimit: 1200 },
   test: {
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/**/*.test.ts', 'site/tests/**/*.test.ts'],
     exclude: ['tests/e2e/**', 'node_modules/**'],
   },
 });

@@ -30,6 +30,10 @@ WooCommerce scripts. Both are server-level decisions, documented below.
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
+# 0. Never redirect certificate validation requests. Let's Encrypt style (ACME) and cPanel AutoSSL checks fetch a file over plain
+#    HTTP from /.well-known/; a redirect to HTTPS (or to the apex) can make renewal fail. This rule stops all rewriting for them.
+RewriteRule ^\.well-known/(acme-challenge|pki-validation)/ - [L]
+
 # 1. Force HTTPS (Bluehost's free SSL must be active first: open https://ideatoapps.net in a private window).
 RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !=https
@@ -74,6 +78,10 @@ AddOutputFilterByType DEFLATE text/html text/css application/javascript applicat
 
 ## Notes
 
+- Rule 0 keeps `/.well-known/acme-challenge/` (and cPanel's `/.well-known/pki-validation/`) out of both redirects, so a certificate
+  can be issued or renewed over plain HTTP. Which of the two folders your Bluehost certificate check uses is unverified; the rule covers both.
+  After the first renewal cycle (or after asking Bluehost to re-run AutoSSL) check that the certificate dates moved forward.
+
 - The caching rules (5) use `<If>`, which needs Apache 2.4 (LiteSpeed accepts it too). If the server answers 500 after pasting, delete rule 5
   and keep the rest: it is only an optimisation.
 - Never cache `/cart/`, `/checkout/` or `/my-account/` at a CDN or caching plugin. WooCommerce sends no-cache headers for them; keep it that way.
@@ -89,4 +97,5 @@ AddOutputFilterByType DEFLATE text/html text/css application/javascript applicat
 3. `curl -I https://ideatoapps.net/wp-content/themes/ideatoapps/assets/css/base.css?ver=1` shows `cache-control: ... max-age=31536000`.
 4. `https://ideatoapps.net/robots.txt` lists the sitemap; `https://ideatoapps.net/sitemap.xml` opens (it redirects to `/wp-sitemap.xml`).
 5. Only if you enabled HSTS: `curl -I https://ideatoapps.net/` shows `strict-transport-security`.
-6. Re-run the security headers scan of your choice and PageSpeed Insights on the home page.
+6. Certificate validation is not redirected: `curl -sI http://ideatoapps.net/.well-known/acme-challenge/test` answers 404 (or 403), **not** a 301 to https.
+7. Re-run the security headers scan of your choice and PageSpeed Insights on the home page.

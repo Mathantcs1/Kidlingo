@@ -7,7 +7,8 @@
     "wp:bootstrap": "node scripts/wp-bootstrap.mjs",
     "test:php": "php vendor/bin/phpunit",
     "test:e2e": "playwright test",
-    "test:e2e:zip": "playwright test -c playwright.zip.config.ts"
+    "test:e2e:zip": "playwright test -c playwright.zip.config.ts",
+    "package": "node scripts/package-site.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

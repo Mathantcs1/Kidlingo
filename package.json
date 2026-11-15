@@ -13,7 +13,8 @@
     "typecheck": "tsc -b",
     "e2e": "playwright test --trace off",
     "e2e:preview": "playwright test -c playwright.preview.config.ts --trace off",
-    "package:zip": "node scripts/package-clipforge.mjs"
+    "package:zip": "node scripts/package-clipforge.mjs",
+    "site:package": "node site/scripts/package-site.mjs"
   },
   "dependencies": {
     "@mediabunny/aac-encoder": "1.65.2",
