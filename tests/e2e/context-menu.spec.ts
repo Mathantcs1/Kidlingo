@@ -121,3 +121,26 @@ test('the media bin item menu adds to the timeline', async ({ page }) => {
   await page.getByTestId('ctx-add-to-timeline').click();
   await expect(page.getByTestId('timeline-clip')).toHaveCount(1);
 });
+
+test('the clip menu has Flip, Crop on canvas and Reset crop: one undo step each, Reset crop greyed without a crop', async ({ page }) => {
+  await setup(page);
+  await clipEl(page).click({ button: 'right' });
+  await expect(page.getByTestId('ctx-reset-crop')).toHaveAttribute('aria-disabled', 'true');
+  const d = await depth(page);
+  await page.getByTestId('ctx-flip-h').click();
+  expect(await depth(page)).toBe(d + 1);
+  const flip = () => page.evaluate(() => window.__clipforge!.getState().history.present.tracks.flatMap((t) => t.clips)[0].flip);
+  expect(await flip()).toEqual({ h: true });
+  await clipEl(page).click({ button: 'right' });
+  await expect(page.getByTestId('ctx-flip-h')).toContainText('Unflip horizontal');
+  await page.getByTestId('ctx-flip-h').click();
+  expect(await flip()).toBeUndefined();
+  await page.evaluate(() => window.__clipforge!.getState().apply((p) => ({ ...p, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.map((c) => (c.kind === 'video' ? { ...c, crop: { left: 0.2, top: 0, right: 0, bottom: 0 } } : c)) })) })));
+  await clipEl(page).click({ button: 'right' });
+  await expect(page.getByTestId('ctx-reset-crop')).not.toHaveAttribute('aria-disabled', 'true');
+  await page.getByTestId('ctx-reset-crop').click();
+  expect(await page.evaluate(() => window.__clipforge!.getState().history.present.tracks.flatMap((t) => t.clips)[0].crop)).toBeUndefined();
+  await clipEl(page).click({ button: 'right' });
+  await page.getByTestId('ctx-crop-mode').click();
+  await expect(page.getByTestId('crop-overlay')).toBeVisible();
+});

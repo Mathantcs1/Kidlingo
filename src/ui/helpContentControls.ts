@@ -60,7 +60,7 @@ export const CONTROL_TOPICS: HelpTopic[] = [
           ['Flip horizontal, Flip vertical', 'Mirror the cropped picture. Flipping happens before the clip is rotated.'],
           ['Anchor X, Y', 'The pivot that Scale, Rotation and animation presets turn about, in percent of the full picture from its centre. Moving it moves the picture (X and Y are where the pivot lands).'],
           ['To crop centre', 'Put the pivot at the centre of the visible area.'],
-          ['Pivot dot', 'The small dot on the picture is the pivot. Drag it to move the pivot without moving the picture.'],
+          ['Pivot dot', 'The small dot on the picture is the pivot. Hold Shift and drag it to move the pivot without moving the picture (not while position, scale, rotation or the anchor are animated).'],
         ],
       },
       { t: 'p', text: 'The anchor has a keyframe row like Position and Scale: see Animation and keyframes. Crop and flip apply to video and image clips.' },

@@ -12,6 +12,8 @@ import { clipPayload } from './clipClipboard';
 import { copyClipsCmd, duplicateClipsCmd, pasteClipsAtCmd, pasteClipsCmd } from './clipClipboardCommands';
 import { addToTimeline, deleteSelected, mergeSelected, rippleDeleteSelected, splitAtPlayhead } from './commands';
 import type { MenuItem } from './contextMenuModel';
+import { resetCropCmd, setFlipCmd } from './cropCommands';
+import { toggleCropMode } from './cropModeStore';
 import { liveSelection } from './edits';
 import { removeMediaItem } from './projectCommands';
 import { openSavePreset } from './savePresetUi';
@@ -54,6 +56,13 @@ export function clipMenuItems(clipId: Id): MenuItem[] {
   items.push({ id: 'copy-anim', label: 'Copy animation', shortcut: 'Mod+Alt+C', disabled: !edit || !single || !animated, title: animated ? undefined : 'This clip has no animation', onSelect: copyAnimCmd });
   items.push({ id: 'paste-anim', label: 'Paste animation', shortcut: 'Mod+Alt+V', disabled: !canEdit || animPayload() === null, title: lockTitle, onSelect: () => pasteAnimCmd() });
   if (animated) items.push({ id: 'save-preset', label: 'Save as preset…', disabled: !edit || !single, onSelect: () => openSavePreset(clipId) });
+  if (clip.kind === 'video' || clip.kind === 'image') {
+    items.push('separator');
+    items.push({ id: 'flip-h', label: clip.flip?.h ? 'Unflip horizontal' : 'Flip horizontal', disabled: !canEdit || !single, title: lockTitle, onSelect: () => setFlipCmd(clipId, { h: clip.flip?.h !== true }) });
+    items.push({ id: 'flip-v', label: clip.flip?.v ? 'Unflip vertical' : 'Flip vertical', disabled: !canEdit || !single, title: lockTitle, onSelect: () => setFlipCmd(clipId, { v: clip.flip?.v !== true }) });
+    items.push({ id: 'crop-mode', label: 'Crop on canvas', disabled: !canEdit || !single, title: lockTitle, onSelect: () => toggleCropMode(clipId) });
+    items.push({ id: 'reset-crop', label: 'Reset crop', disabled: !canEdit || !single || !clip.crop, title: lockTitle ?? (clip.crop ? undefined : 'This clip has no crop'), onSelect: () => resetCropCmd(clipId) });
+  }
   if (clip.kind !== 'audio') {
     items.push('separator');
     items.push({
