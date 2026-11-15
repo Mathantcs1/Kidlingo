@@ -2,6 +2,7 @@
 import { clipDuration, clipEnd, sourceTimeAt } from '../core/clipTime';
 import type { Clip, Id, Project, Track } from '../core/model';
 import type { GainPoint } from './fade';
+import { isRetimedAudio } from './retime/retimeMath';
 
 /**
  * One clip's contribution to a window: source range [srcFrom, srcTo) plays over timeline [when, whenEnd), through
@@ -94,8 +95,10 @@ export function planWindow(
     const a = Math.max(clip.start, from);
     const b = Math.min(end, to);
     if (!(b > a)) continue;
-    const srcFrom = a === clip.start ? clip.in : sourceTimeAt(clip, a);
-    const srcTo = b === end ? clip.out : sourceTimeAt(clip, b);
+    // A retimed clip is a virtual speed-1 source over clip-local timeline seconds [0, D] (see retime/retimeMath.ts).
+    const virtual = isRetimedAudio(clip);
+    const srcFrom = a === clip.start ? (virtual ? 0 : clip.in) : virtual ? a - clip.start : sourceTimeAt(clip, a);
+    const srcTo = b === end ? (virtual ? clipDuration(clip) : clip.out) : virtual ? b - clip.start : sourceTimeAt(clip, b);
     if (!(srcTo > srcFrom)) continue;
     const trackVolume = trackVolumes.get(clip.id) ?? 1;
     const seg: Segment = { clipId: clip.id, mediaId: clip.mediaId, srcFrom, srcTo, when: a, whenEnd: b, clip, trackVolume };

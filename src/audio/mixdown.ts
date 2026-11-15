@@ -2,23 +2,17 @@
 import type { Clip, Id, Project } from '../core/model';
 import { timelineDuration } from '../core/timeline';
 import { ExportError } from '../export/errors';
-import { decodeAudioRange } from '../media/audioDecode';
 import { buildClipChain } from './chain';
-import { prepareSource } from './denoiseSource';
 import { chainLatency, chainMargins } from './effects/params';
 import { clipDuckPoints } from './duck';
 import type { GainPoint } from './fade';
 import { audibleClips, planWindow, trackVolumes } from './plan';
 import type { Segment } from './plan';
+import { loadSegmentAudio } from './segmentSource';
 import { noteAudioBuffer, noteWindow } from './stats';
 
 /** Seconds of audio rendered per OfflineAudioContext when exporting. */
 export const EXPORT_WINDOW_SECONDS = 30;
-/**
- * Seconds of real neighbouring source audio decoded on each side of a window cut (never past the clip's own
- * in/out), so resampling at the cut sees the same samples as an uncut render and windows join seamlessly.
- */
-const CUT_MARGIN = 0.05;
 /** Web Audio's render quantum; the pre-roll is a whole number of them so every window keeps the same block phase. */
 const QUANTUM = 128;
 
@@ -106,11 +100,9 @@ export class MixdownStream {
   private async schedule(ctx: OfflineAudioContext, seg: Segment, t0: number): Promise<boolean> {
     const { clip } = seg;
     const margins = chainMargins(clip.audio.effects);
-    const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN - margins.pre);
-    const to = Math.min(clip.out, seg.srcTo + CUT_MARGIN + margins.post);
     let decoded;
     try {
-      decoded = await decodeAudioRange(seg.mediaId, from, to, ctx, this.opts.signal);
+      decoded = await loadSegmentAudio(seg, margins, ctx, this.opts.signal);
     } catch (e) {
       if (isAbort(e) || this.opts.signal?.aborted) throw abortError();
       const name = this.p.media[seg.mediaId]?.name ?? seg.mediaId;
@@ -118,7 +110,7 @@ export class MixdownStream {
     }
     if (!decoded) return false;
     const source = ctx.createBufferSource();
-    const buffer = await prepareSource(clip, decoded, ctx);
+    const buffer = decoded.buffer;
     if (this.opts.signal?.aborted) throw abortError();
     source.buffer = buffer;
     // Context time 0 is timeline time t0.

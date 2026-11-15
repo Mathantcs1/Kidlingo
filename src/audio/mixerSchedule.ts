@@ -1,15 +1,11 @@
 // Live mixer helpers (see mixer.ts): decoding a window's segments and the clock maths of one scheduled piece.
-import { decodeAudioRange } from '../media/audioDecode';
 import type { DecodedAudio } from '../media/audioDecode';
-import { prepareSource } from './denoiseSource';
 import { chainLatency, chainMargins } from './effects/params';
 import type { Margins } from './effects/params';
 import { planWindow } from './plan';
+import { loadSegmentAudio } from './segmentSource';
 import type { Segment } from './plan';
 import type { Session } from './mixerTypes';
-
-/** Real source audio decoded past each window cut, so resampling at the cut sees its true neighbours. */
-const CUT_MARGIN = 0.05;
 
 /** One decoded segment and the effect margins its buffer covers (pre 0 when the pre-roll was not decoded). */
 export interface Piece {
@@ -36,9 +32,7 @@ export async function decodePieces(
     const margins = { pre: warm ? m.pre : 0, post: m.post };
     let decoded: DecodedAudio | null;
     try {
-      const from = Math.max(clip.in, seg.srcFrom - CUT_MARGIN - margins.pre);
-      const to = Math.min(clip.out, seg.srcTo + CUT_MARGIN + margins.post);
-      decoded = await decodeAudioRange(seg.mediaId, from, to, s.ctx, s.abort.signal);
+      decoded = await loadSegmentAudio(seg, margins, s.ctx, s.abort.signal);
     } catch (e) {
       if (!current()) return [];
       const name = s.names.get(seg.mediaId) ?? seg.mediaId;
@@ -46,9 +40,7 @@ export async function decodePieces(
     }
     if (!current()) return [];
     if (!decoded) continue;
-    const buffer = await prepareSource(clip, decoded, s.ctx);
-    if (!current()) return [];
-    out.push({ seg, decoded: { ...decoded, buffer }, margins });
+    out.push({ seg, decoded, margins });
   }
   return out;
 }
