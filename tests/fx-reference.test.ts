@@ -114,3 +114,30 @@ describe('lutSample', () => {
 describe('every effect type has a schema the reference can use', () => {
   it('has the expected set of effect types', () => expect(FX_TYPES).toHaveLength(17));
 });
+
+describe('chromaPixel', () => {
+  const key = 0x00ff00;
+  const params = (over: Record<string, number> = {}) => ({ ...defaultFxParams('chroma'), key, ...over });
+
+  it('removes the key colour, keeps a skin tone, and is soft between', async () => {
+    const { chromaPixel } = await import('../src/fx/reference');
+    expect(chromaPixel([0, 1, 0], params()).alpha).toBe(0);
+    const skin = chromaPixel([0.78, 0.59, 0.47], params());
+    expect(skin.alpha).toBe(1);
+    close(skin.rgb, [0.78, 0.59, 0.47], 6);
+    const alphas = [0, 0.2, 0.4, 0.6, 0.8, 1].map((t) => chromaPixel([t, 1 - t, 0], params()).alpha);
+    expect(alphas[0]).toBe(0);
+    expect(alphas[5]).toBe(1);
+    expect(alphas.some((a) => a > 0 && a < 1)).toBe(true);
+    for (let i = 1; i < alphas.length; i++) expect(alphas[i]).toBeGreaterThanOrEqual(alphas[i - 1]);
+  });
+
+  it('spill removal pulls the key channel of kept pixels down toward the others', async () => {
+    const { chromaPixel } = await import('../src/fx/reference');
+    const kept = chromaPixel([0.235, 0.784, 0.235], params({ tolerance: 0.15, softness: 0.05, spill: 1 }));
+    expect(kept.alpha).toBe(1);
+    expect(kept.rgb[1]).toBeCloseTo(0.235, 3);
+    const none = chromaPixel([0.235, 0.784, 0.235], params({ tolerance: 0.15, softness: 0.05, spill: 0 }));
+    expect(none.rgb[1]).toBeCloseTo(0.784, 6);
+  });
+});

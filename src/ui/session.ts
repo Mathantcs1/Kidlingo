@@ -1,6 +1,7 @@
 // Page session: editor lock, startup restore (media missing from storage flagged), then storage cleanup.
 import { create } from 'zustand';
-import { gcMedia, referencedMedia } from '../media/gc';
+import { gcLuts, gcMedia, referencedLuts, referencedMedia } from '../media/gc';
+import { settleLuts } from '../media/luts';
 import { hasMedia, settleMedia } from '../media/storage';
 import { loadProject, reconcileMedia } from '../state/persist';
 import { flushOnHide, setAutosaveEnabled, useEditor } from '../state/store';
@@ -87,6 +88,7 @@ export function gcPermitForNewProject(): GcPermit | null {
 export async function collectUnusedMedia(permit: GcPermit | null): Promise<void> {
   if (permit !== PERMIT || useRestoreFailure.getState().message !== null) return;
   await gcMedia(() => referencedMedia(useEditor.getState().history), { emptyIsVerified: true });
+  await gcLuts(() => referencedLuts(useEditor.getState().history), { emptyIsVerified: true });
 }
 
 /**
@@ -126,6 +128,7 @@ async function beginEditing(): Promise<void> {
   // Imported files become collectable once the project references them (see media/storage unsettled ids).
   useEditor.subscribe((s, prev) => {
     if (s.history.present.media !== prev.history.present.media) settleMedia(Object.keys(s.history.present.media));
+    if (s.history.present.luts !== prev.history.present.luts) settleLuts(Object.keys(s.history.present.luts));
   });
   const outcome = await restoreSession();
   if (autosaveAfter(outcome)) setAutosaveEnabled(true);

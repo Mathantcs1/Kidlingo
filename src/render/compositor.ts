@@ -32,6 +32,8 @@ export interface CompositorStats {
   videoTextures: number;
   /** Live offscreen effect targets (bounded; instrumentation for tests). */
   fxTargets: number;
+  /** Loaded LUT textures (one per distinct LUT in use). */
+  lutTextures: number;
   imageTextures: number;
   maxImageSide: number;
 }
@@ -96,7 +98,7 @@ class GlCompositor implements Compositor {
   }
 
   stats(): CompositorStats {
-    return { ...this.frames.stats(), fxTargets: this.fx.targetCount() };
+    return { ...this.frames.stats(), fxTargets: this.fx.targetCount(), lutTextures: this.fx.lutCount() };
   }
 
   private assertUsable(): void {
@@ -113,6 +115,7 @@ class GlCompositor implements Compositor {
       check: () => this.assertUsable(),
       ok: () => !this.disposed && !this.lost,
     });
+    if (!opts.bypassFx) await this.fx.prepare(draws);
     this.assertUsable();
     const fx = opts.bypassFx ? { draws, targets: [] } : this.fx.process(draws, p, t, this.canvas);
     try {

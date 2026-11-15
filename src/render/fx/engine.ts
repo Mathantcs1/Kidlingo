@@ -5,6 +5,7 @@ import type { Draw } from '../frameSources';
 import { fullscreenMatrix, letterbox, uvMatrix } from '../gl';
 import type { QuadRenderer, Size } from '../gl';
 import { GlUnavailableError } from '../glErrors';
+import { LutTextures } from './lutTexture';
 import { FullscreenPass, FxPrograms } from './pass';
 import { TargetPool } from './pool';
 import type { Target } from './pool';
@@ -32,6 +33,7 @@ export class FxEngine {
   private readonly pool: TargetPool;
   private readonly pass: FullscreenPass;
   private readonly programs: FxPrograms;
+  private readonly luts: LutTextures;
   private readonly failed = new Set<FxType>();
 
   constructor(
@@ -42,6 +44,18 @@ export class FxEngine {
     this.pool = new TargetPool(gl);
     this.pass = new FullscreenPass(gl);
     this.programs = new FxPrograms(gl);
+    this.luts = new LutTextures(gl);
+  }
+
+  lutCount(): number {
+    return this.luts.count;
+  }
+
+  /** Loads the LUTs the visible clips use (async); call before `process`. Never rejects. */
+  async prepare(draws: Draw[]): Promise<void> {
+    const refs: string[] = [];
+    for (const d of draws) for (const e of d.clip.fx) if (e.enabled && e.type === 'lut' && e.ref) refs.push(e.ref);
+    if (refs.length) await this.luts.ensure(refs);
   }
 
   targetCount(): number {
@@ -75,6 +89,7 @@ export class FxEngine {
   dispose(): void {
     this.pool.dispose();
     this.programs.dispose();
+    this.luts.dispose();
     this.pass.dispose();
   }
 
@@ -91,7 +106,7 @@ export class FxEngine {
     this.quad.draw(d.slot.tex, fullscreenMatrix(), 1, d.uv);
     const time = t - d.clip.start;
     const frame = Math.floor(time * p.format.fps + 1e-6);
-    const rc = new FxRunContext(gl, this.pool, this.pass, this.programs, {
+    const rc = new FxRunContext(gl, this.pool, this.pass, this.programs, this.luts, {
       pxScale: width / d.size.width, time, frame, seed: seedFor(frame, d.clip.id), fps: p.format.fps, clipId: d.clip.id,
     });
     for (const e of d.clip.fx) {

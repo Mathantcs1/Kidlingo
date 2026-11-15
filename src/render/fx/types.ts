@@ -2,6 +2,7 @@ import type { FxType, VisualEffect } from '../../core/model';
 import { fragment } from './glsl';
 import { FullscreenPass, FxPrograms } from './pass';
 import type { FxProgram, Uniforms } from './pass';
+import type { LutTextures } from './lutTexture';
 import { TargetPool } from './pool';
 import type { Target } from './pool';
 
@@ -12,6 +13,7 @@ export class FxRunContext {
     readonly pool: TargetPool,
     readonly pass: FullscreenPass,
     readonly programs: FxPrograms,
+    readonly luts: LutTextures,
     readonly info: { pxScale: number; time: number; frame: number; seed: number; fps: number; clipId: string },
   ) {}
 

@@ -99,3 +99,38 @@ export function lutSample(cube: Cube, c: Rgb): Rgb {
   }
   return out;
 }
+
+export function mixRgb(a: Rgb, b: Rgb, t: number): Rgb {
+  return a.map((v, i) => mix(v, b[i], t)) as Rgb;
+}
+
+const chromaOf = (c: Rgb): [number, number] => {
+  const y = luma709(c);
+  return [(c[2] - y) / 1.8556, (c[0] - y) / 1.5748];
+};
+
+/**
+ * Chroma key: alpha from the YCbCr chroma distance to the key colour (`key` is packed 0xRRGGBB) with a smooth edge,
+ * and spill removal that pulls the key's dominant channel down toward the other two (not applied to white-ish keys).
+ * Returns the unpremultiplied colour and the new alpha factor.
+ */
+export function chromaPixel(c: Rgb, params: Params): { rgb: Rgb; alpha: number } {
+  const packed = p(params, 'key', 0x00ff00);
+  const key: Rgb = [((packed >> 16) & 255) / 255, ((packed >> 8) & 255) / 255, (packed & 255) / 255];
+  const [kb, kr] = chromaOf(key);
+  const [cb, cr] = chromaOf(c);
+  const d = Math.hypot(cb - kb, cr - kr);
+  const tol = p(params, 'tolerance', 0.35);
+  const alpha = smoothstep(tol, tol + Math.max(p(params, 'softness', 0.15), 0.001), d);
+  const kmax = Math.max(...key);
+  const mask = key.map((v) => (v >= kmax - 1e-4 ? 1 : 0));
+  const dominant = mask[0] + mask[1] + mask[2];
+  let out: Rgb = [...c];
+  if (dominant < 1.5) {
+    const own = c.reduce((s, v, i) => s + v * mask[i], 0) / dominant;
+    const other = Math.max(...c.map((v, i) => (mask[i] ? 0 : v)));
+    const excess = Math.max(own - other, 0) * p(params, 'spill', 0.5);
+    out = out.map((v, i) => v - mask[i] * excess) as Rgb;
+  }
+  return { rgb: out, alpha };
+}

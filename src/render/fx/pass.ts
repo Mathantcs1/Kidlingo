@@ -62,8 +62,8 @@ export class FullscreenPass {
     gl.bindVertexArray(null);
   }
 
-  /** `extra` targets are bound to texture units 1.. as `u_tex1`.. (read with `src1()` in the shader). */
-  draw(prog: FxProgram, src: Target, dst: Target, uniforms: Uniforms, extra: Target[] = []): void {
+  /** `extra` targets are bound to texture units 1.. as `u_tex1`.. (read with `src1()` in the shader); `lut3d` to unit 5 as `u_lut`. */
+  draw(prog: FxProgram, src: Target, dst: Target, uniforms: Uniforms, extra: Target[] = [], lut3d?: WebGLTexture): void {
     const gl = this.gl;
     gl.bindFramebuffer(gl.FRAMEBUFFER, dst.fbo);
     gl.viewport(0, 0, dst.width, dst.height);
@@ -78,6 +78,11 @@ export class FullscreenPass {
       gl.bindTexture(gl.TEXTURE_2D, t.slot.tex);
       gl.uniform1i(prog.loc(`u_tex${i + 1}`), i + 1);
     });
+    if (lut3d) {
+      gl.activeTexture(gl.TEXTURE5);
+      gl.bindTexture(gl.TEXTURE_3D, lut3d);
+      gl.uniform1i(prog.loc('u_lut'), 5);
+    }
     gl.activeTexture(gl.TEXTURE0);
     const texel = prog.loc('u_texel');
     if (texel) gl.uniform2f(texel, 1 / src.width, 1 / src.height);

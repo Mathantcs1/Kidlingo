@@ -1,6 +1,7 @@
 // In-browser test harness (served at /harness.html by the dev server; not part of the app build).
 import { hasWebCodecs } from './media/support';
 import { getMediaFile, hasMedia, listMediaIds, putMedia, removeMedia } from './media/storage';
+import { listLutIds, putLutText } from './media/luts';
 import { clipFromMedia, importFile } from './media/import';
 import { decodeAudio, openVideoSource } from './media/decode';
 import { createCompositor } from './render/compositor';
@@ -94,6 +95,8 @@ const cf = {
   fitTransform,
   makePng,
   readPixels,
+  putLut: putLutText,
+  listLutIds,
   /** Effect types whose shader failed to compile during the last renderPixels call. */
   fxErrors: [] as string[],
   /** Renders every time in one compositor and reports its resource stats halfway and at the end (leak checks). */

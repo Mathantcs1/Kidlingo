@@ -1,6 +1,7 @@
 // Garbage collection of imported media files: OPFS files no project state refers to any more.
 import type { Id, Project } from '../core/model';
 import type { History } from '../state/history';
+import { listLutIds, removeLutFile, unsettledLuts } from './luts';
 import { listMediaIds, removeMedia, unsettledMedia } from './storage';
 
 /** Media ids referenced by any state of the history (undo and redo included), so GC never breaks an undo. */
@@ -43,5 +44,39 @@ export async function gcMedia(referenced: () => ReadonlySet<Id>, opts: { emptyIs
     }
   }
   if (failed.length > 0) console.warn(`clipforge: media cleanup skipped ${failed.length} item(s)`, failed);
+  return removed;
+}
+
+/** LUT ids referenced by any state of the history (library entries and effect refs), so GC never breaks an undo. */
+export function referencedLuts(h: History<Project>): Set<Id> {
+  const ids = new Set<Id>();
+  for (const p of [...h.past, h.present, ...h.future]) {
+    for (const id of Object.keys(p.luts)) ids.add(id);
+    for (const t of p.tracks) for (const c of t.clips) for (const e of c.fx) if (e.ref) ids.add(e.ref);
+  }
+  return ids;
+}
+
+/** Same contract as gcMedia, for the LUT files: only the verified-restore session may call it. Never throws. */
+export async function gcLuts(referenced: () => ReadonlySet<Id>, opts: { emptyIsVerified?: boolean } = {}): Promise<Id[]> {
+  if (referenced().size === 0 && !opts.emptyIsVerified) return [];
+  const removed: Id[] = [];
+  const failed: unknown[] = [];
+  let stored: Id[] = [];
+  try {
+    stored = await listLutIds();
+  } catch (e) {
+    failed.push(e);
+  }
+  for (const id of stored) {
+    if (unusedMedia([id], referenced(), unsettledLuts()).length === 0) continue;
+    try {
+      await removeLutFile(id);
+      removed.push(id);
+    } catch (e) {
+      failed.push(e);
+    }
+  }
+  if (failed.length > 0) console.warn(`clipforge: LUT cleanup skipped ${failed.length} item(s)`, failed);
   return removed;
 }
