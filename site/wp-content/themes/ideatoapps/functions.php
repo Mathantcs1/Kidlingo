@@ -13,6 +13,7 @@ define( 'IDEATOAPPS_THEME_VERSION', '0.2.0' );
 
 require_once get_template_directory() . '/inc/head.php';
 require_once get_template_directory() . '/inc/navigation.php';
+require_once get_template_directory() . '/inc/home.php';
 
 add_action(
 	'after_setup_theme',
@@ -40,6 +41,10 @@ add_action(
 			$prev = array( "ideatoapps-$name" );
 		}
 		wp_enqueue_style( 'ideatoapps-style', get_stylesheet_uri(), $prev, IDEATOAPPS_THEME_VERSION );
+
+		if ( is_front_page() ) {
+			wp_enqueue_style( 'ideatoapps-home', "$base/css/home.css", array( 'ideatoapps-components' ), $ver( 'css/home.css' ) );
+		}
 
 		foreach ( array( 'theme-toggle', 'nav' ) as $name ) {
 			wp_enqueue_script( "ideatoapps-$name", "$base/js/$name.js", array(), $ver( "js/$name.js" ), array( 'in_footer' => true, 'strategy' => 'defer' ) );

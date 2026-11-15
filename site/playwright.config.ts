@@ -13,6 +13,8 @@ export default defineConfig({
   testIgnore: /zip-runs\.spec\.ts/, // needs no WordPress; run via playwright.zip.config.ts (npm run test:e2e:zip)
   timeout: 60_000,
   retries: 0,
+  workers: 1, // specs that edit site content (home.spec.ts) share one WordPress; run files one at a time
+
   reporter: [['list']],
   use: {
     baseURL,

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { parseColor, ratio, sampleBackground, worstRatio } from './helpers/contrast';
+import { adminApi, cleanup, createVideo } from './helpers/wp';
 
 const settle = (page: Page) => page.waitForTimeout(450); // longer than the 150-250ms transitions
 
@@ -41,7 +42,18 @@ for (const theme of ['dark', 'light'] as const) {
     });
 
     test('secondary button text stays >= 4.5:1 on hover (opaque bg) and focus (over the hero)', async ({ page }) => {
-      await page.goto('/');
+      // The home hero only has a secondary button ("Watch demos") once a video is published.
+      const api = await adminApi();
+      try {
+        await createVideo(api, 'Contrast fixture video');
+        await page.goto('/');
+        await checkSecondary(page);
+      } finally {
+        await cleanup(api);
+      }
+    });
+
+    async function checkSecondary(page: Page) {
       const sel = '.hero .btn--secondary';
       const btn = page.locator(sel);
       await btn.hover(); await settle(page);
@@ -53,7 +65,7 @@ for (const theme of ['dark', 'light'] as const) {
       const fg = parseColor(await btn.evaluate((el) => getComputedStyle(el).color));
       const bg = await sampleBackground(page, btn);
       expect(worstRatio(fg, bg), 'focus').toBeGreaterThanOrEqual(4.5);
-    });
+    }
 
     test('disabled buttons stay readable (>= 4.5:1)', async ({ page }) => {
       await page.goto('/');
@@ -83,7 +95,6 @@ for (const theme of ['dark', 'light'] as const) {
           ['hero eyebrow', '.hero .section-heading__eyebrow', 4.5],
           ['hero lead', '.hero__lead', 4.5],
           ['hero h1 (large)', '.hero h1', 3],
-          ['hero secondary button', '.hero .btn--secondary', 4.5],
           ['footer tagline', '.site-footer__tagline', 4.5],
         ],
       },

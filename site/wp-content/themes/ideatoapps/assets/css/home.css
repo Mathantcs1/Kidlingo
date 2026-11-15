@@ -1,0 +1,64 @@
+/* Home page sections (front page only). */
+.home .site-footer { margin-top: 0; }
+.section--flush-top { padding-top: 0; }
+.section--alt { background: var(--bg-alt); }
+.section--alt .section-heading__text,
+.section--alt .steps__item p { color: var(--muted-on-alt); }
+
+.grid { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.section-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-5); }
+
+/* App and video cards */
+.card__media { position: relative; margin: calc(var(--s-3) * -1) calc(var(--s-3) * -1) var(--s-1); aspect-ratio: 16 / 9; overflow: hidden; border-radius: calc(var(--radius-card-lg) - 1px) calc(var(--radius-card-lg) - 1px) 0 0; background: var(--bg-alt); }
+.card__media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.card__media--play { display: grid; place-items: center; background: linear-gradient(135deg, var(--violet), var(--blue)); }
+.card__media--play svg { width: 56px; height: 56px; fill: #fff; }
+.card__note { margin: var(--s-1) 0 0; font-weight: 700; color: var(--ink); }
+.card__note--soon { font-weight: 600; color: var(--muted); }
+
+/* Category chips */
+.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0; padding: 0; list-style: none; }
+.chip { display: flex; flex-direction: column; min-width: 160px; padding: var(--s-2) var(--s-3); background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius-card); color: var(--ink); text-decoration: none; transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.chip:hover { border-color: var(--violet); transform: translateY(-2px); }
+.chip__name { font-weight: 700; }
+.chip__count { font-size: 0.875rem; color: var(--muted); }
+
+/* Steps */
+.steps { display: grid; gap: var(--s-4); margin: 0; padding: 0; list-style: none; counter-reset: step; }
+/* The number is a grid cell, not an overlay, so axe can resolve the heading's background. */
+.steps__item { display: grid; grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto auto 1fr; column-gap: var(--s-2); align-items: start; counter-increment: step; }
+.steps__item::before { content: counter(step); grid-row: 1 / span 3; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: var(--on-primary); font-weight: 700; }
+.steps__item h3 { grid-column: 2; margin-bottom: 4px; }
+.steps__item p { grid-column: 2; margin: 0; color: var(--muted); max-width: 40ch; }
+
+/* Newsletter */
+.newsletter { padding: var(--s-6) var(--s-3); background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius-card-lg); box-shadow: var(--shadow-card); }
+.newsletter .section-heading { margin-bottom: var(--s-3); }
+.newsletter__form label { display: block; margin-bottom: 4px; font-weight: 600; }
+.newsletter__row { display: flex; flex-wrap: wrap; gap: var(--s-1); max-width: 520px; }
+.field { flex: 1 1 220px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--muted); border-radius: var(--radius-ctl); background: var(--bg); color: var(--ink); font: inherit; }
+
+@media (min-width: 768px) {
+	.steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.newsletter { padding: var(--s-6); }
+}
+
+@media (min-width: 1024px) {
+	.steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-3); }
+}
+
+.hero + .section { padding-top: var(--s-6); }
+.home .hero__lead { max-width: 60ch; text-wrap: pretty; }
+
+/* Decorative app tiles (no text) so the hero looks intentional even before any app exists. */
+.hero__art { display: none; }
+@media (min-width: 1024px) {
+	.hero__inner { position: relative; }
+	.hero__art { display: grid; position: absolute; right: var(--gutter); top: 50%; transform: translateY(-50%); grid-template-columns: repeat(3, 88px); gap: var(--s-2); transform-origin: center; }
+	.hero__art span { aspect-ratio: 1; border-radius: 22px; border: 1px solid var(--card-border); background: var(--card); box-shadow: var(--shadow-card); }
+	.hero__art span:nth-child(3n+1) { transform: translateY(18px); }
+	.hero__art span:nth-child(3n+3) { transform: translateY(-18px); }
+	.hero__art span:nth-child(2), .hero__art span:nth-child(5) { background: linear-gradient(135deg, var(--violet), var(--blue)); border-color: transparent; }
+	.hero__art span:nth-child(7) { background: var(--hero-glow-a); }
+}
+.hero__inner .section-heading__eyebrow { width: fit-content; } /* keeps its box (and contrast sampling) clear of the decorative tiles */

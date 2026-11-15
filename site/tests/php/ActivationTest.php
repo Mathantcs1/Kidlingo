@@ -17,6 +17,9 @@ final class ActivationTest extends WPTestCase {
 		if ( ! post_type_exists( 'app' ) ) {
 			ideatoapps_register_app_post_type();
 		}
+		if ( ! post_type_exists( 'video' ) ) {
+			ideatoapps_register_video_post_type();
+		}
 		parent::tearDown();
 	}
 

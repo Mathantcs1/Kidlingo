@@ -15,6 +15,8 @@ define( 'IDEATOAPPS_CORE_VERSION', '0.1.0' );
 
 require_once IDEATOAPPS_CORE_DIR . 'includes/post-type.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/notices.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/video.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/settings.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/meta.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/versions.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/meta-box-fields.php';
