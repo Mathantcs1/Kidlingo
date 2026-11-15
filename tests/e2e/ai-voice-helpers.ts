@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
@@ -9,11 +9,25 @@ import { KEY, openSettings, saveKey } from './ai-settings-helpers';
 export { KEY };
 
 /** A real 1-second MP3 (a 330 Hz tone) made with ffmpeg; the stub returns it as the "synthesized speech". */
-const mp3Path = join(mkdtempSync(join(tmpdir(), 'ai-voice-')), 'speech.mp3');
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=330:duration=1:sample_rate=44100', '-ac', '1', '-b:a', '64k', mp3Path]);
-export const speech = (): Buffer => readFileSync(mp3Path);
+let tmp: string | null = null;
+export const speech = (): Buffer => {
+  if (!tmp) {
+    tmp = mkdtempSync(join(tmpdir(), 'ai-voice-'));
+    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=330:duration=1:sample_rate=44100', '-ac', '1', '-b:a', '64k', join(tmp, 'speech.mp3')]);
+  }
+  return readFileSync(join(tmp, 'speech.mp3'));
+};
+
+/** Call from test.afterAll: removes the generated MP3's temp directory. */
+export function cleanupSpeech(): void {
+  if (tmp) rmSync(tmp, { recursive: true, force: true });
+  tmp = null;
+}
 
 export type Mode = 'ok' | 'slow' | 401 | 402 | 429 | 'network';
+
+export let voicesStatus = 200;
+export const setVoicesStatus = (s: number): void => void (voicesStatus = s);
 
 export interface Tts {
   mode: Mode;
@@ -31,6 +45,7 @@ export async function stubTts(page: Page): Promise<Tts> {
     const req: Request = route.request();
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
     if (req.url().includes('/v1/voices')) {
+      if (voicesStatus !== 200) return route.fulfill({ status: voicesStatus, headers: cors, contentType: 'application/json', body: '{}' });
       return route.fulfill({ headers: cors, contentType: 'application/json', body: JSON.stringify({ voices: [{ voice_id: 'v1', name: 'Rachel' }, { voice_id: 'v2', name: 'Adam' }] }) });
     }
     if (req.url().includes('/v1/user/subscription')) {

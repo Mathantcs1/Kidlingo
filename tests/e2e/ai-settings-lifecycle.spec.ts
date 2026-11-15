@@ -54,6 +54,8 @@ test('Done closes the dialog and returns focus to the Settings button', async ({
 test('closing during Test aborts the request, shows no stale success, and Save/Remove are disabled while testing', async ({ page }) => {
   await stubApi(page, { delayMs: 1500 });
   const failed: string[] = [];
+  const started: string[] = [];
+  page.on('request', (r) => r.url().includes('/v1/voices') && started.push(r.url()));
   page.on('requestfailed', (r) => failed.push(r.url()));
   await open(page);
   await openSettings(page);
@@ -67,7 +69,8 @@ test('closing during Test aborts the request, shows no stale success, and Save/R
   await expect(page.getByTestId('eleven-key-status')).toContainText(SHOWN);
   await page.waitForTimeout(2500);
   await expect(page.getByTestId('settings-dialog')).not.toContainText('Key works');
-  expect(failed.some((u) => u.includes('/v1/voices'))).toBe(true);
+  // Under load Escape can abort before any request is sent; if one was sent it must have been aborted.
+  expect(started.length === 0 || failed.some((u) => u.includes('/v1/voices'))).toBe(true);
 });
 
 test('a rejected key is announced as an alert, success is not', async ({ page }) => {

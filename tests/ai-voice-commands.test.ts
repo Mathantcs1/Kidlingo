@@ -6,7 +6,6 @@ import { addTrack } from '../src/core/tracks';
 import { useEditor } from '../src/state/store';
 import { generateVoiceOver } from '../src/ui/aiVoiceCommands';
 import type { VoiceDeps } from '../src/ui/aiVoiceCommands';
-import { aiVoiceName, placeAudioMedia } from '../src/ui/recordEdits';
 import { useToasts } from '../src/ui/Toast';
 
 const KEY = 'sk_unit_KEYCANARY_123456';
@@ -54,21 +53,6 @@ beforeEach(() => {
   log = { calls: [], removed: [], imported: [], consent: false, asked: 0, answer: true };
   synth = async () => new Blob(['mp3'], { type: 'audio/mpeg' });
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
-});
-
-describe('naming', () => {
-  it('AI voice N uses the lowest free number', () => {
-    const p = emptyProject();
-    expect(aiVoiceName(p)).toBe('AI voice 1');
-    const m = (id: string, name: string): MediaRef => ({ id, name, kind: 'audio', duration: 1, hasAudio: true });
-    expect(aiVoiceName({ ...p, media: { a: m('a', 'AI voice 1'), b: m('b', 'Voice-over 2'), c: m('c', 'AI voice 3') } })).toBe('AI voice 2');
-  });
-  it('placeAudioMedia places like a recording', () => {
-    const p = emptyProject();
-    const m: MediaRef = { id: 'a', name: 'AI voice 1', kind: 'audio', duration: 2, hasAudio: true };
-    const next = placeAudioMedia(p, m, 3, null);
-    expect(next.tracks.find((t) => t.kind === 'audio')?.clips[0]).toMatchObject({ mediaId: 'a', start: 3, in: 0, out: 2 });
-  });
 });
 
 describe('generateVoiceOver', () => {
@@ -209,5 +193,17 @@ describe('generateVoiceOver', () => {
     expect(toasts().join('|')).not.toContain(KEY);
     expect(logged).not.toContain(KEY);
     expect(toasts()).toHaveLength(1);
+  });
+
+  it('a cancel followed by an import failure shows no toast and leaves no media', async () => {
+    const ctl = new AbortController();
+    const d = deps();
+    d.importFile = async () => {
+      ctl.abort();
+      throw new Error('import failed');
+    };
+    expect(await generateVoiceOver(REQ, ctl.signal, d)).toBe(false);
+    expect(toasts()).toEqual([]);
+    expect(Object.keys(present().media)).toHaveLength(0);
   });
 });

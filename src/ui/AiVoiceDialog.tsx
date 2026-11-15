@@ -80,6 +80,7 @@ export default function AiVoiceDialog() {
   const [voiceId, setVoiceId] = useState('');
   const [model, setModel] = useState<TtsModel>('eleven_multilingual_v2');
   const [busy, setBusy] = useState(false);
+  const running = useRef(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const cancel = (): void => {
@@ -110,17 +111,20 @@ export default function AiVoiceDialog() {
   const count = [...text].length;
   const over = count > MAX_TEXT_CODE_POINTS;
   const canGenerate = !busy && voiceId !== '' && text.trim().length > 0 && !over;
-  const status = busy ? 'Generating…' : loadError ?? (voices === null ? 'Loading voices…' : '');
+  const status = busy ? 'Generating…' : over ? 'The script is over the 5,000 character limit.' : loadError ?? (voices === null ? 'Loading voices…' : '');
 
   async function generate(): Promise<void> {
-    if (!canGenerate) return;
+    if (!canGenerate || running.current) return;
+    running.current = true; // only the call that set busy may clear it
     setBusy(true);
-    remember(voiceId);
     const c = ctl.current;
     const ok = await generateVoiceOver({ text, voiceId, model }, c.signal);
+    running.current = false;
     if (c.signal.aborted) return;
-    if (ok) close();
-    else setBusy(false);
+    if (ok) {
+      remember(voiceId);
+      close();
+    } else setBusy(false);
   }
 
   return (
@@ -138,9 +142,10 @@ export default function AiVoiceDialog() {
               disabled={busy}
               placeholder="Type what the voice should say"
               aria-invalid={over}
+              aria-describedby="ai-voice-count"
             />
           </label>
-          <span className={`ai-voice-count${over ? ' is-error' : ''}`} data-testid="ai-voice-count" aria-live="polite">
+          <span className={`ai-voice-count${over ? ' is-error' : ''}`} id="ai-voice-count" data-testid="ai-voice-count">
             {count.toLocaleString('en-US')} / {MAX_TEXT_CODE_POINTS.toLocaleString('en-US')}
           </span>
           <label>
@@ -165,7 +170,7 @@ export default function AiVoiceDialog() {
             </select>
           </label>
         </div>
-        <p className={`ai-voice-status${loadError && !busy ? ' is-error' : ''}`} data-testid="ai-voice-status" aria-live="polite">
+        <p className={`ai-voice-status${(loadError || over) && !busy ? ' is-error' : ''}`} data-testid="ai-voice-status" aria-live="polite">
           {status}
         </p>
         <div className="modal-actions">

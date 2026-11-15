@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { addKey, audioInfo, KEY, openDialog, snapshot, stubTts } from './ai-voice-helpers';
+import { addKey, audioInfo, cleanupSpeech, KEY, openDialog, setVoicesStatus, snapshot, stubTts } from './ai-voice-helpers';
 import { clipStates, importFiles, mediaItem, noAudio, open, playerState, setPlayhead, toast, trackErrors } from './helpers';
 
 test.setTimeout(150_000);
+test.afterAll(cleanupSpeech);
+test.afterEach(() => setVoicesStatus(200));
 
 const SCRIPT = 'Hello from ClipForge.';
 
@@ -182,4 +184,16 @@ test('the exported MP4 contains the generated speech', async ({ page }) => {
   console.log(`export audio: ${codec}, RMS ${rms.toFixed(1)} dB`);
   expect(codec).toBe('aac');
   expect(rms).toBeGreaterThan(-60);
+});
+
+test('a failing voice list shows a plain message and Generate stays disabled', async ({ page }) => {
+  await stubTts(page);
+  await open(page);
+  await addKey(page);
+  setVoicesStatus(500);
+  await page.getByTestId('btn-ai-voice').click();
+  await expect(page.getByTestId('ai-voice-status')).toHaveText('ElevenLabs returned an error. Try again in a moment.');
+  await page.getByTestId('ai-voice-text').fill(SCRIPT);
+  await expect(page.getByTestId('ai-voice-generate')).toBeDisabled();
+  await expect(page.getByTestId('ai-voice-voice')).toBeDisabled();
 });

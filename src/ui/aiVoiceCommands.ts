@@ -86,7 +86,7 @@ export async function generateVoiceOver(req: VoiceRequest, signal: AbortSignal, 
     return true;
   } catch (e) {
     if (mediaId) await deps.removeMedia(mediaId).catch(() => undefined);
-    if (e instanceof RefusedPlacement) return false; // the store already toasted the refusal
+    if (e instanceof RefusedPlacement || signal.aborted) return false; // refusal already toasted; a cancel is silent
     if (e instanceof ElevenLabsError) {
       if (e.reason !== 'aborted') showError(e.message);
     } else {
