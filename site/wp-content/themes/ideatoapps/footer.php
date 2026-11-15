@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<div class="container">
 		<div class="site-footer__inner">
 			<div>
-				<p class="wordmark">Idea<span>To</span>Apps</p>
+				<p class="wordmark"><?php ideatoapps_brand_mark(); ?>Idea<span>To</span>Apps</p>
 				<p class="site-footer__tagline"><?php esc_html_e( 'Useful apps. Brilliant ideas. One place.', 'ideatoapps' ); ?></p>
 			</div>
 			<nav class="footer-nav" aria-label="<?php esc_attr_e( 'Footer', 'ideatoapps' ); ?>">

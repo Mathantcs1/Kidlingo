@@ -24,7 +24,7 @@ $signin = home_url( '/my-account/' );
 
 <header class="site-header" data-inert-when-menu>
 	<div class="container site-header__inner">
-		<a class="wordmark" href="<?php echo esc_url( home_url( '/' ) ); ?>" rel="home">Idea<span>To</span>Apps</a>
+		<a class="wordmark" href="<?php echo esc_url( home_url( '/' ) ); ?>" rel="home"><?php ideatoapps_brand_mark(); ?>Idea<span>To</span>Apps</a>
 
 		<nav class="nav-primary" aria-label="<?php esc_attr_e( 'Primary', 'ideatoapps' ); ?>">
 			<ul><?php ideatoapps_render_links( ideatoapps_primary_links() ); ?></ul>

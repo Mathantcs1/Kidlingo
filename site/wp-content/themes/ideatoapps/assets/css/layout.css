@@ -9,6 +9,8 @@
 	border-bottom: 1px solid var(--line);
 }
 .site-header__inner { display: flex; align-items: center; gap: var(--s-2); min-height: 72px; }
+/* The mark's near-black square is part of the logo: a rounded tile makes it look intentional on the light theme. */
+.brand-mark { display: inline-block; vertical-align: middle; margin-right: var(--s-1); width: 40px; height: 40px; border-radius: var(--radius-ctl); }
 .wordmark { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); text-decoration: none; margin-right: auto; }
 .wordmark span { background: linear-gradient(90deg, var(--violet), var(--blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .wordmark:hover { text-decoration: none; }
