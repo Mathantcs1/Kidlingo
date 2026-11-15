@@ -17,8 +17,8 @@ const ROOT = join(__dirname, '..');
 type Allowed = [string, string, string, number?];
 const ALLOWED: Allowed[] = [
   // ---- src/render: the compositor. Draw.clip / AdjustmentDraw.clip are resolved in collectDraws (drawCollect.ts).
-  ['src/render/compositor.ts', 'const { opacity } = d.clip.transform', 'reads resolved clip (Draw.clip)'],
-  ['src/render/compositor.ts', 'clipMatrix(d.size, d.clip.transform, format)', 'reads resolved clip (Draw.clip)'],
+  ['src/render/drawPicture.ts', 'const { opacity } = d.clip.transform', 'reads resolved clip (Draw.clip)'],
+  ['src/render/drawPicture.ts', 'clipMatrix(d.size, d.clip.transform, format)', 'reads resolved clip (Draw.clip)'],
   ['src/render/clipEffects.ts', "d.clip.kind === 'overlay' || !d.clip.effects", 'reads resolved clip (Draw.clip)'],
   ['src/render/clipEffects.ts', 'd.uv, d.clip.effects, ctx', 'reads resolved clip (Draw.clip): evaluated params'],
   ['src/render/adjustment.ts', '(clip.effects ?? []).some((e) => e.enabled)', 'reads resolved clip (AdjustmentDraw.clip): enabled is never animated'],

@@ -7,12 +7,13 @@ import { CompositeBuffer } from './compositeBuffer';
 import type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
 import { applyAdjustment, needsComposite } from './adjustment';
 import { collectDraws, isAdjustmentDraw } from './drawCollect';
+import { bindCanvas, drawPicture } from './drawPicture';
 import type { Draw, DrawContext } from './drawCollect';
 import { LutTextures } from './effects/luts';
 import { EffectPipeline } from './effects/pipeline';
 import { unavailableTypes } from './effects/programs';
 import type { LoadedLut } from './effects/types';
-import { QuadRenderer, clipMatrix, createContext, forceOpaque, letterbox } from './gl';
+import { QuadRenderer, createContext, forceOpaque, letterbox } from './gl';
 import type { Mat3, Rect, Size, TextureSlot } from './gl';
 import { withAttempts } from './glErrors';
 import { ImageTextures } from './images';
@@ -176,17 +177,9 @@ class GlCompositor implements Compositor {
     if (this.hasAlpha) forceOpaque(gl);
   }
 
-  /** The clip's picture (blur backdrop first, for the 'blur' fit) into the output `bindOutput` binds. */
   private drawPicture(d: Draw, slot: TextureSlot, uv: Mat3, format: Size, viewport: Rect, bindOutput: () => void): void {
-    const { opacity } = d.clip.transform;
-    if (d.clip.fit === 'blur' && d.clip.kind !== 'overlay') this.blur.draw(slot, d.size, uv, opacity, format, viewport, bindOutput);
-    this.quad.draw(slot.tex, clipMatrix(d.size, d.clip.transform, format), opacity, uv);
+    drawPicture(this.quad, this.blur, d, slot, uv, format, viewport, bindOutput);
   }
-}
-
-function bindCanvas(gl: WebGL2RenderingContext, viewport: Rect): void {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 }
 
 /** Throws GlUnavailableError when WebGL2 cannot be started on `canvas` (see GlFailureReason). */
