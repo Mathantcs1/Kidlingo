@@ -1,11 +1,9 @@
 /* Home page sections (front page only). */
 .home .site-footer { margin-top: 0; }
-.section--flush-top { padding-top: 0; }
 .section--alt { background: var(--bg-alt); }
 .section--alt .section-heading__text,
 .section--alt .steps__item p { color: var(--muted-on-alt); }
 
-.section-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-5); }
 
 /* App and video cards */
 
@@ -24,15 +22,9 @@
 .steps__item h3 { grid-column: 2; margin-bottom: 4px; }
 .steps__item p { grid-column: 2; margin: 0; color: var(--muted); max-width: 40ch; }
 
-/* Newsletter */
-.newsletter { padding: var(--s-6) var(--s-3); background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius-card-lg); box-shadow: var(--shadow-card); }
-.newsletter .section-heading { margin-bottom: var(--s-3); }
-.newsletter__form label { display: block; margin-bottom: 4px; font-weight: 600; }
-.newsletter__row { display: flex; flex-wrap: wrap; gap: var(--s-1); max-width: 520px; }
 
 @media (min-width: 768px) {
 	.steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-	.newsletter { padding: var(--s-6); }
 }
 
 @media (min-width: 1024px) {

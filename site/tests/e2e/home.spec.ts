@@ -183,10 +183,11 @@ test.describe('watch and learn', () => {
 });
 
 test.describe('newsletter', () => {
-  test('absent by default; the endpoint owner (Task 7) enables it with the ideatoapps_newsletter_available filter', async ({ page }) => {
+  test('present since Task 7 added the endpoint (details in content.spec.ts); with a consent checkbox', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByTestId('newsletter')).toHaveCount(0);
-    await expect(page.locator('input[type="email"]')).toHaveCount(0);
+    await expect(page.getByTestId('newsletter')).toHaveCount(1);
+    await expect(page.getByTestId('newsletter').locator('input[type="email"]')).toHaveCount(1);
+    await expect(page.getByTestId('newsletter').getByRole('checkbox')).toHaveCount(1);
   });
 });
 
@@ -196,7 +197,7 @@ test.describe('page structure', () => {
     await createApp(api, { ...CLIPFORGE, categories: [cat] });
     await createVideo(api, 'ClipForge walkthrough');
     await page.goto('/');
-    expect(await present(page)).toEqual(['hero', 'featured-apps', 'categories', 'how-it-works', 'watch-learn']);
+    expect(await present(page)).toEqual(['hero', 'featured-apps', 'categories', 'how-it-works', 'watch-learn', 'newsletter']);
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     // headings never skip a level and each section is labelled by its heading
     const levels = await page.locator('main :is(h1,h2,h3,h4)').evaluateAll((els) => els.map((e) => Number(e.tagName[1])));
@@ -206,12 +207,12 @@ test.describe('page structure', () => {
       await expect(page.locator(`#${label}`)).toHaveCount(1);
     }
     const order = await page.locator('main > [data-testid]').evaluateAll((els) => els.map((e) => e.getAttribute('data-testid')));
-    expect(order).toEqual(['hero', 'featured-apps', 'categories', 'how-it-works', 'watch-learn']);
+    expect(order).toEqual(['hero', 'featured-apps', 'categories', 'how-it-works', 'watch-learn', 'newsletter']);
   });
 
   test('empty site shows only the hero and how it works', async ({ page }) => {
     await page.goto('/');
-    expect(await present(page)).toEqual(['hero', 'how-it-works']);
+    expect(await present(page)).toEqual(['hero', 'how-it-works', 'newsletter']);
     await expect(page.locator('main a[href=""], main a:not([href])')).toHaveCount(0);
   });
 });

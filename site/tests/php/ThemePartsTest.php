@@ -33,8 +33,9 @@ final class ThemePartsTest extends WPTestCase {
 		$this->assertSame( '', $this->render( '../functions' ) );
 	}
 
-	public function test_footer_links_and_no_learn_in_header(): void {
-		$this->assertSame( array( 'Apps', 'Learn', 'Blog', 'About', 'Contact', 'Privacy', 'Terms', 'Refund' ), array_column( ideatoapps_footer_links(), 'label' ) );
+	public function test_footer_links_and_no_learn_without_videos(): void {
+		// Task 7: Learn (header and footer) appears only once a video is published (see ContentPagesTest).
+		$this->assertSame( array( 'Apps', 'Blog', 'About', 'Contact', 'Privacy', 'Terms', 'Refund' ), array_column( ideatoapps_footer_links(), 'label' ) );
 		$this->assertSame( array( 'Apps', 'Blog', 'About' ), array_column( ideatoapps_primary_links(), 'label' ) );
 	}
 }

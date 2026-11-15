@@ -20,13 +20,13 @@ test.describe('desktop shell', () => {
     await expect(header.getByTestId('menu-button')).toBeHidden();
   });
 
-  test('footer lists the eight legal and content links', async ({ page }) => {
+  test('footer lists the legal and content links (Learn joins them once a video is published: content.spec.ts)', async ({ page }) => {
     await page.goto('/');
     const footer = page.getByRole('contentinfo');
     const links = footer.getByRole('link');
-    await expect(links).toHaveText(['Apps', 'Learn', 'Blog', 'About', 'Contact', 'Privacy', 'Terms', 'Refund']);
+    await expect(links).toHaveText(['Apps', 'Blog', 'About', 'Contact', 'Privacy', 'Terms', 'Refund']);
     const hrefs = await links.evaluateAll((els) => els.map((e) => new URL((e as HTMLAnchorElement).href).pathname));
-    expect(hrefs).toEqual(['/apps/', '/learn/', '/blog/', '/about/', '/contact/', '/privacy/', '/terms/', '/refund-policy/']);
+    expect(hrefs).toEqual(['/apps/', '/blog/', '/about/', '/contact/', '/privacy/', '/terms/', '/refund-policy/']);
     await expect(footer).toContainText('Useful apps. Brilliant ideas. One place.');
   });
 

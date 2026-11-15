@@ -16,6 +16,7 @@ require_once get_template_directory() . '/inc/navigation.php';
 require_once get_template_directory() . '/inc/home.php';
 require_once get_template_directory() . '/inc/app-data.php';
 require_once get_template_directory() . '/inc/catalog.php';
+require_once get_template_directory() . '/inc/content.php';
 
 add_action(
 	'after_setup_theme',
@@ -54,6 +55,16 @@ add_action(
 		}
 		if ( is_singular( 'app' ) ) {
 			wp_enqueue_style( 'ideatoapps-app', "$base/css/app.css", array( 'ideatoapps-components' ), $ver( 'css/app.css' ) );
+		}
+
+		if ( ideatoapps_is_content_view() ) {
+			wp_enqueue_style( 'ideatoapps-content', "$base/css/content.css", array( 'ideatoapps-components' ), $ver( 'css/content.css' ) );
+		}
+		if ( is_singular( 'video' ) || is_post_type_archive( 'video' ) ) {
+			wp_enqueue_script( 'ideatoapps-video', "$base/js/video-player.js", array(), $ver( 'js/video-player.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
+		}
+		if ( ideatoapps_has_json_form() ) {
+			wp_enqueue_script( 'ideatoapps-forms', "$base/js/forms.js", array(), $ver( 'js/forms.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
 		}
 
 		foreach ( array( 'theme-toggle', 'nav' ) as $name ) {

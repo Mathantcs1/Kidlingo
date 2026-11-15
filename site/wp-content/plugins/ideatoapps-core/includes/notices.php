@@ -43,12 +43,12 @@ function ideatoapps_pull_notices( $post_id ) {
 }
 
 /**
- * Print queued notices on the app edit screen.
+ * Print queued notices on the app and video edit screens.
  */
 function ideatoapps_print_notices() {
 	$screen = get_current_screen();
 	$post   = get_post();
-	if ( ! $screen || 'app' !== $screen->post_type || ! $post ) {
+	if ( ! $screen || ! in_array( $screen->post_type, array( 'app', 'video' ), true ) || ! $post ) {
 		return;
 	}
 	foreach ( ideatoapps_pull_notices( $post->ID ) as $message ) {

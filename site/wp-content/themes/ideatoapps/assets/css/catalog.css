@@ -13,17 +13,7 @@ html.js .catalog-filters__apply { display: none; }
 
 .catalog__count { margin: 0 0 var(--s-2); color: var(--muted); font-size: 0.9375rem; }
 
-.empty-state { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-1); padding: var(--s-6) var(--s-3); background: var(--card); border: 1px dashed var(--muted); border-radius: var(--radius-card-lg); }
-.empty-state__title { margin: 0; font-size: 1.5rem; }
-.empty-state__text { margin: 0 0 var(--s-2); color: var(--muted); max-width: 48ch; }
 
-/* Pagination (core markup: nav.pagination > .nav-links) */
-.pagination { margin-top: var(--s-5); }
-.pagination .nav-links { display: flex; flex-wrap: wrap; gap: var(--s-1); align-items: center; }
-.pagination .page-numbers { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--line); border-radius: var(--radius-ctl); color: var(--ink); font-weight: 600; text-decoration: none; }
-.pagination a.page-numbers:hover { background: var(--bg-alt); border-color: var(--muted); }
-.pagination .page-numbers.current { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-.pagination .page-numbers.dots { border-color: transparent; }
 
 @media (min-width: 768px) {
 	.catalog-filters { grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto; align-items: end; }

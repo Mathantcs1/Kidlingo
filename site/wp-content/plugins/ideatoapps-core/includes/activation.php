@@ -13,6 +13,7 @@ defined( 'ABSPATH' ) || exit;
 function ideatoapps_core_activate() {
 	ideatoapps_register_app_post_type();
 	ideatoapps_register_video_post_type();
+	ideatoapps_ensure_pages();
 	update_option( 'ideatoapps_rewrite_version', IDEATOAPPS_CORE_VERSION, false );
 	flush_rewrite_rules( false );
 }
@@ -24,6 +25,7 @@ function ideatoapps_core_activate() {
 function ideatoapps_core_maybe_flush_rewrites() {
 	if ( IDEATOAPPS_CORE_VERSION !== get_option( 'ideatoapps_rewrite_version' ) ) {
 		update_option( 'ideatoapps_rewrite_version', IDEATOAPPS_CORE_VERSION, false );
+		ideatoapps_ensure_pages();
 		flush_rewrite_rules( false );
 	}
 }

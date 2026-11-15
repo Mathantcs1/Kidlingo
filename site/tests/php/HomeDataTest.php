@@ -115,7 +115,9 @@ final class HomeDataTest extends WPTestCase {
 		$this->assertStringNotContainsString( 'youtube.com', $this->render( 'watch-learn' ) );
 	}
 
-	public function test_newsletter_absent_by_default_and_shown_when_the_filter_says_so(): void {
+	public function test_newsletter_absent_without_the_route_and_shown_when_the_filter_says_so(): void {
+		// Task 7: the plugin turns the filter on because it owns the REST route; simulate "no route" by removing its callback.
+		remove_filter( 'ideatoapps_newsletter_available', 'ideatoapps_newsletter_route_exists' );
 		$this->assertFalse( ideatoapps_newsletter_available() );
 		$this->assertSame( '', trim( $this->render( 'newsletter' ) ) );
 		add_filter( 'ideatoapps_newsletter_available', '__return_true' );
@@ -125,6 +127,7 @@ final class HomeDataTest extends WPTestCase {
 		$this->assertStringContainsString( '<label', $html );
 		remove_filter( 'ideatoapps_newsletter_available', '__return_true' );
 		$this->assertSame( '', trim( $this->render( 'newsletter' ) ) );
+		add_filter( 'ideatoapps_newsletter_available', 'ideatoapps_newsletter_route_exists' );
 	}
 
 	public function test_how_it_works_has_four_honest_steps(): void {

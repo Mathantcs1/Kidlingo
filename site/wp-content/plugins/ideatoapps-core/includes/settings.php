@@ -75,6 +75,7 @@ function ideatoapps_featured_all_hidden() {
  */
 function ideatoapps_register_settings() {
 	register_setting( 'ideatoapps', 'ideatoapps_featured_app_ids', array( 'type' => 'array', 'sanitize_callback' => 'ideatoapps_sanitize_featured_ids', 'default' => array(), 'show_in_rest' => false ) );
+	register_setting( 'ideatoapps', 'ideatoapps_contact_enabled', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false, 'show_in_rest' => false ) );
 	register_setting( 'ideatoapps', 'ideatoapps_youtube_channel_url', array( 'type' => 'string', 'sanitize_callback' => 'ideatoapps_sanitize_channel_url', 'default' => '', 'show_in_rest' => false ) );
 }
 add_action( 'init', 'ideatoapps_register_settings' );
@@ -96,6 +97,8 @@ function ideatoapps_process_settings( array $post ) {
 
 	$errors = array();
 	update_option( 'ideatoapps_featured_app_ids', ideatoapps_sanitize_featured_ids( $post['featured_app_ids'] ?? array() ), false );
+
+	update_option( 'ideatoapps_contact_enabled', ! empty( $post['contact_enabled'] ), false );
 
 	$raw = isset( $post['youtube_channel_url'] ) && is_string( $post['youtube_channel_url'] ) ? trim( $post['youtube_channel_url'] ) : '';
 	if ( '' === $raw ) {
@@ -178,6 +181,13 @@ function ideatoapps_render_settings_page() {
 					<td>
 						<input type="url" id="ita-youtube" name="youtube_channel_url" class="regular-text" value="<?php echo esc_attr( (string) get_option( 'ideatoapps_youtube_channel_url', '' ) ); ?>" placeholder="https://www.youtube.com/@yourchannel">
 						<p class="description"><?php esc_html_e( 'Optional. Linked from the Watch & Learn section when it has videos.', 'ideatoapps-core' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Contact form', 'ideatoapps-core' ); ?></th>
+					<td>
+						<label for="ita-contact-enabled"><input type="checkbox" id="ita-contact-enabled" name="contact_enabled" value="1" <?php checked( ideatoapps_contact_enabled() ); ?>> <?php esc_html_e( 'Turn the contact form on', 'ideatoapps-core' ); ?></label>
+						<p class="description"><?php esc_html_e( 'Leave this off until you have confirmed that the site can send mail to a mailbox you read. Messages go to the Administration Email Address in Settings > General. While it is off, the Contact page says the form is not yet available.', 'ideatoapps-core' ); ?></p>
 					</td>
 				</tr>
 			</table>

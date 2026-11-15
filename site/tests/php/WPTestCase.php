@@ -13,6 +13,11 @@ abstract class WPTestCase extends TestCase {
 		wp_cache_flush();
 	}
 
+	/** A throw-away user with the given role (rolled back with the test). */
+	protected static function make_user( string $role ): int {
+		return wp_insert_user( array( 'user_login' => 'u_' . $role . wp_generate_password( 6, false ), 'user_pass' => 'x', 'role' => $role ) );
+	}
+
 	protected function tearDown(): void {
 		global $wpdb;
 		$wpdb->query( 'ROLLBACK' );

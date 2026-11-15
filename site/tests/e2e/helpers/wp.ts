@@ -115,13 +115,45 @@ export async function createWooProduct(api: Api, name: string, price = '24.99'):
   return body.id;
 }
 
-export async function createVideo(api: Api, title: string, opts: { status?: 'publish' | 'draft'; media?: number } = {}): Promise<number> {
-  const body = await send(api, 'POST', '/wp/v2/video', {
-    title,
-    status: opts.status ?? 'publish',
-    featured_media: opts.media ?? 0,
-  });
+/**
+ * A video through the REST API, then its "Video details" box through the real edit form (the video type has no
+ * custom-fields support, so REST cannot write the YouTube ID or related app; the owner uses this box too).
+ */
+export async function createVideo(api: Api, title: string, opts: { status?: 'publish' | 'draft'; media?: number; youtubeId?: string; excerpt?: string; content?: string; relatedApp?: number } = {}): Promise<number> {
+  const status = opts.status ?? 'publish';
+  const body = await send(api, 'POST', '/wp/v2/video', { title, status, featured_media: opts.media ?? 0, excerpt: opts.excerpt ?? '', content: opts.content ?? '' });
   api.made.push({ route: '/wp/v2/video', id: body.id });
+  if (opts.youtubeId || opts.relatedApp) {
+    const html = await (await api.ctx.get(`/wp-admin/post.php?post=${body.id}&action=edit`)).text();
+    const grab = (re: RegExp) => {
+      const m = re.exec(html);
+      if (!m) throw new Error(`video editor field missing: ${re}`);
+      return m[1];
+    };
+    const form = new URLSearchParams({
+      action: 'editpost',
+      originalaction: 'editpost',
+      post_type: 'video',
+      post_ID: String(body.id),
+      _wpnonce: grab(/id="_wpnonce" name="_wpnonce" value="([a-f0-9]+)"/),
+      ideatoapps_video_nonce: grab(/name="ideatoapps_video_nonce" value="([a-f0-9]+)"/),
+      post_title: title,
+      content: opts.content ?? '',
+      excerpt: opts.excerpt ?? '',
+      post_status: status,
+      ita_youtube_id: opts.youtubeId ?? '',
+      ita_related_app_id: String(opts.relatedApp ?? 0),
+      _thumbnail_id: String(opts.media ?? -1),
+    });
+    const res = await api.ctx.post('/wp-admin/post.php', { data: form.toString(), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, maxRedirects: 0 });
+    expect(res.status(), `save video "${title}"`).toBe(302);
+  }
+  return body.id;
+}
+
+export async function createPost(api: Api, title: string, opts: { status?: 'publish' | 'draft'; content?: string; date?: string } = {}): Promise<number> {
+  const body = await send(api, 'POST', '/wp/v2/posts', { title, status: opts.status ?? 'publish', content: opts.content ?? '', excerpt: `About ${title}.`, ...(opts.date ? { date: opts.date } : {}) });
+  api.made.push({ route: '/wp/v2/posts', id: body.id });
   return body.id;
 }
 
@@ -131,7 +163,7 @@ export async function createCategory(api: Api, name: string): Promise<number> {
   return id;
 }
 
-export async function trash(api: Api, type: 'app' | 'video', id: number): Promise<void> {
+export async function trash(api: Api, type: 'app' | 'video' | 'posts', id: number): Promise<void> {
   await send(api, 'DELETE', `/wp/v2/${type}/${id}`);
 }
 
@@ -163,12 +195,13 @@ export async function uploadFile(api: Api, name: string, type: string, data: Buf
 }
 
 /** Save the IdeaToApps settings through the real admin form (nonce included). Returns the redirect URL. */
-export async function saveSettings(api: Api, s: { featured?: number[]; channel?: string }): Promise<string> {
-  api.settingsDirty = s.featured?.length || s.channel ? true : false;
+export async function saveSettings(api: Api, s: { featured?: number[]; channel?: string; contact?: boolean }): Promise<string> {
+  api.settingsDirty = s.featured?.length || s.channel || s.contact ? true : false;
   const page = await (await api.ctx.get('/wp-admin/options-general.php?page=ideatoapps-settings')).text();
   const nonce = /name="_wpnonce" value="([a-f0-9]+)"/.exec(page)?.[1];
   expect(nonce, 'settings form nonce').toBeTruthy();
   const form = new URLSearchParams({ action: 'ideatoapps_save_settings', _wpnonce: nonce!, youtube_channel_url: s.channel ?? '' });
+  if (s.contact) form.set('contact_enabled', '1');
   // A <select multiple> submits the selected options in the order they appear in the list, not the order they were clicked.
   const listed = [...page.matchAll(/<option value="(\d+)"/g)].map((m) => Number(m[1]));
   for (const id of listed.filter((id) => (s.featured ?? []).includes(id))) form.append('featured_app_ids[]', String(id));
@@ -191,6 +224,7 @@ export async function resetContent(api: Api): Promise<void> {
   for (const [route, query] of [
     ['/wp/v2/app', 'status=any&per_page=100'],
     ['/wp/v2/video', 'status=any&per_page=100'],
+    ['/wp/v2/posts', 'status=any&per_page=100'],
     ['/wp/v2/app_category', 'per_page=100'],
     ['/wp/v2/media', 'per_page=100'],
     ['/wc/v3/products', 'per_page=100&status=any'],
