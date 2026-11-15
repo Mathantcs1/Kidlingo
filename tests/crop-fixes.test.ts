@@ -125,3 +125,36 @@ describe('croppedUvMatrix inset', () => {
     expect(b).toBeGreaterThan(a);
   });
 });
+
+describe('format switch with a static pivot (final review)', () => {
+  it('a clip framed at its fit with a pivot is refitted, not scaled proportionally', async () => {
+    const { reframeProject } = await import('../src/core/merge');
+    const p = proj(vclip({ anchor: { x: 0.5, y: 0 }, transform: { ...defaultTransform(), x: 300, scale: 0.3 } }));
+    const fitted = resetClipTransform(p, 'c1');
+    const v = reframeProject(fitted, 'vertical'); // 1080x1920
+    const t = get(v).transform;
+    expect(t.scale).toBeCloseTo(0.5625, 12);
+    const c = mean(frameCorners({ width: 1920, height: 1080 }, t, { width: 1080, height: 1920 }, { anchor: { x: 0.5, y: 0 } }));
+    expect(c.x).toBeCloseTo(540, 9);
+    expect(c.y).toBeCloseTo(960, 9);
+    const back = get(reframeProject(v, 'youtube')).transform;
+    expect(back.scale).toBeCloseTo(1, 12);
+    expect(back.x).toBeCloseTo(get(fitted).transform.x, 9);
+  });
+  it('a customised clip with a pivot still follows the proportional rule', async () => {
+    const { reframeProject } = await import('../src/core/merge');
+    const p = proj(vclip({ anchor: { x: 0.5, y: 0 }, transform: { ...defaultTransform(), x: 123, scale: 0.3 } }));
+    const v = get(reframeProject(p, 'vertical')).transform;
+    expect(v.x).toBeCloseTo(123 * (1080 / 1920), 9);
+  });
+});
+
+describe('snapping a plain clip is unchanged (final review)', () => {
+  it('an empty view takes the clip-centre path, bit for bit', async () => {
+    const { snapToCanvas } = await import('../src/render/overlayDrag');
+    const t = { ...defaultTransform(), x: 3.3, y: -2.2, scale: 0.77, rotation: 33.3 };
+    const size = { width: 1280, height: 720 };
+    expect(snapToCanvas(t, size, FMT, 8, {})).toEqual(snapToCanvas(t, size, FMT, 8, undefined));
+    expect(snapToCanvas(t, size, FMT, 8, { anchor: { x: 0, y: 0 } })).toEqual(snapToCanvas(t, size, FMT, 8));
+  });
+});

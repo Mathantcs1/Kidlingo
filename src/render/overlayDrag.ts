@@ -1,6 +1,7 @@
 // Pure drag maths of the on-canvas transform overlay (move, uniform scale about the pivot, rotate, snapping), split from
 // overlayGeometry.ts (Plan 5E Task 6). Everything is in FORMAT pixels, like the geometry it uses.
 import type { Transform } from '../core/model';
+import { isCropped } from '../core/cropTypes';
 import { scaleBounds } from '../core/scale';
 import { normaliseDegrees } from '../core/transformLimits';
 import type { ClipView, Size } from './geometry';
@@ -73,7 +74,8 @@ export function snapToCanvas(t: Transform, size: Size, format: Size, thresholdPx
   if (!fin(t.x, t.y, t.scale, t.rotation, size.width, size.height, format.width, format.height, thresholdPx)) return t;
   const q = clipCorners(size, t, format, view);
   // With a crop or a moved pivot the visible quad's centre is what lands on the canvas centre (no view: the pivot, as before).
-  const c = view ? { x: q.reduce((s, p) => s + p.x, 0) / 4, y: q.reduce((s, p) => s + p.y, 0) / 4 } : clipCentre(t, format);
+  const moved = view !== undefined && (isCropped(view.crop) || (view.anchor !== undefined && (view.anchor.x !== 0 || view.anchor.y !== 0)));
+  const c = moved ? { x: q.reduce((s, p) => s + p.x, 0) / 4, y: q.reduce((s, p) => s + p.y, 0) / 4 } : clipCentre(t, format);
   const axis = (centre: number, coords: number[], extent: number): number => {
     const mid = extent / 2;
     if (Math.abs(mid - centre) <= thresholdPx) return mid - centre;

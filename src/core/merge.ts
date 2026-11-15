@@ -2,6 +2,7 @@ import { FORMATS } from './formats';
 import type { FormatKey } from './formats';
 import { clipDuration, clipEnd } from './model';
 import type { Clip, Id, Project, Transform } from './model';
+import { withPivotOffset } from './pivotFit';
 import { overlayDefaultTransform, reframeOverlay } from './overlays';
 import { hasFramingKeys, scaleFramingKeys } from './reframeKeys';
 import { TimelineError, assertUnlocked, findClip } from './timeline';
@@ -118,8 +119,10 @@ export function reframeProject(p: Project, key: FormatKey): Project {
     if (c.kind === 'audio' || !m || !m.width || !m.height) return { ...c };
     const dims = { width: m.width, height: m.height };
     const t = c.transform;
-    if (!oldUsable || (!hasFramingKeys(c) && atFit(t, fitTransform(dims, old, c.fit)))) {
-      const { x, y, scale } = fitTransform(dims, canvas, c.fit);
+    // With a static pivot the fit places the PICTURE, so the pivot sits offset from the centre (5E, pivotFit.ts).
+    const fitFor = (canvasSize: { width: number; height: number }): Transform => withPivotOffset(fitTransform(dims, canvasSize, c.fit), c.anchor, dims, t.rotation);
+    if (!oldUsable || (!hasFramingKeys(c) && atFit(t, fitFor(old)))) {
+      const { x, y, scale } = fitFor(canvas);
       return { ...c, transform: { ...t, x, y, scale } };
     }
     // Ruling K: no clamp, so clips outside 0.02..20 round-trip exactly; only an unusable result keeps the old scale.

@@ -40,6 +40,7 @@ const ALLOWED: Allowed[] = [
   ['src/render/geometry.ts', 'if (!isCropped(view?.crop)) return m;', 'not a clip: the optional view argument of the pure clipMatrix'],
   ['src/render/geometry.ts', 'const c = view!.crop!;', 'not a clip: the optional view argument of the pure clipMatrix'],
   ['src/render/geometry.ts', 'track.flip !== (frame.flip === true)', 'not a clip: a media track / VideoFrame mirror flag'],
+  ['src/render/overlayDrag.ts', 'const moved = view !== undefined', 'not a clip: the optional view argument of the pure snapToCanvas'],
   ['src/render/overlayGeometry.ts', 'const crop = view?.crop;', 'not a clip: the optional view argument of the pure clipCorners'],
   ['src/render/overlayGeometry.ts', 'const anchor = view?.anchor;', 'not a clip: the optional view argument of the pure clipCorners'],
   ['src/render/overlayGeometry.ts', 'view?.anchor ? { anchor: view.anchor }', 'not a clip: the optional view argument of the pure frameCorners'],
