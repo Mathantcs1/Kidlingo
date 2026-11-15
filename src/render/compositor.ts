@@ -2,19 +2,18 @@
 import type { Id, Project, VideoEffectType } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
-import { applyClipEffects, blendOf } from './clipEffects';
 import { CompositeBuffer } from './compositeBuffer';
 import type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
-import { applyAdjustment, needsComposite } from './adjustment';
-import { collectDraws, isAdjustmentDraw } from './drawCollect';
-import { bindCanvas, drawPicture } from './drawPicture';
-import type { Draw, DrawContext } from './drawCollect';
+import { needsComposite } from './adjustment';
+import { collectDraws } from './drawCollect';
+import { drawSteps } from './drawSteps';
+import type { DrawContext } from './drawCollect';
 import { LutTextures } from './effects/luts';
 import { EffectPipeline } from './effects/pipeline';
 import { unavailableTypes } from './effects/programs';
 import type { LoadedLut } from './effects/types';
 import { QuadRenderer, createContext, forceOpaque, letterbox } from './gl';
-import type { Mat3, Rect, Size, TextureSlot } from './gl';
+import type { Size, TextureSlot } from './gl';
 import { withAttempts } from './glErrors';
 import { ImageTextures } from './images';
 import { OverlayTextures } from './overlays/textures';
@@ -153,32 +152,12 @@ class GlCompositor implements Compositor {
     // Only a frame with a visible non-normal clip or an active adjustment layer pays for the intermediate composite.
     const composite = draws.some(needsComposite) && this.composite.begin(viewport);
     if (!composite) this.composite.idle();
-    const bindOutput = composite ? () => this.composite.bindCurrent() : () => bindCanvas(gl, viewport);
-    bindOutput();
-    for (const d of draws) {
-      if (isAdjustmentDraw(d)) {
-        // Everything drawn so far is the composite (or no composite: blending unavailable, the adjustment is skipped).
-        if (composite) applyAdjustment(this.composite, this.effects, d.clip, p, t, format, this.frameLuts, this.onEffectUnavailable);
-        continue;
-      }
-      // Effects first (working-size passes, no transform); the blur backdrop is made from the processed picture (D7).
-      // A pipeline output is overwritten by the next clip's run of its size: it is drawn right here.
-      const { slot, uv } = applyClipEffects(this.effects, d, p, t, format, this.frameLuts, this.onEffectUnavailable);
-      const mode = blendOf(d.clip);
-      if (!composite || mode === 'normal') {
-        this.drawPicture(d, slot, uv, format, viewport, bindOutput);
-        continue;
-      }
-      this.composite.beginLayer();
-      this.drawPicture(d, slot, uv, format, viewport, () => this.composite.bindLayer());
-      this.composite.blend(mode);
-    }
+    drawSteps(
+      { gl, quad: this.quad, blur: this.blur, composite: this.composite, effects: this.effects, luts: this.frameLuts, onUnavailable: this.onEffectUnavailable },
+      draws, p, t, format, viewport, composite,
+    );
     if (composite) this.composite.present(viewport);
     if (this.hasAlpha) forceOpaque(gl);
-  }
-
-  private drawPicture(d: Draw, slot: TextureSlot, uv: Mat3, format: Size, viewport: Rect, bindOutput: () => void): void {
-    drawPicture(this.quad, this.blur, d, slot, uv, format, viewport, bindOutput);
   }
 }
 

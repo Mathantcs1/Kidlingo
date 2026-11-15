@@ -1,11 +1,10 @@
 import { resolveClip } from '../core/animate';
 import { maxDrawnScale } from '../core/drawnScale';
-import { videoSourceTime } from '../core/clipTime';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
-import { croppedUvMatrix } from './cropGeometry';
-import { createTexture, frameOrientation, rotatedSize, uploadTexture, uvMatrix } from './gl';
+import { uvMatrix } from './gl';
 import type { Mat3, Size, TextureSlot } from './gl';
+import { imageDraw, pruneVideoSlots, videoDraw } from './drawCollectPicture';
 import type { ImageTextures } from './images';
 import type { OverlayTextures } from './overlays/textures';
 import { visualClipsAt } from './visible';
@@ -49,36 +48,7 @@ export interface DrawContext {
   isLive(): boolean;
 }
 
-const UPRIGHT = uvMatrix(0);
-
-/**
- * The texture lookup of a picture whose uploaded texels are `texels` (display orientation): `orientation` composed with
- * the clip's crop sub-rectangle and flip (Plan 5E D1, D3). The crop edges are inset by half a texel so bilinear
- * sampling never reads cropped-away pixels (D7). The orientation itself when the clip has neither.
- */
-function pictureUv(clip: Clip, orientation: Mat3, texels: Size): Mat3 {
-  return croppedUvMatrix(orientation, clip.crop, clip.flip, { x: 0.5 / texels.width, y: 0.5 / texels.height });
-}
-
-function videoSlot(ctx: DrawContext, source: VideoSource, index: number): TextureSlot {
-  let slots = ctx.videoSlots.get(source);
-  if (!slots) {
-    slots = [];
-    ctx.videoSlots.set(source, slots);
-  }
-  while (slots.length <= index) slots.push({ tex: createTexture(ctx.gl), width: 0, height: 0 });
-  return slots[index];
-}
-
-/** Drops textures of sources the caller no longer passes (they may have been closed). */
-function pruneVideoSlots(ctx: DrawContext, sources: Map<Id, VideoSource>): void {
-  const live = new Set(sources.values());
-  for (const [source, slots] of ctx.videoSlots) {
-    if (live.has(source)) continue;
-    for (const s of slots) ctx.gl.deleteTexture(s.tex);
-    ctx.videoSlots.delete(source);
-  }
-}
+export const UPRIGHT = uvMatrix(0);
 
 /**
  * Phase 1 (async): fetch every frame/bitmap and upload it into its own texture. Nothing is drawn to the
@@ -115,34 +85,14 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
     // Clips of unknown or missing media are skipped.
     if (!media || media.missing) continue;
     if (clip.kind === 'image') {
-      const slot = await ctx.images.get(media, () => ctx.isLive());
-      ctx.assertUsable();
-      shownImages.add(clip.mediaId);
-      // Transforms are in the image's own pixels, whatever resolution its texture was decoded at.
-      const size = media.width && media.height ? { width: media.width, height: media.height } : slot;
-      if (slot && size) {
-        const texels = { width: slot.width, height: slot.height };
-        draws.push({ clip, slot, size, uv: pictureUv(clip, UPRIGHT, texels), texels });
-      }
+      const d = await imageDraw(ctx, clip, media, shownImages);
+      if (d) draws.push(d);
       continue;
     }
     const source = sources.get(clip.id) ?? sources.get(clip.mediaId);
     if (!source) continue;
-    const frame = await source.frameAt(videoSourceTime(clip, t, p.format.fps));
-    ctx.assertUsable();
-    if (!frame) continue;
-    const width = 'displayWidth' in frame ? frame.displayWidth : frame.width;
-    const height = 'displayHeight' in frame ? frame.displayHeight : frame.height;
-    if (!(width > 0 && height > 0)) continue;
-    const n = uses.get(source) ?? 0;
-    uses.set(source, n + 1);
-    const slot = videoSlot(ctx, source, n);
-    uploadTexture(ctx.gl, slot, frame, width, height);
-    // Frames arrive unrotated; draw them at their displayed size and turn the texture lookup instead.
-    const { rotation, mirror } = frameOrientation(source, frame as { rotation?: unknown; flip?: unknown });
-    const size = rotatedSize({ width, height }, rotation);
-    // The frame is uploaded at its display size, so the texels match `size` once rotated.
-    draws.push({ clip, slot, size, uv: pictureUv(clip, uvMatrix(rotation, false, mirror), size), texels: size });
+    const d = await videoDraw(ctx, clip, source, t, p.format.fps, uses);
+    if (d) draws.push(d);
   }
   pruneVideoSlots(ctx, sources);
   ctx.images.prune(shownImages, p);
