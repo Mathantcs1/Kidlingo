@@ -1,0 +1,38 @@
+.settings-status-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.settings-status.is-ok {
+  color: var(--text);
+}
+
+.settings-status.is-error {
+  color: var(--danger);
+}
+
+.settings-key-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-key-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-privacy {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}

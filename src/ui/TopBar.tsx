@@ -1,5 +1,6 @@
 import FormatPicker from './FormatPicker';
 import { newProject } from './projectCommands';
+import { useSettings } from './settingsState';
 
 const LICENSES_URL = `${import.meta.env.BASE_URL}licenses/THIRD-PARTY.txt`;
 
@@ -21,6 +22,14 @@ export default function TopBar({ editable, inert }: { editable: boolean; inert: 
       </div>
       <div className="topbar-group">
         <FormatPicker disabled={!editable} />
+        <button
+          type="button"
+          data-testid="btn-settings"
+          onClick={() => useSettings.getState().openSettings()}
+          title="Settings: ElevenLabs API key"
+        >
+          Settings
+        </button>
         <a className="topbar-link" href={LICENSES_URL} target="_blank" rel="noopener" data-testid="link-licenses">
           Third-party licenses
         </a>
