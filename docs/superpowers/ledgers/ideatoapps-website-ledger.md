@@ -133,3 +133,9 @@ Task 9: CARRY: JSON-LD ideatoapps_app_jsonld must strip rating/review RECURSIVEL
 - Fixed by controller: Theme URI .com -> .net.
 - Trailer Claude-Session ids differ across commits (history unpushed; left as is).
 - Next: final whole-branch review on the most capable model, then finishing-a-development-branch (NO push without a fresh explicit user "push").
+
+## Final review (3b00872): NOT READY -> fix round 1 (d4c214b) -> scoped re-review APPROVED, no Critical/Important
+- Fixed: I1 nonce route Origin check (+_jsonp), I2 zips protected at upload (add_attachment), I3 deployment Phase A/B, I4 price from Woo product, M1 newsletter G1 text, M2 privacy hashed-IP, M3 rollback order.
+- Gate: PHPUnit 214/1280 OK (1 test-setup warning REQUEST_METHOD), vitest 694, typecheck, build; affected e2e specs green one at a time. Full chain not re-run after d4c214b.
+- Deferred minors (follow-up): (1) rename flag `_ideatoapps_unnamed` not cleared when upload name already matches (download-files.php:107) -> later title change could rename a sold file; (2) flag deleted before rename; (3) nonce Origin compare ignores scheme/port (compare full origin); (4) every zip becomes private while Woo active - document; (5) authors without read_private_posts lose uploaded zip in picker on reopen; (6) FAQ/Terms price vs JSON-LD can differ for variable products / 0-decimal stores, +1 product lookup per card; (7) docs: DECISIONS.md:37 stale "saving a version moves the zip"; STRIPE_SETUP.md:32 webhook uses apex URL during Phase A; G3/ADMIN_GUIDE apex URLs need temp-URL note.
+- Remaining: finish branch. NO push without a fresh explicit user "push" in the session.
