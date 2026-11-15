@@ -162,9 +162,9 @@ export default function SettingsDialog() {
           </button>
         </div>
         <p className="settings-privacy" data-testid="eleven-privacy-note">
-          Your key is kept only in this browser and is never uploaded by ClipForge, which has no server. When you
-          generate a voice, the text you type is sent to ElevenLabs, which has its own terms and privacy policy. Your
-          video and audio files are never sent.
+          Your key is kept only in this browser and is never uploaded by ClipForge, which has no server. With each
+          request, your key and the text you generate are sent straight to ElevenLabs, which has its own terms and
+          privacy policy. Your video and audio files are never sent.
         </p>
       </div>
     </div>

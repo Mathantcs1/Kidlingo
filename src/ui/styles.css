@@ -163,6 +163,29 @@ button:disabled,
   min-width: 0;
 }
 
+.tb-short {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .topbar {
+    gap: 6px;
+    padding: 8px 6px;
+  }
+
+  .topbar-group {
+    gap: 6px;
+  }
+
+  .tb-long {
+    display: none;
+  }
+
+  .tb-short {
+    display: inline;
+  }
+}
+
 .topbar-link {
   color: var(--muted);
   font-size: 12px;

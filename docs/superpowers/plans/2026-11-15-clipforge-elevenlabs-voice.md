@@ -14,7 +14,7 @@
 
 - TypeScript strict; 2 spaces, single quotes, semicolons; files ≲200 lines; keep every existing `data-testid`; `window.__clipforge` stays DEV-only.
 - The API key is stored ONLY in this browser (IndexedDB, its own key, never in the project JSON, never in an export, never in the OPFS media, never in a URL, a log, a toast, an error message, a test fixture or the dev hook). It is sent ONLY as the `xi-api-key` header to `https://api.elevenlabs.io`. Never use `VITE_*` env vars or `.env.local` for it (they would be baked into the public bundle).
-- Nothing is sent to ElevenLabs until the user has saved a key AND confirmed the privacy notice once; the notice says plainly that the script text is sent to ElevenLabs and may use their credits.
+- No script text is sent to ElevenLabs until the user has saved a key AND confirmed the privacy notice once (the key alone is sent for Test key and the voice list); the notice says plainly that the script text is sent to ElevenLabs and may use their credits.
 - Generated speech is ordinary audio media ("AI voice N") placed in ONE `apply`; a failed placement removes the imported media (same safety as voice-over recording); no project version bump.
 - Plain-English errors for: no/invalid key (401), quota or plan limit (402/401 with quota message), rate limit (429), network/CORS failure, abort, empty audio, text too long; the key never appears in any message.
 - Real ElevenLabs is NEVER called by tests: all tests inject a fake `fetch` or stub the route.

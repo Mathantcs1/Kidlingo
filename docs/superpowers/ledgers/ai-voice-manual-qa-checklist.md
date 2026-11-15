@@ -6,6 +6,7 @@ Safari and other browsers are unverified: do not claim support from this list. N
 
 ## 1. Key handling
 - [ ] Settings (top bar) opens; the key field is a password field with no way to reveal it.
+- [ ] Note whether the browser's password manager offers to save the key field (it should not; if it does, record the browser and tell the controller).
 - [ ] Add key and Save: it shows masked (first 3 characters, then dots, last 4). No request is sent until Test key.
 - [ ] **Test key** with the good key says it works (and shows remaining characters if ElevenLabs reports them).
 - [ ] Test with a bad or revoked key: plain "key rejected" style message, no key text in it.

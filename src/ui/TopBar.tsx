@@ -27,8 +27,12 @@ export default function TopBar({ editable, inert }: { editable: boolean; inert: 
           data-testid="btn-settings"
           onClick={() => useSettings.getState().openSettings()}
           title="Settings: ElevenLabs API key"
+          aria-label="Settings"
         >
-          Settings
+          <span className="tb-long">Settings</span>
+          <span className="tb-short" aria-hidden="true">
+            ⚙
+          </span>
         </button>
         <a className="topbar-link" href={LICENSES_URL} target="_blank" rel="noopener" data-testid="link-licenses">
           Third-party licenses

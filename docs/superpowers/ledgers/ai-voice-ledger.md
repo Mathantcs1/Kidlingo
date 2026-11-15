@@ -16,6 +16,8 @@ Copied from the git-ignored `.superpowers/sdd/2026-11-15-clipforge-elevenlabs-vo
 Ruling: P1 — Models: sonnet implementers for T1-T3; task reviewers opus for T1 (key-leak security) and T3 (placement/consent), sonnet for T2; final review opus.
 Ruling: P2 — If the project changed while the synthesis request was in flight, the clip is placed at the START TIME captured when Generate was pressed, refused only if placement is impossible; the media is removed on any placement failure.
 Ruling: P3 — The empty `.env.local` created by the ElevenLabs CLI is not used; left alone (untracked, ignored) until the user says to delete it.
+Ruling: T4a — The key itself (no script text) is sent to api.elevenlabs.io when the user presses Test key or opens the AI voice dialog (voice list); script text is sent only after consent. The plan constraint now reads "no script text before consent".
+Ruling: T4b — Consent is stored per browser, not per key; only Remove in Settings resets it.
 Ruling: T2 no show/hide toggle on the key input (password only, never revealable) so the key stays unexposed.
 
 ## Task outcomes
@@ -28,3 +30,4 @@ Ruling: T2 no show/hide toggle on the key input (password only, never revealable
 - Never run against the real ElevenLabs API (CORS, quota response shapes unverified); run `ai-voice-manual-qa-checklist.md`.
 - Final whole-branch review (opus, key-leak focus) and the push/deploy decision belong to the controller and the user.
 - CLOSED: Task 4's first e2e run had 2 failures in `restore.spec.ts` (the one-shot IDB read failure was consumed by the Toolbar `hasKey()` read). Fixed in the test (`failNextRead` skips the `clipforge-ai-secrets` database); mutation-checked; no other e2e helper patches IDB reads (`session.spec.ts` patches `put`, unaffected). Full e2e now 408 passed.
+- Final review fix wave: Settings button compacts to a gear (aria-label kept) at <= 800 px so the top bar fits at 700 px (`tests/e2e/topbar-fit.spec.ts`); Settings privacy note now says key and text are sent with each request.

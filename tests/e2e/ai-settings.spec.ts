@@ -18,7 +18,7 @@ test('Settings opens from the top bar, explains privacy, and closes with Escape 
   const note = page.getByTestId('eleven-privacy-note');
   await expect(note).toBeVisible();
   await expect(note).toContainText('only in this browser');
-  await expect(note).toContainText('sent to ElevenLabs');
+  await expect(note).toContainText('your key and the text you generate are sent straight to ElevenLabs');
   await expect(note).toContainText('own terms');
   await expect(note).toContainText('no server');
   const input = page.getByTestId('eleven-key-input');
