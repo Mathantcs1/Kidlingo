@@ -29,7 +29,9 @@ Stripe, with **Test mode** ticked:
 
 In the Stripe dashboard (Test mode) > Developers > Webhooks > Add endpoint:
 
-- Endpoint URL: `https://ideatoapps.net/?wc-api=wc_stripe`
+- Endpoint URL: `<site-address>/?wc-api=wc_stripe`, where `<site-address>` is the Site Address in Settings > General **right now**.
+  - **Phase A** (before DNS points at Bluehost, see `DEPLOYMENT_BLUEHOST.md`): use the temporary URL, for example `https://<random>.temp.domains/?wc-api=wc_stripe`.
+  - **Phase B** (after DNS and the switch to the apex): update the endpoint to `https://ideatoapps.net/?wc-api=wc_stripe` (or create a new one and delete the old). The temporary URL stops working once the site address changes, and the signing secret of a new endpoint differs, so paste the new `whsec_...` into the plugin again.
 - Events: the ones the plugin lists on its settings page (it also offers a one-click "Configure webhooks" button that
   creates the endpoint with the right events). The plugin handles payment success, payment failure, refunds and disputes.
 - Copy the signing secret (`whsec_...`) into the plugin's "Test webhook secret" field.

@@ -1,6 +1,6 @@
 # Admin guide (no coding needed)
 
-For the person who runs ideatoapps.net day to day. You work in the WordPress admin: `https://ideatoapps.net/wp-admin/`.
+For the person who runs ideatoapps.net day to day. You work in the WordPress admin: `https://ideatoapps.net/wp-admin/` (during Phase A, before launch, use the temporary URL Bluehost gave you instead).
 This guide describes the screens as built in this project and checked in a local test site. Bluehost-specific screens are not covered
 here (see `DEPLOYMENT_BLUEHOST.md`). Words in **bold** are the exact labels you will see.
 
@@ -64,6 +64,8 @@ Past buyers get every new version automatically (see below). To release one:
 **How past buyers get it:** when you save a new version, the site gives every customer who already bought ClipForge (completed or processing order, not refunded or cancelled) download permission for it. They do nothing: next time they open **My account > Downloads** ("My library") the new version is at the top with your changelog and a **Download** button. No email is sent about it (email delivery is not set up), so tell them yourself if you want them to know. The old versions stay available to them. Someone who bought **before** 1.1.0 exists and someone who buys **after** both see every version.
 
 Notes: a version's file can be set only by an administrator or the person who uploaded it. Avoid **Remove** on a version someone already owns; add a newer one instead. The zip is moved into a protected folder the moment it is uploaded to the media library (before you save the version) and the media item becomes private; the public media library address of the zip must not be shared.
+
+**Every zip you upload becomes private while WooCommerce is active.** This applies to any `.zip` added through the media library or the Versions picker, not only release zips, so a public zip for a blog post or a free download will not work: host such files elsewhere (another service, or a plain link). Only Administrators and Editors should use the **Versions** box: it lists private files, which needs the `read_private_posts` capability (Authors do not have it, so they would not see an uploaded zip again after reopening the page).
 
 ## 5. Handle an order
 

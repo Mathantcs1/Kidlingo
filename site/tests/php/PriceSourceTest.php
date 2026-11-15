@@ -64,4 +64,34 @@ final class PriceSourceTest extends CommerceTestCase {
 		$this->assertStringContainsString( '$31.50 USD', $terms );
 		$this->assertStringNotContainsString( '24.99', $terms );
 	}
+
+	public function test_a_variable_product_falls_back_to_the_label_like_the_json_ld_offer(): void {
+		$app = $this->app();
+		$this->add_version( $app, '1.0.0' );
+		$variable = new WC_Product_Variable();
+		$variable->set_name( 'Variable' );
+		$variable->set_status( 'publish' );
+		$variable->set_regular_price( '12' );
+		$variable->set_props( array( 'price' => '12' ) );
+		$vid = $variable->save();
+		update_post_meta( $vid, '_price', '12' );
+		wp_cache_flush();
+		update_post_meta( $app, 'woo_product_id', $vid );
+		$this->assertSame( '12', (string) wc_get_product( $vid )->get_price(), 'precondition: the variable product reports a price' );
+		$this->assertSame( '', ideatoapps_app_product_price( $app ), 'variable product: no single price' );
+		$this->assertSame( trim( (string) get_post_meta( $app, 'price_label', true ) ), ideatoapps_app_price_text( $app ) );
+		$this->assertSame( array(), ideatoapps_app_jsonld_offer( $app ), 'and no structured-data offer either' );
+	}
+
+	public function test_json_ld_and_page_price_agree_in_a_zero_decimal_store(): void {
+		$app = $this->app();
+		$this->add_version( $app, '1.0.0' );
+		update_option( 'woocommerce_price_num_decimals', 0 );
+		$this->set_price( $app, '25' );
+		$this->assertSame( '$25 one-time', ideatoapps_app_price_text( $app ) );
+		$this->assertSame( '25', ideatoapps_app_jsonld_offer( $app )['price'], 'no ".00" in a 0-decimal store' );
+		update_option( 'woocommerce_price_num_decimals', 3 );
+		$this->assertSame( '$25.000 one-time', ideatoapps_app_price_text( $app ) );
+		$this->assertSame( '25.000', ideatoapps_app_jsonld_offer( $app )['price'], 'same decimals rule as the page' );
+	}
 }

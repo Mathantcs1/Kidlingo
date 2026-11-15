@@ -81,6 +81,36 @@ final class CommerceProtectTest extends CommerceTestCase {
 		$this->assertSame( $named, get_attached_file( $att ), 'buyers keep the file name they were sold' );
 	}
 
+	public function test_an_upload_that_already_has_the_buyer_name_clears_the_flag_so_a_later_title_change_never_renames_it(): void {
+		$app = $this->app();
+		$att = $this->zip_attachment( 'ClipForge-1.0.0.zip' );
+		$this->assertSame( '1', (string) get_post_meta( $att, '_ideatoapps_unnamed', true ), 'precondition: flagged at upload' );
+		$named = get_attached_file( $att );
+		$this->assertTrue( ideatoapps_add_version( $app, '1.0.0', 'x', $att ) );
+		$this->assertSame( $named, get_attached_file( $att ) );
+		$this->assertSame( '', (string) get_post_meta( $att, '_ideatoapps_unnamed', true ), 'flag cleared because the name already matched' );
+		wp_update_post( array( 'ID' => $app, 'post_title' => 'Totally Different' ) );
+		ideatoapps_update_version( $app, '1.0.0', 'y', $att );
+		$this->assertSame( $named, get_attached_file( $att ), 'sold file name is stable' );
+		$this->assertFileExists( $named );
+	}
+
+	public function test_the_unnamed_flag_survives_a_failed_rename_and_the_next_save_retries(): void {
+		$app    = $this->app();
+		$att    = $this->zip_attachment( 'upload (7).zip' );
+		$dir    = dirname( get_attached_file( $att ) );
+		$block  = $dir . '/ClipForge-1.0.0.zip';
+		file_put_contents( $block, 'in the way' );
+		$orig = get_attached_file( $att );
+		ideatoapps_add_version( $app, '1.0.0', 'x', $att );
+		$this->assertSame( $orig, get_attached_file( $att ), 'rename refused, file untouched' );
+		$this->assertSame( '1', (string) get_post_meta( $att, '_ideatoapps_unnamed', true ), 'flag kept so it can retry' );
+		unlink( $block );
+		ideatoapps_update_version( $app, '1.0.0', 'y', $att );
+		$this->assertSame( $block, get_attached_file( $att ), 'renamed on the retry' );
+		$this->assertSame( '', (string) get_post_meta( $att, '_ideatoapps_unnamed', true ), 'flag cleared after the successful rename' );
+	}
+
 	public function test_updating_a_version_with_a_new_file_protects_it_without_a_product(): void {
 		$app = $this->unlinked_app();
 		ideatoapps_add_version( $app, '1.0.0', 'x', $this->zip_attachment( 'a.zip' ) );

@@ -83,7 +83,7 @@ function ideatoapps_app_jsonld_offer( int $app_id ): array {
 	}
 	return array(
 		'@type'         => 'Offer',
-		'price'         => number_format( (float) $price, 2, '.', '' ),
+		'price'         => number_format( (float) $price, function_exists( 'wc_get_price_decimals' ) ? max( 0, (int) wc_get_price_decimals() ) : 2, '.', '' ),
 		'priceCurrency' => get_woocommerce_currency(),
 		'availability'  => $product->is_in_stock() ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
 		'url'           => ideatoapps_canonical_url( (string) get_permalink( $app_id ) ),

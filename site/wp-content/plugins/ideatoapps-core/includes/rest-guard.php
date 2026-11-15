@@ -90,8 +90,8 @@ function ideatoapps_rate_limit_exceeded( $bucket ) {
 }
 
 /**
- * Is this request first-party? Only a request with no Origin header (same-origin GETs, navigations) or an Origin whose
- * host is this site's host may be authenticated from the login cookie. WordPress CORS replies echo the Origin with
+ * Is this request first-party? Only a request with no Origin header (same-origin GETs, navigations) or an Origin that equals this site's
+ * origin (scheme, host and port; default ports normalised) may be authenticated from the login cookie. WordPress CORS replies echo the Origin with
  * credentials allowed, so a foreign page could otherwise read the visitor's real `wp_rest` nonce. The JSONP callback
  * (`_jsonp`) is a second cross-site way to read the response, so it is never first-party either.
  *
@@ -107,9 +107,30 @@ function ideatoapps_rest_is_first_party( $request ) {
 	if ( null === $origin || '' === $origin ) {
 		return true;
 	}
-	$host = wp_parse_url( (string) $origin, PHP_URL_HOST );
-	$home = wp_parse_url( home_url(), PHP_URL_HOST );
-	return is_string( $host ) && is_string( $home ) && 0 === strcasecmp( $host, $home );
+	$theirs = ideatoapps_normalise_origin( (string) $origin );
+	$ours   = ideatoapps_normalise_origin( home_url() );
+	return null !== $theirs && null !== $ours && $theirs === $ours;
+}
+
+/**
+ * Reduce a URL or Origin header to "scheme://host:port": lower case, one trailing dot of the host removed, default
+ * ports (80 for http, 443 for https) filled in. Anything that is not an http(s) origin (for example "null") gives null.
+ *
+ * @param string $url URL or Origin value.
+ * @return string|null
+ */
+function ideatoapps_normalise_origin( $url ) {
+	$parts = wp_parse_url( trim( $url ) );
+	if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+		return null;
+	}
+	$scheme = strtolower( $parts['scheme'] );
+	if ( 'http' !== $scheme && 'https' !== $scheme ) {
+		return null;
+	}
+	$host = rtrim( strtolower( $parts['host'] ), '.' );
+	$port = isset( $parts['port'] ) ? (int) $parts['port'] : ( 'https' === $scheme ? 443 : 80 );
+	return '' === $host ? null : $scheme . '://' . $host . ':' . $port;
 }
 
 /**

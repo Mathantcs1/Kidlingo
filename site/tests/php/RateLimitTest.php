@@ -2,11 +2,12 @@
 final class RateLimitTest extends WPTestCase {
 	protected function setUp(): void {
 		parent::setUp();
-		$_SERVER['REMOTE_ADDR'] = '203.0.113.' . wp_rand( 1, 250 );
+		$_SERVER['REMOTE_ADDR']    = '203.0.113.' . wp_rand( 1, 250 );
+		$_SERVER['REQUEST_METHOD'] = 'GET';
 	}
 
 	protected function tearDown(): void {
-		unset( $_SERVER['REMOTE_ADDR'] );
+		unset( $_SERVER['REMOTE_ADDR'], $_SERVER['REQUEST_METHOD'] );
 		parent::tearDown();
 	}
 
@@ -100,6 +101,30 @@ final class RateLimitTest extends WPTestCase {
 		$this->assertSame( $user, $got, 'no Origin header' );
 		list( $got, $user ) = $this->nonce_with_cookie( array( 'Origin' => home_url() ) );
 		$this->assertSame( $user, $got, 'same Origin' );
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'origin_cases' )]
+	public function test_nonce_route_compares_the_full_origin( string $home, string $origin, bool $first_party ): void {
+		add_filter( 'home_url', static fn() => $home, 99 );
+		list( $got, $user, $anon ) = $this->nonce_with_cookie( array( 'Origin' => $origin ) );
+		remove_all_filters( 'home_url', 99 );
+		$this->assertSame( $first_party ? $user : $anon, $got, $home . ' vs ' . $origin );
+	}
+
+	public static function origin_cases(): array {
+		return array(
+			'same https'               => array( 'https://ideatoapps.net', 'https://ideatoapps.net', true ),
+			'explicit default port'    => array( 'https://ideatoapps.net', 'https://ideatoapps.net:443', true ),
+			'uppercase host'           => array( 'https://ideatoapps.net', 'https://IDEATOAPPS.NET', true ),
+			'trailing dot'             => array( 'https://ideatoapps.net', 'https://ideatoapps.net.', true ),
+			'http home, http origin'   => array( 'http://localhost:8888', 'http://localhost:8888', true ),
+			'http origin, https home'  => array( 'https://ideatoapps.net', 'http://ideatoapps.net', false ),
+			'https origin, http home'  => array( 'http://ideatoapps.net', 'https://ideatoapps.net', false ),
+			'other port'               => array( 'https://ideatoapps.net', 'https://ideatoapps.net:2083', false ),
+			'default vs other http'    => array( 'http://ideatoapps.net', 'http://ideatoapps.net:8080', false ),
+			'null origin'              => array( 'https://ideatoapps.net', 'null', false ),
+			'other host'               => array( 'https://ideatoapps.net', 'https://evil.example', false ),
+		);
 	}
 
 	public function test_nonce_route_refuses_to_authenticate_jsonp_callers(): void {

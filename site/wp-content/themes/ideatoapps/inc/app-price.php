@@ -18,13 +18,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return string
  */
 function ideatoapps_app_product_price( int $app_id ): string {
-	$product_id = (int) get_post_meta( $app_id, 'woo_product_id', true );
-	if ( $product_id <= 0 || ! function_exists( 'ideatoapps_woocommerce_active' ) || ! ideatoapps_woocommerce_active() || ! function_exists( 'wc_price' )
-		|| 'product' !== get_post_type( $product_id ) || 'publish' !== get_post_status( $product_id ) ) {
+	if ( ! function_exists( 'ideatoapps_app_product' ) || ! function_exists( 'wc_price' ) ) {
 		return '';
 	}
-	$product = wc_get_product( $product_id );
-	$price   = $product ? (string) $product->get_price() : '';
+	// Same eligibility as the buy gate and the JSON-LD offer: a valid simple product this app owns, and published.
+	// (A variable product has no single price, so it falls back to the label. No query beyond what the card already runs:
+	// post meta and the product are cached by WordPress after the first read.)
+	$product = ideatoapps_app_product( $app_id );
+	if ( ! $product || 'publish' !== $product->get_status() ) {
+		return '';
+	}
+	$price = (string) $product->get_price();
 	if ( '' === $price || ! is_numeric( $price ) ) {
 		return '';
 	}

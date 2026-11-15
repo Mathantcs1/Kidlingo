@@ -105,6 +105,9 @@ fails it shows a fixed client-side message.
 - Cart and checkout pages are converted to the classic shortcodes once per plugin version: the owner reloads a page or runs the seed to trigger it.
 - `delete_attachment` leaves a stale product file entry; the buy gate (`ideatoapps_app_is_sellable`) catches it, so the app just stops being sellable.
 - Version zips are moved to `woocommerce_uploads/ideatoapps/` on add/update even when no product is linked yet, but only while WooCommerce is active.
+- **Every** `.zip` uploaded to the media library becomes private and is moved into the protected folder while WooCommerce is active (the hook cannot tell a release zip from any other zip). Public zips (blog downloads etc.) must be hosted elsewhere.
+- Only users with `read_private_posts` (Editors, Administrators) see a protected zip again in the Versions picker; use the Versions box as Administrator or Editor. Authors are not blocked in code (restricting the box was judged riskier than documenting it).
+- Origin check of the nonce route (`ideatoapps_rest_is_first_party()`): compares scheme, host and port against `home_url()` (default ports normalised, case and one trailing dot ignored). Behind a TLS-terminating proxy that makes `home_url()` and the browser origin differ in scheme, the form nonce is anonymous-only for signed-in visitors.
 - A version's file can only be set by an admin (`manage_options`) or by the user who uploaded it (review M-1).
 
 ## SEO, structured data and performance (Task 9)

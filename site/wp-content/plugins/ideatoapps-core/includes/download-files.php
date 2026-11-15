@@ -104,13 +104,17 @@ function ideatoapps_protected_root(): string {
 function ideatoapps_name_protected_file( int $attachment_id, string $path, string $basename ): string {
 	$name   = sanitize_file_name( $basename );
 	$target = dirname( $path ) . '/' . $name;
-	if ( ! get_post_meta( $attachment_id, '_ideatoapps_unnamed', true ) || '' === $name || $target === $path ) {
+	if ( ! get_post_meta( $attachment_id, '_ideatoapps_unnamed', true ) || '' === $name ) {
 		return $path;
+	}
+	if ( $target === $path ) { // Already carries the buyer-facing name: nothing to rename, and never rename it later.
+		delete_post_meta( $attachment_id, '_ideatoapps_unnamed' );
+		return $path;
+	}
+	if ( file_exists( $target ) || ! rename( $path, $target ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
+		return $path; // Flag kept: a later save can retry.
 	}
 	delete_post_meta( $attachment_id, '_ideatoapps_unnamed' );
-	if ( file_exists( $target ) || ! rename( $path, $target ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
-		return $path;
-	}
 	update_attached_file( $attachment_id, $target );
 	return realpath( $target ) ?: $target;
 }
