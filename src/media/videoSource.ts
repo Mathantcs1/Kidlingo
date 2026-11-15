@@ -66,11 +66,12 @@ export class DecodedVideoSource implements VideoSource {
     firstTimestamp: number,
     readonly rotation: Rotation,
     readonly flip: boolean,
+    size?: { width: number; height: number },
   ) {
     this.input = input;
     this.sink = sink;
     this.firstTimestamp = firstTimestamp;
-    this.reverse = sink ? new ReverseRun(sink, firstTimestamp, () => this.closed) : null;
+    this.reverse = sink ? new ReverseRun(sink, firstTimestamp, () => this.closed, size) : null;
     stats.open++;
     stats.opened++;
     stats.peak = Math.max(stats.peak, stats.open);
@@ -104,6 +105,7 @@ export class DecodedVideoSource implements VideoSource {
       if (t < reverse.start - EPS && reverse.start - t <= REVERSE_REACH) {
         this.dropIterator();
         const next = await reverse.fill(t, reverse.start);
+        if (this.closed) return null;
         if (next) return next;
       } else {
         reverse.release();
@@ -132,6 +134,7 @@ export class DecodedVideoSource implements VideoSource {
         if (cache[0].start - t <= REVERSE_REACH) {
           this.dropIterator();
           const hit = await this.reverse?.fill(t, cache[0].start);
+          if (this.closed) return null;
           if (hit) return hit;
         }
         this.seek(t);

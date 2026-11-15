@@ -13,7 +13,7 @@ import type { AnimPayload, KeysPayload, PayloadTarget } from './animPayload';
 import { assertInside, commitClip, sameFrame } from './keyEditHelpers';
 import { copyKey } from './keyLists';
 import type { AnyKey } from './keyLists';
-import { MAX_KEYS, localRange, localTime, tooClose } from './keyframes';
+import { MAX_KEYS, keyVisible, localRange, localTime, tooClose } from './keyframes';
 import { repairClipKeys, repairEffectKeys, repairEffectLoops, repairPositionKeys } from './migrateKeys';
 import { repairMotion, withMotion } from './migrateMotion';
 import type { Clip, Id, Keyframe, Project, VideoEffect } from './model';
@@ -65,7 +65,6 @@ function pasteKeysInto(p: Project, clipId: Id, payload: KeysPayload, t: number):
   if (clip.kind === 'audio') return { clip, skipped: payload.targets.length };
   assertInside(clip, t);
   const u0 = localTime(clip, t, p.format.fps);
-  const [lo, hi] = localRange(clip);
   const ratio = fitRatio(fitScale(p, clip), payload.fit);
   let next = clip;
   let skipped = 0;
@@ -73,7 +72,7 @@ function pasteKeysInto(p: Project, clipId: Id, payload: KeysPayload, t: number):
     const target = targetFor(next, pt);
     if (!target) { skipped++; continue; }
     const prop = target.kind === 'transform' ? target.prop : undefined;
-    const fresh = keys.map((k) => adapt(k, u0 + k.t, prop, ratio)).filter((k) => k.t >= lo - 1e-9 && k.t < hi - 1e-9);
+    const fresh = keys.map((k) => adapt(k, u0 + k.t, prop, ratio)).filter((k) => keyVisible(clip, k.t));
     if (fresh.length < keys.length) skipped++;
     if (fresh.length === 0) continue;
     const kept = keysOf(next, target).filter((e) => !fresh.some((k) => tooClose(e.t, k.t) || sameFrame(clip, e.t, k.t, p.format.fps)));
@@ -135,8 +134,11 @@ function shiftedKeys(list: readonly AnyKey[], s: Shape, prop: string, ratio: num
 function pasteAnimInto(p: Project, clip: Clip, a: AnimPayload, anchor: Anchor, t: number): { clip: Clip; skipped: number } {
   if (clip.kind === 'audio') throw new TimelineError(AUDIO);
   const [lo, hi] = localRange(clip);
-  let origin = lo;
-  if (anchor === 'end') origin = hi - a.span;
+  // Payload times are footage seconds running forward: on a reversed clip the animation's start sits `span` below the
+  // footage edge played first, so 'start' (timeline) is `hi - span` and 'end' is `lo`.
+  const reversed = clip.reverse === true && clip.freeze === undefined;
+  let origin = reversed ? hi - a.span : lo;
+  if (anchor === 'end') origin = reversed ? lo : hi - a.span;
   if (anchor === 'playhead') {
     assertInside(clip, t);
     origin = localTime(clip, t, p.format.fps);

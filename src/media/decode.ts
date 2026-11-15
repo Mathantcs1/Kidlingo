@@ -37,7 +37,7 @@ export async function openVideoSource(mediaId: Id): Promise<VideoSource> {
     if (!track) return new DecodedVideoSource(input, null, 0, 0, false);
     const first = await track.getFirstTimestamp();
     const [rotation, flip] = await Promise.all([track.getRotation(), track.getFlip()]);
-    return new DecodedVideoSource(input, new VideoSampleSink(track), first, rotation, flip);
+    return new DecodedVideoSource(input, new VideoSampleSink(track), first, rotation, flip, { width: track.codedWidth, height: track.codedHeight });
   } catch (e) {
     input.dispose();
     throw e;

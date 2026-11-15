@@ -106,3 +106,11 @@ describe('clip end for sanity', () => {
     expect(clipEnd(mk({ speed: 2 }))).toBeCloseTo(3 + 5, 9);
   });
 });
+
+describe('pasting keys onto a reversed clip (review M3)', () => {
+  it('keeps a key at `out` (first frame shown) and drops one at `in` (off the clip)', () => {
+    const c = mk({ reverse: true });
+    expect(keyVisible(c, 20)).toBe(true);
+    expect(keyVisible(c, 10)).toBe(false);
+  });
+});

@@ -3,7 +3,7 @@
 // presets resolved to their values); it is silent and has its own timeline (`in` 0, `out` hold).
 import { resolveClip } from './animate';
 import { splitClip } from './clipEdits';
-import { clipEnd, sourceTimeAt } from './clipTime';
+import { clipEnd, videoSourceTime } from './clipTime';
 import { newId } from './model';
 import type { Clip, Id, Project } from './model';
 import { EPS, MIN_CLIP, TimelineError, assertFinite, assertUnlocked, findClip, mapClips } from './timeline';
@@ -19,7 +19,11 @@ export function freezeFrame(p: Project, clipId: Id, t: number, hold = DEFAULT_FR
   const start = clip.start;
   const end = clipEnd(clip);
   if (t < start - EPS || t > end + EPS) throw new TimelineError('Freeze time is outside the clip');
-  const at = sourceTimeAt(clip, Math.min(Math.max(t, start), end));
+  // The footage of the FRAME shown at `t` (a reversed clip samples mid-frame, D11); a freeze at the very end holds the last frame shown.
+  const fps = p.format.fps;
+  const last = Math.max(start, end - 1 / fps);
+  const shown = Math.min(Math.max(t, start), last);
+  const at = videoSourceTime(clip, start + Math.floor((shown - start) * fps + 1e-6) / fps, fps);
   const { speed: _s, reverse: _r, speedKeys: _k, preservePitch: _pp, ...drawn } = resolveClip(clip, t, p.format);
   const still: Clip = { ...drawn, id: newId(), freeze: { at }, in: 0, out: hold, audio: { ...drawn.audio, silent: true, fadeIn: 0, fadeOut: 0 } };
   // Near an edge there is nothing worth splitting off: insert before or after the clip.

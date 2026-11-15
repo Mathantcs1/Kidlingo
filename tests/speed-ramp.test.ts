@@ -174,12 +174,13 @@ describe('eases', () => {
 });
 
 describe('extrapolation beyond the edges (handles)', () => {
-  it('uses the speed held at the edge', () => {
+  it('continues along the ramp itself (so a trimmed clip agrees with its duration) and round-trips', () => {
     const c = clip({ in: 4, out: 10, start: 10, speedKeys: RAMP });
-    const sIn = speedAt(RAMP, 4);
-    expect(sourceTimeAt(c, 9)).toBeCloseTo(4 - sIn, 9);
     const end = c.start + clipDuration(c);
-    expect(sourceTimeAt(c, end + 1)).toBeCloseTo(10 + speedAt(RAMP, 10), 9);
-    expect(timelineTimeAt(c, 3)).toBeCloseTo(c.start - 1 / sIn, 9);
+    for (const t of [8, 9, 9.99, end + 0.5, end + 1]) expect(timelineTimeAt(c, sourceTimeAt(c, t))).toBeCloseTo(t, 8);
+    expect(sourceTimeAt(c, 9)).toBeLessThan(4);
+    expect(sourceTimeAt(c, end + 1)).toBeGreaterThan(10);
+    expect(sourceTimeAt(c, c.start)).toBe(4);
+    expect(sourceTimeAt(c, end)).toBeCloseTo(10, 9);
   });
 });

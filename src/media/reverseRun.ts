@@ -24,7 +24,11 @@ export class ReverseRun {
     private readonly sink: VideoSampleSink,
     private readonly firstTimestamp: number,
     private readonly isClosed: () => boolean,
-  ) {}
+    size?: { width: number; height: number },
+  ) {
+    // The first window is sized from the track's own frame size (not a 1080p guess) so a 4K clip never exceeds its budget.
+    if (size && size.width > 0 && size.height > 0) this.bytesPerFrame = frameBytes(size.width, size.height);
+  }
 
   /** Whether a window is held. */
   get active(): boolean {

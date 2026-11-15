@@ -4,7 +4,7 @@ import { clipDuration, clipEnd, sourceTimeAt } from '../src/core/clipTime';
 import { defaultClipAudio, defaultTransform, emptyProject } from '../src/core/model';
 import type { Clip, Project } from '../src/core/model';
 import { SPEED_PRESETS, applySpeedPreset, speedPresetKeys } from '../src/core/speedPresets';
-import { splitClip } from '../src/core/timeline';
+import { splitClip, trimClip } from '../src/core/timeline';
 
 const vc = (id: string, start: number, extra: Partial<Clip> = {}): Clip => ({
   id, mediaId: 'm1', kind: 'video', start, in: 2, out: 12, transform: defaultTransform(), volume: 1, fit: 'fit',
@@ -66,5 +66,25 @@ describe('speed presets', () => {
     expect(l.out).toBeCloseTo(sourceTimeAt(c, cut), 9);
     expect(r.in).toBe(l.out);
     expect(clipDuration(l) + clipDuration(r)).toBeCloseTo(clipDuration(c), 9);
+  });
+});
+
+describe('trimming a ramp clip (review I1)', () => {
+  const keys = [{ t: 0, v: 1, ease: { kind: 'linear' as const } }, { t: 30, v: 4, ease: { kind: 'linear' as const } }];
+  const ramp = (): Project => proj([vc('a', 5, { in: 10, out: 20, speedKeys: keys })]);
+  it('a start trim keeps the clip end where it was; an end trim lands exactly on the dropped time', () => {
+    const p = ramp();
+    const end = clipEnd(clipOf(p, 'a'));
+    const s = trimClip(p, 'a', 'start', 6);
+    expect(clipEnd(clipOf(s, 'a'))).toBeCloseTo(end, 6);
+    const e = trimClip(p, 'a', 'end', end - 1);
+    expect(clipEnd(clipOf(e, 'a'))).toBeCloseTo(end - 1, 6);
+    const back = trimClip(e, 'a', 'end', end);
+    expect(clipEnd(clipOf(back, 'a'))).toBeCloseTo(end, 6);
+  });
+  it('an outward start trim also keeps the end', () => {
+    const p = proj([vc('a', 5, { in: 14, out: 20, speedKeys: keys })]);
+    const end = clipEnd(clipOf(p, 'a'));
+    expect(clipEnd(clipOf(trimClip(p, 'a', 'start', 3), 'a'))).toBeCloseTo(end, 6);
   });
 });

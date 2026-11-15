@@ -43,7 +43,7 @@ export default function Waveform({ clip, mediaId, width }: { clip: Clip; mediaId
       const bottom = mid - min * mid;
       ctx.fillRect(x, top, 1, Math.max(1, bottom - top));
     }
-  }, [peaks, width, clip.in, clip.out]);
+  }, [peaks, width, clip.in, clip.out, clip.reverse, clip.speed, clip.speedKeys]);
 
   return (
     <canvas

@@ -33,7 +33,7 @@ describe('freezeFrame', () => {
     const p = proj([vc('a', 0, 10, 20, { speed: 2 })]);
     expect(clips(freezeFrame(p, 'a', 2, 1)).find((c) => c.freeze)!.freeze!.at).toBe(sourceTimeAt(p.tracks[0].clips[0], 2));
     const rv = proj([vc('a', 0, 10, 20, { reverse: true })]);
-    expect(clips(freezeFrame(rv, 'a', 3, 1)).find((c) => c.freeze)!.freeze!.at).toBeCloseTo(17, 9);
+    expect(clips(freezeFrame(rv, 'a', 3, 1)).find((c) => c.freeze)!.freeze!.at).toBeCloseTo(17 - 1 / 60, 9); // the frame shown at 3 s (mid-frame sample)
     const still = clips(freezeFrame(p, 'a', 2, 1)).find((c) => c.freeze)!;
     expect(still.speed).toBeUndefined();
   });
@@ -44,7 +44,8 @@ describe('freezeFrame', () => {
     expect([head[0].freeze?.at, head[0].start, head[1].start]).toEqual([10, 2, 4]);
     const tail = clips(freezeFrame(p, 'a', 12, 2));
     expect(tail).toHaveLength(2);
-    expect([tail[1].freeze?.at, tail[1].start]).toEqual([20, 12]);
+    expect(tail[1].freeze!.at).toBeCloseTo(20 - 1 / 30, 6);
+    expect(tail[1].start).toBe(12);
   });
   it('only the same track moves; locked tracks, non-video and freeze clips and bad times are refused', () => {
     const p = proj([vc('a', 0, 0, 10)]);
