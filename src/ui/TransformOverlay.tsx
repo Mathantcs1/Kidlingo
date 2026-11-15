@@ -10,6 +10,7 @@ import { formatToCss, overlayTarget, toleranceInFormatPx } from './overlayMath';
 import type { Box } from './overlayMath';
 import { HANDLE_PX, ROTATE_PX, handleAt } from './overlayHit';
 import type { DragTarget, LiveTransform } from './overlayHit';
+import './crop.css';
 import CropOverlay from './CropOverlay';
 import type { LiveCrop } from './CropOverlay';
 import { endCropMode, useCropMode } from './cropModeStore';
@@ -17,11 +18,13 @@ import MotionPath from './MotionPath';
 import { PASS_THROUGH_PX, motionPathTarget, toFormat } from './motionPathMath';
 import { keyAtPlayhead } from './keyframeCommands';
 import { toggleCornerCmd } from './pathCommands';
+import { usePivotDrag } from './usePivotDrag';
 import { useTransformDrag } from './useTransformDrag';
 import type { LivePath } from './usePathDrag';
 import { withLiveValue } from './transformEdits';
 
 const CORNERS = ['tl', 'tr', 'br', 'bl'] as const;
+const PIVOT_HIT_PX = 10;
 
 interface Props {
   project: Project;
@@ -46,6 +49,18 @@ function liveHandles(p: Project, live: LiveTransform): Transform {
   const { clip } = findClip(p, live.clipId);
   if (!clip.keys) return live.transform;
   return resolvedTransform(findClip(withLiveValue(p, live.clipId, live.patch, live.t), live.clipId).clip, live.t, p.format.fps);
+}
+
+/** Whether the on-canvas pivot drag applies: the clip has no animated position, scale, rotation or anchor. */
+function pivotMovable(p: Project, clipId: string): boolean {
+  const k = findClip(p, clipId).clip.keys;
+  return !k || ((k.position?.length ?? 0) + (k.scale?.length ?? 0) + (k.rotation?.length ?? 0) + (k.anchor?.length ?? 0) === 0);
+}
+
+/** Whether the pointer press is on the pivot dot (centre, in CSS px relative to the overlay). */
+function nearDot(e: ReactPointerEvent<SVGSVGElement>, centre: Point): boolean {
+  const r = e.currentTarget.getBoundingClientRect();
+  return Math.hypot(e.clientX - r.left - centre.x, e.clientY - r.top - centre.y) <= PIVOT_HIT_PX;
 }
 
 /** The pointer cursor for a handle; corner cursors follow the corner's direction from the centre (rotated clips). */
@@ -110,6 +125,8 @@ export default function TransformOverlay(props: Props) {
 
 function OverlayQuad({ project, box, canvasRef, onLive, target, centre, onDoubleClick }: Props & { target: DragTarget; centre: Point; onDoubleClick?: (e: ReactMouseEvent<SVGSVGElement>) => void }) {
   const { begin, dragging } = useTransformDrag(canvasRef, onLive);
+  const [pivotLive, setPivotLive] = useState<Point | null>(null);
+  const pivot = usePivotDrag(canvasRef, setPivotLive);
   const [hover, setHover] = useState<Handle | null>(null);
   const format = project.format;
   const toCss = (p: Point): Point => formatToCss(p, box, format);
@@ -118,8 +135,14 @@ function OverlayQuad({ project, box, canvasRef, onLive, target, centre, onDouble
   const rot = toCss(rotateHandlePoint(corners, toleranceInFormatPx(ROTATE_PX, box, format)));
   const topMid = { x: (css[0].x + css[1].x) / 2, y: (css[0].y + css[1].y) / 2 };
   const h = HANDLE_PX / 2;
+  const dot = pivotLive ? toCss(pivotLive) : centre; // the pivot: where the clip's position is (its anchor point)
 
   const onPointerDown = (e: ReactPointerEvent<SVGSVGElement>): void => {
+    // Shift + press on the pivot dot drags the pivot only (the picture stays); a static transform and an unlocked clip only.
+    if (e.shiftKey && pivotMovable(project, target.clipId) && nearDot(e, centre)) {
+      pivot.begin(e, target.clipId, format);
+      return;
+    }
     const handle = begin(e, target);
     if (handle) setHover(handle);
   };
@@ -156,6 +179,7 @@ function OverlayQuad({ project, box, canvasRef, onLive, target, centre, onDouble
           height={HANDLE_PX}
         />
       ))}
+      <circle className="tov-pivot" data-testid="anchor-handle" cx={dot.x} cy={dot.y} r={4} />
       <circle className="tov-handle tov-rotate" data-testid="overlay-handle-rotate" cx={rot.x} cy={rot.y} r={h} />
     </svg>
   );

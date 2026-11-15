@@ -1,6 +1,6 @@
 // Store-bound crop / flip / anchor commands (Plan 5E Task 6): each is ONE `apply` (one undo step); refusals (locked
 // track, keyed anchor, wrong clip kind) become toasts through `guard`.
-import { anchorToCropCentre, fitToCrop, resetAnchor, resetCrop, setAnchor, setCrop, setFlip } from '../core/cropEdits';
+import { anchorToCropCentre, fitToCrop, movePivotTo, resetAnchor, resetCrop, setAnchor, setCrop, setFlip } from '../core/cropEdits';
 import type { Anchor, Crop } from '../core/cropTypes';
 import type { Id, Project } from '../core/model';
 import { setValueAtCmd } from './keyframeCommands';
@@ -19,4 +19,6 @@ export const setFlipCmd = (clipId: Id, patch: { h?: boolean; v?: boolean }): voi
 export const setAnchorAtCmd = (clipId: Id, a: Anchor): void => setValueAtCmd(clipId, ANCHOR_TARGET, a);
 export const resetAnchorCmd = (clipId: Id): void => apply((p) => resetAnchor(p, clipId));
 export const anchorToCropCentreCmd = (clipId: Id): void => apply((p) => anchorToCropCentre(p, clipId));
+/** The on-canvas pivot drag's release: the pivot lands on the format point, the picture does not move (ONE step). */
+export const movePivotCmd = (clipId: Id, point: { x: number; y: number }): void => apply((p) => movePivotTo(p, clipId, point));
 export const setAnchorStaticCmd = (clipId: Id, a: Anchor): void => apply((p) => setAnchor(p, clipId, a));

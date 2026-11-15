@@ -1,6 +1,7 @@
 // Pure edits of a clip's crop, flip and anchor (Plan 5E D2, D3, D4, D8). Video and image clips only; locked tracks and
 // non-finite values are refused; a no-op returns the SAME project (no undo step). One call = one undo step.
 import { ANIMATED_REFUSAL } from './animTargets';
+import { frameFractionAt } from './cropDrag';
 import { ANCHOR_LIMIT, MAX_CROP_EDGE, clampCrop, cropMinimum, normaliseCrop } from './cropTypes';
 import type { Anchor, Crop, Flip } from './cropTypes';
 import type { Clip, Id, Project } from './model';
@@ -116,4 +117,29 @@ export function fitToCrop(p: Project, clipId: Id, mode: 'fit' | 'fill'): Project
   const t = clip.transform;
   if (t.x === x && t.y === y && t.scale === scale) return p;
   return replaceClip(p, clipId, { ...clip, transform: { ...t, x, y, scale } });
+}
+
+/**
+ * Moves the pivot to the canvas point `point` (format px from the canvas top-left) WITHOUT moving the picture: the new
+ * anchor is where the point falls on the frame, and x/y become the point's offset from the canvas centre (the on-canvas
+ * pivot drag). Exact only while position, scale, rotation and anchor are static, so it is refused otherwise; refused
+ * too for media of unknown size. A move that changes nothing returns `p`.
+ */
+export function movePivotTo(p: Project, clipId: Id, point: { x: number; y: number }): Project {
+  if (!finite(point.x) || !finite(point.y)) throw new TimelineError('Invalid pivot position');
+  const clip = target(p, clipId);
+  const k = clip.keys;
+  if ((k?.position?.length ?? 0) + (k?.scale?.length ?? 0) + (k?.rotation?.length ?? 0) + (k?.anchor?.length ?? 0) > 0) throw new TimelineError(ANIMATED_REFUSAL);
+  const m = p.media[clip.mediaId];
+  if (!m?.width || !m.height) throw new TimelineError('This clip has no known size');
+  const f = frameFractionAt(point, clip.transform, { width: m.width, height: m.height }, clip.anchor, p.format);
+  const c = (v: number): number => Math.min(ANCHOR_LIMIT, Math.max(-ANCHOR_LIMIT, v)) + 0;
+  const anchor = { x: c(f.u - 0.5), y: c(f.v - 0.5) };
+  const x = point.x - p.format.width / 2 + 0;
+  const y = point.y - p.format.height / 2 + 0;
+  const same = anchor.x === (clip.anchor?.x ?? 0) && anchor.y === (clip.anchor?.y ?? 0) && x === clip.transform.x && y === clip.transform.y;
+  if (same) return p;
+  const { anchor: _old, ...rest } = clip;
+  const next: Clip = { ...rest, transform: { ...clip.transform, x, y }, ...(anchor.x === 0 && anchor.y === 0 ? {} : { anchor }) };
+  return replaceClip(p, clipId, next);
 }

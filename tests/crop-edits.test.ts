@@ -191,3 +191,46 @@ describe('resolver and reframe pass crop, flip and anchor through', () => {
     expect(get(reframeProject(q, 'youtube')).transform.scale).toBeCloseTo(get(p).transform.scale, 12);
   });
 });
+
+describe('movePivotTo (the on-canvas pivot drag: the picture stays where it is)', () => {
+  const FMT = { width: 1920, height: 1080 };
+  const quad = (p: Project) => {
+    const c = get(p);
+    const m = p.media.m1;
+    return clipCorners({ width: m.width!, height: m.height! }, c.transform, FMT, { crop: c.crop, anchor: c.anchor });
+  };
+  it('moves the pivot to the point and keeps every corner of the picture where it was', async () => {
+    const { movePivotTo } = await import('../src/core/cropEdits');
+    const base = setCrop(proj(vclip({ transform: { ...defaultTransform(), x: 30, y: -20, scale: 0.4, rotation: 25 }, anchor: { x: 0.1, y: 0.05 } })), 'c1', { left: 0.2, bottom: 0.1 });
+    const q = movePivotTo(base, 'c1', { x: 1200, y: 400 });
+    expect(get(q).transform.x).toBeCloseTo(1200 - 960, 9);
+    expect(get(q).transform.y).toBeCloseTo(400 - 540, 9);
+    quad(base).forEach((c, i) => {
+      expect(quad(q)[i].x).toBeCloseTo(c.x, 6);
+      expect(quad(q)[i].y).toBeCloseTo(c.y, 6);
+    });
+    expect(get(q).transform.scale).toBe(0.4);
+    expect(get(q).transform.rotation).toBe(25);
+  });
+  it('the pivot point maps to the new anchor, and a no-op returns the same project', async () => {
+    const { movePivotTo } = await import('../src/core/cropEdits');
+    const p = proj();
+    const centre = { x: 960 + get(p).transform.x, y: 540 + get(p).transform.y };
+    expect(movePivotTo(p, 'c1', centre)).toBe(p);
+    const q = movePivotTo(p, 'c1', { x: centre.x + 0.25 * 3840 * 0.5, y: centre.y });
+    expect(get(q).anchor!.x).toBeCloseTo(0.25, 9);
+  });
+  it('refuses a keyed position, scale, rotation or anchor, a locked track and unknown media size', async () => {
+    const { movePivotTo } = await import('../src/core/cropEdits');
+    const k = { t: 0, v: 1, ease: { kind: 'linear' as const } };
+    for (const keys of [
+      { position: [{ t: 0, x: 0, y: 0, ease: { kind: 'linear' as const } }] }, { scale: [k] }, { rotation: [k] },
+      { anchor: [{ t: 0, x: 0, y: 0, ease: { kind: 'linear' as const } }] },
+    ]) expect(() => movePivotTo(proj(vclip({ keys })), 'c1', { x: 1, y: 1 })).toThrow(/animated/i);
+    expect(() => movePivotTo(proj(vclip(), true), 'c1', { x: 1, y: 1 })).toThrow(/locked/i);
+    const p = proj();
+    p.media.m1 = { ...p.media.m1, width: undefined, height: undefined };
+    expect(() => movePivotTo(p, 'c1', { x: 1, y: 1 })).toThrow();
+    expect(() => movePivotTo(proj(), 'c1', { x: NaN, y: 1 })).toThrow();
+  });
+});

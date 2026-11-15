@@ -205,3 +205,74 @@ test('crop mode follows a rotated clip and ends when the selection changes', asy
   await expect(page.getByTestId('crop-overlay')).toHaveCount(0);
   await expect(page.getByTestId('crop-mode-toggle')).toHaveAttribute('aria-pressed', 'false');
 });
+
+test('pivot dot: Shift + drag moves the pivot without moving the picture, one undo step; Escape cancels', async ({ page }) => {
+  const errors = trackErrors(page);
+  await setupPip(page, 'split'); // 300x100 at (960, 540)
+  const dot = page.getByTestId('anchor-handle');
+  await expect(dot).toBeVisible();
+  const b = await canvasBox(page);
+  const depth = await undoDepth(page);
+  const from = await center(page, 'anchor-handle');
+  const to = toPage(b, { x: 1060, y: 520 });
+  // Escape: nothing committed
+  await page.keyboard.down('Shift');
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 6 });
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+  expect((await clipOf(page)).anchor).toBeUndefined();
+  expect(await undoDepth(page)).toBe(depth);
+  // for real
+  await page.keyboard.down('Shift');
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 6 });
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+  const c = await clipOf(page);
+  expect(c.anchor!.x).toBeCloseTo((1060 - 810) / 300 - 0.5, 1);
+  expect(c.anchor!.y).toBeCloseTo((520 - 490) / 100 - 0.5, 1);
+  expect(c.transform.x).toBeCloseTo(100, 0);
+  expect(c.transform.y).toBeCloseTo(-20, 0);
+  expect(await undoDepth(page)).toBe(depth + 1);
+  await expectPixel(page, 880, 540, isRed, 'the picture did not move (red left half)');
+  await expectPixel(page, 1030, 540, isYellow, 'nor the yellow half');
+  await expectPixel(page, 800, 540, isBlue, 'nor its edge');
+  // the dot now sits at the new pivot, which the rotation field turns about
+  const moved = await center(page, 'anchor-handle');
+  expect(Math.abs(moved.x - to.x)).toBeLessThan(3);
+  await page.getByTestId('btn-undo').click();
+  expect((await clipOf(page)).anchor).toBeUndefined();
+  expect((await clipOf(page)).transform.x).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('without Shift a press on the dot still moves the clip; a keyed position cannot take the pivot drag', async ({ page }) => {
+  await setupPip(page, 'split');
+  const b = await canvasBox(page);
+  const from = await center(page, 'anchor-handle');
+  await page.mouse.move(from.x, from.y);
+  await page.keyboard.down('Alt');
+  await page.mouse.down();
+  await page.mouse.move(from.x + 40, from.y, { steps: 4 });
+  await page.mouse.up();
+  await page.keyboard.up('Alt');
+  expect((await clipOf(page)).anchor).toBeUndefined();
+  expect((await clipOf(page)).transform.x).toBeGreaterThan(10);
+  await page.getByTestId('btn-undo').click();
+  await page.getByTestId('kf-toggle-position').click();
+  const depth = await undoDepth(page);
+  const f2 = await center(page, 'anchor-handle');
+  await page.keyboard.down('Shift');
+  await page.mouse.move(f2.x, f2.y);
+  await page.mouse.down();
+  await page.mouse.move(f2.x + 60, f2.y + 20, { steps: 4 });
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+  expect((await clipOf(page)).anchor).toBeUndefined();
+  expect(toPage(b, { x: 0, y: 0 }).x).toBeDefined();
+  expect(await undoDepth(page)).toBeGreaterThanOrEqual(depth); // a keyed move may add a key, never a pivot change
+});

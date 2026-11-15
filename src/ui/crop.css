@@ -34,3 +34,11 @@
   stroke-width: 1;
   stroke-dasharray: 2 4;
 }
+
+/* The pivot dot: where the clip's position (its anchor point) is. Shift + drag moves the pivot, not the picture. */
+.tov-pivot {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.9));
+}
