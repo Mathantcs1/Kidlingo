@@ -97,7 +97,8 @@ test.describe('featured apps', () => {
 
     await saveSettings(api, { featured: [c, a, d] });
     await page.goto('/');
-    await expect(page.getByTestId('featured-apps').locator('.card__title')).toHaveText(['Charlie', 'Alpha']);
+    // The same order as the list on the settings page (by title), whatever order they were chosen in.
+    await expect(page.getByTestId('featured-apps').locator('.card__title')).toHaveText(['Alpha', 'Charlie']);
     expect(b).toBeGreaterThan(0);
   });
 
@@ -182,9 +183,7 @@ test.describe('watch and learn', () => {
 });
 
 test.describe('newsletter', () => {
-  test('absent while /ideatoapps/v1/newsletter is not registered (Task 7 owns it)', async ({ page }) => {
-    const routes = await (await api.ctx.get('/?rest_route=/')).json();
-    expect(Object.keys(routes.routes)).not.toContain('/ideatoapps/v1/newsletter');
+  test('absent by default; the endpoint owner (Task 7) enables it with the ideatoapps_newsletter_available filter', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByTestId('newsletter')).toHaveCount(0);
     await expect(page.locator('input[type="email"]')).toHaveCount(0);
@@ -250,14 +249,23 @@ for (const theme of ['dark', 'light'] as const) {
       });
     }
 
-    test('hero secondary button text over the glow stays >= 4.5:1 (pixel sampled)', async ({ page }) => {
-      for (const width of [1440, 390]) {
+    test('hero text over the glow keeps its contrast with a video published (pixel sampled)', async ({ page }) => {
+      test.setTimeout(300_000);
+      // Ten fresh loads per width: the glow must not depend on load timing.
+      for (const [width, load] of [1440, 390].flatMap((w) => Array.from({ length: 10 }, (_, i) => [w, i] as const))) {
         await page.setViewportSize({ width, height: 900 });
         await page.goto('/');
         await page.waitForTimeout(450);
-        const btn = page.getByTestId('hero').getByRole('link', { name: 'Watch demos' });
-        const fg = parseColor(await btn.evaluate((el) => getComputedStyle(el).color));
-        expect(worstRatio(fg, await sampleBackground(page, btn)), `${width}px`).toBeGreaterThanOrEqual(4.5);
+        const hero = page.getByTestId('hero');
+        for (const [name, loc, min] of [
+          ['Watch demos', hero.getByRole('link', { name: 'Watch demos' }), 4.5],
+          ['lead', hero.locator('.hero__lead'), 5.2],
+          ['eyebrow', hero.locator('.section-heading__eyebrow'), 5.2],
+          ['h1', hero.getByRole('heading', { level: 1 }), 3],
+        ] as const) {
+          const fg = parseColor(await loc.evaluate((el) => getComputedStyle(el).color));
+          expect(worstRatio(fg, await sampleBackground(page, loc)), `${name} at ${width}px, load ${load}`).toBeGreaterThanOrEqual(min);
+        }
       }
     });
   });

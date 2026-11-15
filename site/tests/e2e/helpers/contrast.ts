@@ -30,6 +30,7 @@ export function ratio(a: RGB, b: RGB): number {
  * background pixels behind it. Worst-case text contrast is the lower of the ratios against those two extremes.
  */
 export async function sampleBackground(page: Page, el: Locator): Promise<{ lightest: RGB; darkest: RGB }> {
+  await page.evaluate(() => document.fonts.ready); // fallback font -> Inter swap changes layout and the glow position
   await el.evaluate((node) => node.setAttribute('data-sample', ''));
   const style = await page.addStyleTag({
     content: '[data-sample],[data-sample] *{color:transparent!important;-webkit-text-fill-color:transparent!important;background:none!important;text-shadow:none!important;border-color:transparent!important;outline:none!important;box-shadow:none!important}',

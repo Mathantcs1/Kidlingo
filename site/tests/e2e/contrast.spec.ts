@@ -92,8 +92,8 @@ for (const theme of ['dark', 'light'] as const) {
       {
         path: '/',
         checks: [
-          ['hero eyebrow', '.hero .section-heading__eyebrow', 4.5],
-          ['hero lead', '.hero__lead', 4.5],
+          ['hero eyebrow', '.hero .section-heading__eyebrow', 5.2],
+          ['hero lead', '.hero__lead', 5.2],
           ['hero h1 (large)', '.hero h1', 3],
           ['footer tagline', '.site-footer__tagline', 4.5],
         ],

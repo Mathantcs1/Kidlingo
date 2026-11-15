@@ -1,6 +1,6 @@
 <?php
 /**
- * Newsletter sign-up. Rendered only when the REST route /ideatoapps/v1/newsletter exists.
+ * Newsletter sign-up. Rendered only when the `ideatoapps_newsletter_available` filter returns true (the endpoint owner sets it).
  *
  * @package IdeaToApps
  */

@@ -112,7 +112,9 @@ export async function saveSettings(api: Api, s: { featured?: number[]; channel?:
   const nonce = /name="_wpnonce" value="([a-f0-9]+)"/.exec(page)?.[1];
   expect(nonce, 'settings form nonce').toBeTruthy();
   const form = new URLSearchParams({ action: 'ideatoapps_save_settings', _wpnonce: nonce!, youtube_channel_url: s.channel ?? '' });
-  for (const id of s.featured ?? []) form.append('featured_app_ids[]', String(id));
+  // A <select multiple> submits the selected options in the order they appear in the list, not the order they were clicked.
+  const listed = [...page.matchAll(/<option value="(\d+)"/g)].map((m) => Number(m[1]));
+  for (const id of listed.filter((id) => (s.featured ?? []).includes(id))) form.append('featured_app_ids[]', String(id));
   const res = await api.ctx.post('/wp-admin/admin-post.php', { data: form.toString(), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, maxRedirects: 0 });
   expect(res.status(), 'settings save redirects').toBe(302);
   return res.headers()['location'] ?? '';

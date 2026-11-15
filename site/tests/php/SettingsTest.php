@@ -109,4 +109,34 @@ final class SettingsTest extends WPTestCase {
 			}
 		}
 	}
+
+	private function settings_html(): string {
+		ob_start();
+		ideatoapps_render_settings_page();
+		return (string) ob_get_clean();
+	}
+
+	public function test_notice_when_no_featured_app_is_visible_appears_and_disappears(): void {
+		wp_set_current_user( $this->user( 'administrator' ) );
+		$msg = 'None of your featured apps are published, so the latest apps are shown instead.';
+		$this->assertStringNotContainsString( $msg, $this->settings_html(), 'nothing chosen: no notice' );
+		$id = wp_insert_post( array( 'post_type' => 'app', 'post_title' => 'F', 'post_status' => 'publish', 'meta_input' => array( 'delivery_status' => 'live' ) ) );
+		update_option( 'ideatoapps_featured_app_ids', array( $id ) );
+		$this->assertStringNotContainsString( $msg, $this->settings_html(), 'a visible choice: no notice' );
+		wp_update_post( array( 'ID' => $id, 'post_status' => 'draft' ) );
+		$this->assertStringContainsString( $msg, $this->settings_html() );
+		wp_update_post( array( 'ID' => $id, 'post_status' => 'publish' ) );
+		update_post_meta( $id, 'delivery_status', 'draft' );
+		$this->assertStringContainsString( $msg, $this->settings_html(), 'hidden by delivery status' );
+		update_post_meta( $id, 'delivery_status', 'coming_soon' );
+		$this->assertStringNotContainsString( $msg, $this->settings_html() );
+	}
+
+	public function test_description_does_not_claim_pick_order(): void {
+		wp_set_current_user( $this->user( 'administrator' ) );
+		$html = $this->settings_html();
+		$this->assertStringNotContainsString( 'order you picked', $html );
+		$this->assertStringContainsString( 'same order as this list', $html );
+		$this->assertStringContainsString( 'latest apps are shown instead', $html );
+	}
 }

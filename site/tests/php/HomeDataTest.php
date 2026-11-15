@@ -40,7 +40,7 @@ final class HomeDataTest extends WPTestCase {
 		$this->assertSame( array( 'App 8', 'App 7', 'App 6', 'App 5', 'App 4', 'App 3' ), $this->titles( ideatoapps_featured_apps() ) );
 	}
 
-	public function test_featured_option_wins_keeps_order_and_still_filters_drafts(): void {
+	public function test_featured_option_wins_in_title_order_and_still_filters_drafts(): void {
 		$a     = $this->app( 'A' );
 		$b     = $this->app( 'B' );
 		$c     = $this->app( 'C' );
@@ -48,7 +48,7 @@ final class HomeDataTest extends WPTestCase {
 		$trash = $this->app( 'E', 'trash' );
 		$this->app( 'Latest but not featured' );
 		update_option( 'ideatoapps_featured_app_ids', array( $c, $draft, $a, $trash, 999999 ) );
-		$this->assertSame( array( 'C', 'A' ), $this->titles( ideatoapps_featured_apps() ) );
+		$this->assertSame( array( 'A', 'C' ), $this->titles( ideatoapps_featured_apps() ) );
 		unset( $b );
 	}
 
@@ -115,21 +115,16 @@ final class HomeDataTest extends WPTestCase {
 		$this->assertStringNotContainsString( 'youtube.com', $this->render( 'watch-learn' ) );
 	}
 
-	public function test_newsletter_only_when_rest_route_registered(): void {
+	public function test_newsletter_absent_by_default_and_shown_when_the_filter_says_so(): void {
 		$this->assertFalse( ideatoapps_newsletter_available() );
 		$this->assertSame( '', trim( $this->render( 'newsletter' ) ) );
-		add_action(
-			'rest_api_init',
-			static function () {
-				register_rest_route( 'ideatoapps/v1', '/newsletter', array( 'methods' => 'POST', 'callback' => '__return_true', 'permission_callback' => '__return_true' ) );
-			}
-		);
-		$GLOBALS['wp_rest_server'] = null;
+		add_filter( 'ideatoapps_newsletter_available', '__return_true' );
 		$this->assertTrue( ideatoapps_newsletter_available() );
 		$html = $this->render( 'newsletter' );
 		$this->assertStringContainsString( 'type="email"', $html );
 		$this->assertStringContainsString( '<label', $html );
-		$GLOBALS['wp_rest_server'] = null;
+		remove_filter( 'ideatoapps_newsletter_available', '__return_true' );
+		$this->assertSame( '', trim( $this->render( 'newsletter' ) ) );
 	}
 
 	public function test_how_it_works_has_four_honest_steps(): void {

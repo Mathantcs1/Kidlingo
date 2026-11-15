@@ -62,11 +62,12 @@
 	overflow: hidden;
 	padding-block: var(--s-8);
 	background:
-		radial-gradient(60% 80% at 15% 0%, var(--hero-glow-a), transparent 70%),
-		radial-gradient(50% 70% at 90% 10%, var(--hero-glow-b), transparent 70%);
+		/* Fixed pixel heights: the glow must not move when the hero grows or shrinks with its content. */
+		radial-gradient(60% 440px at 15% 0%, var(--hero-glow-a), transparent 70%),
+		radial-gradient(50% 380px at 90% 10%, var(--hero-glow-b), transparent 70%);
 }
 .hero__inner h1 { max-width: 16ch; }
-.hero__lead { max-width: 56ch; font-size: 1.125rem; color: var(--muted); margin-bottom: var(--s-4); }
+.hero__lead { max-width: 56ch; font-size: 1.125rem; color: var(--muted-on-alt); margin-bottom: var(--s-4); } /* darker than --muted: the worst glow pixel stays >= 5.2:1 in both themes */
 .hero__actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
 .hero__code { margin: 0 0 var(--s-2); font-size: 0.875rem; font-weight: 700; letter-spacing: 0.1em; color: var(--link); }
 

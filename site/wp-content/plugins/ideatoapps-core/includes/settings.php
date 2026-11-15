@@ -42,6 +42,35 @@ function ideatoapps_sanitize_featured_ids( $value ) {
 }
 
 /**
+ * Whether featured apps are chosen but none of them can currently be shown (unpublished, or delivery status not live or coming soon).
+ *
+ * @return bool
+ */
+function ideatoapps_featured_all_hidden() {
+	$ids = array_values( array_filter( array_map( 'absint', (array) get_option( 'ideatoapps_featured_app_ids', array() ) ) ) );
+	if ( ! $ids ) {
+		return false;
+	}
+	$visible = get_posts(
+		array(
+			'post_type'      => 'app',
+			'post_status'    => 'publish',
+			'post__in'       => $ids,
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- a handful of rows.
+				array(
+					'key'     => 'delivery_status',
+					'value'   => array( 'live', 'coming_soon' ),
+					'compare' => 'IN',
+				),
+			),
+		)
+	);
+	return ! $visible;
+}
+
+/**
  * Register the options so every writer, not only the form, goes through the same sanitisers.
  */
 function ideatoapps_register_settings() {
@@ -121,6 +150,9 @@ function ideatoapps_render_settings_page() {
 		<?php elseif ( 'invalid_url' === $status ) : ?>
 			<div class="notice notice-error"><p><?php esc_html_e( 'The YouTube channel URL was not saved: it must start with http:// or https://. Everything else was saved.', 'ideatoapps-core' ); ?></p></div>
 		<?php endif; ?>
+		<?php if ( ideatoapps_featured_all_hidden() ) : ?>
+			<div class="notice notice-warning"><p><?php esc_html_e( 'None of your featured apps are published, so the latest apps are shown instead.', 'ideatoapps-core' ); ?></p></div>
+		<?php endif; ?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="ideatoapps_save_settings">
 			<?php wp_nonce_field( 'ideatoapps_save_settings' ); ?>
@@ -136,7 +168,7 @@ function ideatoapps_render_settings_page() {
 						<p class="description">
 							<?php
 							/* translators: %d: maximum number of featured apps. */
-							echo esc_html( sprintf( __( 'Up to %d apps, shown on the home page in the order you picked. Leave empty to show the latest apps. Apps that are not live or coming soon are never shown.', 'ideatoapps-core' ), IDEATOAPPS_FEATURED_MAX ) );
+							echo esc_html( sprintf( __( 'Up to %d apps. They are shown on the home page in the same order as this list (by title). Leave empty to show the latest apps. Apps that are not published, or not live or coming soon, are never shown; if none of your choices can be shown, the latest apps are shown instead.', 'ideatoapps-core' ), IDEATOAPPS_FEATURED_MAX ) );
 							?>
 						</p>
 					</td>

@@ -39,7 +39,8 @@ function ideatoapps_visible_apps_args( array $extra = array() ): array {
 }
 
 /**
- * Apps for the home page grid: the chosen ones (in the chosen order) if any of them is still visible, otherwise the latest.
+ * Apps for the home page grid: the chosen ones (in title order, as listed on the settings page) if any of them is still
+ * visible, otherwise the latest apps (so the home never shows an empty featured area).
  *
  * @return WP_Post[]
  */
@@ -49,7 +50,7 @@ function ideatoapps_featured_apps(): array {
 	}
 	$ids = array_values( array_filter( array_map( 'absint', (array) get_option( 'ideatoapps_featured_app_ids', array() ) ) ) );
 	if ( $ids ) {
-		$chosen = get_posts( ideatoapps_visible_apps_args( array( 'post__in' => $ids, 'orderby' => 'post__in' ) ) );
+		$chosen = get_posts( ideatoapps_visible_apps_args( array( 'post__in' => $ids, 'orderby' => array( 'title' => 'ASC', 'ID' => 'ASC' ) ) ) );
 		if ( $chosen ) {
 			return $chosen;
 		}
@@ -114,9 +115,9 @@ function ideatoapps_youtube_channel_url(): string {
 }
 
 /**
- * Whether the newsletter REST endpoint (owned by a later task) exists.
+ * Whether the newsletter sign-up should show. False until the endpoint's owner hooks this filter to true (the REST route
+ * is not inspected: that would boot the whole REST server on every home request).
  */
 function ideatoapps_newsletter_available(): bool {
-	$routes = rest_get_server()->get_routes( 'ideatoapps/v1' );
-	return isset( $routes['/ideatoapps/v1/newsletter'] );
+	return (bool) apply_filters( 'ideatoapps_newsletter_available', false );
 }
