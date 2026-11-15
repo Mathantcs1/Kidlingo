@@ -5,7 +5,8 @@
 import type { Transform } from '../core/model';
 import { scaleBounds } from '../core/scale';
 import { normaliseDegrees } from '../core/transformLimits';
-import type { Size } from './geometry';
+import { isCropped } from '../core/cropTypes';
+import type { ClipView, Size } from './geometry';
 
 export type Point = { x: number; y: number };
 /** TL, TR, BR, BL of the clip's (source) quad after scale, clockwise rotation about its centre and translation. */
@@ -32,18 +33,40 @@ export function clipCentre(t: Transform, format: Size): Point {
   return fin(t.x, t.y) ? { x: cx + t.x, y: cy + t.y } : { x: cx, y: cy };
 }
 
-/** `size` is the clip's displayed source size (rotated size for rotated video), as the compositor uses it. */
-export function clipCorners(size: Size, t: Transform, format: Size): Corners {
+/**
+ * `size` is the clip's displayed source size (rotated size for rotated video), as the compositor uses it: the FULL frame
+ * (Plan 5E D1). With a `view`, the corners of the CROPPED quad about the anchor (D6); no view = the 5B corners exactly.
+ */
+export function clipCorners(size: Size, t: Transform, format: Size, view?: ClipView): Corners {
   const c = clipCentre(t, format);
   if (!fin(size.width, size.height, t.scale, t.rotation, t.x, t.y)) return [c, { ...c }, { ...c }, { ...c }];
-  const hw = (size.width * t.scale) / 2;
-  const hh = (size.height * t.scale) / 2;
   const rad = (t.rotation * Math.PI) / 180;
   const cos = Math.cos(rad);
   const sin = Math.sin(rad);
   // Clockwise on screen with y down: (a, b) → (a·cos − b·sin, a·sin + b·cos), the same as clipMatrix.
   const at = (a: number, b: number): Point => ({ x: c.x + a * cos - b * sin, y: c.y + a * sin + b * cos });
-  return [at(-hw, -hh), at(hw, -hh), at(hw, hh), at(-hw, hh)];
+  const crop = view?.crop;
+  const anchor = view?.anchor;
+  if (!isCropped(crop) && !(anchor && (anchor.x !== 0 || anchor.y !== 0))) {
+    const hw = (size.width * t.scale) / 2;
+    const hh = (size.height * t.scale) / 2;
+    return [at(-hw, -hh), at(hw, -hh), at(hw, hh), at(-hw, hh)];
+  }
+  const sw = size.width * t.scale;
+  const sh = size.height * t.scale;
+  const ox = anchor ? anchor.x * sw : 0;
+  const oy = anchor ? anchor.y * sh : 0;
+  const u0 = isCropped(crop) ? crop.left : 0;
+  const u1 = isCropped(crop) ? 1 - crop.right : 1;
+  const v0 = isCropped(crop) ? crop.top : 0;
+  const v1 = isCropped(crop) ? 1 - crop.bottom : 1;
+  const p = (u: number, v: number): Point => at((u - 0.5) * sw - ox, (v - 0.5) * sh - oy);
+  return [p(u0, v0), p(u1, v0), p(u1, v1), p(u0, v1)];
+}
+
+/** The full-frame quad (crop ignored): the dashed "cropped away" outline of crop mode. */
+export function frameCorners(size: Size, t: Transform, format: Size, view?: ClipView): Corners {
+  return clipCorners(size, t, format, view?.anchor ? { anchor: view.anchor } : undefined);
 }
 
 /** Unit vector pointing "up" out of the clip (rotates with it); straight up when the quad has no extent. */

@@ -2,18 +2,10 @@
 // geometry.ts. Everything is optional: an absent crop/flip returns the input untouched (bit-identical to 5B).
 import type { Crop, Flip } from '../core/cropTypes';
 import { isCropped } from '../core/cropTypes';
+import { mulMat3 } from './geometry';
 import type { Mat3, Size } from './geometry';
 
-/** a · b (apply b first, then a), column-major. */
-export function mulMat3(a: Mat3, b: Mat3): Mat3 {
-  const r = new Array<number>(9).fill(0);
-  for (let c = 0; c < 3; c++) {
-    for (let row = 0; row < 3; row++) {
-      r[c * 3 + row] = a[row] * b[c * 3] + a[3 + row] * b[c * 3 + 1] + a[6 + row] * b[c * 3 + 2];
-    }
-  }
-  return r as Mat3;
-}
+export { mulMat3 };
 
 /** The displayed size of the cropped region. */
 export function croppedSize(size: Size, crop: Crop | undefined): Size {

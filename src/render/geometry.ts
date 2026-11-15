@@ -1,4 +1,6 @@
 // Pure geometry for the compositor (no DOM, no GL), so it can be unit-tested.
+import type { Anchor, Crop } from '../core/cropTypes';
+import { isCropped } from '../core/cropTypes';
 import type { Transform } from '../core/model';
 
 /** A 3x3 matrix in column-major order (as `uniformMatrix3fv` expects). */
@@ -26,7 +28,38 @@ export function applyMat3(m: Mat3, x: number, y: number): [number, number] {
  * `canvas` logical pixels. The quad is `src * scale` pixels, rotated `rotation` degrees clockwise about its
  * centre, then centred at (x, y) canvas pixels from the canvas centre with y pointing down.
  */
-export function clipMatrix(src: Size, t: Transform, canvas: Size): Mat3 {
+export function clipMatrix(src: Size, t: Transform, canvas: Size, view?: ClipView): Mat3 {
+  const anchor = view?.anchor;
+  if (anchor && (anchor.x !== 0 || anchor.y !== 0)) {
+    // Plan 5E D4/D6: (x, y) is where the ANCHOR lands: R·(local − a) + (x, y) = R·local + (x, y) − R·a.
+    const rad = (t.rotation * Math.PI) / 180;
+    const ax = anchor.x * src.width * t.scale;
+    const ay = anchor.y * src.height * t.scale;
+    t = { ...t, x: t.x - (ax * Math.cos(rad) - ay * Math.sin(rad)), y: t.y - (ax * Math.sin(rad) + ay * Math.cos(rad)) };
+  }
+  const m = frameMatrix(src, t, canvas);
+  if (!isCropped(view?.crop)) return m;
+  // D1: the drawn quad is the crop's sub-rectangle of the full-frame quad.
+  const c = view!.crop!;
+  return mulMat3(m, [1 - c.left - c.right, 0, 0, 0, 1 - c.top - c.bottom, 0, c.left, c.top, 1]);
+}
+
+/** Optional crop mask and pivot of a clip (Plan 5E); absent = the 5B quad bit for bit. */
+export interface ClipView {
+  crop?: Crop;
+  anchor?: Anchor;
+}
+
+/** a · b (apply b first, then a), column-major. */
+export function mulMat3(a: Mat3, b: Mat3): Mat3 {
+  const r = new Array<number>(9).fill(0);
+  for (let c = 0; c < 3; c++) {
+    for (let row = 0; row < 3; row++) r[c * 3 + row] = a[row] * b[c * 3] + a[3 + row] * b[c * 3 + 1] + a[6 + row] * b[c * 3 + 2];
+  }
+  return r as Mat3;
+}
+
+function frameMatrix(src: Size, t: Transform, canvas: Size): Mat3 {
   const sw = src.width * t.scale;
   const sh = src.height * t.scale;
   const rad = (t.rotation * Math.PI) / 180;
