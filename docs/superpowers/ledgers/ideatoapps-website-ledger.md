@@ -151,7 +151,7 @@ Rebased onto origin fix round 2 (c1da28e). Status per item (details and RED/GREE
 - A1 DONE BY FIX ROUND 2 (16e9dc2): rename flag cleared when the name already matches; my duplicate implementation and tests were dropped in favour of the remote's.
 - A2 DONE BY FIX ROUND 2: flag deleted only after a successful rename (remote version kept).
 - A3 DONE BY FIX ROUND 2: full-origin nonce compare (`ideatoapps_normalise_origin`, also trims a trailing dot and rejects 'null'); my `ideatoapps_origin_key` version and tests dropped.
-- A4 FIXED (docs): zip privacy in DECISIONS Known limits and ADMIN_GUIDE section 4 (remote's ADMIN_GUIDE text kept; its claim that authors cannot see their zip again is replaced because of A5).
+- A4 FIXED (docs): zip privacy in DECISIONS Known limits and ADMIN_GUIDE section 4 (remote's text kept except the authors-cannot-see-zip claim, replaced because of A5).
 - A5 FIXED: new `includes/media-picker.php` adds the private status with perm=readable to the media modal query, so authors see only their OWN private zips again; nothing public; test in CommerceProtectTest.
 - A6 DONE BY FIX ROUND 2: price/JSON-LD consistency (simple products, store decimals); not touched here.
 - A7 DONE BY FIX ROUND 2 (docs: stale DECISIONS line, Phase A webhook URL, temp-URL notes); remote wording kept, ADMIN_GUIDE zip paragraph merged (authors now see their own zips, see A5).
