@@ -20,6 +20,7 @@ function ideatoapps_details_fields() {
 		'launch_url'  => __( 'Launch URL', 'ideatoapps-core' ),
 		'demo_url'    => __( 'Demo URL', 'ideatoapps-core' ),
 		'video_id'    => __( 'Video ID', 'ideatoapps-core' ),
+		'woo_product_id' => __( 'WooCommerce product ID', 'ideatoapps-core' ),
 	);
 }
 

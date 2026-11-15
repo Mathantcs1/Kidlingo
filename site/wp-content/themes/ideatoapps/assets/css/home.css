@@ -5,16 +5,9 @@
 .section--alt .section-heading__text,
 .section--alt .steps__item p { color: var(--muted-on-alt); }
 
-.grid { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
 .section-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-5); }
 
 /* App and video cards */
-.card__media { position: relative; margin: calc(var(--s-3) * -1) calc(var(--s-3) * -1) var(--s-1); aspect-ratio: 16 / 9; overflow: hidden; border-radius: calc(var(--radius-card-lg) - 1px) calc(var(--radius-card-lg) - 1px) 0 0; background: var(--bg-alt); }
-.card__media img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.card__media--play { display: grid; place-items: center; background: linear-gradient(135deg, var(--violet), var(--blue)); }
-.card__media--play svg { width: 56px; height: 56px; fill: #fff; }
-.card__note { margin: var(--s-1) 0 0; font-weight: 700; color: var(--ink); }
-.card__note--soon { font-weight: 600; color: var(--muted); }
 
 /* Category chips */
 .chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0; padding: 0; list-style: none; }
@@ -36,7 +29,6 @@
 .newsletter .section-heading { margin-bottom: var(--s-3); }
 .newsletter__form label { display: block; margin-bottom: 4px; font-weight: 600; }
 .newsletter__row { display: flex; flex-wrap: wrap; gap: var(--s-1); max-width: 520px; }
-.field { flex: 1 1 220px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--muted); border-radius: var(--radius-ctl); background: var(--bg); color: var(--ink); font: inherit; }
 
 @media (min-width: 768px) {
 	.steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }

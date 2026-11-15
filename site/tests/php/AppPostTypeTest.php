@@ -107,6 +107,21 @@ final class AppPostTypeTest extends WPTestCase {
 		$this->assertTrue( ideatoapps_meta_auth( false, 'tagline', $id, get_current_user_id() ) );
 	}
 
+	public function test_category_url_is_routed_to_the_taxonomy_not_to_an_attachment_rule(): void {
+		global $wp_rewrite;
+		$wp_rewrite->set_permalink_structure( '/%postname%/' );
+		ideatoapps_register_app_post_type();
+		flush_rewrite_rules();
+		$hit = null;
+		foreach ( $wp_rewrite->rewrite_rules() as $regex => $query ) {
+			if ( 1 === preg_match( "#^$regex#", 'apps/category/creator/' ) ) {
+				$hit = $query;
+				break;
+			}
+		}
+		$this->assertSame( 'index.php?app_category=$matches[1]', $hit, 'the first rule matching /apps/category/x/ must be the category one' );
+	}
+
 	public static function factory_user( string $role ): int {
 		return wp_insert_user( array( 'user_login' => $role . wp_generate_password( 6, false ), 'user_pass' => wp_generate_password(), 'role' => $role ) );
 	}

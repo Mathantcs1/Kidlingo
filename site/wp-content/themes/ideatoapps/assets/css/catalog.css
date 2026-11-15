@@ -1,0 +1,30 @@
+/* Apps catalog (/apps/). */
+.catalog .section-heading { margin-bottom: var(--s-4); }
+
+.catalog-filters { display: grid; gap: var(--s-2); margin-bottom: var(--s-4); padding: var(--s-3); background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius-card-lg); box-shadow: var(--shadow-card); }
+.catalog-filters__field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.catalog-filters label { font-size: 0.875rem; font-weight: 600; }
+.catalog-filters .field { width: 100%; flex: none; }
+.select { position: relative; display: block; }
+.select::after { content: ""; position: absolute; right: 16px; top: 50%; width: 8px; height: 8px; margin-top: -6px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); pointer-events: none; }
+.catalog-filters select.field { appearance: none; -webkit-appearance: none; padding-right: 40px; background-color: var(--bg); }
+.catalog-filters__apply { align-self: end; }
+html.js .catalog-filters__apply { display: none; }
+
+.catalog__count { margin: 0 0 var(--s-2); color: var(--muted); font-size: 0.9375rem; }
+
+.empty-state { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-1); padding: var(--s-6) var(--s-3); background: var(--card); border: 1px dashed var(--muted); border-radius: var(--radius-card-lg); }
+.empty-state__title { margin: 0; font-size: 1.5rem; }
+.empty-state__text { margin: 0 0 var(--s-2); color: var(--muted); max-width: 48ch; }
+
+/* Pagination (core markup: nav.pagination > .nav-links) */
+.pagination { margin-top: var(--s-5); }
+.pagination .nav-links { display: flex; flex-wrap: wrap; gap: var(--s-1); align-items: center; }
+.pagination .page-numbers { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--line); border-radius: var(--radius-ctl); color: var(--ink); font-weight: 600; text-decoration: none; }
+.pagination a.page-numbers:hover { background: var(--bg-alt); border-color: var(--muted); }
+.pagination .page-numbers.current { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.pagination .page-numbers.dots { border-color: transparent; }
+
+@media (min-width: 768px) {
+	.catalog-filters { grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto; align-items: end; }
+}

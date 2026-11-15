@@ -1,0 +1,135 @@
+<?php
+/**
+ * Seed the ClipForge listing (app + WooCommerce product). Idempotent. Copy comes from ClipForge's README only.
+ * It adds no versions and no files: no release zip exists yet.
+ *
+ * @package ideatoapps-core
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * The ClipForge listing data.
+ *
+ * @return array<string, mixed>
+ */
+function ideatoapps_clipforge_listing() {
+	return array(
+		'tagline'     => 'Edit videos in your browser. Your files stay on your device.',
+		'platforms'   => 'Desktop browser (Chrome or Edge); Windows, macOS or Linux with Python 3 or Node.js to run the local launcher',
+		'price_label' => '$24.99 one-time',
+		'notes'       => 'Chromium-based desktop browser (Chrome or Edge); Safari is untested. Python 3 or Node.js is needed to run the included local launcher.',
+		'features'    => array(
+			'Import video, audio and images, including screen recordings without sound',
+			'Arrange, trim and split clips on a timeline; ripple delete; snapping',
+			'Stack video layers and audio tracks (up to 8 of each) with mute, solo, lock and hide',
+			'Move, scale and rotate a clip on the preview for picture-in-picture',
+			'YouTube 16:9, Vertical 9:16, Square 1:1 and Portrait 4:5 formats',
+			'Undo/redo and autosave in your browser',
+			'Export MP4 (H.264 + AAC) at 1080p or 4K',
+			'Runs locally: your media is never uploaded',
+		),
+		'faq'         => array(
+			array(
+				'q' => 'Do I need an internet connection?',
+				'a' => 'Once downloaded, ClipForge runs from your computer, and your media never leaves it.',
+			),
+			array(
+				'q' => 'Which browsers work?',
+				'a' => 'Chrome and Edge on desktop are tested. Safari is untested.',
+			),
+			array(
+				'q' => 'How do I get updates?',
+				'a' => 'Later versions are added to your account library after purchase.',
+			),
+		),
+	);
+}
+
+/**
+ * Create the ClipForge simple product ($24.99, virtual, downloadable, no files yet).
+ *
+ * @return int Product ID, 0 when WooCommerce is not available.
+ */
+function ideatoapps_seed_clipforge_product() {
+	if ( ! ideatoapps_woocommerce_active() || ! class_exists( 'WC_Product_Simple' ) ) {
+		return 0;
+	}
+	$product = new WC_Product_Simple();
+	$product->set_name( 'ClipForge' );
+	$product->set_status( 'publish' );
+	$product->set_regular_price( '24.99' );
+	$product->set_virtual( true );
+	$product->set_downloadable( true );
+	return (int) $product->save();
+}
+
+/**
+ * Create the ClipForge app (and product) unless it already exists.
+ *
+ * @return int The app post ID (the existing one when already seeded).
+ */
+function ideatoapps_seed_clipforge() {
+	$existing = get_posts(
+		array(
+			'post_type'      => 'app',
+			'name'           => 'clipforge',
+			'post_status'    => 'any',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+		)
+	);
+	if ( $existing ) {
+		return (int) $existing[0];
+	}
+
+	$data = ideatoapps_clipforge_listing();
+	$id   = wp_insert_post(
+		wp_slash(
+			array(
+				'post_type'    => 'app',
+				'post_title'   => 'ClipForge',
+				'post_name'    => 'clipforge',
+				'post_status'  => 'publish',
+				'post_content' => '<p>' . $data['notes'] . '</p>',
+			)
+		),
+		true
+	);
+	if ( is_wp_error( $id ) ) {
+		return 0;
+	}
+	$meta = array(
+		'tagline'         => $data['tagline'],
+		'platforms'       => $data['platforms'],
+		'price_label'     => $data['price_label'],
+		'delivery_status' => 'live',
+		'features'        => ideatoapps_encode_list( $data['features'] ),
+		'faq'             => ideatoapps_encode_list( $data['faq'] ),
+	);
+	foreach ( $meta as $key => $value ) {
+		update_post_meta( $id, $key, wp_slash( $value ) );
+	}
+	wp_set_object_terms( $id, 'Creator', 'app_category' );
+	$product_id = ideatoapps_seed_clipforge_product();
+	if ( $product_id > 0 ) {
+		update_post_meta( $id, 'woo_product_id', $product_id );
+	}
+	return (int) $id;
+}
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	/**
+	 * Create the ClipForge listing and its WooCommerce product (safe to run again).
+	 */
+	WP_CLI::add_command(
+		'ideatoapps seed-clipforge',
+		static function () {
+			$id = ideatoapps_seed_clipforge();
+			if ( $id <= 0 ) {
+				WP_CLI::error( 'Could not create the ClipForge app.' );
+			}
+			WP_CLI::success( sprintf( 'ClipForge app ready (ID %d): %s', $id, get_permalink( $id ) ) );
+		}
+	);
+}

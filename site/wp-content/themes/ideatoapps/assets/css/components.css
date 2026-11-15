@@ -74,3 +74,13 @@
 @media (min-width: 1024px) {
 	.hero { padding-block: calc(var(--s-12) + var(--s-3)) var(--s-12); }
 }
+
+/* App grid, card media/notes and text fields (used by the home page, the catalog and the app page) */
+.grid { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.card__media { position: relative; margin: calc(var(--s-3) * -1) calc(var(--s-3) * -1) var(--s-1); aspect-ratio: 16 / 9; overflow: hidden; border-radius: calc(var(--radius-card-lg) - 1px) calc(var(--radius-card-lg) - 1px) 0 0; background: var(--bg-alt); }
+.card__media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.card__media--play { display: grid; place-items: center; background: linear-gradient(135deg, var(--violet), var(--blue)); }
+.card__media--play svg { width: 56px; height: 56px; fill: #fff; }
+.card__note { margin: var(--s-1) 0 0; font-weight: 700; color: var(--ink); }
+.card__note--soon { font-weight: 600; color: var(--muted); }
+.field { flex: 1 1 220px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--muted); border-radius: var(--radius-ctl); background: var(--bg); color: var(--ink); font: inherit; }

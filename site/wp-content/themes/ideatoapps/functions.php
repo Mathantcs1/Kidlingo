@@ -14,6 +14,8 @@ define( 'IDEATOAPPS_THEME_VERSION', '0.2.0' );
 require_once get_template_directory() . '/inc/head.php';
 require_once get_template_directory() . '/inc/navigation.php';
 require_once get_template_directory() . '/inc/home.php';
+require_once get_template_directory() . '/inc/app-data.php';
+require_once get_template_directory() . '/inc/catalog.php';
 
 add_action(
 	'after_setup_theme',
@@ -44,6 +46,14 @@ add_action(
 
 		if ( is_front_page() ) {
 			wp_enqueue_style( 'ideatoapps-home', "$base/css/home.css", array( 'ideatoapps-components' ), $ver( 'css/home.css' ) );
+		}
+
+		if ( function_exists( 'ideatoapps_is_catalog' ) && ideatoapps_is_catalog() ) {
+			wp_enqueue_style( 'ideatoapps-catalog', "$base/css/catalog.css", array( 'ideatoapps-components' ), $ver( 'css/catalog.css' ) );
+			wp_enqueue_script( 'ideatoapps-catalog', "$base/js/catalog.js", array(), $ver( 'js/catalog.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
+		}
+		if ( is_singular( 'app' ) ) {
+			wp_enqueue_style( 'ideatoapps-app', "$base/css/app.css", array( 'ideatoapps-components' ), $ver( 'css/app.css' ) );
 		}
 
 		foreach ( array( 'theme-toggle', 'nav' ) as $name ) {

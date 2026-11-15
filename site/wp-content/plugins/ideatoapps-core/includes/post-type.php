@@ -43,5 +43,9 @@ function ideatoapps_register_app_post_type() {
 			'rewrite'      => array( 'slug' => 'apps/category' ),
 		)
 	);
+
+	// The app post type's attachment rule (apps/x/y/) would swallow /apps/category/x/ (taxonomy rules come later), so the
+	// category rule goes first.
+	add_rewrite_rule( '^apps/category/([^/]+)/?$', 'index.php?app_category=$matches[1]', 'top' );
 }
 add_action( 'init', 'ideatoapps_register_app_post_type' );
