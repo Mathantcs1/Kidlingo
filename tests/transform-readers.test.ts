@@ -90,7 +90,7 @@ const ALLOWED: Allowed[] = [
   ['src/ui/OrientToggle.tsx', 'const on = keys.orient === true;', 'reads stored value on purpose: the stored orient flag the toggle edits (the heading itself comes from resolvedTransform)'],
   ['src/ui/TransformOverlay.tsx', 'if (!clip.keys) return live.transform;', 'handles at the live drag transform (static clip); a keyed clip resolves the live project at the drag playhead (5B M4)'],
   ['src/ui/TransformOverlay.tsx', 'clipCorners(target.size, target.transform, format, target.view)', 'handles at the target transform (resolved at the playhead, or the live drag)'],
-  ['src/ui/edits.ts', 'rotation: c.transform.rotation, opacity: c.transform.opacity', 'reads stored value on purpose: setClipFit keeps the static rotation/opacity'],
+  ['src/ui/fitEdits.ts', 'rotation: c.transform.rotation, opacity: c.transform.opacity', 'reads stored value on purpose: setClipFit keeps the static rotation/opacity (and a static pivot)'],
   ['src/ui/mediaEdits.ts', '(c.effects ?? []).some((e) => e.ref === mediaId)', 'reads stored value on purpose: LUT media in use (not animated)'],
   // 5B Task 7: the animation inspector, browser and timeline bands read the RAW clip's stack in ONE place (the resolved
   // clip has no `motion`); the ghost and the preview tiles read the DRAWN transform from resolveClip.

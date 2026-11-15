@@ -2,7 +2,8 @@
 // except for positionAt's result.
 import { easeAt } from './easing';
 import { frameIndex, snapToFrame } from './fps';
-import { clipDuration, clipEnd, isSourceless } from './model';
+import { clipDuration, clipEnd, sourceAtOffset } from './clipTime';
+import { isSourceless } from './model';
 import type { Clip, Keyframe, PositionKeyframe } from './model';
 import { curvedPoint, isCurved } from './pathCurve';
 
@@ -27,7 +28,8 @@ export function tooClose(a: number, b: number): boolean {
  * its frame's start, so preview frame N equals export frame N; times before the clip read its first frame.
  */
 export function localTime(clip: Clip, t: number, fps: number): number {
-  return (isSourceless(clip) ? 0 : clip.in) + snapToFrame(t - clip.start, fps);
+  const offset = snapToFrame(t - clip.start, fps);
+  return isSourceless(clip) ? offset : sourceAtOffset(clip, offset);
 }
 
 /** The clip's visible local range [lo, hi] (D3): `[in, out]` for sourced clips, `[0, duration]` for sourceless ones. */

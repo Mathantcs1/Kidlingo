@@ -3,7 +3,8 @@ import { cloneVideoEffects } from './clipEffects';
 import { copyKey, mapEffectKeys, mapTransformKeys, shiftKeys, splitKeys } from './keyLists';
 import type { AnyKey } from './keyLists';
 import { withMotion } from './migrateMotion';
-import { clipDuration, clipEnd, isSourceless, newId } from './model';
+import { clipDuration, clipEnd, sourceTimeAt } from './clipTime';
+import { isSourceless, newId } from './model';
 import { shiftMotion, splitMotion } from './motionClipOps';
 import type { Clip, Id, Project, TransformKeys } from './model';
 import { EPS, MIN_CLIP, TimelineError, assertFinite, assertFree, assertUnlocked, findClip, mapClips, replaceClip } from './timeline';
@@ -42,10 +43,10 @@ export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: nu
     // emphasis and loop cycles (5B D12: at −= Δ, phase += Δ); a sourced clip's keys and stack stay on their footage.
     next = isSourceless(clip)
       ? { ...withMotion(shiftClipKeys(clip, -delta), clip.motion && shiftMotion(clip.motion, delta)), start: time, in: 0, out: clipDuration(clip) - delta }
-      : { ...clip, start: time, in: clip.in + delta };
+      : { ...clip, start: time, in: sourceTimeAt(clip, time) };
     if (next.in < -EPS || next.start < -EPS) throw new TimelineError('Trim extends beyond source');
   } else {
-    next = { ...clip, out: clip.in + (time - clip.start) };
+    next = { ...clip, out: sourceTimeAt(clip, time) };
   }
   if (clipDuration(next) < MIN_CLIP - EPS) throw new TimelineError('Clip would be too short');
   assertFree(track, next, clip.id);
@@ -61,7 +62,7 @@ export function splitClip(p: Project, clipId: Id, time: number): Project {
   if (time < clip.start + MIN_CLIP - EPS || time > clipEnd(clip) - MIN_CLIP + EPS) {
     throw new TimelineError('Split point too close to clip edge');
   }
-  const cut = clip.in + (time - clip.start);
+  const cut = sourceTimeAt(clip, time);
   // Keys (Plan 5 D9): each half keeps the keys that decide its own local range, a looped target (5B D4) or an
   // oriented path (D7) its whole list; a sourceless right half's keys shift by −(time − start) (local time restarts).
   const d = time - clip.start;

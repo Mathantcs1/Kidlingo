@@ -1,5 +1,5 @@
 // DOM-free planning of windowed audio: which part of which clip sounds in a timeline window.
-import { clipDuration, clipEnd } from '../core/model';
+import { clipDuration, clipEnd, sourceTimeAt } from '../core/clipTime';
 import type { Clip, Id, Project, Track } from '../core/model';
 import type { GainPoint } from './fade';
 
@@ -94,8 +94,8 @@ export function planWindow(
     const a = Math.max(clip.start, from);
     const b = Math.min(end, to);
     if (!(b > a)) continue;
-    const srcFrom = a === clip.start ? clip.in : clip.in + (a - clip.start);
-    const srcTo = b === end ? clip.out : clip.in + (b - clip.start);
+    const srcFrom = a === clip.start ? clip.in : sourceTimeAt(clip, a);
+    const srcTo = b === end ? clip.out : sourceTimeAt(clip, b);
     if (!(srcTo > srcFrom)) continue;
     const trackVolume = trackVolumes.get(clip.id) ?? 1;
     const seg: Segment = { clipId: clip.id, mediaId: clip.mediaId, srcFrom, srcTo, when: a, whenEnd: b, clip, trackVolume };

@@ -1,10 +1,8 @@
 // Pure project edits behind the editor's buttons and shortcuts (composed from core/ operations).
-import { fitTransform, joinClips } from '../core/merge';
-import { withPivotOffset } from '../core/pivotFit';
+import { joinClips } from '../core/merge';
 import { clipEnd } from '../core/model';
 import type { Clip, Id, MediaRef, Project, Track } from '../core/model';
 import { MIN_CLIP, TimelineError, addClip, assertUnlocked, deleteClip, findClip, splitClip } from '../core/timeline';
-import { withoutTransformKeys } from '../core/transformEdits';
 import { clipFromMedia } from '../media/clip';
 import { laneRejects } from './drag';
 
@@ -80,7 +78,7 @@ export function projectHasWork(h: { past: Project[]; present: Project; future: P
 // Media removal lives in ./mediaEdits (re-exported here so import sites stay unchanged).
 export { clipsUsingMedia, removeMediaFromProject, usedByText } from './mediaEdits';
 
-function updateClip(p: Project, clipId: Id, fn: (c: Clip) => Clip): Project {
+export function updateClip(p: Project, clipId: Id, fn: (c: Clip) => Clip): Project {
   const { track, clip } = findClip(p, clipId);
   assertUnlocked(p, track.id);
   const next = fn(clip);
@@ -93,30 +91,6 @@ export function setClipVolume(p: Project, clipId: Id, volume: number): Project {
   if (!Number.isFinite(volume)) throw new TimelineError('Invalid volume');
   const v = Math.min(2, Math.max(0, volume));
   return updateClip(p, clipId, (c) => (c.volume === v ? c : { ...c, volume: v }));
-}
-
-/**
- * Sets a video/image clip's fit mode and resets its position and scale to `fitTransform` for the project canvas (the
- * modes are defined by how the whole clip covers the canvas) and removes its position and scale keys; rotation and
- * opacity (and their keys) are kept. Media without known dimensions only changes the mode. Returns `p` itself when
- * the clip already has that mode.
- */
-export function setClipFit(p: Project, clipId: Id, fit: Clip['fit']): Project {
-  return updateClip(p, clipId, (c) => {
-    if (c.kind === 'audio') throw new TimelineError('Audio clips have no picture to fit');
-    if (c.kind === 'overlay') throw new TimelineError('Overlays have no frame to fit');
-    if (c.kind === 'adjustment') throw new TimelineError('Adjustment layers have no frame to fit');
-    if (c.fit === fit) return c;
-    const m = p.media[c.mediaId];
-    if (!m?.width || !m.height) return { ...c, fit };
-    const src = { width: m.width, height: m.height };
-    // A static pivot moves the position so the PICTURE (not the pivot) takes the fit framing (5E).
-    const transform = { ...withPivotOffset(fitTransform(src, p.format, fit), c.anchor, src, c.transform.rotation), rotation: c.transform.rotation, opacity: c.transform.opacity };
-    // The fit defines the framing: position and scale keys go (Plan 5 D9); rotation and opacity keys stay.
-    const { keys: _keys, ...rest } = c;
-    const keys = withoutTransformKeys(c.keys, ['position', 'scale']);
-    return keys ? { ...rest, fit, transform, keys } : { ...rest, fit, transform };
-  });
 }
 
 /** Joins the clips ordered by their start time. */
@@ -189,3 +163,5 @@ export function replaceWithMedia(p: Project, m: MediaRef): Project {
 export function videoClipCount(p: Project): number {
   return p.tracks.reduce((n, t) => n + (t.kind === 'video' ? t.clips.length : 0), 0);
 }
+
+export { setClipFit } from './fitEdits';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { clipEnd } from '../core/model';
+import { clipDuration, clipEnd } from '../core/clipTime';
 import type { Id, Project, TrackKind } from '../core/model';
 import { findClip, moveClip, trimClip } from '../core/timeline';
 import { MAX_TRACKS_PER_KIND, isLocked } from '../core/tracks';
@@ -57,7 +57,7 @@ function previewFor(p: Project, g: Gesture, dx: number, x: number, y: number, pp
     const trackId = over?.lane ?? track.id;
     const zone = over?.zone ?? null;
     const rejected = track.locked || (zone ? zoneRejects(p, zone, track.kind) : isLocked(p, trackId));
-    return { clipId: clip.id, kind: g.kind, trackId, zone, start, duration: clip.out - clip.in, value: start, rejected };
+    return { clipId: clip.id, kind: g.kind, trackId, zone, start, duration: clipDuration(clip), value: start, rejected };
   }
   const t = trimTarget(p, clip.id, g.kind, dx, pps);
   const start = g.kind === 'start' ? t : clip.start;

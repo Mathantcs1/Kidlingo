@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { clipDuration, sourceSpan } from '../core/clipTime';
 import type { Clip, Id } from '../core/model';
 import { getPeaks, peakAt } from '../media/peaks';
 import type { Peaks } from '../media/peaks';
@@ -34,10 +35,10 @@ export default function Waveform({ clip, mediaId, width }: { clip: Clip; mediaId
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = 'rgb(0 0 0 / 0.65)';
     const mid = h / 2;
-    const span = clip.out - clip.in;
+    const span = clipDuration(clip);
     for (let x = 0; x < w; x++) {
-      const t0 = clip.in + (x / w) * span;
-      const { min, max } = peakAt(peaks, t0, clip.in + ((x + 1) / w) * span);
+      const [t0, t1] = sourceSpan(clip, (x / w) * span, ((x + 1) / w) * span);
+      const { min, max } = peakAt(peaks, t0, t1);
       const top = mid - max * mid;
       const bottom = mid - min * mid;
       ctx.fillRect(x, top, 1, Math.max(1, bottom - top));

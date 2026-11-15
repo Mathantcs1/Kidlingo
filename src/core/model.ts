@@ -3,7 +3,9 @@ import type { FormatKey } from './formats';
 import type { KeyLoop, Keyframe, PositionKeyframe, TransformKeys, Vec } from './keyTypes';
 import type { Anchor, Crop, Flip } from './cropTypes';
 import type { ClipMotion } from './motionTypes';
+import { clipDuration, clipEnd } from './clipTime';
 
+export { clipDuration, clipEnd };
 export type { Anchor, ClipMotion, Crop, Flip, KeyLoop, Keyframe, PositionKeyframe, TransformKeys, Vec };
 
 export type Id = string;
@@ -179,12 +181,4 @@ export function emptyProject(formatKey: FormatKey = 'youtube'): Project {
 /** Overlay and adjustment clips: no media, no source (`in` is unused, the start can be trimmed either way). */
 export function isSourceless(c: Clip): boolean {
   return c.kind === 'overlay' || c.kind === 'adjustment';
-}
-
-export function clipDuration(c: Clip): number {
-  return c.out - c.in;
-}
-
-export function clipEnd(c: Clip): number {
-  return c.start + clipDuration(c);
 }

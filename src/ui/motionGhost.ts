@@ -4,6 +4,7 @@
 // Pure and DOM-free; both read the resolver (resolveClip = drawn, resolvedTransform = base), never the stack itself.
 import { motionAt } from '../core/motion';
 import { resolveClip, resolvedTransform, resolvedView } from '../core/animate';
+import { clipEnd } from '../core/clipTime';
 import type { Clip, Id, Project, Transform } from '../core/model';
 import { clipCorners } from '../render/overlayGeometry';
 import type { Corners, Point } from '../render/overlayGeometry';
@@ -16,7 +17,7 @@ const sameGeometry = (a: Transform, b: Transform): boolean =>
 /** The drawn transform of `clip` at `t` when its preset stack moves it away from the rest geometry, else null. */
 function drawnAway(p: Project, clip: Clip, t: number): Transform | null {
   if (!motionAt(clip, t, p.format)) return null;
-  if (t < clip.start || t >= clip.start + (clip.out - clip.in)) return null;
+  if (t < clip.start || t >= clipEnd(clip)) return null;
   const drawn = resolveClip(clip, t, p.format).transform;
   return sameGeometry(drawn, resolvedTransform(clip, t, p.format.fps)) ? null : drawn;
 }

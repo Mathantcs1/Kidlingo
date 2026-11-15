@@ -1,6 +1,6 @@
 // DOM-free math for dragging on the timeline: thresholds, snapping, move/trim targets and drop rules.
 import { snapTime } from '../core/merge';
-import { clipEnd } from '../core/model';
+import { clipDuration, clipEnd, timelineTimeAt } from '../core/clipTime';
 import type { Clip, Id, MediaRef, Project, TrackKind } from '../core/model';
 import { findClip } from '../core/timeline';
 
@@ -42,7 +42,7 @@ export function moveTarget(p: Project, clipId: Id, dxPx: number, pps: number): n
   const { clip } = findClip(p, clipId);
   const d = delta(dxPx, pps);
   if (d === null) return clip.start;
-  return snapSpan(withoutClip(p, clipId), clip.start + d, clip.out - clip.in, snapSeconds(pps));
+  return snapSpan(withoutClip(p, clipId), clip.start + d, clipDuration(clip), snapSeconds(pps));
 }
 
 /**
@@ -60,7 +60,7 @@ export function trimTarget(p: Project, clipId: Id, edge: 'start' | 'end', dxPx: 
 
 function sourceEnd(clip: Clip, m: MediaRef | undefined): number {
   if (!m || m.kind === 'image' || !(m.duration > 0)) return Infinity;
-  return clip.start + (m.duration - clip.in);
+  return timelineTimeAt(clip, m.duration);
 }
 
 /** Start for media of `duration` dropped at ruler offset `x`, snapped. */
