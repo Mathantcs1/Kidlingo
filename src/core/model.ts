@@ -4,6 +4,7 @@ import type { KeyLoop, Keyframe, PositionKeyframe, TransformKeys, Vec } from './
 import type { Anchor, Crop, Flip } from './cropTypes';
 import type { ClipMotion } from './motionTypes';
 import { clipDuration, clipEnd } from './clipTime';
+import type { SpeedFields } from './speedTypes';
 
 export { clipDuration, clipEnd };
 export type { Anchor, ClipMotion, Crop, Flip, KeyLoop, Keyframe, PositionKeyframe, TransformKeys, Vec };
@@ -82,8 +83,8 @@ export interface TrackDuck {
   release: number;
 }
 
-/** Times in seconds; duration = out - in. */
-export interface Clip {
+/** Times in seconds; `in`/`out` are FOOTAGE seconds, the length on the timeline is clipDuration (out - in at speed 1; Plan 5D). */
+export interface Clip extends SpeedFields {
   id: Id;
   mediaId: Id;
   /**

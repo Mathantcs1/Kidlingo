@@ -1,13 +1,32 @@
 // The ONE relation between timeline time and footage ("source") time of a clip (Plan 5D D1). Every place that turns a
 // timeline time into footage time, a footage time into a timeline time, or asks how long a clip is on the timeline calls
-// these functions; tests/clip-time-readers.test.ts fails on a new open-coded site. In Task 1 of Plan 5D (this file's
-// first version) every clip plays forward at speed 1, so each function is EXACTLY the expression it replaced (same
-// operations in the same order, so results are bit-identical); speed, reverse and ramps extend the bodies later.
+// these functions; tests/clip-time-readers.test.ts fails on a new open-coded site.
+//
+// `in`/`out` are FOOTAGE seconds and the clip covers [in, out) in both directions (reverse plays it backwards). A clip
+// with no speed field is "identity timed": each function is then EXACTLY the expression it replaced (same operations,
+// same order, so results are bit-identical). Constant speed s: forward u = in + s·tau, reverse u = out − s·tau, lasting
+// (out − in) / s. A ramp (speedKeys) uses the integral of speedRamp.ts. A freeze clip shows footage `freeze.at` always.
+// Beyond a clip's edge the maps extrapolate at the speed held at that edge (the handles a transition would use).
 import type { Clip } from './model';
+import { rampInverse, rampOffset, speedAt } from './speedRamp';
 
-/** Where `Clip.in`/`Clip.out` are footage seconds: the clip's length on the TIMELINE (out - in at speed 1). */
+const hasRamp = (c: Clip): boolean => c.speedKeys !== undefined && c.speedKeys.length > 0;
+
+/** True when footage time and timeline time differ only by an offset (no speed, reverse, ramp or freeze). */
+export function isIdentityTime(c: Clip): boolean {
+  return c.freeze === undefined && c.reverse === undefined && c.speedKeys === undefined && (c.speed === undefined || c.speed === 1);
+}
+
+/** The clip's constant speed (1 when absent); meaningless for a ramp. */
+function constSpeed(c: Clip): number {
+  return c.speed ?? 1;
+}
+
+/** The clip's length on the TIMELINE (out - in at speed 1). */
 export function clipDuration(c: Clip): number {
-  return c.out - c.in;
+  if (c.freeze !== undefined) return c.out - c.in;
+  if (hasRamp(c)) return rampOffset(c.speedKeys!, c.out) - rampOffset(c.speedKeys!, c.in);
+  return (c.out - c.in) / constSpeed(c);
 }
 
 /** The timeline time at which the clip ends. */
@@ -15,19 +34,61 @@ export function clipEnd(c: Clip): number {
   return c.start + clipDuration(c);
 }
 
-/** The footage time shown at clip-local timeline offset `tau` (seconds after the clip's start). */
-export function sourceAtOffset(c: Clip, tau: number): number {
-  return c.in + tau;
+/** The speed held at the footage edge that is played FIRST (`in` forward, `out` reverse) and LAST. */
+function edgeSpeeds(c: Clip): { first: number; last: number } {
+  if (hasRamp(c)) {
+    const atIn = speedAt(c.speedKeys!, c.in);
+    const atOut = speedAt(c.speedKeys!, c.out);
+    return c.reverse ? { first: atOut, last: atIn } : { first: atIn, last: atOut };
+  }
+  const s = constSpeed(c);
+  return { first: s, last: s };
 }
 
-/** The footage time shown at timeline time `t`. Extrapolates beyond the clip (the handles a transition would use). */
+/** The footage time shown at clip-local timeline offset `tau` (seconds after the clip's start). Exact at both clip edges. */
+export function sourceAtOffset(c: Clip, tau: number): number {
+  if (isIdentityTime(c)) return c.in + tau;
+  if (c.freeze !== undefined) return c.freeze.at;
+  const rev = c.reverse === true;
+  const { first, last } = edgeSpeeds(c);
+  const D = clipDuration(c);
+  const from = rev ? c.out : c.in;
+  const to = rev ? c.in : c.out;
+  const dir = rev ? -1 : 1;
+  if (tau === 0) return from;
+  if (tau < 0) return from + dir * first * tau;
+  if (tau >= D) return tau === D ? to : to + dir * last * (tau - D);
+  if (hasRamp(c)) {
+    const k = c.speedKeys!;
+    return rev ? rampInverse(k, rampOffset(k, c.out) - tau) : rampInverse(k, rampOffset(k, c.in) + tau);
+  }
+  return from + dir * constSpeed(c) * tau;
+}
+
+/** The footage time shown at timeline time `t`. Extrapolates beyond the clip at the speed held at its edge. */
 export function sourceTimeAt(c: Clip, t: number): number {
   return sourceAtOffset(c, t - c.start);
 }
 
-/** The timeline time at which footage time `u` is shown. */
+/** The timeline time at which footage time `u` is shown (extrapolates beyond the footage range at the edge speed). */
 export function timelineTimeAt(c: Clip, u: number): number {
-  return c.start + (u - c.in);
+  if (isIdentityTime(c)) return c.start + (u - c.in);
+  if (c.freeze !== undefined) return c.start;
+  const rev = c.reverse === true;
+  const { first, last } = edgeSpeeds(c);
+  const D = clipDuration(c);
+  const lo = c.in;
+  const hi = c.out;
+  if (hasRamp(c)) {
+    const k = c.speedKeys!;
+    if (u >= lo && u <= hi) return c.start + (rev ? rampOffset(k, c.out) - rampOffset(k, u) : rampOffset(k, u) - rampOffset(k, c.in));
+    if (u < lo) return c.start + (rev ? D + (lo - u) / speedAt(k, lo) : (u - lo) / speedAt(k, lo));
+    return c.start + (rev ? -(u - hi) / speedAt(k, hi) : D + (u - hi) / speedAt(k, hi));
+  }
+  const s = constSpeed(c);
+  void first;
+  void last;
+  return c.start + (rev ? (c.out - u) / s : (u - c.in) / s);
 }
 
 /**
@@ -40,9 +101,14 @@ export function sourceSpan(c: Clip, tauA: number, tauB: number): [number, number
   return a <= b ? [a, b] : [b, a];
 }
 
-/** True when footage time and timeline time differ only by an offset (no speed, no reverse, no ramp, no freeze). */
-export function isIdentityTime(_c: Clip): boolean {
-  return true;
+/**
+ * The footage time the picture of the output frame starting at timeline time `t` is taken from (D11). Forward: the
+ * frame's start. Reverse: the MIDDLE of the frame's footage interval, so the decoder's tolerance can never pick the frame
+ * after `out` (frames are looked up by "the last frame at or before the time").
+ */
+export function videoSourceTime(c: Clip, t: number, fps: number): number {
+  if (c.reverse === true && c.freeze === undefined) return sourceAtOffset(c, t - c.start + 0.5 / fps);
+  return sourceTimeAt(c, t);
 }
 
 /** The footage range a trim can reach: from the start of the file to the end of the media (Infinity for stills and unknown lengths). */
