@@ -2,8 +2,10 @@
 Theme Name: IdeaToApps
 Theme URI: https://ideatoapps.com
 Author: IdeaToApps
-Description: Custom theme for the IdeaToApps website.
-Version: 0.1.0
+Description: Custom theme for the IdeaToApps website. Dark-first design system with an accessible light mode.
+Version: 0.2.0
 Requires PHP: 8.0
 Text Domain: ideatoapps
 */
+
+/* Styles live in assets/css/ (tokens, fonts, base, layout, components) and are enqueued from functions.php. */

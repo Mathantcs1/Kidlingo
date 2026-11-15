@@ -10,6 +10,7 @@
     "test:e2e:zip": "playwright test -c playwright.zip.config.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "1.65.0",
     "@wp-playground/cli": "3.1.64"
   }

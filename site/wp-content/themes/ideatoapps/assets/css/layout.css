@@ -1,0 +1,93 @@
+/* Header, mobile drawer and footer. Mobile first; the desktop nav starts at 768px. */
+.site-header {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	background: var(--header-bg);
+	backdrop-filter: blur(14px);
+	-webkit-backdrop-filter: blur(14px);
+	border-bottom: 1px solid var(--line);
+}
+.site-header__inner { display: flex; align-items: center; gap: var(--s-2); min-height: 72px; }
+.wordmark { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); text-decoration: none; margin-right: auto; }
+.wordmark span { background: linear-gradient(90deg, var(--violet), var(--blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.wordmark:hover { text-decoration: none; }
+
+.nav-primary { display: none; }
+.nav-primary ul, .nav-drawer__list, .footer-nav ul { list-style: none; margin: 0; padding: 0; }
+.nav-primary a {
+	display: inline-block;
+	padding: 8px 16px;
+	border-radius: var(--radius-ctl);
+	color: var(--ink);
+	font-weight: 500;
+	text-decoration: none;
+	transition: background-color var(--dur-fast) var(--ease);
+}
+.nav-primary a:hover { background: var(--bg-alt); }
+.nav-primary a[aria-current="page"] { color: var(--link); }
+.site-header .site-header__signin { display: none; }
+
+.icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-ctl);
+	background: transparent;
+	color: var(--ink);
+	cursor: pointer;
+	transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.icon-btn:hover { background: var(--bg-alt); border-color: var(--muted); }
+.icon-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.theme-toggle .icon-sun { display: none; }
+:root[data-theme="light"] .theme-toggle .icon-sun { display: block; }
+:root[data-theme="light"] .theme-toggle .icon-moon { display: none; }
+
+/* Without JS the drawer cannot open, so its links show as a plain list under the header. */
+.menu-button { display: none; }
+html.js .menu-button { display: inline-flex; }
+.nav-drawer { background: var(--bg); padding: var(--s-2) var(--gutter) var(--s-3); border-bottom: 1px solid var(--line); }
+.nav-drawer__head { display: none; }
+html.js .nav-drawer { display: none; }
+html.js .nav-drawer.is-open {
+	display: flex;
+	flex-direction: column;
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	overflow-y: auto;
+	border: 0;
+	animation: drawer-in var(--dur-slow) var(--ease);
+}
+html.js .nav-drawer__head { display: flex; align-items: center; justify-content: space-between; min-height: 56px; margin-bottom: var(--s-3); }
+.nav-drawer__title { font-weight: 700; color: var(--muted); }
+.nav-drawer__list a { display: block; padding: 16px 0; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 1.25rem; font-weight: 600; text-decoration: none; }
+.nav-drawer__list a:hover { color: var(--link); }
+@keyframes drawer-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+@media (min-width: 768px) {
+	.nav-primary { display: block; margin-inline: var(--s-3) auto; }
+	.nav-primary ul { display: flex; gap: 4px; }
+	.site-header .site-header__signin { display: inline-flex; }
+	html.js .menu-button, .nav-drawer, html.js .nav-drawer.is-open { display: none; }
+	.wordmark { margin-right: 0; }
+	.site-header__inner { gap: var(--s-1); }
+}
+
+.site-footer { margin-top: var(--s-8); border-top: 1px solid var(--line); background: var(--bg-alt); padding-block: var(--s-6); }
+.site-footer__inner { display: grid; gap: var(--s-4); }
+.site-footer__tagline { margin: var(--s-1) 0 0; color: var(--muted-on-alt); max-width: 32ch; }
+.footer-nav ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px var(--s-3); }
+.footer-nav a { display: inline-block; padding: 8px 0; color: var(--ink); text-decoration: none; }
+.footer-nav a:hover { color: var(--link); text-decoration: underline; }
+.site-footer__legal { margin: 0; padding-top: var(--s-3); border-top: 1px solid var(--line); color: var(--muted-on-alt); font-size: 0.875rem; }
+
+@media (min-width: 768px) {
+	.site-footer__inner { grid-template-columns: 1fr 1.2fr; align-items: start; }
+	.footer-nav ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

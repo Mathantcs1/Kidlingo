@@ -1,0 +1,93 @@
+/*
+ * Design tokens. Dark is the default (brand) theme; light is selected with html[data-theme="light"].
+ * An inline script in <head> sets data-theme before first paint (see inc/head.php).
+ * Layout scale: 8px grid; breakpoints mobile 360-767, tablet 768-1023, desktop 1024+.
+ */
+:root {
+	--font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+	/* Brand */
+	--violet: #7357f5;
+	--blue: #367cf5;
+	--teal: #16b8b0;
+	--warning: #d98a20;
+	--navy-900: #0b1230;
+	--navy-800: #111c46;
+
+	/* Spacing (8px grid) */
+	--s-1: 8px;
+	--s-2: 16px;
+	--s-3: 24px;
+	--s-4: 32px;
+	--s-5: 40px;
+	--s-6: 48px;
+	--s-8: 64px;
+	--s-12: 96px;
+	--section-y: var(--s-8);
+	--gutter: 16px;
+	--container: 1200px;
+
+	/* Shape and motion */
+	--radius-ctl: 12px;
+	--radius-card: 16px;
+	--radius-card-lg: 20px;
+	--dur-fast: 150ms;
+	--dur: 200ms;
+	--dur-slow: 250ms;
+	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+	/* Dark theme (default) */
+	color-scheme: dark;
+	--bg: #0b1230;
+	--bg-alt: #111c46;
+	--ink: #eef1fb;
+	--muted: #a9b4d0;
+	--muted-on-alt: #a9b4d0;
+	--primary: #7357f5;
+	--primary-hover: #8268ff;
+	--on-primary: #ffffff;
+	--accent: #367cf5;
+	--link: #b2a4ff;
+	--card: #111c46;
+	--card-border: rgb(255 255 255 / 0.1);
+	--line: rgb(255 255 255 / 0.12);
+	--focus: #b2a4ff;
+	--header-bg: rgb(11 18 48 / 0.82);
+	--hero-glow-a: rgb(115 87 245 / 0.34);
+	--hero-glow-b: rgb(54 124 245 / 0.22);
+	--shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 32px rgb(3 6 20 / 0.45);
+}
+
+:root[data-theme="light"] {
+	color-scheme: light;
+	--bg: #f8faff;
+	--bg-alt: #eef2fc;
+	--ink: #17203a;
+	--muted: #61708d;
+	--muted-on-alt: #536079;
+	--primary: #7357f5;
+	--primary-hover: #6446ea;
+	--on-primary: #ffffff;
+	--accent: #367cf5;
+	--link: #5636d8;
+	--card: #ffffff;
+	--card-border: #dfe5f4;
+	--line: #dfe5f4;
+	--focus: #5636d8;
+	--header-bg: rgb(248 250 255 / 0.86);
+	--hero-glow-a: rgb(115 87 245 / 0.16);
+	--hero-glow-b: rgb(54 124 245 / 0.12);
+	--shadow-card: 0 1px 2px rgb(23 32 58 / 0.05), 0 10px 28px rgb(23 32 58 / 0.07);
+}
+
+@media (min-width: 768px) {
+	:root { --gutter: 32px; }
+}
+
+@media (min-width: 1024px) {
+	:root { --section-y: var(--s-12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root { --dur-fast: 0.01ms; --dur: 0.01ms; --dur-slow: 0.01ms; }
+}
