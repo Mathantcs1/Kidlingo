@@ -12,7 +12,7 @@ export class FxRunContext {
     readonly pool: TargetPool,
     readonly pass: FullscreenPass,
     readonly programs: FxPrograms,
-    readonly info: { pxScale: number; time: number; frame: number; seed: number; fps: number },
+    readonly info: { pxScale: number; time: number; frame: number; seed: number; fps: number; clipId: string },
   ) {}
 
   /** Compiles (once) the shader for `key`; call BEFORE acquiring any target so a compile failure leaks nothing. */

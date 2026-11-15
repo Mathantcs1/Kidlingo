@@ -9,6 +9,7 @@ import { FullscreenPass, FxPrograms } from './pass';
 import { TargetPool } from './pool';
 import type { Target } from './pool';
 import { EFFECT_DEFS } from './registry';
+import { seedFor } from './seed';
 import { FxRunContext } from './types';
 
 const MAX_TARGET_SIDE = 4096;
@@ -17,13 +18,6 @@ const MIN_TARGET_SIDE = 8;
 const FLIPPED = uvMatrix(0, true);
 
 export type FxErrorHandler = (type: FxType, log: string) => void;
-
-/** Deterministic per-(frame, clip) seed, an integer below 2^24 (exact in float32). */
-export function seedFor(frame: number, clipId: string): number {
-  let h = 2166136261 ^ (frame >>> 0);
-  for (let i = 0; i < clipId.length; i++) h = Math.imul(h ^ clipId.charCodeAt(i), 16777619);
-  return (h >>> 0) % 16777216;
-}
 
 /** Target size for a clip: its on-screen size, never above the source nor 4096, at least 8 (E2). */
 export function targetSize(src: Size, clipScale: number, screenScale: number): Size {
@@ -98,7 +92,7 @@ export class FxEngine {
     const time = t - d.clip.start;
     const frame = Math.floor(time * p.format.fps + 1e-6);
     const rc = new FxRunContext(gl, this.pool, this.pass, this.programs, {
-      pxScale: width / d.size.width, time, frame, seed: seedFor(frame, d.clip.id), fps: p.format.fps,
+      pxScale: width / d.size.width, time, frame, seed: seedFor(frame, d.clip.id), fps: p.format.fps, clipId: d.clip.id,
     });
     for (const e of d.clip.fx) {
       const def = EFFECT_DEFS[e.type];
