@@ -40,6 +40,26 @@ export function footageRange(c: Clip): [number, number] {
   return isIdentityTime(c) ? [c.in, c.in + clipDuration(c)] : [c.in, c.out];
 }
 
+/**
+ * The timeline offset (seconds from the clip's start) at which clip-local time `k` shows: `k` itself for a clip with its
+ * own timeline, `k - in` for an identity-timed one (the exact old expression), else through the time map (Plan 5D D6:
+ * a key's place on the timeline, mirrored in reverse and non-linear in a ramp).
+ */
+export function offsetOfLocal(c: Clip, k: number): number {
+  if (hasOwnTimeline(c)) return k;
+  return isIdentityTime(c) ? k - c.in : timelineTimeAt(c, k) - c.start;
+}
+
+/** Clip-local time `k` moved by `delta` timeline seconds: `k + delta` when identity-timed or own-timeline, else through the map. */
+export function shiftLocal(c: Clip, k: number, delta: number): number {
+  return hasOwnTimeline(c) || isIdentityTime(c) ? k + delta : sourceAtOffset(c, offsetOfLocal(c, k) + delta);
+}
+
+/** The clip-local time shown at the clip's first frame (`in`; `out` in reverse; 0 for a clip with its own timeline). */
+export function localAtStart(c: Clip): number {
+  return hasOwnTimeline(c) ? 0 : sourceAtOffset(c, 0);
+}
+
 /** The clip's length on the TIMELINE (out - in at speed 1). */
 export function clipDuration(c: Clip): number {
   if (c.freeze !== undefined) return c.out - c.in;

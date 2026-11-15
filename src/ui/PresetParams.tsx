@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { SPRING_DEFAULT } from '../core/easing';
 import type { Ease, EaseKind } from '../core/easing';
-import { localRange } from '../core/keyframes';
+import { offsetOfLocal } from '../core/clipTime';
 import type { Clip } from '../core/model';
 import type { PresetPatch } from '../core/motionEdits';
 import { MOTION_LIMITS } from '../core/motionTypes';
@@ -93,7 +93,6 @@ export default function PresetParams({ clip, slot, use, disabled }: Props) {
   const dir = schema.params.find((d) => d.key === 'direction');
   const direction = paramOf(use, 'direction');
   const kenBurns = use.preset === 'kenBurns';
-  const [lo] = localRange(clip);
   const id = (k: string): string => `anim-${slot}-${k}`;
   return (
     <div className="anim-params" data-testid={id('params')}>
@@ -109,7 +108,7 @@ export default function PresetParams({ clip, slot, use, disabled }: Props) {
       {slot === 'emphasis' && use.at !== undefined && (
         <div className="anim-at">
           <span>
-            At <output data-testid="anim-emphasis-at">{formatNumber(clip.start + use.at - lo)} s</output>
+            At <output data-testid="anim-emphasis-at">{formatNumber(clip.start + offsetOfLocal(clip, use.at))} s</output>
           </span>
           <button type="button" data-testid="anim-emphasis-here" disabled={disabled} onClick={() => emphasisHereCmd(clip.id)}>
             At playhead

@@ -1,6 +1,7 @@
 // DOM-free maths of the timeline keyframe row (Plan 5 Task 8): the summary diamonds of a clip, where they sit, and
 // the retiming drag (whole frames, playhead snap, kept on the clip) with a preview of the core's refusal.
-import { keyFrame, localRange } from '../core/keyframes';
+import { keyFrame } from '../core/keyframes';
+import { offsetOfLocal } from '../core/clipTime';
 import { frameIndex } from '../core/fps';
 import { keyTimes, moveKeys } from '../core/keyframeEdits';
 import type { KeyRef } from '../core/keyframeEdits';
@@ -17,12 +18,12 @@ export function rowSummary(clip: Clip): { times: number[]; before: boolean; afte
   const times = visibleKeyTimes(clip);
   if (clip.kind === 'audio') return { times, before: false, after: false };
   const hidden = keyTimes(clip).filter((u) => !keyVisible(clip, u));
-  const [lo] = localRange(clip);
-  return { times, before: hidden.some((u) => u < lo), after: hidden.some((u) => u >= lo) };
+  const before = hidden.some((u) => offsetOfLocal(clip, u) < 0);
+  return { times, before, after: hidden.some((u) => offsetOfLocal(clip, u) >= 0) };
 }
 
 /** A diamond's x in px from the clip's left edge (D3: local key time → timeline time). */
-export const diamondX = (clip: Clip, u: number, pps: number): number => (u - localRange(clip)[0]) * pps;
+export const diamondX = (clip: Clip, u: number, pps: number): number => offsetOfLocal(clip, u) * pps;
 
 /** A pointer delta in seconds rounded to whole frames (0 for unusable input). */
 export function frameDelta(dxPx: number, pps: number, fps: number): number {
@@ -33,11 +34,11 @@ export function frameDelta(dxPx: number, pps: number, fps: number): number {
 /** `delta` (whole frames) limited so every moved key stays on the clip's visible range [lo, hi) (the end is off the clip). */
 export function clampDelta(clip: Clip, times: readonly number[], delta: number, fps: number): number {
   if (times.length === 0 || !(fps > 0)) return 0;
-  const [lo, hi] = localRange(clip);
-  const first = Math.min(...times);
-  const last = Math.max(...times);
-  const nMin = -Math.floor((first - lo) * fps + 1e-6);
-  const nMax = Math.ceil((hi - last) * fps - 1e-6) - 1;
+  const offsets = times.map((u) => offsetOfLocal(clip, u));
+  const first = Math.min(...offsets);
+  const last = Math.max(...offsets);
+  const nMin = -Math.floor(first * fps + 1e-6);
+  const nMax = Math.ceil((clipDuration(clip) - last) * fps - 1e-6) - 1;
   if (nMin > nMax) return 0;
   const n = Math.min(nMax, Math.max(nMin, Math.round(delta * fps)));
   return n === 0 ? 0 : n / fps;
@@ -46,7 +47,7 @@ export function clampDelta(clip: Clip, times: readonly number[], delta: number, 
 /** Snaps the grabbed key (local `grabbed`) into the playhead's frame when it lands within SNAP_PX of it (whole frames kept; P5-6). */
 export function snapDeltaToPlayhead(clip: Clip, grabbed: number, delta: number, playhead: number, pps: number, fps: number): number {
   if (!(pps > 0) || !(fps > 0)) return delta;
-  const at = clip.start + (grabbed - localRange(clip)[0]);
+  const at = clip.start + offsetOfLocal(clip, grabbed);
   if (Math.abs(at + delta - playhead) * pps > SNAP_PX) return delta;
   return (frameIndex(playhead - clip.start, fps) - keyFrame(clip, grabbed, fps)) / fps;
 }

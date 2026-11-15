@@ -1,6 +1,7 @@
 // Store-bound keyframe commands (Plan 5 Task 6): each edit is ONE `apply` (one undo step) at the playhead; refusals
 // (locked track, playhead off the clip) become toasts through `guard`. Jumps move the playhead only (no history).
-import { keyFrame, keyIndexAtPlayhead, keyVisible, localRange, tooClose } from '../core/keyframes';
+import { offsetOfLocal } from '../core/clipTime';
+import { keyFrame, keyIndexAtPlayhead, keyVisible, tooClose } from '../core/keyframes';
 import { frameIndex } from '../core/fps';
 export { keyVisible };
 import { OUTSIDE_REFUSAL, keyTimes, removeKeys, setKeyEase, setValueAt, targetKeys, targetValueAt } from '../core/keyframeEdits';
@@ -30,7 +31,7 @@ export function keyAtPlayhead(clip: Clip, target: AnimTarget, t: number, fps: nu
 }
 
 /** The timeline time of local key time `u` on `clip`. */
-export const keyTimelineTime = (clip: Clip, u: number): number => clip.start + (u - localRange(clip)[0]);
+export const keyTimelineTime = (clip: Clip, u: number): number => clip.start + offsetOfLocal(clip, u);
 
 /**
  * The timeline time of the previous (`dir` −1) or next (+1) key of `target` (any animated target when null) from

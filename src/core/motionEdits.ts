@@ -5,6 +5,7 @@
 import { isSameEase, repairEase } from './easing';
 import type { Ease } from './easing';
 import { commitClip } from './keyEditHelpers';
+import { clipEnd, hasOwnTimeline, isIdentityTime, localAtStart } from './clipTime';
 import { localRange, localTime } from './keyframes';
 import { repairMotion, withMotion } from './migrateMotion';
 import type { Clip, Id, Project } from './model';
@@ -56,6 +57,10 @@ export function defaultSeed(clipId: Id, slot: MotionSlot): number {
 
 /** The playhead's local time on the clip, kept on the visible range (an emphasis chosen off the clip lands on an edge frame). */
 function playheadLocal(clip: Clip, t: number, fps: number): number {
+  if (!hasOwnTimeline(clip) && !isIdentityTime(clip)) {
+    // A retimed clip: clamp the PLAYHEAD to the clip's frames (its last frame is not `out` - 1/fps footage), then map it.
+    return localTime(clip, Math.min(Math.max(t, clip.start), clipEnd(clip) - 1 / fps), fps);
+  }
   const [lo, hi] = localRange(clip);
   const u = localTime(clip, t, fps);
   const last = Math.max(lo, hi - 1 / fps);
@@ -113,7 +118,7 @@ export function setPreset(p: Project, clipId: Id, slot: MotionSlot, use: PresetK
   if ('seed' in next.params && (seed !== undefined || typeof use === 'string')) next.params.seed = seed ?? defaultSeed(clip.id, slot);
   if (slot === 'emphasis') next.at = Number.isFinite(given.at) ? given.at : playheadLocal(clip, t, fps);
   if (slot === 'loop') {
-    next.phase = Number.isFinite(given.phase) ? given.phase : -localRange(clip)[0];
+    next.phase = Number.isFinite(given.phase) ? given.phase : -localAtStart(clip);
     next.count = given.count ?? null;
   }
   return commitSlot(p, clip, slot, canonical(clip, slot, next));

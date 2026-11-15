@@ -2,7 +2,7 @@
 // except for positionAt's result.
 import { easeAt } from './easing';
 import { frameIndex, snapToFrame } from './fps';
-import { clipDuration, clipEnd, footageRange, hasOwnTimeline, sourceAtOffset } from './clipTime';
+import { clipDuration, clipEnd, footageRange, hasOwnTimeline, isIdentityTime, offsetOfLocal, sourceAtOffset } from './clipTime';
 import type { Clip, Keyframe, PositionKeyframe } from './model';
 import { curvedPoint, isCurved } from './pathCurve';
 
@@ -42,6 +42,11 @@ const EDGE = 1e-9;
 
 /** Whether local key time `k` shows on the clip: its visible local range, end exclusive (the end is off the clip). The ONE rule for the strip, previous/next and the motion path. */
 export function keyVisible(clip: Clip, k: number): boolean {
+  if (!hasOwnTimeline(clip) && !isIdentityTime(clip)) {
+    // A retimed clip shows a key by its place on the TIMELINE: in reverse the key at `out` is the first frame and the one at `in` is off the clip.
+    const o = offsetOfLocal(clip, k);
+    return o >= -EDGE && o < clipDuration(clip) - EDGE;
+  }
   const [lo, hi] = localRange(clip);
   return k >= lo - EDGE && k < hi - EDGE;
 }
@@ -52,7 +57,7 @@ export function keyVisible(clip: Clip, k: number): boolean {
  * −1 before the visible range.
  */
 export function keyFrame(clip: Clip, k: number, fps: number): number {
-  const d = k - localRange(clip)[0];
+  const d = offsetOfLocal(clip, k);
   return d * fps + 1e-6 < 0 ? -1 : frameIndex(d, fps);
 }
 

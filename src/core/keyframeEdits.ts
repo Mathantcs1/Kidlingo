@@ -4,6 +4,7 @@ import { staticValue, targetKeys, valueAtLocal, withStaticValue, withTargetKeys 
 import type { AnimTarget, AnimValue, KeyRef } from './animTargets';
 import { isSameEase, repairEase } from './easing';
 import type { Ease } from './easing';
+import { clipDuration, hasOwnTimeline, isIdentityTime, offsetOfLocal, shiftLocal } from './clipTime';
 import { setAnchor } from './cropEdits';
 import { ANCHOR_LIMIT } from './cropTypes';
 import { assertInside, commitClip, isVec2, keyToValue, locate, sameFrame, selection } from './keyEditHelpers';
@@ -135,11 +136,14 @@ export function moveKeys(p: Project, clipId: Id, refs: readonly KeyRef[], delta:
   const clip = locate(p, clipId);
   if (delta === 0) return p;
   const [lo, hi] = localRange(clip);
+  const retimed = !hasOwnTimeline(clip) && !isIdentityTime(clip);
   let next = clip;
   for (const { target, list, picked } of selection(clip, refs)) {
-    const moved = list.filter((_, i) => picked.has(i)).map((k) => ({ ...k, t: k.t + delta }));
+    // `delta` is TIMELINE seconds (Plan 5D): a key moves by the same timeline time, i.e. by speed x delta of footage.
+    const moved = list.filter((_, i) => picked.has(i)).map((k) => ({ ...k, t: shiftLocal(clip, k.t, delta) }));
     const still = list.filter((_, i) => !picked.has(i));
-    if (moved.some((k) => k.t < lo - EPS || k.t > hi + EPS)) throw new TimelineError('Keyframes must stay on the clip');
+    const outside = retimed ? (k: { t: number }): boolean => offsetOfLocal(clip, k.t) < -EPS || offsetOfLocal(clip, k.t) > clipDuration(clip) + EPS : (k: { t: number }): boolean => k.t < lo - EPS || k.t > hi + EPS;
+    if (moved.some(outside)) throw new TimelineError('Keyframes must stay on the clip');
     if (moved.some((m) => still.some((s) => tooClose(m.t, s.t) || sameFrame(clip, m.t, s.t, p.format.fps)))) throw new TimelineError('Keyframes would overlap');
     next = withTargetKeys(next, target, [...still, ...moved].sort((a, b) => a.t - b.t));
   }

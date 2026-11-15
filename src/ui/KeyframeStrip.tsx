@@ -1,4 +1,4 @@
-import { localRange } from '../core/keyframes';
+import { clipDuration, offsetOfLocal } from '../core/clipTime';
 import { targetKeys } from '../core/keyframeEdits';
 import type { AnimTarget } from '../core/keyframeEdits';
 import type { Clip } from '../core/model';
@@ -25,8 +25,7 @@ const pct = (v: number): string => `${Math.min(100, Math.max(0, v * 100))}%`;
  * previous/next, so a click never seeks off the clip.
  */
 export default function KeyframeStrip({ clip, target, group, label, testId, playhead, fps }: Props) {
-  const [lo, hi] = localRange(clip);
-  const span = hi - lo;
+  const span = clipDuration(clip);
   const keys = (targetKeys(clip, target) ?? []).filter((k) => keyVisible(clip, k.t));
   const current = keyAtPlayhead(clip, target, playhead, fps);
   return (
@@ -48,7 +47,7 @@ export default function KeyframeStrip({ clip, target, group, label, testId, play
             aria-label={`Keyframe at ${time.toFixed(2)} s`}
             aria-current={here || undefined}
             title={`${label} keyframe at ${time.toFixed(2)} s`}
-            style={{ left: pct(span > 0 ? (k.t - lo) / span : 0) }}
+            style={{ left: pct(span > 0 ? offsetOfLocal(clip, k.t) / span : 0) }}
             onClick={() => seekToKeyCmd(clip.id, k.t)}
             onDoubleClick={() => openEase(clip.id, groupRefsAt(clip, group ?? [target], k.t))}
           />

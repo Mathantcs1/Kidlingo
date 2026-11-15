@@ -2,7 +2,7 @@
 // the exit window at the end (both from motionWindows: the windows as drawn, short-clip scaling included), a band
 // over the emphasis window and a thin striped line for a loop. Purely visual: pointer-events none, hidden from
 // assistive tech, so they never take a clip drag, a trim or a click (the inspector is the edit path).
-import { localRange } from '../core/keyframes';
+import { hasOwnTimeline, isIdentityTime, offsetOfLocal } from '../core/clipTime';
 import { clipDuration } from '../core/model';
 import type { Clip } from '../core/model';
 import { motionWindows } from '../core/motion';
@@ -22,14 +22,18 @@ export default function MotionBands({ clip, pps }: { clip: Clip; pps: number }) 
     const b = Math.min(Math.max(a, end), d);
     return { left: timeToPx(a, pps), width: Math.max(MIN_PX, timeToPx(b - a, pps)) };
   };
-  const at = emphasis?.at !== undefined ? emphasis.at - localRange(clip)[0] : null;
+  // Emphasis `at`/`duration` are FOOTAGE seconds: under speed the band's ends come from the map (swapped in reverse).
+  const ends = emphasis?.at !== undefined ? [offsetOfLocal(clip, emphasis.at), offsetOfLocal(clip, emphasis.at + emphasis.duration)] : null;
+  const retimed = !isIdentityTime(clip) && !hasOwnTimeline(clip);
+  const at = ends === null ? null : retimed ? Math.min(ends[0], ends[1]) : ends[0];
+  const emphasisLen = ends === null || emphasis === undefined ? 0 : retimed ? Math.abs(ends[1] - ends[0]) : emphasis.duration;
   return (
     <span className="motion-bands" aria-hidden="true">
       {loop && <span className="motion-band motion-band-loop" data-testid="motion-band-loop" />}
       {w.in && <span className="motion-band motion-band-in" data-testid="motion-band-in" style={band(w.in.start, w.in.end)} />}
       {w.out && <span className="motion-band motion-band-out" data-testid="motion-band-out" style={band(w.out.start, w.out.end)} />}
-      {emphasis && at !== null && at < d && at + emphasis.duration > 0 && (
-        <span className="motion-band motion-band-emphasis" data-testid="motion-band-emphasis" style={band(at, at + emphasis.duration)} />
+      {emphasis && at !== null && at < d && at + emphasisLen > 0 && (
+        <span className="motion-band motion-band-emphasis" data-testid="motion-band-emphasis" style={band(at, at + emphasisLen)} />
       )}
     </span>
   );
