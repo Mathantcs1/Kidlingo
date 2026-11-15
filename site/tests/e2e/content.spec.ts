@@ -165,9 +165,9 @@ test.describe('Blog', () => {
     await expect(page.getByTestId('blog-list').locator('article h2')).toHaveText(['Post 01']);
   });
 
-  test('?pg=99 on a blog with no posts shows the real empty state on page 1', async ({ page }) => {
+  test('?pg=99 on a blog with no posts keeps the (true) empty state and does not redirect', async ({ page }) => {
     await page.goto('/blog/?pg=99');
-    await expect(page).not.toHaveURL(/pg=/);
+    await expect(page).toHaveURL(/pg=99/);
     await expect(page.getByTestId('blog-empty')).toContainText('No posts yet');
   });
 });

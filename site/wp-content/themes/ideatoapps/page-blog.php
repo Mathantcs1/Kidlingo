@@ -21,7 +21,8 @@ $ideatoapps_query = new WP_Query(
 	)
 );
 $ideatoapps_url   = get_permalink( get_queried_object_id() );
-$ideatoapps_last  = $ideatoapps_page > 1 && empty( $ideatoapps_query->posts ) ? ideatoapps_overflow_target_page( $ideatoapps_page, ideatoapps_list_page_count( $ideatoapps_query->query_vars ) ) : 0;
+$ideatoapps_pages = $ideatoapps_page > 1 && empty( $ideatoapps_query->posts ) ? ideatoapps_list_page_count( $ideatoapps_query->query_vars ) : 0;
+$ideatoapps_last  = $ideatoapps_pages > 0 ? ideatoapps_overflow_target_page( $ideatoapps_page, $ideatoapps_pages ) : 0; // A blog with no posts at all keeps its honest empty state.
 if ( $ideatoapps_last > 0 ) { // ?pg=99 on a two-page blog: go to the last page instead of showing "No posts yet".
 	wp_safe_redirect( 1 === $ideatoapps_last ? $ideatoapps_url : add_query_arg( 'pg', $ideatoapps_last, $ideatoapps_url ), 302 );
 	exit;
