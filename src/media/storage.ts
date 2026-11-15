@@ -47,9 +47,27 @@ export async function putMedia(id: Id, file: Blob): Promise<void> {
     const writable = await handle.createWritable();
     await file.stream().pipeTo(writable);
   } catch (e) {
-    if (!existed) await dir.removeEntry(id).catch(() => undefined);
+    if (!existed) await removeCreated(dir, id);
     unsettled.delete(id);
     throw e;
+  }
+}
+
+/**
+ * Removes an entry THIS call created after a failed write. The aborted writer can still hold the file for a moment
+ * (removeEntry then fails with a modification-not-allowed error and an empty entry would stay behind), so the removal is
+ * retried with a short, growing pause; a missing entry is fine. Gives up quietly after the last attempt: the startup
+ * cleanup and the verified-restore GC own anything that survives.
+ */
+async function removeCreated(dir: FileSystemDirectoryHandle, id: Id): Promise<void> {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      await dir.removeEntry(id);
+      return;
+    } catch (e) {
+      if (isNotFound(e)) return;
+      await new Promise((resolve) => setTimeout(resolve, 5 * (attempt + 1)));
+    }
   }
 }
 

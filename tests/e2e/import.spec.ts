@@ -158,6 +158,21 @@ test('a failed putMedia over an existing id keeps the stored file', async ({ pag
   expect(r.freshExists).toBe(false);
 });
 
+test('failed first writes never leave an entry behind (600 attempts: the cleanup must survive a writer that is still closing)', async ({ page }) => {
+  await openHarness(page);
+  const orphans = await page.evaluate(async () => {
+    const failing = { stream: () => new ReadableStream({ start: (c) => c.error(new Error('read failed')) }) } as unknown as Blob;
+    let n = 0;
+    for (let i = 0; i < 600; i++) {
+      const id = crypto.randomUUID();
+      await window.cf.putMedia(id, failing).catch(() => undefined);
+      if (await window.cf.hasMedia(id)) n++;
+    }
+    return n;
+  });
+  expect(orphans).toBe(0);
+});
+
 test('valid files in containers ClipForge cannot open are named, not called damaged', async ({ page }) => {
   await openHarness(page);
   const bytes = (f: string): number[] => [...readFileSync(join(dir, f))];
