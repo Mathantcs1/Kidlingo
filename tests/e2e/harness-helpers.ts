@@ -57,7 +57,7 @@ export function render(
   page: Page,
   p: Project,
   times: number[],
-  opts: { canvas?: { width: number; height: number }; sources?: boolean } = {},
+  opts: { canvas?: { width: number; height: number }; sources?: boolean; bypassFx?: boolean } = {},
 ): Promise<Frame[]> {
   return page.evaluate(({ p, times, opts }) => window.cf.renderPixels(p, times, opts), { p, times, opts });
 }

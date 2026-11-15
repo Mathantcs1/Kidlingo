@@ -32,13 +32,13 @@ type Rgb = [number, number, number];
  * A PNG of the given size: solid `rgb`; or, with `right`, `rgb` on the left half and `right` on the right half; or,
  * with `stripes`, 1 px white columns every `stripes` px on black (a pattern that aliases badly when downscaled).
  */
-async function makePng(width: number, height: number, rgb: Rgb, opts: { right?: Rgb; stripes?: number } = {}): Promise<Blob> {
+async function makePng(width: number, height: number, rgb: Rgb, opts: { right?: Rgb; stripes?: number; alpha?: number } = {}): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('no 2d context');
-  const css = (c: Rgb): string => `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+  const css = (c: Rgb): string => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${opts.alpha ?? 1})`;
   ctx.fillStyle = css(opts.stripes ? [0, 0, 0] : rgb);
   ctx.fillRect(0, 0, width, height);
   if (opts.right) {
@@ -90,8 +90,27 @@ const cf = {
   fitTransform,
   makePng,
   readPixels,
+  /** Effect types whose shader failed to compile during the last renderPixels call. */
+  fxErrors: [] as string[],
+  /** Renders every time in one compositor and reports its resource stats halfway and at the end (leak checks). */
+  async renderStats(p: Project, times: number[]) {
+    const canvas = document.createElement('canvas');
+    const compositor = createCompositor(canvas, { preserveDrawingBuffer: true });
+    try {
+      compositor.resize(p.format.width, p.format.height);
+      const sources = new Map<Id, VideoSource>();
+      let mid = compositor.stats();
+      for (const [i, t] of times.entries()) {
+        await compositor.renderFrame(p, t, sources);
+        if (i === Math.floor(times.length / 2)) mid = compositor.stats();
+      }
+      return { mid, after: compositor.stats(), glError: canvas.getContext('webgl2')?.getError() ?? -1 };
+    } finally {
+      compositor.dispose();
+    }
+  },
   /** Stores a PNG (see makePng) as image media under a fresh id; returns its MediaRef (not part of any project). */
-  async putImageMedia(width: number, height: number, rgb: Rgb, opts?: { right?: Rgb; stripes?: number }): Promise<MediaRef> {
+  async putImageMedia(width: number, height: number, rgb: Rgb, opts?: { right?: Rgb; stripes?: number; alpha?: number }): Promise<MediaRef> {
     const id = newId();
     await putMedia(id, await makePng(width, height, rgb, opts));
     return { id, name: `${id}.png`, kind: 'image', duration: 5, width, height, hasAudio: false };
@@ -103,10 +122,11 @@ const cf = {
   async renderPixels(
     p: Project,
     times: number[],
-    opts: { canvas?: { width: number; height: number }; sources?: boolean } = {},
+    opts: { canvas?: { width: number; height: number }; sources?: boolean; bypassFx?: boolean } = {},
   ): Promise<{ width: number; height: number; data: number[]; glError: number }[]> {
     const canvas = document.createElement('canvas');
-    const compositor = createCompositor(canvas, { preserveDrawingBuffer: true });
+    cf.fxErrors.length = 0;
+    const compositor = createCompositor(canvas, { preserveDrawingBuffer: true, onFxError: (type) => cf.fxErrors.push(type) });
     const sources = new Map<Id, VideoSource>();
     try {
       compositor.resize(opts.canvas?.width ?? p.format.width, opts.canvas?.height ?? p.format.height);
@@ -117,7 +137,7 @@ const cf = {
       }
       const out = [];
       for (const t of times) {
-        await compositor.renderFrame(p, t, sources);
+        await compositor.renderFrame(p, t, sources, { bypassFx: opts.bypassFx });
         const glError = canvas.getContext('webgl2')?.getError() ?? -1;
         out.push({ ...readPixels(canvas), glError });
       }

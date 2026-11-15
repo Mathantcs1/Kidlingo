@@ -8,6 +8,8 @@ export interface GlStub {
   noAlphaFalse: boolean;
   /** Every shader compile fails with STUB_LOG as its info log. */
   shaderFail: boolean;
+  /** Shader sources containing this text fail to compile (empty = none). */
+  shaderFailPattern: string;
 }
 
 export const STUB_LOG = 'ERROR: 0:1: stub compile failure';
@@ -17,7 +19,7 @@ export async function stubGl(page: Page, stub: Partial<GlStub>): Promise<void> {
   await page.addInitScript(
     ([initial, log]) => {
       const w = window as unknown as { __cfGl: GlStub };
-      w.__cfGl = { noWebGl2: false, noAlphaFalse: false, shaderFail: false, ...initial };
+      w.__cfGl = { noWebGl2: false, noAlphaFalse: false, shaderFail: false, shaderFailPattern: '', ...initial };
       type GetContext = (this: unknown, type: string, ...rest: unknown[]) => unknown;
       const withContext = new WeakSet<object>();
       const patch = (proto: { getContext: unknown }): void => {
@@ -37,12 +39,22 @@ export async function stubGl(page: Page, stub: Partial<GlStub>): Promise<void> {
       const proto = WebGL2RenderingContext.prototype;
       const getParam = proto.getShaderParameter;
       const getLog = proto.getShaderInfoLog;
+      const setSource = proto.shaderSource;
+      const sources = new WeakMap<object, string>();
+      proto.shaderSource = function (shader: WebGLShader, source: string) {
+        sources.set(shader, source);
+        return setSource.call(this, shader, source);
+      };
+      const failing = (shader: WebGLShader): boolean => {
+        const pattern = w.__cfGl.shaderFailPattern;
+        return w.__cfGl.shaderFail || (pattern !== '' && (sources.get(shader) ?? '').includes(pattern));
+      };
       proto.getShaderParameter = function (shader: WebGLShader, pname: number) {
-        if (w.__cfGl.shaderFail && pname === this.COMPILE_STATUS) return false;
+        if (failing(shader) && pname === this.COMPILE_STATUS) return false;
         return getParam.call(this, shader, pname);
       };
       proto.getShaderInfoLog = function (shader: WebGLShader) {
-        return w.__cfGl.shaderFail ? log : getLog.call(this, shader);
+        return failing(shader) ? log : getLog.call(this, shader);
       };
     },
     [stub, STUB_LOG] as const,
