@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "wp:start": "node scripts/wp-start.mjs",
+    "wp:bootstrap": "node scripts/wp-bootstrap.mjs",
     "test:php": "php vendor/bin/phpunit",
     "test:e2e": "playwright test"
   },
