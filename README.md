@@ -112,6 +112,16 @@ It is a static site built with React, TypeScript and Vite.
     file); applying one copies it into the clip in one undo step, relative to the clip's own position. Rename, delete
     (asks first; clips keep their animation) and favourites are in the browser. A library written by a newer version is
     shown read-only and never overwritten.
+- **Speed, reverse, ramps and freeze frame** (Plan 5, Part 5D; saved data version 9): the Inspector's "Speed" section sets a
+  constant **Speed** (25 % to 400 %; the clip keeps its start and its length changes, rounded to whole frames) or a
+  **Duration** (which sets the speed), **Reverse**, **Preserve pitch** (on by default: the sound is time-stretched, pitch
+  kept; off, it is resampled so a faster clip sounds higher), **Push later clips** (move the clips after it on the same
+  track instead of refusing an overlap), and the **ramp presets** Speed up, Slow down, Bullet time and Flash forward with
+  an editable percent per point and a small graph. **Freeze frame** splits the clip at the playhead and inserts a 2 s still
+  of that frame (later clips on the track move). A badge on the clip shows its retiming; the right-click menu has Speed
+  50 % / 200 %, Normal speed, Reverse and Freeze frame. Animation In/Out presets keep their length in timeline seconds;
+  emphasis and loop presets and keyframes stay on the footage they were placed on. Picture and sound use one time map, so a
+  split, trim or export keeps them in step.
 - **Crop, flip and anchor point** (Plan 5, Part 5E; saved data version 8): the Inspector's "Crop & Flip" section has four
   crop fields (percent from each edge), **Crop on canvas** (eight handles over the preview with a dashed outline of the
   full picture, live while you drag, one undo step per gesture, Escape cancels), **Fit** and **Fill** (scale the visible
@@ -176,8 +186,7 @@ The multi-layer timeline (Plan 2), audio editing (Plan 3), visual effects (Plan 
 real GPU/Mac/Safari/QuickTime. The rest of Plan 5 is outlined in
 [docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md](docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md):
 
-- **5E crop, flip, anchor point**, **5D speed** (constant speed, reverse, ramps, freeze frame, pitch-preserving
-  audio) and **5C transitions** (crossfade, wipe, slide, zoom on a cut).
+- **5C transitions** (crossfade, wipe, slide, zoom on a cut).
 - Later: text stagger/typewriter presets, effect-parameter presets, motion blur, loop-in, "convert preset to keyframes",
   library export/import, and a professional UI pass (a visual and usability polish of the whole editor; no data change).
 
@@ -326,7 +335,7 @@ Layers and the preview:
 - **Animation limits** (Plan 5, Part 5A):
   - At most **500 keys per property** (a further key is refused; a hand-edited project is trimmed to the earliest 500).
     A key costs about 55 to 60 bytes of saved project.
-  - No speed change, transitions or crop/flip yet (Parts 5E, 5D and 5C). (Presets, springs, loops and draggable paths
+  - No transitions yet (Part 5C). (Presets, springs, loops and draggable paths
     arrived in Part 5B, below.)
   - A split or trim that is not a whole number of frames from the clip's start can move the animation's frame grid by
     less than one frame. A static edit of an animated property is refused ("This setting is animated: change it at the
@@ -337,6 +346,17 @@ Layers and the preview:
   - Overlay text uses the device's system font; the animation measurements (preview frame time, memory, parity with
     the export) were made with the software renderer (SwiftShader) in headless Chromium on Linux, not on a real GPU,
     in Safari or in QuickTime (see `docs/superpowers/ledgers/plan-5a-manual-qa-checklist.md`).
+- **Speed limits** (Plan 5, Part 5D; saved data version 9 is one-way, a v8 build cannot open a v9 project):
+  - Speed stays between 25 % and 400 %; a ramp has at most 64 points and its speeds are clamped to that range. Speed applies to
+    video and audio clips; images, overlays and adjustment layers refuse it, and a freeze frame has no speed or sound.
+  - The pitch-preserving stretch is a block-based WSOLA: speech and music are good at 50 %-200 %; at 25 % and 400 % and on
+    sharp transients (a click) it smears, and its phase restarts once every 2 s (a faint seam). Preserve pitch off uses a
+    band-limited resampler and is exact. The audio markers of a retimed clip can sit up to about 3 frames from the picture's
+    at the extremes (measured 85 ms early at 25 %).
+  - Reverse playback decodes a window of frames at a time: a long-GOP clip (a key frame every 10 s) can be 2-3x slower to
+    reverse than to play forward and the live preview may drop frames; the export is exact. Real Mac/Safari behaviour is unverified.
+  - Keyframes and the emphasis / loop presets sit on footage time: speeding a clip up squeezes them, reversing mirrors them.
+    Ease editing of individual ramp points is not offered (use the presets and the point percentages).
 - **Crop, flip and anchor limits** (Plan 5, Part 5E; saved data version 8 is one-way, a v7 build cannot open a v8 project):
   - Crop is a mask on the full picture: the visible pixels never move and position, scale and rotation keep referring
     to the uncropped frame (so a rotation turns about the picture's centre, not the visible area's; use "To crop

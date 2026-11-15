@@ -46,3 +46,19 @@ test('exporting a 2x clip lasts half as long (ffprobe-grade duration from the mp
   expect(r.error).toBeNull();
   expect(r.info!.duration).toBeCloseTo(2, 1);
 });
+
+test('decode guard: 30 output frames at 4x decode at most ceil(4) + 1 source frames each', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [file]);
+  const c = clipOf(m, { speed: 4, out: 4, transform: { scale: 1 } });
+  const n = await page.evaluate(
+    async ({ p, times }) => {
+      window.cf.resetVideoDecodeCount();
+      await window.cf.renderPixels(p, times, { canvas: { width: 64, height: 36 } });
+      return window.cf.videoDecodeCount();
+    },
+    { p: project(FMT, [m], [c]), times: Array.from({ length: 30 }, (_, i) => i / 30) },
+  );
+  expect(n).toBeLessThanOrEqual(30 * 5);
+  expect(n).toBeGreaterThanOrEqual(30 * 4 - 8); // it really did read through the footage (no frames were skipped by a seek per frame)
+});

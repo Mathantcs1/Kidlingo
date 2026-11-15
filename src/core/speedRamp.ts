@@ -105,5 +105,3 @@ export function rampInverse(keys: readonly Keyframe[], y: number): number {
   return t.b[c] + Math.min(h, Math.max(0, d));
 }
 
-/** The speed at footage time `u` as the integral sees it, for edge extrapolation (same clamp as speedAt). */
-export const edgeSpeed = speedAt;

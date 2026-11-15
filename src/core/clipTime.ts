@@ -88,14 +88,14 @@ export function sourceAtOffset(c: Clip, tau: number): number {
   if (isIdentityTime(c)) return c.in + tau;
   if (c.freeze !== undefined) return c.freeze.at;
   const rev = c.reverse === true;
-  const { first, last } = edgeSpeeds(c);
   const D = clipDuration(c);
   const from = rev ? c.out : c.in;
   const to = rev ? c.in : c.out;
   const dir = rev ? -1 : 1;
   if (tau === 0) return from;
-  if (tau < 0) return from + dir * first * tau;
-  if (tau >= D) return tau === D ? to : to + dir * last * (tau - D);
+  // Beyond the clip's edges the map extrapolates at the speed held at the edge (the common in-range case needs no edge speeds).
+  if (tau < 0) return from + dir * edgeSpeeds(c).first * tau;
+  if (tau >= D) return tau === D ? to : to + dir * edgeSpeeds(c).last * (tau - D);
   if (hasRamp(c)) {
     const k = c.speedKeys!;
     return rev ? rampInverse(k, rampOffset(k, c.out) - tau) : rampInverse(k, rampOffset(k, c.in) + tau);
@@ -113,19 +113,16 @@ export function timelineTimeAt(c: Clip, u: number): number {
   if (isIdentityTime(c)) return c.start + (u - c.in);
   if (c.freeze !== undefined) return c.start;
   const rev = c.reverse === true;
-  const { first, last } = edgeSpeeds(c);
-  const D = clipDuration(c);
   const lo = c.in;
   const hi = c.out;
   if (hasRamp(c)) {
     const k = c.speedKeys!;
     if (u >= lo && u <= hi) return c.start + (rev ? rampOffset(k, c.out) - rampOffset(k, u) : rampOffset(k, u) - rampOffset(k, c.in));
+    const D = clipDuration(c);
     if (u < lo) return c.start + (rev ? D + (lo - u) / speedAt(k, lo) : (u - lo) / speedAt(k, lo));
     return c.start + (rev ? -(u - hi) / speedAt(k, hi) : D + (u - hi) / speedAt(k, hi));
   }
   const s = constSpeed(c);
-  void first;
-  void last;
   return c.start + (rev ? (c.out - u) / s : (u - c.in) / s);
 }
 

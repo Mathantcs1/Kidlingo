@@ -3,7 +3,7 @@
 // newer-version notice and its stored bytes never change.
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { trackErrors } from './helpers';
+import { PPS, clipEl, trackErrors } from './helpers';
 import { savedProject, writeSaved } from './overlay-helpers';
 import { setupPip } from './pip-helpers';
 import { CURRENT_VERSION } from '../helpers/project';
@@ -47,11 +47,9 @@ test('speed fields in a v9 save survive a reload; the timeline length follows th
   await reload(page);
   const after = await tone(page);
   expect([after.speed, after.reverse, after.in, after.out]).toEqual([2, true, before.in, before.out]);
-  const length = await page.evaluate(() => {
-    const c = window.__clipforge!.getState().history.present.tracks.flatMap((t) => t.clips).find((x) => x.id === 'tone')!;
-    return (c.out - c.in) / (c.speed ?? 1);
-  });
-  expect(length).toBeCloseTo(1, 9);
+  // The 2 s of footage at 2x lasts 1 s: the clip's drawn width on the timeline (60 px per second), not a recomputation.
+  const box = await clipEl(page, 'tone').boundingBox();
+  expect(box!.width / PPS).toBeCloseTo(1, 1);
   expect(errors).toEqual([]);
 });
 
