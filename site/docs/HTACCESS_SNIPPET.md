@@ -34,12 +34,14 @@ RewriteEngine On
 #    HTTP from /.well-known/; a redirect to HTTPS (or to the apex) can make renewal fail. This rule stops all rewriting for them.
 RewriteRule ^\.well-known/(acme-challenge|pki-validation)/ - [L]
 
-# 1. Force HTTPS (Bluehost's free SSL must be active first: open https://ideatoapps.net in a private window).
+# 1. PHASE B ONLY (after DNS points at Bluehost and https://ideatoapps.net opens): force HTTPS and redirect to the apex. Applied on the
+#    temporary URL it redirects you to a domain that does not resolve to this server yet and locks you out of wp-admin.
+#    (Bluehost's free SSL must be active first: open https://ideatoapps.net in a private window.)
 RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !=https
 RewriteRule ^ https://ideatoapps.net%{REQUEST_URI} [L,R=301]
 
-# 2. www -> apex (the canonical links and the sitemap use https://ideatoapps.net).
+# 2. PHASE B ONLY: www -> apex (the canonical links and the sitemap use https://ideatoapps.net).
 RewriteCond %{HTTP_HOST} ^www\.ideatoapps\.net$ [NC]
 RewriteRule ^ https://ideatoapps.net%{REQUEST_URI} [L,R=301]
 </IfModule>
@@ -77,6 +79,9 @@ AddOutputFilterByType DEFLATE text/html text/css application/javascript applicat
 ```
 
 ## Notes
+
+- **Rules 1 and 2 (redirect to `https://ideatoapps.net`) are Phase B only**: apply them after DNS points at Bluehost and the apex works
+  (`DEPLOYMENT_BLUEHOST.md`, sections 2, 5 and 6). While you build on the temporary URL, leave them out (rules 0 and 3 to 6 are safe).
 
 - Rule 0 keeps `/.well-known/acme-challenge/` (and cPanel's `/.well-known/pki-validation/`) out of both redirects, so a certificate
   can be issued or renewed over plain HTTP. Which of the two folders your Bluehost certificate check uses is unverified; the rule covers both.

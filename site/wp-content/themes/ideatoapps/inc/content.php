@@ -44,7 +44,8 @@ function ideatoapps_faq_items(): array {
 		),
 		array(
 			'q' => __( 'What does it cost?', 'ideatoapps' ),
-			'a' => __( 'ClipForge is a one-time purchase of $24.99 USD. There is no free trial.', 'ideatoapps' ),
+			/* translators: %s: price with currency, from the ClipForge product, such as "$24.99 USD". */
+			'a' => sprintf( __( 'ClipForge is a one-time purchase of %s. There is no free trial.', 'ideatoapps' ), ideatoapps_clipforge_price_text() ),
 		),
 		array(
 			'q' => __( 'Is my video uploaded anywhere?', 'ideatoapps' ),

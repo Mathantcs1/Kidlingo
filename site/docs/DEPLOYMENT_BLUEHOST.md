@@ -13,8 +13,8 @@ mailboxes stay **off** until the mailboxes exist. The privacy policy, terms and 
 | --- | --- | --- |
 | G1 | **Do not mail the newsletter list.** The sign-up form stores an email and a consent time; nothing is ever sent. There is no unsubscribe link, no double opt-in and no self-service erasure. Do not export the list into a mailing tool until all of those exist and you confirm a real mailbox. | Sending marketing email without unsubscribe or confirmed consent breaks anti-spam rules (CAN-SPAM, GDPR/PECR depending on the reader). |
 | G2 | **Set the `ideatoapps_client_ip` filter** if the site sits behind a proxy or CDN (Cloudflare, a Bluehost proxy cache). Snippet in `ENVIRONMENT.md` ("Client IP and the rate limit"). | The form rate limit (5 per minute per visitor) uses the connecting address. Behind a proxy every visitor looks the same, so a few people would block everyone. Without a proxy do nothing. |
-| G3 | **Raw zip URL returns 403.** In a private window open the direct address of a release zip. Find it in a test purchase: the download goes through a signed link; then try `https://ideatoapps.net/wp-content/uploads/woocommerce_uploads/` and any file path you can guess or see in the media library. It must answer **403** (or 404), never download. | Release zips must only reach paying customers. The code moves zips into `woocommerce_uploads/ideatoapps/<random>/` and relies on WooCommerce's `.htaccess` there. nginx ignores `.htaccess`, and the sandbox could not test it. |
-| G4 | **WordPress Address and Site Address are both `https://ideatoapps.net`** (the apex, no `www`). Settings > General. | Canonical links, the sitemap and structured data are hard-wired to the apex. A `www` address would make core's sitemap list the wrong host. |
+| G3 | **Raw zip URL returns 403.** In a private window open the direct address of a release zip. Find it in a test purchase: the download goes through a signed link; then try `https://ideatoapps.net/wp-content/uploads/woocommerce_uploads/` and any file path you can guess or see in the media library. It must answer **403** (or 404), never download. Also open `https://ideatoapps.net/wp-json/wp/v2/media?mime_type=application/zip` (and `/wp-json/wp/v2/media?per_page=100`) in a private window: it must list **no** release zip (an empty list `[]` is right). | Release zips must only reach paying customers. The code moves a zip into `woocommerce_uploads/ideatoapps/<random>/` the moment it is uploaded (before it is saved to any version) and makes the media item private, and relies on WooCommerce's `.htaccess` there. nginx ignores `.htaccess`, and the sandbox could not test it. |
+| G4 | **Phase B only:** once DNS points at Bluehost, **WordPress Address and Site Address are both `https://ideatoapps.net`** (the apex, no `www`). Settings > General. Never set them earlier (see the warning in section 2). | Canonical links, the sitemap and structured data are hard-wired to the apex. A `www` address would make core's sitemap list the wrong host. |
 | G5 | **Trash the default "Sample Page"** (Pages > All Pages) and the default "Hello world!" post if present. | WordPress adds them; they would be listed in the sitemap and public. |
 | G6 | **Owner decisions:** refund terms (the Refund page is a draft), sales-tax handling, and working mailboxes. | They are business/legal choices, not code. Not decided in this build. |
 | G7 | **Express Checkout (Apple Pay / Google Pay) versus the live-Stripe guard.** The guard only hides the Stripe gateway at checkout while Stripe is in live mode. The Stripe plugin's Express Checkout buttons (product and cart pages) are another surface. Disable them while testing, and verify them before going live. A Stripe setting with no `testmode` value counts as live. | See `STRIPE_SETUP.md`, "Going live". |
@@ -25,17 +25,33 @@ mailboxes stay **off** until the mailboxes exist. The privacy policy, terms and 
 
 - You need: Bluehost login, ability to open cPanel/File Manager, the two zips from `npm run site:package` (section 3), a Stripe account (test mode is enough to start).
 - PHP: the theme and plugin declare **PHP 8.0 as the minimum**. Choose PHP 8.1 or newer in the Bluehost control panel if offered (MultiPHP Manager in cPanel). The tests ran on PHP 8.3 only; **8.0 is unverified**.
-- Do **not** change DNS until you have decided to launch. Build and check on a temporary address first if Bluehost gives you one.
+- Do **not** change DNS until you have decided to launch. The work has two phases: **Phase A** (sections 2 to 4) builds and tests the site on the temporary address Bluehost gives you; **Phase B** (sections 5 and 6) switches to `ideatoapps.net` only after DNS points to Bluehost.
 - Domain `ideatoapps.net`: who holds the registration and where DNS lives is unknown to this document.
 
-## 2. Create the WordPress site
+## 2. Phase A: create the WordPress site on the temporary URL
 
 Menu names on Bluehost change; the intent matters more than the wording (unverified against the current dashboard).
 
+> **Phase A rules. Do NOT set Site Address / WordPress Address to `https://ideatoapps.net` yet, and do NOT apply the HTTPS/apex redirect rules
+> (rules 1 and 2) of `HTACCESS_SNIPPET.md` yet.** Stay on Bluehost's temporary URL (for example `https://<random>.temp.domains` or the server
+> hostname shown in the dashboard) until DNS for `ideatoapps.net` points at this Bluehost account (Phase B, sections 5 and 6).
+>
+> **Warning: lock-out.** If you set WordPress Address / Site Address to a domain that does not yet resolve to this server, the next page load
+> redirects to that domain and you can no longer open wp-admin. Recovery: in `wp-config.php` (File Manager) add, above the line
+> `/* That's all, stop editing! */`:
+>
+> ```php
+> define( 'WP_HOME', 'https://<temp-url>' );
+> define( 'WP_SITEURL', 'https://<temp-url>' );
+> ```
+>
+> (use your real temporary URL; remove both lines again in Phase B), or edit the `siteurl` and `home` rows of the `wp_options` table in phpMyAdmin
+> (your table prefix may differ from `wp_`) back to the temporary URL.
+
 1. Log in to Bluehost > **Websites** > **Add Site** > **WordPress** (or "Empty environment" and install WordPress yourself via the installer in cPanel).
-2. Choose the domain `ideatoapps.net`. Choose the **apex** (no `www`).
-3. Let Bluehost issue the free SSL certificate and wait until `https://ideatoapps.net` opens without a warning (private window).
-4. WordPress admin > **Settings > General**: set **WordPress Address (URL)** and **Site Address (URL)** to `https://ideatoapps.net` (gate G4).
+2. Create the site on the **temporary URL** Bluehost offers (you may attach `ideatoapps.net` as the domain later, in Phase B).
+3. Let Bluehost issue its SSL certificate for the temporary URL and wait until it opens without a warning (private window).
+4. Leave **Settings > General** addresses as they are (the temporary URL). Gate G4 belongs to Phase B.
 5. **Settings > Permalinks**: choose **Post name** and Save. (Needed for `/apps/clipforge/`.)
 6. Remove Bluehost's bundled sample content and any plugins you do not want (gate G5).
 
@@ -76,7 +92,11 @@ Follow `ADMIN_GUIDE.md`. In short:
 3. **Settings > IdeaToApps**: YouTube channel URL `https://www.youtube.com/channel/UCwlwxUoefdwEduU7pT8ctAw`. The Learn menu item appears only once at least one **Video** is published; the channel link alone does not add it.
 4. Leave **Contact form** off until the mailbox exists.
 
-## 5. HTTPS, apex and headers (`.htaccess`)
+## 5. Phase B: HTTPS, apex and headers (`.htaccess`)
+
+Only after DNS points at Bluehost and `https://ideatoapps.net` opens with a valid certificate (section 6). Rules 1 and 2 of the snippet redirect everything to
+`https://ideatoapps.net`; applied earlier they send you away from the temporary URL and lock you out. (During Phase A you may paste only the snippet
+without rules 1 and 2 if you want the headers and caching.)
 
 Paste the block from `HTACCESS_SNIPPET.md` above `# BEGIN WordPress` in `public_html/.htaccess` (copy the file first). It forces HTTPS,
 redirects `www` to the apex, keeps certificate validation requests (`/.well-known/acme-challenge/`) out of the redirects, adds security
@@ -84,9 +104,13 @@ headers and cache headers. **It has never run on a real server**; use its "Verif
 
 Also check for a Bluehost or Cloudflare setting that redirects HTTP to HTTPS or `www` to the apex; two redirect layers can loop.
 
-## 6. DNS and SSL checks (when you decide to go live)
+## 6. Phase B: DNS, SSL and the switch to the apex (when you decide to go live)
 
 DNS is yours to change; nothing here does it. Typical result: `ideatoapps.net` A record points at the Bluehost IP, `www` is a CNAME to the apex or a second A record.
+
+Order: (1) change DNS and wait until `ideatoapps.net` resolves to Bluehost; (2) attach the domain to the site in Bluehost and let it issue the SSL certificate;
+(3) **only then** set Settings > General **WordPress Address** and **Site Address** to `https://ideatoapps.net` (gate G4) and remove any `WP_HOME` / `WP_SITEURL`
+lines from `wp-config.php`; (4) apply the redirect rules (section 5); (5) run the checks below.
 
 - `https://ideatoapps.net` opens with a valid padlock. `http://`, `www` and `http://www` each end on `https://ideatoapps.net/` in one redirect.
 - `https://ideatoapps.net/robots.txt` lists the sitemap; `/sitemap.xml` opens (it redirects to `/wp-sitemap.xml`).
@@ -113,7 +137,7 @@ Restore test (do it once before launch, on a copy or a staging site if you can):
 - Before **any** update (WordPress, WooCommerce, Stripe plugin, our two zips) take a backup (section 7).
 - Update on a staging copy first when you can. WooCommerce major versions are the usual risk. The tested versions are WooCommerce 11.3.0 and WordPress 7.x; later versions are untested.
 - New theme or plugin zip: Plugins > Add New > Upload; WordPress offers "Replace current with uploaded". The plugin keeps your content (apps, versions, orders) because it lives in the database and in `uploads/`, not in the plugin folder.
-- **Rollback**: re-upload the previous zip (keep every zip you ship, named with its date), or restore the backup. If the site shows a white screen after an update, rename the new plugin folder in File Manager (`wp-content/plugins/ideatoapps-core` to `ideatoapps-core-off`) to disable it, then restore the old folder.
+- **Rollback**: re-upload the previous zip (keep every zip you ship, named with its date), or restore the backup. If the site shows a white screen after an update and you must disable the plugin, **first stop the store taking money**: put the store in maintenance mode (or WooCommerce > Settings > Payments: disable the Stripe gateway), and only then deactivate the plugin (Plugins page) or rename its folder in File Manager (`wp-content/plugins/ideatoapps-core` to `ideatoapps-core-off`), then restore the old folder. Without the plugin the **live-Stripe guard, login-for-downloads, no-guest-checkout and the buy gate are all gone**, so the shop would sell and serve downloads with none of those rules until it is back.
 - Removing a ClipForge version from an app takes it away from the product's downloads; buyers' permission rows are kept (dormant), but whether re-adding the same version re-activates them for earlier buyers is **not tested**, so avoid removing a version a customer already owns; add a newer one instead.
 
 ## 9. Email (SPF, DKIM, DMARC) once mailboxes exist

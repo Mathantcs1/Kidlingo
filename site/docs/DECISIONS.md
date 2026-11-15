@@ -32,7 +32,7 @@ and no fee figure is shown to visitors.
 
 ## Behaviour decisions made while building (each came from review)
 
-- One-time purchase of **$24.99 USD**, no free trial, no subscription. The charged price comes from the WooCommerce product only, never from the browser. The "Price label" is display text.
+- One-time purchase of **$24.99 USD**, no free trial, no subscription. The charged price comes from the WooCommerce product only, never from the browser. The displayed price (Buy button, card, FAQ, Terms) is read from that same product; the free-text "Price label" is only a fallback when no published product with a price is linked (review fix: the label could differ from the charge).
 - **Accounts are required to buy** (guest checkout is forced off, and cannot be turned back on in wp-admin). Downloads require login and are always streamed by WooCommerce, never redirected to the file.
 - **Versions**: each release is a version (x.y.z) with a changelog and a zip. Saving a version moves the zip to WooCommerce's protected uploads folder, adds it to the product, and gives access to every earlier buyer with a qualifying order. Removing a version takes the file off the product and keeps old permission rows dormant.
 - **Buy gate**: the Buy button and `?add-to-cart=` both require the app to be Published, Live, linked to a published product and to have a valid version file. A crafted URL gets the same answer as the button.
@@ -48,7 +48,7 @@ and no fee figure is shown to visitors.
 
 ## Known limits (accepted for phase 1)
 
-- Price text is fixed in two theme places (the FAQ answer and the Terms line), plus the app's own Price label: changing the price needs all three edited (`ADMIN_GUIDE.md` section 2).
+- The FAQ and Terms price text falls back to the launch price `$24.99 USD` when no ClipForge app with a priced, published product exists. Prose you type yourself in editors is not updated automatically (`ADMIN_GUIDE.md` section 2).
 - The newsletter has no unsubscribe or erasure (gate G1); the privacy draft must list the hashed rate-limit counters (they hold a hash of the IP, not the IP).
 - Checkout asks only for name and email: no billing address or phone. Revisit if you need tax by postcode or Stripe Radar rules.
 - A deleted media file leaves a stale product file entry; the buy gate then switches the Buy button off rather than selling something that cannot be delivered.

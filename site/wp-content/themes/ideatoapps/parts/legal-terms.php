@@ -16,7 +16,8 @@ $ideatoapps_confirm = static function ( string $text ): void {
 <p><?php $ideatoapps_confirm( __( 'legal name and address of the seller.', 'ideatoapps' ) ); ?></p>
 
 <h2><?php esc_html_e( 'Buying an app', 'ideatoapps' ); ?></h2>
-<p><?php esc_html_e( 'Apps on this site are bought once. The price shown on the app page is the price you pay. ClipForge is $24.99 USD, one time, and there is no free trial.', 'ideatoapps' ); ?></p>
+<?php /* translators: %s: price with currency, from the ClipForge product, such as "$24.99 USD". */ ?>
+<p><?php echo esc_html( sprintf( __( 'Apps on this site are bought once. The price shown on the app page is the price you pay. ClipForge is %s, one time, and there is no free trial.', 'ideatoapps' ), ideatoapps_clipforge_price_text() ) ); ?></p>
 <p><?php $ideatoapps_confirm( __( 'how taxes (sales tax or VAT) are handled and shown at checkout.', 'ideatoapps' ) ); ?></p>
 
 <h2><?php esc_html_e( 'Downloads', 'ideatoapps' ); ?></h2>

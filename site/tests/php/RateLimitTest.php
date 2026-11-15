@@ -63,6 +63,50 @@ final class RateLimitTest extends WPTestCase {
 		$this->assertSame( 'no-cache', $res->get_headers()['Pragma'] ?? '' );
 	}
 
+	/** Call the nonce route with a login cookie for a real user; returns [route nonce, user nonce, anonymous nonce]. */
+	private function nonce_with_cookie( array $headers, array $params = array() ): array {
+		$uid    = self::make_user( 'subscriber' );
+		$cookie = wp_generate_auth_cookie( $uid, time() + 3600, 'logged_in' );
+		$_COOKIE[ LOGGED_IN_COOKIE ] = $cookie;
+		wp_set_current_user( $uid );
+		$user = wp_create_nonce( 'wp_rest' );
+		wp_set_current_user( 0 );
+		$anon = wp_create_nonce( 'wp_rest' );
+		$req  = new WP_REST_Request( 'GET', '/ideatoapps/v1/nonce' );
+		foreach ( $headers as $k => $v ) {
+			$req->set_header( $k, $v );
+		}
+		foreach ( $params as $k => $v ) {
+			$req->set_param( $k, $v );
+		}
+		$got = rest_do_request( $req )->get_data()['nonce'];
+		unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
+		wp_set_current_user( 0 );
+		$this->assertNotSame( $user, $anon, 'precondition: user and anonymous nonces differ' );
+		return array( $got, $user, $anon );
+	}
+
+	public function test_nonce_route_gives_a_foreign_origin_only_the_anonymous_nonce(): void {
+		list( $got, , $anon ) = $this->nonce_with_cookie( array( 'Origin' => 'https://evil.example' ) );
+		$this->assertSame( $anon, $got );
+		list( $got, , $anon ) = $this->nonce_with_cookie( array( 'Origin' => 'null' ) );
+		$this->assertSame( $anon, $got, 'opaque origin' );
+		list( $got, , $anon ) = $this->nonce_with_cookie( array( 'Origin' => 'https://' . wp_parse_url( home_url(), PHP_URL_HOST ) . '.evil.example' ) );
+		$this->assertSame( $anon, $got, 'look-alike host' );
+	}
+
+	public function test_nonce_route_gives_same_origin_and_origin_less_requests_the_user_nonce(): void {
+		list( $got, $user ) = $this->nonce_with_cookie( array() );
+		$this->assertSame( $user, $got, 'no Origin header' );
+		list( $got, $user ) = $this->nonce_with_cookie( array( 'Origin' => home_url() ) );
+		$this->assertSame( $user, $got, 'same Origin' );
+	}
+
+	public function test_nonce_route_refuses_to_authenticate_jsonp_callers(): void {
+		list( $got, , $anon ) = $this->nonce_with_cookie( array(), array( '_jsonp' => 'steal' ) );
+		$this->assertSame( $anon, $got );
+	}
+
 	public function test_client_ip_uses_remote_addr_only_and_a_validated_filter(): void {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '9.9.9.9';
 		$this->assertSame( $_SERVER['REMOTE_ADDR'], ideatoapps_client_ip() );

@@ -15,6 +15,7 @@ require_once get_template_directory() . '/inc/head.php';
 require_once get_template_directory() . '/inc/brand.php';
 require_once get_template_directory() . '/inc/navigation.php';
 require_once get_template_directory() . '/inc/home.php';
+require_once get_template_directory() . '/inc/app-price.php';
 require_once get_template_directory() . '/inc/app-data.php';
 require_once get_template_directory() . '/inc/catalog.php';
 require_once get_template_directory() . '/inc/content.php';

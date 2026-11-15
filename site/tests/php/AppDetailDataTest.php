@@ -52,7 +52,7 @@ final class AppDetailDataTest extends WPTestCase {
 		$this->assertSame( 'Buy Buyable, $5.00 one-time', $buy['label'] );
 		$this->assertSame( add_query_arg( 'add-to-cart', $pid, get_permalink( $live ) ), $buy['href'] );
 
-		$this->assertSame( 'Buy NoPrice', ideatoapps_app_buy_state( get_post( $this->sellable( array(), 'NoPrice' ) ) )['label'] );
+		$this->assertSame( 'Buy NoPrice, $5.00 one-time', ideatoapps_app_buy_state( get_post( $this->sellable( array(), 'NoPrice' ) ) )['label'], 'no label needed: the price comes from the product' );
 		$this->assertSame( 'none', ideatoapps_app_buy_state( get_post( $this->app( array(), 'No product' ) ) )['kind'] );
 		$this->assertSame( 'none', ideatoapps_app_buy_state( get_post( $this->app( array( 'woo_product_id' => 999999 ), 'Missing product' ) ) )['kind'] );
 		$soon = ideatoapps_app_buy_state( get_post( $this->sellable( array( 'delivery_status' => 'coming_soon', 'price_label' => '$5.00' ), 'Soon' ) ) );

@@ -137,4 +137,16 @@ final class NewsletterTest extends WPTestCase {
 		$this->assertFalse( ideatoapps_can_export_subscribers( 'bad' ) );
 		$this->assertTrue( ideatoapps_can_export_subscribers( wp_create_nonce( 'ideatoapps_export_subscribers' ) ) );
 	}
+
+	public function test_the_admin_list_page_repeats_launch_gate_g1(): void {
+		wp_set_current_user( self::make_user( 'administrator' ) );
+		ob_start();
+		ideatoapps_render_export_page();
+		$html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'Do not mail anyone from this list', $html );
+		$this->assertStringContainsString( 'G1', $html );
+		$this->assertStringContainsString( 'unsubscribe', $html );
+		$this->assertStringContainsString( 'double opt-in', $html );
+		$this->assertStringNotContainsString( 'to use it elsewhere', $html );
+	}
 }

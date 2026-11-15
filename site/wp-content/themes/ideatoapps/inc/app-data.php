@@ -104,11 +104,11 @@ function ideatoapps_app_buy_state( WP_Post $app ): array {
 	if ( ! function_exists( 'ideatoapps_app_is_sellable' ) || ! ideatoapps_app_is_sellable( $app->ID ) ) {
 		return array( 'kind' => 'soon' );
 	}
-	$price = trim( (string) get_post_meta( $app->ID, 'price_label', true ) );
+	$price = ideatoapps_app_price_text( $app->ID );
 	$title = get_the_title( $app );
 	return array(
 		'kind'  => 'buy',
-		/* translators: 1: app title, 2: price label such as "$24.99 one-time". */
+		/* translators: 1: app title, 2: price such as "$24.99 one-time", taken from the WooCommerce product. */
 		'label' => '' !== $price ? sprintf( __( 'Buy %1$s, %2$s', 'ideatoapps' ), $title, $price ) : sprintf( __( 'Buy %s', 'ideatoapps' ), $title ),
 		'href'  => add_query_arg( 'add-to-cart', $product_id, get_permalink( $app ) ),
 	);

@@ -119,4 +119,12 @@ final class ContentPagesTest extends WPTestCase {
 		$this->assertStringContainsStringIgnoringCase( 'Safari', $text );
 		$this->assertDoesNotMatchRegularExpression( '/\b(Edge|Windows|macOS|Linux|account library|refund within|\d+-day)\b/i', $text );
 	}
+
+	public function test_draft_privacy_policy_mentions_the_hashed_rate_limit_counters_and_keeps_the_banner(): void {
+		$html = $this->render( 'legal-privacy' );
+		$this->assertStringContainsString( 'hash of your IP address', $html );
+		$this->assertStringContainsString( 'weak', $html );
+		$this->assertStringContainsString( 'owner to confirm', strtolower( $html ) );
+		$this->assertStringContainsString( 'DRAFT, pending legal review', $this->render( 'draft-banner' ) );
+	}
 }

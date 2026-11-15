@@ -16,7 +16,7 @@ if ( ! $ideatoapps_app instanceof WP_Post ) {
 	return;
 }
 $ideatoapps_soon   = 'coming_soon' === (string) get_post_meta( $ideatoapps_app->ID, 'delivery_status', true ) || 'soon' === ideatoapps_app_buy_state( $ideatoapps_app )['kind'];
-$ideatoapps_price  = trim( (string) get_post_meta( $ideatoapps_app->ID, 'price_label', true ) );
+$ideatoapps_price  = ideatoapps_app_price_text( $ideatoapps_app->ID );
 $ideatoapps_terms  = get_the_terms( $ideatoapps_app, 'app_category' );
 if ( $ideatoapps_soon ) {
 	$ideatoapps_note = '<p class="card__note card__note--soon">' . esc_html__( 'Coming soon', 'ideatoapps' ) . '</p>';

@@ -59,7 +59,7 @@ The newsletter and contact REST routes allow 5 requests per minute per visitor (
 one `add_option()` creates the counter row, later requests run a single SQL `UPDATE ... option_value = option_value + 1`
 and read the value back from the database (or `wp_cache_incr()` when a persistent object cache exists), so parallel
 requests cannot slip past the limit. Counter rows are named `ita_rl_<form>_<md5 of IP>_<minute>` and rows of old minutes
-are purged automatically; no IP is stored in plain text.
+are purged automatically; the IP is stored only as an MD5 hash, which is weak for IPv4 (only about four billion possible addresses, so a hash can be reversed by guessing) and is therefore still personal data; rows are kept for about a minute and are cleaned up when the next counter is created, so on a quiet site a few can linger.
 
 `ideatoapps_client_ip()` (plugin `includes/rest-guard.php`) uses **`REMOTE_ADDR` only**. `X-Forwarded-For` is
 client-controlled and is never trusted by default. Behind a proxy or CDN (Cloudflare, Bluehost proxy cache) all visitors

@@ -20,7 +20,7 @@ Safety rules that never change:
 4. Fill the **Product details** box:
    - **Tagline**: one sentence under the title.
    - **Platforms**: what it runs on. Only write what has been tested.
-   - **Price label**: the words shown to visitors, for example `$24.99 one-time` (see section 2: this is text only).
+   - **Price label**: fallback text such as `$24.99 one-time`, used only when no WooCommerce product is linked; otherwise the price comes from the product (section 2).
    - **Launch URL / Demo URL / Video ID**: leave empty if you have none.
    - **Delivery status**: **Draft** (hidden from the catalog), **Coming soon** (listed, no price, no buy button) or **Live**.
    - **Features**: one per line. **FAQ**: click **Add question** for each question and answer.
@@ -34,11 +34,11 @@ The app page never shows a download link. Only a signed-in buyer gets the file.
 
 ## 2. Change the price
 
-There are **two** places, and they must match:
+Change it in **one** place: **Products** (WooCommerce) > open ClipForge > **Regular price** (or **Sale price**) > **Update**. No developer edit is needed:
 
-1. **What is charged:** **Products** (WooCommerce) > open ClipForge > **Regular price** > **Update**. This is the only number used at checkout. The structured data (search engines) follows this price too.
-2. **What visitors read:** the app's **Price label** in **Product details** (for example `$29.99 one-time`) > **Update**.
-3. Also edit the sentences that mention the old price in the draft **Terms** page and the **FAQ** page. The FAQ answer "What does it cost?" and the Terms line are fixed text in the theme: they need a developer to change, or replace the Terms page text in the editor with your own text.
+- The Buy button ("Buy ClipForge, $29.99 one-time"), the app card, the **FAQ** answer "What does it cost?" and the draft **Terms** page all read the price from that WooCommerce product, so they change with it. The checkout charge and the structured data (search engines) use it too.
+- The app's **Price label** (Product details) is now only a fallback, shown when the app has no linked, published WooCommerce product with a price. You can leave it as it is when a product is linked.
+- If you wrote your own sentences with a price in the Terms or FAQ editor text, or in the app's long description, those are plain text and you must edit them yourself.
 
 Currency is USD only. A price change affects new purchases only. People who already bought keep their access.
 
@@ -63,7 +63,7 @@ Past buyers get every new version automatically (see below). To release one:
 
 **How past buyers get it:** when you save a new version, the site gives every customer who already bought ClipForge (completed or processing order, not refunded or cancelled) download permission for it. They do nothing: next time they open **My account > Downloads** ("My library") the new version is at the top with your changelog and a **Download** button. No email is sent about it (email delivery is not set up), so tell them yourself if you want them to know. The old versions stay available to them. Someone who bought **before** 1.1.0 exists and someone who buys **after** both see every version.
 
-Notes: a version's file can be set only by an administrator or the person who uploaded it. Avoid **Remove** on a version someone already owns; add a newer one instead. The zip is stored in a protected folder the moment you save; the public media library address of the zip must not be shared.
+Notes: a version's file can be set only by an administrator or the person who uploaded it. Avoid **Remove** on a version someone already owns; add a newer one instead. The zip is moved into a protected folder the moment it is uploaded to the media library (before you save the version) and the media item becomes private; the public media library address of the zip must not be shared.
 
 ## 5. Handle an order
 

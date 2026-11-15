@@ -125,7 +125,7 @@ function ideatoapps_render_export_page() {
 			echo esc_html( sprintf( _n( '%d address is stored on this site, each with the time the visitor gave consent.', '%d addresses are stored on this site, each with the time the visitor gave consent.', $count, 'ideatoapps-core' ), $count ) );
 			?>
 		</p>
-		<p><?php esc_html_e( 'No mail service is connected: nothing is sent from this site. Download the list to use it elsewhere.', 'ideatoapps-core' ); ?></p>
+		<p><?php esc_html_e( 'No mail service is connected: nothing is sent from this site. Do not mail anyone from this list yet (launch gate G1): there is no unsubscribe link and no double opt-in, so sending marketing email would break anti-spam rules. Download the list only once both exist.', 'ideatoapps-core' ); ?></p>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="ideatoapps_export_subscribers">
 			<?php wp_nonce_field( 'ideatoapps_export_subscribers' ); ?>

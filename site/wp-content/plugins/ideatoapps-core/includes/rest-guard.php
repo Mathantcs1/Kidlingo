@@ -90,15 +90,44 @@ function ideatoapps_rate_limit_exceeded( $bucket ) {
 }
 
 /**
- * Fresh REST nonce for pages served from a cache (GET /ideatoapps/v1/nonce). Never cacheable. For a signed-in visitor
- * the cookie is checked here because REST drops the user when no nonce was sent.
+ * Is this request first-party? Only a request with no Origin header (same-origin GETs, navigations) or an Origin whose
+ * host is this site's host may be authenticated from the login cookie. WordPress CORS replies echo the Origin with
+ * credentials allowed, so a foreign page could otherwise read the visitor's real `wp_rest` nonce. The JSONP callback
+ * (`_jsonp`) is a second cross-site way to read the response, so it is never first-party either.
  *
+ * @param WP_REST_Request $request Request.
+ * @return bool
+ */
+function ideatoapps_rest_is_first_party( $request ) {
+	$jsonp = $request->get_param( '_jsonp' );
+	if ( null !== $jsonp && '' !== $jsonp ) {
+		return false;
+	}
+	$origin = $request->get_header( 'origin' );
+	if ( null === $origin || '' === $origin ) {
+		return true;
+	}
+	$host = wp_parse_url( (string) $origin, PHP_URL_HOST );
+	$home = wp_parse_url( home_url(), PHP_URL_HOST );
+	return is_string( $host ) && is_string( $home ) && 0 === strcasecmp( $host, $home );
+}
+
+/**
+ * Fresh REST nonce for pages served from a cache (GET /ideatoapps/v1/nonce). Never cacheable. For a signed-in visitor
+ * the cookie is checked here because REST drops the user when no nonce was sent, but only for first-party requests
+ * (see ideatoapps_rest_is_first_party()); a foreign Origin or JSONP caller always gets the anonymous nonce.
+ *
+ * @param WP_REST_Request $request Request.
  * @return WP_REST_Response
  */
-function ideatoapps_rest_nonce() {
-	$uid = wp_validate_auth_cookie( '', 'logged_in' );
-	if ( $uid ) {
-		wp_set_current_user( $uid );
+function ideatoapps_rest_nonce( $request ) {
+	if ( ideatoapps_rest_is_first_party( $request ) ) {
+		$uid = wp_validate_auth_cookie( '', 'logged_in' );
+		if ( $uid ) {
+			wp_set_current_user( $uid );
+		}
+	} else {
+		wp_set_current_user( 0 );
 	}
 	$res = new WP_REST_Response( array( 'nonce' => wp_create_nonce( 'wp_rest' ) ), 200 );
 	$res->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private' );

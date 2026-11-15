@@ -39,6 +39,48 @@ final class CommerceProtectTest extends CommerceTestCase {
 		$this->assertSame( $moved, ideatoapps_protect_attachment_file( $att ), 'idempotent' );
 	}
 
+	public function test_a_zip_is_protected_at_upload_even_if_it_is_never_saved_to_a_version(): void {
+		$att  = $this->zip_attachment( 'never-saved.zip' );
+		$path = get_attached_file( $att );
+		$this->assertStringStartsWith( $this->protected_root(), $path, 'in the protected folder straight away' );
+		$this->assertFileExists( $path );
+		$this->assertFileDoesNotExist( wp_upload_dir()['path'] . '/never-saved.zip', 'no public copy' );
+		$this->assertSame( 'private', get_post_status( $att ) );
+		$public = get_posts( array( 'post_type' => 'attachment', 'post_status' => 'inherit', 'post_mime_type' => 'application/zip', 'numberposts' => -1, 'fields' => 'ids' ) );
+		$this->assertNotContains( $att, array_map( 'intval', $public ), 'not in the anonymous media list (/wp/v2/media?mime_type=application/zip)' );
+	}
+
+	public function test_non_zip_uploads_stay_where_they_are_and_public(): void {
+		$up  = wp_upload_bits( 'pic.png', null, 'x' );
+		$img = (int) wp_insert_attachment( array( 'post_mime_type' => 'image/png', 'post_title' => 'p', 'post_status' => 'inherit' ), $up['file'] );
+		$this->assertNotSame( 'private', get_post_status( $img ) );
+		$this->assertStringNotContainsString( 'woocommerce_uploads', (string) get_attached_file( $img ) );
+	}
+
+	public function test_a_zip_protected_at_upload_still_links_to_a_version_and_keeps_the_buyer_file_name(): void {
+		$app = $this->app();
+		$att = $this->zip_attachment( 'my upload (3).zip' );
+		$dir = dirname( get_attached_file( $att ) );
+		$this->assertTrue( ideatoapps_add_version( $app, '1.0.0', 'x', $att ) );
+		$path = get_attached_file( $att );
+		$this->assertSame( $dir, dirname( $path ), 'renamed in place, same unguessable folder' );
+		$this->assertStringEndsWith( '/ClipForge-1.0.0.zip', $path );
+		$this->assertFileExists( $path );
+		$product = wc_get_product( (int) get_post_meta( $app, 'woo_product_id', true ) );
+		$this->assertTrue( $product->has_file( ideatoapps_download_id( $app, '1.0.0' ) ), 'the product links the file' );
+		$this->assertNotSame( '', ideatoapps_valid_zip_attachment( $att ) );
+	}
+
+	public function test_an_already_named_protected_file_is_not_renamed_again(): void {
+		$app = $this->app();
+		$att = $this->zip_attachment( 'first.zip' );
+		ideatoapps_add_version( $app, '1.0.0', 'x', $att );
+		$named = get_attached_file( $att );
+		wp_update_post( array( 'ID' => $app, 'post_title' => 'Renamed App' ) );
+		ideatoapps_update_version( $app, '1.0.0', 'y', $att );
+		$this->assertSame( $named, get_attached_file( $att ), 'buyers keep the file name they were sold' );
+	}
+
 	public function test_updating_a_version_with_a_new_file_protects_it_without_a_product(): void {
 		$app = $this->unlinked_app();
 		ideatoapps_add_version( $app, '1.0.0', 'x', $this->zip_attachment( 'a.zip' ) );

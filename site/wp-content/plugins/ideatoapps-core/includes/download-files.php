@@ -93,6 +93,46 @@ function ideatoapps_protected_root(): string {
 }
 
 /**
+ * A zip protected at upload keeps its upload name until it is first put on a version; then it is renamed (in its own
+ * unguessable folder) to the buyer-facing name. Files that already carry a name are never renamed again.
+ *
+ * @param int    $attachment_id Attachment post ID.
+ * @param string $path          Real path inside the protected folder.
+ * @param string $basename      Buyer-facing file name.
+ * @return string Real path after the optional rename.
+ */
+function ideatoapps_name_protected_file( int $attachment_id, string $path, string $basename ): string {
+	$name   = sanitize_file_name( $basename );
+	$target = dirname( $path ) . '/' . $name;
+	if ( ! get_post_meta( $attachment_id, '_ideatoapps_unnamed', true ) || '' === $name || $target === $path ) {
+		return $path;
+	}
+	delete_post_meta( $attachment_id, '_ideatoapps_unnamed' );
+	if ( file_exists( $target ) || ! rename( $path, $target ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
+		return $path;
+	}
+	update_attached_file( $attachment_id, $target );
+	return realpath( $target ) ?: $target;
+}
+
+/**
+ * A zip was just uploaded to the media library: protect it right away (same helper the version save uses), so it is never
+ * public between the upload and the first save of a version. Ruling: only while WooCommerce is active, like the version
+ * protection. Anything that is not a real zip is left alone.
+ *
+ * @param int $attachment_id New attachment ID.
+ */
+function ideatoapps_protect_new_zip_upload( $attachment_id ): void {
+	if ( ! ideatoapps_woocommerce_active() || '' === ideatoapps_valid_zip_attachment( (int) $attachment_id ) ) {
+		return;
+	}
+	if ( '' !== ideatoapps_protect_attachment_file( (int) $attachment_id ) ) {
+		update_post_meta( (int) $attachment_id, '_ideatoapps_unnamed', 1 );
+	}
+}
+add_action( 'add_attachment', 'ideatoapps_protect_new_zip_upload' );
+
+/**
  * Make sure a valid version file lives in the protected folder, moving it there once.
  *
  * @param int    $attachment_id Attachment post ID.
@@ -106,7 +146,7 @@ function ideatoapps_protect_attachment_file( int $attachment_id, string $basenam
 		return '';
 	}
 	if ( 0 === strpos( $path, $root . DIRECTORY_SEPARATOR ) ) {
-		return $path;
+		return '' !== $basename ? ideatoapps_name_protected_file( $attachment_id, $path, $basename ) : $path;
 	}
 	$dir = $root . '/' . bin2hex( random_bytes( 6 ) );
 	if ( ! wp_mkdir_p( $dir ) ) {
