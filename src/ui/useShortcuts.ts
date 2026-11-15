@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { deleteSelected, redo, rippleDeleteSelected, splitAtPlayhead, togglePlay, undo } from './commands';
 import { isKeyboardFocused } from './inputModality';
 import { TRANSFORMING_CLASS } from './useTransformDrag';
+import { toggleFxBypass } from './fxCommands';
 import { isTextEntry, nativeSpaceTarget } from './keys';
 import type { Shortcut } from './keys';
 import { shortcutBlockedByRange, shortcutFor } from './keys';
@@ -47,6 +48,12 @@ export function useShortcuts(enabled: boolean): void {
       // Space mid-drag on the preview would start playback under the gesture: swallow it until the drag ends.
       if (isSpace(e) && document.documentElement.classList.contains(TRANSFORMING_CLASS)) {
         e.preventDefault();
+        return;
+      }
+      // Backslash toggles the preview-only "Effects off" compare view.
+      if (e.key === '\\' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
+        e.preventDefault();
+        toggleFxBypass();
         return;
       }
       const parts = keyParts(e);

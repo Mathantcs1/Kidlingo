@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useEditor } from '../state/store';
 import { fitBox, previewSize } from './layout';
 import { PreviewRenderer } from './previewRenderer';
+import { FX_SCHEMAS } from '../fx/params';
 import { showError } from './Toast';
 import { ChunkLoadError } from '../loadChunk';
 import { toGlUnavailable } from '../render/glErrors';
@@ -36,6 +37,7 @@ function glFailure(e: unknown): Failure {
 export default function Preview({ editable }: { editable: boolean }) {
   const project = useEditor((s) => s.history.present);
   const playhead = useEditor((s) => s.playhead);
+  const fxBypass = useEditor((s) => s.fxBypass);
   const [stageRef, size] = useElementSize<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<PreviewRenderer | null>(null);
@@ -63,6 +65,7 @@ export default function Preview({ editable }: { editable: boolean }) {
     let cancelled = false;
     PreviewRenderer.create(canvas, {
       onSourceError: (name) => showError(`Could not open ${name} for the preview`),
+      onFxError: (type) => showError(`The ${FX_SCHEMAS[type].label} effect is not supported by this computer's graphics, so it is skipped`),
       onFatal: (message) => {
         if (!cancelled) setFailure({ message });
       },
@@ -95,8 +98,8 @@ export default function Preview({ editable }: { editable: boolean }) {
     const r = rendererRef.current;
     if (!r) return;
     r.resize(pixels.width, pixels.height);
-    r.request(shown, playhead);
-  }, [shown, playhead, pixels.width, pixels.height, generation]);
+    r.request(shown, playhead, { bypassFx: fxBypass });
+  }, [shown, playhead, pixels.width, pixels.height, generation, fxBypass]);
 
   return (
     <section className="preview" aria-label="Preview">
@@ -110,6 +113,11 @@ export default function Preview({ editable }: { editable: boolean }) {
           height={pixels.height}
           style={{ width: box.width, height: box.height, display: failure ? 'none' : undefined }}
         />
+        {fxBypass && !failure && (
+          <span className="preview-fx-off" data-testid="fx-bypass-tag" role="status">
+            Effects off
+          </span>
+        )}
         {editable && !failure && (
           <TransformOverlay project={project} playhead={playhead} box={canvasBox} canvasRef={canvasRef} live={live} onLive={setLive} />
         )}

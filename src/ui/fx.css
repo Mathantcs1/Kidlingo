@@ -1,0 +1,13 @@
+.fx-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fx-bypass[aria-pressed='true'] { background: var(--accent, #3a7bd5); color: #fff; }
+.look-gallery { display: grid; gap: 6px; margin: 6px 0; }
+.look-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.look-btn { display: flex; flex-direction: column; align-items: stretch; gap: 3px; padding: 3px; font-size: 11px; }
+.look-btn[aria-pressed='true'] { outline: 2px solid var(--accent, #3a7bd5); }
+.look-swatch { display: block; height: 14px; border-radius: 3px; }
+.fx-lut { display: grid; gap: 4px; }
+.fx-lut-missing { color: var(--danger, #d9534f); font-size: 12px; }
+.fx-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.fx-color input[type='color'] { width: 100%; height: 26px; padding: 0; }
+.clip-fx-badge { position: absolute; right: 4px; top: 2px; font-size: 10px; padding: 0 4px; border-radius: 6px; background: rgba(0, 0, 0, 0.55); color: #fff; }
+.preview-fx-off { position: absolute; left: 10px; top: 8px; font-size: 12px; padding: 2px 8px; border-radius: 10px; background: rgba(0, 0, 0, 0.65); color: #fff; pointer-events: none; }

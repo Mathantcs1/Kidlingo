@@ -1,5 +1,5 @@
 // Drives the preview compositor: latest-wins render scheduling and one VideoSource per active video clip.
-import type { Id, Project } from '../core/model';
+import type { FxType, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import type { Compositor } from '../render/compositor';
 import { shownClipIds, visualClipsAt } from '../render/visible';
@@ -10,6 +10,8 @@ export interface PreviewCallbacks {
   onSourceError(name: string): void;
   /** Rendering is no longer possible (e.g. the WebGL context was lost). */
   onFatal(message: string): void;
+  /** An effect's shader does not compile on this GPU (called once per effect type); the effect is skipped. */
+  onFxError?(type: FxType): void;
 }
 
 const LOST = 'WebGL context lost';
@@ -19,6 +21,7 @@ const KEEP_RECENT = 2;
 interface Request {
   p: Project;
   t: number;
+  bypassFx: boolean;
 }
 
 /**
@@ -46,7 +49,7 @@ export class PreviewRenderer {
   static async create(canvas: HTMLCanvasElement, callbacks: PreviewCallbacks): Promise<PreviewRenderer> {
     // Shares the lazily loaded chunk the exporter uses for the compositor.
     const { createCompositor } = await loadChunk(() => import('../render/compositor'));
-    return new PreviewRenderer(canvas, createCompositor(canvas, { preserveDrawingBuffer: true }), callbacks);
+    return new PreviewRenderer(canvas, createCompositor(canvas, { preserveDrawingBuffer: true, onFxError: (type) => callbacks.onFxError?.(type) }), callbacks);
   }
 
   resize(width: number, height: number): void {
@@ -55,9 +58,9 @@ export class PreviewRenderer {
   }
 
   /** Renders `p` at `t` as soon as the current render (if any) finishes, replacing any older pending request. */
-  request(p: Project, t: number): void {
+  request(p: Project, t: number, opts: { bypassFx?: boolean } = {}): void {
     if (this.disposed || this.stopped) return;
-    this.pending = { p, t };
+    this.pending = { p, t, bypassFx: opts.bypassFx === true };
     this.canvas.dataset.renderState = 'busy';
     if (!this.running) void this.pump();
   }
@@ -81,12 +84,12 @@ export class PreviewRenderer {
   private async pump(): Promise<void> {
     this.running = true;
     while (this.pending && !this.disposed) {
-      const { p, t } = this.pending;
+      const { p, t, bypassFx } = this.pending;
       this.pending = null;
       try {
         await this.syncSources(p, t);
         if (this.disposed) break;
-        await this.compositor.renderFrame(p, t, this.sources);
+        await this.compositor.renderFrame(p, t, this.sources, { bypassFx });
         this.canvas.dataset.renderedT = String(t);
       } catch (e) {
         if (this.disposed) break;

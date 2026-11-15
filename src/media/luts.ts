@@ -63,3 +63,14 @@ export async function listLutIds(): Promise<Id[]> {
   for await (const name of dir.keys()) ids.push(name);
   return ids.sort();
 }
+
+export async function hasLut(id: Id): Promise<boolean> {
+  const dir = await lutDir();
+  try {
+    await dir.getFileHandle(id);
+    return true;
+  } catch (e) {
+    if (isNotFound(e)) return false;
+    throw e;
+  }
+}

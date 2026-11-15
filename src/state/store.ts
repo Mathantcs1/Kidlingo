@@ -18,6 +18,8 @@ export interface EditorState {
   lastError: string | null;
   /** Why the last autosave failed, or null while saving works (set by the autosave below). */
   saveError: string | null;
+  /** Preview-only "Effects off" compare view (not saved, not part of undo, never used by export). */
+  fxBypass: boolean;
 }
 
 export interface EditorActions {
@@ -29,6 +31,7 @@ export interface EditorActions {
   setActiveTrack(id: Id | null): void;
   setPlayhead(t: number): void;
   setPlaying(b: boolean): void;
+  setFxBypass(b: boolean): void;
   loadProject(p: Project): void;
 }
 
@@ -40,6 +43,11 @@ export const useEditor = create<EditorState & EditorActions>()((set, get) => ({
   playing: false,
   lastError: null,
   saveError: null,
+  fxBypass: false,
+
+  setFxBypass(b) {
+    set({ fxBypass: b });
+  },
 
   apply(fn) {
     const { history } = get();

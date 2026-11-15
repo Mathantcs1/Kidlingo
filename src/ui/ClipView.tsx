@@ -3,6 +3,7 @@ import { clipDuration } from '../core/model';
 import type { Clip, Id, MediaRef } from '../core/model';
 import { useEditor } from '../state/store';
 import './audio.css';
+import './fx.css';
 import { toggleSelection } from './edits';
 import { timeToPx } from './layout';
 import Waveform from './Waveform';
@@ -22,6 +23,7 @@ interface ClipViewProps {
 /** A clip on a lane: click selects, the body drags to move, the edge handles drag to trim. */
 export default function ClipView({ clip, media, pps, selected, locked, dragging, onDragStart }: ClipViewProps) {
   const missing = media?.missing === true;
+  const fxCount = clip.fx.filter((e) => e.enabled).length;
   const name = media?.name ?? (clip.kind === 'overlay' ? 'Overlay' : 'Unknown media');
   const onClick = (e: MouseEvent): void => {
     e.stopPropagation();
@@ -52,6 +54,11 @@ export default function ClipView({ clip, media, pps, selected, locked, dragging,
       )}
       <span className="clip-name">{name}</span>
       {missing && <span className="clip-missing">missing media</span>}
+      {fxCount > 0 && (
+        <span className="clip-fx-badge" data-testid="clip-fx-badge" title={`${fxCount} effect${fxCount === 1 ? '' : 's'}`}>
+          fx {fxCount}
+        </span>
+      )}
       {clip.kind === 'video' && clip.audio.silent && (
         <span className="clip-detached-badge" data-testid="clip-detached-badge">
           audio detached
