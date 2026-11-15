@@ -229,4 +229,43 @@ final class AppMetaBoxTest extends WPTestCase {
 		ideatoapps_enqueue_admin( 'post.php' );
 		$this->assertTrue( wp_script_is( 'ideatoapps-admin-app', 'enqueued' ) );
 	}
+
+	public function test_the_last_faq_row_can_be_deleted_through_the_form(): void {
+		$id = $this->app();
+		update_post_meta( $id, 'faq', wp_slash( wp_json_encode( array( array( 'q' => 'Q', 'a' => 'A' ) ) ) ) );
+		$this->as_role( 'administrator' );
+		// Browser: every row removed, so no ita_faq_q[] is posted, but the box's hidden marker still is.
+		ob_start();
+		ideatoapps_render_details_box( get_post( $id ) );
+		$this->assertStringContainsString( 'name="ita_faq_present"', (string) ob_get_clean() );
+		$_POST = array( 'ideatoapps_details_nonce' => wp_create_nonce( 'ideatoapps_save_details' ), 'ita_faq_present' => '1' );
+		ideatoapps_save_details( $id );
+		$this->assertSame( '[]', get_post_meta( $id, 'faq', true ), 'FAQ cleared' );
+	}
+
+	public function test_a_post_without_the_faq_marker_or_nonce_keeps_the_faq(): void {
+		$id  = $this->app();
+		$faq = wp_json_encode( array( array( 'q' => 'Q', 'a' => 'A' ) ) );
+		update_post_meta( $id, 'faq', wp_slash( $faq ) );
+		$this->as_role( 'administrator' );
+		$_POST = array( 'ideatoapps_details_nonce' => wp_create_nonce( 'ideatoapps_save_details' ), 'ita_tagline' => 'x' ); // e.g. quick edit style post.
+		ideatoapps_save_details( $id );
+		$this->assertSame( $faq, get_post_meta( $id, 'faq', true ) );
+		$_POST = array( 'ita_faq_present' => '1' ); // marker alone, no nonce.
+		ideatoapps_save_details( $id );
+		$this->assertSame( $faq, get_post_meta( $id, 'faq', true ) );
+	}
+
+	public function test_a_rest_write_of_invalid_faq_or_features_json_is_answered_with_an_error(): void {
+		$req = new WP_REST_Request( 'POST', '/wp/v2/apps/1' );
+		$req->set_param( 'meta', array( 'faq' => '{not json', 'tagline' => 'ok' ) );
+		$res = apply_filters( 'rest_pre_insert_app', new stdClass(), $req );
+		$this->assertTrue( is_wp_error( $res ) );
+		$this->assertSame( 400, $res->get_error_data()['status'] );
+		$req->set_param( 'meta', array( 'features' => '"scalar"' ) );
+		$this->assertTrue( is_wp_error( apply_filters( 'rest_pre_insert_app', new stdClass(), $req ) ) );
+		$req->set_param( 'meta', array( 'faq' => '[{"q":"a","a":"b"}]', 'features' => '', 'tagline' => 'ok' ) );
+		$this->assertFalse( is_wp_error( apply_filters( 'rest_pre_insert_app', new stdClass(), $req ) ), 'valid JSON and clearing pass' );
+		$this->assertFalse( is_wp_error( apply_filters( 'rest_pre_insert_app', new stdClass(), new WP_REST_Request( 'POST', '/wp/v2/apps/1' ) ) ), 'no meta at all' );
+	}
 }

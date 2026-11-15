@@ -90,7 +90,8 @@ function ideatoapps_render_details_box( $post ) {
 		esc_textarea( implode( "\n", array_filter( $features, 'is_string' ) ) ),
 		esc_html__( 'One feature per line.', 'ideatoapps-core' )
 	);
-	echo '<tr><th>' . esc_html__( 'FAQ', 'ideatoapps-core' ) . '</th><td><div id="ita-faq-rows">';
+	// The marker is posted even when every row was removed (no ita_faq_q[] then), so the save knows the FAQ was in the form.
+	echo '<tr><th>' . esc_html__( 'FAQ', 'ideatoapps-core' ) . '</th><td><input type="hidden" name="ita_faq_present" value="1"><div id="ita-faq-rows">';
 	$has_rows = false;
 	foreach ( $faq as $row ) {
 		if ( is_array( $row ) && isset( $row['q'], $row['a'] ) ) {

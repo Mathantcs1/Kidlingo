@@ -233,6 +233,17 @@ test.describe('pagination', () => {
     await expect(titles(page)).toHaveText(['Numbered app 13']);
   });
 
+  test('a page past the end is a real 404 (WordPress core), never a "No apps match your filters" box', async ({ page }) => {
+    for (const path of ['/apps/?paged=999', '/apps/page/999/', '/apps/?sort=title&paged=999', '/apps/?s=app&paged=999']) {
+      const res = await page.goto(path);
+      expect(res?.status(), path).toBe(404);
+      await expect(page.getByTestId('catalog-empty'), path).toHaveCount(0);
+      await expect(page.getByRole('heading', { level: 1 }), path).toContainText(/could not be found/i);
+    }
+    await page.goto('/apps/?s=zzznothingmatches'); // a real empty search on page 1 stays honest
+    await expect(page.getByTestId('catalog-empty')).toContainText('No apps match your filters');
+  });
+
   test('no pagination with 12 or fewer matches', async ({ page }) => {
     await page.goto('/apps/?s=app+number+3');
     await expect(page.getByRole('navigation', { name: 'Pagination' })).toHaveCount(0);

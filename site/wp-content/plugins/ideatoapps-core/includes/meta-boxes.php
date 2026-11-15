@@ -113,11 +113,35 @@ function ideatoapps_save_details( $post_id ) {
 	if ( isset( $_POST['ita_features'] ) && is_string( $_POST['ita_features'] ) ) {
 		update_post_meta( $post_id, 'features', wp_slash( ideatoapps_features_from_text( wp_unslash( $_POST['ita_features'] ) ) ) );
 	}
-	if ( isset( $_POST['ita_faq_q'] ) ) {
+	if ( isset( $_POST['ita_faq_q'] ) || isset( $_POST['ita_faq_present'] ) ) { // Marker: deleting the last row posts no ita_faq_q[].
 		update_post_meta( $post_id, 'faq', wp_slash( ideatoapps_faq_from_rows( ideatoapps_post_list( 'ita_faq_q' ), ideatoapps_post_list( 'ita_faq_a' ) ) ) );
 	}
 }
 add_action( 'save_post_app', 'ideatoapps_save_details' );
+
+/**
+ * The attachment a version row may really use, with an admin notice for everything that is refused or unusable
+ * (nothing is silently reverted): a file the user may not use is replaced by the current one; a file that is not a
+ * valid zip is kept but the notice says the app cannot be bought until a real zip is attached.
+ *
+ * @param int    $post_id Post ID.
+ * @param string $version Version.
+ * @param int    $attach  Requested attachment ID.
+ * @param int    $current Attachment the version has now (0 for a new version).
+ * @return int Attachment ID to store.
+ */
+function ideatoapps_checked_version_attachment( $post_id, $version, $attach, $current ) {
+	if ( ! ideatoapps_can_use_version_attachment( $attach, $current ) ) {
+		/* translators: %s: version number. */
+		ideatoapps_add_notice( $post_id, sprintf( __( 'Version %s: that file is another person\'s upload, so it was not used. Upload the zip yourself or ask an administrator.', 'ideatoapps-core' ), $version ) );
+		return $current;
+	}
+	if ( $attach > 0 && $attach !== $current && '' === ideatoapps_valid_zip_attachment( $attach ) ) {
+		/* translators: %s: version number. */
+		ideatoapps_add_notice( $post_id, sprintf( __( 'Version %s: the chosen file is not a valid zip (it must be a .zip file inside the media library), so buying stays off until a real zip is attached.', 'ideatoapps-core' ), $version ) );
+	}
+	return $attach;
+}
 
 /**
  * Save the Versions box: edit/remove existing rows, then add one new version if submitted.
@@ -147,9 +171,7 @@ function ideatoapps_save_versions( $post_id ) {
 				$current = $existing['attachment_id'];
 			}
 		}
-		if ( ! ideatoapps_can_use_version_attachment( $attach, $current ) ) {
-			$attach = $current;
-		}
+		$attach = ideatoapps_checked_version_attachment( $post_id, $version, $attach, $current );
 		ideatoapps_update_version( $post_id, $version, $changelog, $attach );
 	}
 
@@ -159,7 +181,7 @@ function ideatoapps_save_versions( $post_id ) {
 	}
 	$changelog = isset( $_POST['ita_new_changelog'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ita_new_changelog'] ) ) : '';
 	$attach    = isset( $_POST['ita_new_attachment'] ) ? absint( wp_unslash( $_POST['ita_new_attachment'] ) ) : 0;
-	$attach    = ideatoapps_can_use_version_attachment( $attach, 0 ) ? $attach : 0;
+	$attach    = ideatoapps_checked_version_attachment( $post_id, $version, $attach, 0 );
 	if ( ! ideatoapps_is_semver( $version ) ) {
 		/* translators: %s: the version the editor typed. */
 		ideatoapps_add_notice( $post_id, sprintf( __( "Version '%s' was not added: use the form 1.2.3.", 'ideatoapps-core' ), $version ) );

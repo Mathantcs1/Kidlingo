@@ -159,6 +159,9 @@ function ideatoapps_sanitize_features( $value ) {
 function ideatoapps_keep_previous_on_invalid_json( $check, $object_id, $meta_key ) {
 	if ( in_array( $meta_key, array( 'faq', 'features' ), true ) && 'app' === get_post_type( $object_id ) && ideatoapps_json_invalid_flag( $meta_key ) ) {
 		ideatoapps_json_invalid_flag( $meta_key, false );
+		if ( wp_is_serving_rest_request() ) {
+			return false; // The REST caller gets a 400 from ideatoapps_rest_reject_invalid_json(); no admin notice nobody will see.
+		}
 		/* translators: %s: field name (faq or features). */
 		ideatoapps_add_notice( (int) $object_id, sprintf( __( 'The %s value was not valid and was not saved; the previous value was kept.', 'ideatoapps-core' ), $meta_key ) );
 		return false;
@@ -167,6 +170,29 @@ function ideatoapps_keep_previous_on_invalid_json( $check, $object_id, $meta_key
 }
 add_filter( 'update_post_metadata', 'ideatoapps_keep_previous_on_invalid_json', 10, 3 );
 add_filter( 'add_post_metadata', 'ideatoapps_keep_previous_on_invalid_json', 10, 3 );
+
+/**
+ * A REST write of FAQ or features that is not a JSON list is refused with a 400 instead of being dropped silently.
+ * (App meta is only writable through REST when the post type supports custom-fields; this keeps that path honest.)
+ *
+ * @param mixed           $prepared Prepared post (or error).
+ * @param WP_REST_Request $request  Request.
+ * @return mixed
+ */
+function ideatoapps_rest_reject_invalid_json( $prepared, $request ) {
+	$meta = $request instanceof WP_REST_Request ? $request->get_param( 'meta' ) : null;
+	if ( is_wp_error( $prepared ) || ! is_array( $meta ) ) {
+		return $prepared;
+	}
+	foreach ( array( 'faq', 'features' ) as $key ) {
+		if ( array_key_exists( $key, $meta ) && ! ideatoapps_json_list_valid( $meta[ $key ] ) ) {
+			/* translators: %s: field name (faq or features). */
+			return new WP_Error( 'ideatoapps_invalid_json', sprintf( __( 'The %s value must be a JSON list.', 'ideatoapps-core' ), $key ), array( 'status' => 400 ) );
+		}
+	}
+	return $prepared;
+}
+add_filter( 'rest_pre_insert_app', 'ideatoapps_rest_reject_invalid_json', 10, 2 );
 
 /**
  * Register all app meta keys.

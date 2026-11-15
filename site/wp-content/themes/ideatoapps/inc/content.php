@@ -88,6 +88,28 @@ function ideatoapps_blog_page_number(): int {
 }
 
 /**
+ * Where to send a visitor who asked for a page past the end of a list (`?pg=99`, `?paged=999`): the last page that exists,
+ * so they never see an empty state that claims there is nothing. 0 means the request is fine as it is.
+ *
+ * @param int $page      Requested page (1-based).
+ * @param int $max_pages Pages the list really has (0 when it is empty).
+ */
+function ideatoapps_overflow_target_page( int $page, int $max_pages ): int {
+	return $page > 1 && $page > max( 1, $max_pages ) ? max( 1, $max_pages ) : 0;
+}
+
+/**
+ * How many pages a list really has. WordPress skips the total when the requested page is already past the end, so
+ * count again from page 1 (ids only) before deciding where an out-of-range request should go.
+ *
+ * @param array<string, mixed> $args WP_Query args of the list (any `paged` is ignored).
+ */
+function ideatoapps_list_page_count( array $args ): int {
+	$count = new WP_Query( array_merge( $args, array( 'paged' => 1, 'fields' => 'ids', 'no_found_rows' => false ) ) );
+	return (int) $count->max_num_pages;
+}
+
+/**
  * The visible app a video is about, or null.
  */
 function ideatoapps_video_related_app( int $video_id ): ?WP_Post {

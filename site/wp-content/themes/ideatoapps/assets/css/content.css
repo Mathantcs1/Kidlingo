@@ -36,6 +36,7 @@
 .video-play svg { width: 72px; height: 72px; padding: 18px 14px 18px 22px; border-radius: 50%; background: var(--primary); fill: var(--on-primary); box-shadow: 0 8px 24px rgb(3 6 20 / 0.45); transition: transform var(--dur) var(--ease), background-color var(--dur-fast) var(--ease); }
 .video-play:hover svg { background: var(--primary-hover); transform: scale(1.06); }
 .video-play:focus-visible { outline-offset: -6px; }
+.video-fallback { position: absolute; inset: 0; z-index: 2; display: grid; place-items: end start; padding: var(--s-3); color: #fff; font-weight: 600; text-decoration: underline; background: linear-gradient(to top, rgb(3 6 20 / 0.7), transparent 55%); }
 .video-page h1 { margin-bottom: var(--s-3); font-size: clamp(2rem, 1.5rem + 2vw, 3rem); }
 .video-page .video-frame { margin-bottom: var(--s-4); }
 

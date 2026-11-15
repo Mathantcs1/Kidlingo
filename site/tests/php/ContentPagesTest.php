@@ -127,4 +127,39 @@ final class ContentPagesTest extends WPTestCase {
 		$this->assertStringContainsString( 'owner to confirm', strtolower( $html ) );
 		$this->assertStringContainsString( 'DRAFT, pending legal review', $this->render( 'draft-banner' ) );
 	}
+
+	/** Start from a site where the seed has not run and no content page exists. */
+	private function forget_seeded_pages(): void {
+		foreach ( array_keys( ideatoapps_content_pages() ) as $slug ) {
+			$page = get_page_by_path( $slug );
+			if ( $page ) {
+				wp_delete_post( $page->ID, true );
+			}
+		}
+		delete_option( 'ideatoapps_seeded_pages' );
+	}
+
+	public function test_a_page_trashed_before_the_seed_ran_is_detected_and_not_recreated(): void {
+		$this->forget_seeded_pages();
+		$id = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_name' => 'faq', 'post_title' => 'My FAQ', 'post_content' => 'mine' ) );
+		wp_trash_post( $id );
+		$this->assertSame( 'faq__trashed', get_post_field( 'post_name', $id ) );
+		ideatoapps_ensure_pages();
+		$live = get_posts( array( 'post_type' => 'page', 'post_status' => 'publish', 'name' => 'faq', 'numberposts' => -1 ) );
+		$this->assertSame( array(), $live, 'the owner\'s trashed FAQ is not replaced by a new empty shell' );
+		$this->assertContains( 'faq', (array) get_option( 'ideatoapps_seeded_pages' ), 'handled, so it is not re-checked on every request' );
+	}
+
+	public function test_a_failed_insert_does_not_mark_the_slug_as_seeded_so_the_next_request_retries(): void {
+		$this->forget_seeded_pages();
+		// wp_insert_post refuses the 'about' page (as it would on a database error).
+		add_filter( 'wp_insert_post_empty_content', static fn( $empty, $postarr ) => isset( $postarr['post_name'] ) && 'about' === $postarr['post_name'] ? true : $empty, 10, 2 );
+		ideatoapps_ensure_pages();
+		$this->assertNull( get_page_by_path( 'about' ), 'precondition: the insert for about failed' );
+		$this->assertNotContains( 'about', (array) get_option( 'ideatoapps_seeded_pages' ) );
+		$this->assertContains( 'faq', (array) get_option( 'ideatoapps_seeded_pages' ), 'the others are done' );
+		remove_all_filters( 'wp_insert_post_empty_content' );
+		ideatoapps_ensure_pages();
+		$this->assertNotNull( get_page_by_path( 'about' ), 'created once the failure is gone' );
+	}
 }

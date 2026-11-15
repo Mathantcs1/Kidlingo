@@ -26,6 +26,26 @@ function ideatoapps_content_pages() {
 }
 
 /**
+ * Whether the owner already has a page for this slug in the trash (WordPress renames it to `<slug>__trashed`).
+ *
+ * @param string $slug Page slug.
+ * @return bool
+ */
+function ideatoapps_page_is_trashed( $slug ) {
+	$found = get_posts(
+		array(
+			'post_type'      => 'page',
+			'post_status'    => 'trash',
+			'name'           => $slug . '__trashed',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+		)
+	);
+	return ! empty( $found );
+}
+
+/**
  * Create the missing pages. Slugs handled before (even if the page is gone now) are remembered and skipped.
  */
 function ideatoapps_ensure_pages() {
@@ -35,8 +55,11 @@ function ideatoapps_ensure_pages() {
 		if ( in_array( $slug, $done, true ) ) {
 			continue;
 		}
-		if ( null === get_page_by_path( $slug ) ) {
-			wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_name' => $slug, 'post_title' => $title, 'post_content' => '' ) );
+		if ( null === get_page_by_path( $slug ) && ! ideatoapps_page_is_trashed( $slug ) ) {
+			$id = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_name' => $slug, 'post_title' => $title, 'post_content' => '' ), true );
+			if ( is_wp_error( $id ) || 0 === $id ) {
+				continue; // Not created: do not remember it, the next request tries again.
+			}
 		}
 		$done[]  = $slug;
 		$changed = true;

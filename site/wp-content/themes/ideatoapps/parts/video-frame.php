@@ -2,6 +2,7 @@
 /**
  * The click-to-play area of a video. The initial HTML holds only a button (and the poster image, if one is set):
  * no iframe and no request to YouTube. assets/js/video-player.js builds the youtube-nocookie.com iframe on click.
+ * A <noscript> "Watch on YouTube" link covers visitors without JavaScript.
  *
  * Args: video (WP_Post).
  *
@@ -30,4 +31,6 @@ $ideatoapps_image = (int) get_post_thumbnail_id( $ideatoapps_video ) > 0 ? wp_ge
 	<button type="button" class="video-play" data-youtube-id="<?php echo esc_attr( $ideatoapps_yt ); ?>" data-video-title="<?php echo esc_attr( $ideatoapps_title ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: video title. */ __( 'Play video: %s', 'ideatoapps' ), $ideatoapps_title ) ); ?>">
 		<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l11-6.5z"/></svg>
 	</button>
+	<?php // Without JavaScript the button does nothing. This plain link only exists then; it loads nothing from YouTube until it is followed. ?>
+	<noscript><a class="video-fallback" href="<?php echo esc_url( 'https://www.youtube.com/watch?v=' . $ideatoapps_yt ); ?>" rel="noopener noreferrer"><?php echo esc_html( sprintf( /* translators: %s: video title. */ __( 'Watch on YouTube: %s', 'ideatoapps' ), $ideatoapps_title ) ); ?></a></noscript>
 </div>

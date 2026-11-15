@@ -73,6 +73,27 @@ test.describe('Learn', () => {
     await expect(frame).toBeFocused();
   });
 
+  test.describe('without JavaScript', () => {
+    test.use({ javaScriptEnabled: false });
+    test('a plain "Watch on YouTube" link replaces the dead play button, and nothing is requested from YouTube on load', async ({ page }) => {
+      await createVideo(api, 'Walkthrough', { youtubeId: YT, excerpt: 'A tour of the editor.' });
+      const hosts = new Set<string>();
+      page.on('request', (r) => { try { hosts.add(new URL(r.url()).host); } catch { /* data: urls */ } });
+      await page.goto('/learn/');
+      await page.waitForLoadState('networkidle');
+      const link = page.getByRole('link', { name: /Watch on YouTube: Walkthrough/ });
+      await expect(link).toHaveAttribute('href', `https://www.youtube.com/watch?v=${YT}`);
+      await expect(link).toBeVisible();
+      expect([...hosts].filter((h) => h !== 'localhost:8888'), 'nothing loaded from YouTube until clicked').toEqual([]);
+    });
+  });
+
+  test('with JavaScript the fallback link is not in the page', async ({ page }) => {
+    await createVideo(api, 'Walkthrough', { youtubeId: YT });
+    await page.goto('/learn/');
+    await expect(page.getByRole('link', { name: /Watch on YouTube/ })).toHaveCount(0);
+  });
+
   test('a video without a YouTube ID is listed with no play button; a bad ID is never saved', async ({ page }) => {
     await createVideo(api, 'Coming later', { excerpt: 'Soon.' });
     await page.goto('/learn/');
@@ -137,6 +158,17 @@ test.describe('Blog', () => {
     await expect(page.getByTestId('blog-list').locator('article h2')).toHaveText(['Post 01']);
     await page.getByRole('link', { name: 'Newer posts' }).click();
     await expect(page.getByTestId('blog-list').locator('article')).toHaveCount(9);
+    // Past the end: the last page, not an empty state saying there are no posts.
+    await page.goto('/blog/?pg=99');
+    await expect(page).toHaveURL(/pg=2/);
+    await expect(page.getByTestId('blog-empty')).toHaveCount(0);
+    await expect(page.getByTestId('blog-list').locator('article h2')).toHaveText(['Post 01']);
+  });
+
+  test('?pg=99 on a blog with no posts shows the real empty state on page 1', async ({ page }) => {
+    await page.goto('/blog/?pg=99');
+    await expect(page).not.toHaveURL(/pg=/);
+    await expect(page.getByTestId('blog-empty')).toContainText('No posts yet');
   });
 });
 
