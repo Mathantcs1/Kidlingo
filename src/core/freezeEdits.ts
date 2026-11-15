@@ -1,6 +1,7 @@
 // Freeze frame (Plan 5D Task 4): splits the clip at `t` and inserts a still of the frame shown there, `hold` seconds long,
 // pushing the later clips of the SAME track later by `hold`. The still carries the picture as drawn at `t` (keys and
 // presets resolved to their values); it is silent and has its own timeline (`in` 0, `out` hold).
+import { reconcileTransitions } from './transitionReconcile';
 import { resolveClip } from './animate';
 import { splitClip } from './clipEdits';
 import { clipEnd, videoSourceTime } from './clipTime';
@@ -30,7 +31,9 @@ export function freezeFrame(p: Project, clipId: Id, t: number, hold = DEFAULT_FR
   const edge = t <= start + MIN_CLIP - EPS || t >= end - MIN_CLIP + EPS;
   const insertAt = !edge ? t : t <= start + MIN_CLIP - EPS ? start : end;
   const base = edge ? p : splitClip(p, clipId, t);
-  return mapClips(base, (tr) =>
-    tr.id !== track.id ? tr.clips : [...tr.clips.map((c) => (c.start >= insertAt - EPS ? { ...c, start: c.start + hold } : c)), { ...still, start: insertAt }],
+  return reconcileTransitions(
+    mapClips(base, (tr) =>
+      tr.id !== track.id ? tr.clips : [...tr.clips.map((c) => (c.start >= insertAt - EPS ? { ...c, start: c.start + hold } : c)), { ...still, start: insertAt }],
+    ),
   );
 }

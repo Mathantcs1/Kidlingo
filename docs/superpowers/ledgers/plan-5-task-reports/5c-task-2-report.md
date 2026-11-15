@@ -1,0 +1,6 @@
+# Plan 5C Task 2 (pure model, validity, edit rules)
+- New: `transitionTypes.ts` (types/constants; `Track.transitions?` optional, no version bump), `transitions.ts` (cutsOf, windowOf, handleBefore/After via `timelineTimeAt`, snapDuration, maxDuration, pairAllowed, transitionValid), `transitionReconcile.ts` (reconcileTransitions, transitionChanges, withTransitions), `transitionEdits.ts` (add/set/remove/setDuration).
+- Hooked reconcile into: moveClip, deleteClip (incl. ripple), trimClip, splitClip (OUT transition re-pointed to the right half first), joinClips, removeMediaFromProject, speed retime/setReverse, freezeFrame. removeTrack needs nothing (transitions live on the track).
+- Decisions: 'audio' type is valid only on audio tracks and picture types only on video tracks; stills/overlays/freeze clips have infinite handles; media with duration 0 is unbounded (as trimLimits); glitch `amount` 0..1 default 0.5.
+- Tests: transition-model/-edits/-rules (+ a 2000-step property test asserting `transitionValid` after every successful edit; 300+ steps hold transitions). Mutations caught: no reconcile in split, from/to swapped on re-point, clamp rounded up, locked ignored.
+- Not done here (later tasks): v10 bump/migration (3), joinClips `opts.transition` and clipboard carry (10).

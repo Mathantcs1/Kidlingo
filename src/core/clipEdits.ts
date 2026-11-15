@@ -1,3 +1,4 @@
+import { reconcileTransitions } from './transitionReconcile';
 import { cloneEffects, fitFades, withAudio } from './clipAudio';
 import { cloneVideoEffects } from './clipEffects';
 import { copyKey, mapEffectKeys, mapTransformKeys, shiftKeys, splitKeys } from './keyLists';
@@ -60,7 +61,7 @@ export function trimClip(p: Project, clipId: Id, edge: 'start' | 'end', time: nu
   assertFree(track, next, clip.id);
   // Fades must still fit the (possibly shorter) clip.
   next = withAudio(next, fitFades(next.audio, clipDuration(next)));
-  return replaceClip(p, clipId, next);
+  return reconcileTransitions(replaceClip(p, clipId, next));
 }
 
 export function splitClip(p: Project, clipId: Id, time: number): Project {
@@ -103,7 +104,10 @@ export function splitClip(p: Project, clipId: Id, time: number): Project {
   };
   left.audio = fitFades(left.audio, clipDuration(left));
   right.audio = fitFades(right.audio, clipDuration(right));
-  return mapClips(p, (t) =>
-    t.clips.flatMap((c) => (c.id === clipId ? [left, right] : [c])),
-  );
+  // The OUT transition (outgoing clip = this one) now starts at the right half, which owns the cut; the IN one stays with the left half.
+  const split = mapClips(p, (t) => t.clips.flatMap((c) => (c.id === clipId ? [left, right] : [c])));
+  return reconcileTransitions({
+    ...split,
+    tracks: split.tracks.map((t) => (t.transitions?.some((x) => x.fromClipId === clipId) ? { ...t, transitions: t.transitions.map((x) => (x.fromClipId === clipId ? { ...x, fromClipId: right.id } : x)) } : t)),
+  });
 }

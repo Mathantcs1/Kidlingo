@@ -1,6 +1,7 @@
 // Speed edits (Plan 5D Task 4): constant speed, reverse, pitch and the ramp as pure (Project, …) => Project functions.
 // A retime keeps the clip's start and the footage edge that plays FIRST, snaps the new length to whole frames by moving the
 // edge that plays LAST (D7), and either refuses an overlap or (ripple) pushes the later clips of the SAME track.
+import { reconcileTransitions } from './transitionReconcile';
 import { fitFades, withAudio } from './clipAudio';
 import { clipDuration, withDuration } from './clipTime';
 import type { Keyframe } from './keyTypes';
@@ -78,7 +79,7 @@ function retime(p: Project, ids: Id[], opts: RetimeOptions, edit: (c: Clip) => C
       }),
     };
   }
-  return cur;
+  return reconcileTransitions(cur);
 }
 
 /** Sets a constant speed (0.25..4); 1 removes the field and a ramp is replaced. */
@@ -101,13 +102,13 @@ export function setReverse(p: Project, ids: Id[], reverse: boolean): Project {
   }
   if (targets.every(({ clip }) => (clip.reverse === true) === reverse)) return p;
   const set = new Set(ids);
-  return {
+  return reconcileTransitions({
     ...p,
     tracks: p.tracks.map((tr) => ({
       ...tr,
       clips: tr.clips.map((c) => (!set.has(c.id) || (c.reverse === true) === reverse ? c : reverse ? { ...c, reverse: true as const } : clean(c, ['reverse']))),
     })),
-  };
+  });
 }
 
 /** Pitch preservation when the clip is stretched: on (default) removes the field, off stores `false`. */

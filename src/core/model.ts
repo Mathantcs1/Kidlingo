@@ -5,6 +5,7 @@ import type { Anchor, Crop, Flip } from './cropTypes';
 import type { ClipMotion } from './motionTypes';
 import { clipDuration, clipEnd } from './clipTime';
 import type { SpeedFields } from './speedTypes';
+import type { Transition } from './transitionTypes';
 
 export { clipDuration, clipEnd };
 export type { Anchor, ClipMotion, Crop, Flip, KeyLoop, Keyframe, PositionKeyframe, TransformKeys, Vec };
@@ -127,6 +128,8 @@ export interface Track {
   volume: number;
   duck: TrackDuck | null;
   clips: Clip[];
+  /** Transitions on this track's cuts (Plan 5C, data v10); absent = none, an empty list is never stored. */
+  transitions?: Transition[];
 }
 
 export interface MediaRef {

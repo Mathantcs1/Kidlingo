@@ -5,6 +5,7 @@ import type { Clip, Id, Project, Transform } from './model';
 import { withPivotOffset } from './pivotFit';
 import { overlayDefaultTransform, reframeOverlay } from './overlays';
 import { hasFramingKeys, scaleFramingKeys } from './reframeKeys';
+import { reconcileTransitions } from './transitionReconcile';
 import { TimelineError, assertUnlocked, findClip } from './timeline';
 
 const EPS = 1e-9;
@@ -44,10 +45,10 @@ export function joinClips(p: Project, clipIds: Id[]): Project {
       throw new TimelineError('Joined clips would overlap another clip');
     }
   }
-  return {
+  return reconcileTransitions({
     ...p,
     tracks: p.tracks.map((t) => (t.id === trackId ? { ...t, clips } : t)),
-  };
+  });
 }
 
 export function snapTime(p: Project, _trackId: Id, time: number, threshold: number): number {

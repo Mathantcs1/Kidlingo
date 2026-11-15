@@ -1,4 +1,5 @@
 // Pure edits that remove media from the project, and how media in use is counted and worded (re-exported by ./edits).
+import { reconcileTransitions } from '../core/transitionReconcile';
 import type { Clip, Id, Project } from '../core/model';
 import { TimelineError } from '../core/timeline';
 
@@ -30,5 +31,5 @@ export function removeMediaFromProject(p: Project, mediaId: Id): Project {
   const uses = (c: Clip): boolean => mediaId !== '' && c.mediaId === mediaId;
   if (p.tracks.some((t) => t.locked && t.clips.some(uses))) throw new TimelineError('Track is locked');
   const { [mediaId]: _removed, ...media } = p.media;
-  return { ...p, media, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.filter((c) => !uses(c)) })) };
+  return reconcileTransitions({ ...p, media, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.filter((c) => !uses(c)) })) });
 }

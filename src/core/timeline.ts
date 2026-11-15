@@ -1,6 +1,7 @@
 import { adoptFirstClipFps } from './fps';
 import { clipDuration, clipEnd } from './model';
 import type { Clip, Id, Project, Track } from './model';
+import { reconcileTransitions } from './transitionReconcile';
 
 export const MIN_CLIP = 0.05;
 export const EPS = 1e-9;
@@ -89,7 +90,7 @@ export function moveClip(p: Project, clipId: Id, newStart: number, trackId?: Id)
   }
   const moved: Clip = { ...clip, start: Math.max(0, newStart) };
   assertFree(target, moved, clip.id);
-  return {
+  return reconcileTransitions({
     ...p,
     tracks: p.tracks.map((t) => {
       const rest = t.clips.filter((c) => c.id !== clipId);
@@ -97,14 +98,14 @@ export function moveClip(p: Project, clipId: Id, newStart: number, trackId?: Id)
         ? { ...t, clips: [...rest, moved].sort(byStart) }
         : { ...t, clips: rest };
     }),
-  };
+  });
 }
 
 export function deleteClip(p: Project, clipId: Id, opts?: { ripple?: boolean }): Project {
   const { track, clip } = findClip(p, clipId);
   assertUnlocked(p, track.id);
   const dur = clipDuration(clip);
-  return {
+  return reconcileTransitions({
     ...p,
     tracks: p.tracks.map((t) => {
       if (t.id !== track.id) return t;
@@ -115,7 +116,7 @@ export function deleteClip(p: Project, clipId: Id, opts?: { ripple?: boolean }):
         );
       return { ...t, clips };
     }),
-  };
+  });
 }
 
 export function activeClipsAt(p: Project, t: number): Clip[] {
