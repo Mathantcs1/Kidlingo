@@ -30,9 +30,7 @@ type Allowed = [string, string, string];
 const ALLOWED: Allowed[] = [
   // Routed by the task named in each entry (identity-timed clips are unaffected until then); a routed site makes its
   // entry stale, which fails this test, so the entry must be deleted with the change.
-  ['src/core/clipEdits.ts', 'cut - clip.in),', 'Task 4: the left half\'s fades fit its TIMELINE duration (clipDuration), reverse halves swap their footage ranges'],
-  ['src/core/clipEdits.ts', 'clip.out - cut),', 'Task 4: the right half\'s fades fit its TIMELINE duration (clipDuration)'],
-  ['src/core/keyframes.ts', 'const d = k - localRange(clip)[0];', 'Task 4: keyFrame counts frames from the key\'s TIMELINE offset (timelineTimeAt)'],
+  ['src/core/keyframes.ts', 'const d = k - localRange(clip)[0];', 'Task 5: keyFrame counts frames from the key\'s TIMELINE offset (timelineTimeAt)'],
   ['src/core/motionEdits.ts', '-localRange(clip)[0]', 'Task 5: a loop phase at the clip start is expressed in footage time through the map'],
   ['src/ui/MotionBands.tsx', 'emphasis.at - localRange(clip)[0]', 'Task 11: preset bands positioned from timelineTimeAt'],
   ['src/ui/keyDrag.ts', '(u - localRange(clip)[0]) * pps', 'Task 5: diamond position from timelineTimeAt'],

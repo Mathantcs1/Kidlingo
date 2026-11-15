@@ -1,6 +1,6 @@
 // DOM-free math for dragging on the timeline: thresholds, snapping, move/trim targets and drop rules.
 import { snapTime } from '../core/merge';
-import { clipDuration, clipEnd, timelineTimeAt } from '../core/clipTime';
+import { clipDuration, clipEnd, hasOwnTimeline, timelineTimeAt, trimLimits } from '../core/clipTime';
 import type { Clip, Id, MediaRef, Project, TrackKind } from '../core/model';
 import { findClip } from '../core/timeline';
 
@@ -55,12 +55,21 @@ export function trimTarget(p: Project, clipId: Id, edge: 'start' | 'end', dxPx: 
   const d = delta(dxPx, pps);
   if (d === null) return from;
   const t = snapTime(withoutClip(p, clipId), '', from + d, snapSeconds(pps));
-  return edge === 'end' ? Math.min(t, sourceEnd(clip, p.media[clip.mediaId])) : t;
+  return clampToSource(clip, p.media[clip.mediaId], edge, t);
 }
 
-function sourceEnd(clip: Clip, m: MediaRef | undefined): number {
-  if (!m || m.kind === 'image' || !(m.duration > 0)) return Infinity;
-  return timelineTimeAt(clip, m.duration);
+/**
+ * Keeps a dragged edge inside the footage (Plan 5D): a forward clip's end stops at the media end; a reversed clip's edges
+ * swap roles (its start moves `out`, up to the media end; its end moves `in`, down to the file start). Own-timeline clips have no footage.
+ */
+function clampToSource(clip: Clip, m: MediaRef | undefined, edge: 'start' | 'end', t: number): number {
+  if (hasOwnTimeline(clip) || !m || m.kind === 'image' || !(m.duration > 0)) return t;
+  const { footageMin, footageMax } = trimLimits(m);
+  const atMin = timelineTimeAt(clip, footageMin);
+  const atMax = timelineTimeAt(clip, footageMax);
+  const reverse = clip.reverse === true;
+  if (edge === 'end') return Math.min(t, reverse ? atMin : atMax);
+  return reverse ? Math.max(t, atMax) : t; // a forward start trim stays unclamped here: core trimClip refuses `in < 0` (existing contract)
 }
 
 /** Start for media of `duration` dropped at ruler offset `x`, snapped. */

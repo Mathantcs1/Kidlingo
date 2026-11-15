@@ -20,6 +20,10 @@ const sameEffects = (a: Clip['audio']['effects'], b: Clip['audio']['effects']): 
     return x.type === y.type && x.enabled === y.enabled && kx.length === Object.keys(y.params).length && kx.every((k) => x.params[k] === y.params[k]);
   });
 
+/** The retiming fields (speed, reverse, ramp, pitch) of the two clips are equal: a sped-up twin is a different sound. */
+const sameTiming = (a: Clip, b: Clip): boolean =>
+  (a.speed ?? 1) === (b.speed ?? 1) && (a.reverse === true) === (b.reverse === true) && a.preservePitch === b.preservePitch && JSON.stringify(a.speedKeys ?? null) === JSON.stringify(b.speedKeys ?? null);
+
 /**
  * True when `c` still has the sound settings detachAudio copied from the video clip: same volume, fades, pan and
  * effects (type, order, enabled, params; ids differ). `silent` is ignored (the video clip is silent by then).
@@ -42,11 +46,11 @@ export function findDetachedTwin(p: Project, videoClipId: Id): Clip | null {
   } catch {
     return null;
   }
-  if (video.kind !== 'video' || !video.audio.silent) return null;
+  if (video.kind !== 'video' || !video.audio.silent || video.freeze !== undefined) return null;
   const matches = p.tracks
     .filter((t) => t.kind === 'audio')
     .flatMap((t) => t.clips)
-    .filter((c) => c.kind === 'audio' && c.mediaId === video.mediaId && c.start === video.start && c.in === video.in && c.out === video.out);
+    .filter((c) => c.kind === 'audio' && c.mediaId === video.mediaId && c.start === video.start && c.in === video.in && c.out === video.out && sameTiming(c, video));
   return matches.length === 1 && isUneditedTwin(matches[0], video) ? matches[0] : null;
 }
 
@@ -62,6 +66,7 @@ export function detachDisabledReason(p: Project, selection: readonly Id[]): stri
   const { track, clip } = found;
   if (clip.kind === 'image') return 'Images have no sound';
   if (clip.kind !== 'video') return 'Only video clips have audio to detach';
+  if (clip.freeze !== undefined) return 'A freeze frame has no audio';
   if (p.media[clip.mediaId]?.hasAudio !== true) return 'This clip has no audio';
   if (clip.audio.silent) return 'Audio is already detached';
   if (track.locked) return 'Track is locked';

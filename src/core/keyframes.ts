@@ -2,8 +2,7 @@
 // except for positionAt's result.
 import { easeAt } from './easing';
 import { frameIndex, snapToFrame } from './fps';
-import { clipDuration, clipEnd, sourceAtOffset } from './clipTime';
-import { isSourceless } from './model';
+import { clipDuration, clipEnd, footageRange, hasOwnTimeline, sourceAtOffset } from './clipTime';
 import type { Clip, Keyframe, PositionKeyframe } from './model';
 import { curvedPoint, isCurved } from './pathCurve';
 
@@ -29,13 +28,14 @@ export function tooClose(a: number, b: number): boolean {
  */
 export function localTime(clip: Clip, t: number, fps: number): number {
   const offset = snapToFrame(t - clip.start, fps);
-  return isSourceless(clip) ? offset : sourceAtOffset(clip, offset);
+  return hasOwnTimeline(clip) ? offset : sourceAtOffset(clip, offset);
 }
 
 /** The clip's visible local range [lo, hi] (D3): `[in, out]` for sourced clips, `[0, duration]` for sourceless ones. */
 export function localRange(clip: Clip): [number, number] {
-  const lo = isSourceless(clip) ? 0 : clip.in;
-  return [lo, lo + clipDuration(clip)];
+  if (hasOwnTimeline(clip)) return [0, clipDuration(clip)];
+  // A retimed clip's footage range is [in, out] itself; an identity-timed one keeps the exact old arithmetic.
+  return footageRange(clip);
 }
 
 const EDGE = 1e-9;

@@ -17,9 +17,27 @@ export function isIdentityTime(c: Clip): boolean {
   return c.freeze === undefined && c.reverse === undefined && c.speedKeys === undefined && (c.speed === undefined || c.speed === 1);
 }
 
+/**
+ * Clips whose keys, presets and trims run in clip-local TIMELINE seconds instead of footage time: overlays and
+ * adjustment layers (no source) and freeze frames (every time shows the same footage frame).
+ */
+export function hasOwnTimeline(c: Clip): boolean {
+  return c.kind === 'overlay' || c.kind === 'adjustment' || c.freeze !== undefined;
+}
+
+/** The `out` that makes a clip with its own timeline (see hasOwnTimeline) last `tau` timeline seconds. */
+export function outForLength(c: Clip, tau: number): number {
+  return c.in + tau;
+}
+
 /** The clip's constant speed (1 when absent); meaningless for a ramp. */
 function constSpeed(c: Clip): number {
   return c.speed ?? 1;
+}
+
+/** The footage range a sourced clip shows, [in, out]; an identity-timed clip keeps the exact old `in + duration` arithmetic. */
+export function footageRange(c: Clip): [number, number] {
+  return isIdentityTime(c) ? [c.in, c.in + clipDuration(c)] : [c.in, c.out];
 }
 
 /** The clip's length on the TIMELINE (out - in at speed 1). */
@@ -109,6 +127,22 @@ export function sourceSpan(c: Clip, tauA: number, tauB: number): [number, number
 export function videoSourceTime(c: Clip, t: number, fps: number): number {
   if (c.reverse === true && c.freeze === undefined) return sourceAtOffset(c, t - c.start + 0.5 / fps);
   return sourceTimeAt(c, t);
+}
+
+/**
+ * `c` with the footage edge that is played LAST (forward `out`, reverse `in`) moved so the clip lasts exactly `d`
+ * timeline seconds at its current speed fields (constant speed or ramp). Used to snap a speed edit's duration to whole
+ * frames (D7) and by Plan 5D's retiming edits. A clip with its own timeline just changes `out`.
+ */
+export function withDuration(c: Clip, d: number): Clip {
+  if (hasOwnTimeline(c)) return { ...c, out: outForLength(c, d) };
+  const rev = c.reverse === true;
+  if (hasRamp(c)) {
+    const k = c.speedKeys!;
+    return rev ? { ...c, in: rampInverse(k, rampOffset(k, c.out) - d) } : { ...c, out: rampInverse(k, rampOffset(k, c.in) + d) };
+  }
+  const length = d * constSpeed(c);
+  return rev ? { ...c, in: c.out - length } : { ...c, out: c.in + length };
 }
 
 /** The footage range a trim can reach: from the start of the file to the end of the media (Infinity for stills and unknown lengths). */

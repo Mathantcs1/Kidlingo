@@ -2,6 +2,8 @@
 // video/audio clips keep speed fields and only video clips a freeze; `{version: 10}` is newer and never overwritten.
 import { describe, it, expect } from 'vitest';
 import { clipDuration } from '../src/core/clipTime';
+import { repairSpeed } from '../src/core/migrateSpeed';
+import type { Clip } from '../src/core/model';
 import { migrateProject } from '../src/core/migrate';
 import { CURRENT_VERSION } from '../src/core/model';
 import { classifySaved } from '../src/state/persist';
@@ -142,5 +144,22 @@ describe('idempotence', () => {
       const p = ok(saved(9, [base('c', 'video', extra)]));
       expect(JSON.stringify(ok(p))).toBe(JSON.stringify(p));
     }
+  });
+});
+
+describe('ramp repair keeps the timeline length (review of Task 2-3)', () => {
+  const lin = { kind: 'linear' };
+  const clipOf = (extra: Record<string, unknown>) => ({ id: 'a', mediaId: 'm1', kind: 'video', start: 0, in: 0, out: 8, ...extra });
+  it('a clamped-value ramp keeps its authored duration by moving `out`', () => {
+    const raw = clipOf({ speedKeys: [{ t: 0, v: 1, ease: lin }, { t: 8, v: 50, ease: lin }] });
+    const before = clipDuration(raw as never);
+    const fixed = repairSpeed(raw) as never as Clip;
+    expect(clipDuration(fixed)).toBeCloseTo(before, 6);
+  });
+  it('a dropped ramp (one usable key) keeps the length the runtime gave it', () => {
+    const raw = clipOf({ speedKeys: [{ t: 0, v: 4, ease: lin }, { t: 'x', v: 4 }] });
+    const fixed = repairSpeed(raw) as never as Clip;
+    expect(clipDuration(fixed)).toBeCloseTo(2, 6);
+    expect(fixed.speedKeys).toBeUndefined();
   });
 });

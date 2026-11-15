@@ -52,3 +52,18 @@ export function splitMotion(m: ClipMotion | undefined, mid: number, shift: numbe
   if (m.out) right.out = copyUse(m.out);
   return [orNone(left), orNone(shift === 0 ? right : shiftMotion(right, -shift))];
 }
+
+/**
+ * splitMotion for a clip playing in REVERSE (Plan 5D): the left timeline half holds the upper footage, so an emphasis
+ * whose footage window starts at or above the cut belongs to the left half and the others to the right. In/out slots and
+ * loops are timeline-side and unchanged. Forward clips are exactly splitMotion.
+ */
+export function splitMotionFor(m: ClipMotion | undefined, mid: number, shift: number, reverse: boolean): [ClipMotion | undefined, ClipMotion | undefined] {
+  if (!reverse || !m?.emphasis) return splitMotion(m, mid, shift);
+  const { emphasis, ...rest } = m;
+  const [l, r] = splitMotion(rest, mid, shift);
+  const toLeft = emphasis.at >= mid - EDGE;
+  const left = toLeft ? { ...(l ?? {}), emphasis: copyUse(emphasis) } : l;
+  const right = toLeft ? r : { ...(r ?? {}), emphasis: copyUse(emphasis) };
+  return [left && orNone(left), right && orNone(right)];
+}
