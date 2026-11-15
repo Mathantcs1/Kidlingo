@@ -26,7 +26,8 @@ export interface VideoSource {
   close(): void;
 }
 
-export { resetVideoSourceStats, videoSourceStats } from './videoSource';
+export { resetVideoDecodeCount, resetVideoSourceStats, videoDecodeCount, videoSourceStats } from './videoSource';
+export { resetReverseBytes, reverseBytes } from './reverseCache';
 
 /** Opens the media's primary video track for frame access. Reads the file lazily; never loads it whole. */
 export async function openVideoSource(mediaId: Id): Promise<VideoSource> {

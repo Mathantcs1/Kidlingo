@@ -3,6 +3,9 @@
 import { ALL_FORMATS, BlobSource, Input, VideoSampleSink } from 'mediabunny';
 import type { Rotation, VideoSample } from 'mediabunny';
 import type { VideoSource } from './decode';
+import { noteDecoded } from './decodeStats';
+import { ReverseRun } from './reverseRun';
+export { resetVideoDecodeCount, videoDecodeCount } from './decodeStats';
 
 /** Decoded frames kept around (a contiguous run from the current iterator). */
 const MAX_CACHED_FRAMES = 4;
@@ -19,6 +22,9 @@ interface CachedFrame {
   end: number;
   frame: VideoFrame;
 }
+
+/** Backward requests within this many seconds of the cached frames are reverse playback (a window is decoded); farther ones seek. */
+const REVERSE_REACH = 2;
 
 /** Live/peak counts of open VideoSources (instrumentation for tests and leak checks). */
 const stats = { open: 0, peak: 0, opened: 0 };
@@ -49,6 +55,8 @@ export class DecodedVideoSource implements VideoSource {
   /** The time `iter` was started at; frames before it were skipped by the decoder. */
   private iterStart = 0;
   private closed = false;
+  /** The reverse window: ascending frames decoded in one pass, served downwards; empty outside reverse playback. */
+  private readonly reverse: ReverseRun | null;
   /** Serialises frameAt calls so the iterator and cache are never used concurrently. */
   private queue: Promise<unknown> = Promise.resolve();
 
@@ -62,12 +70,13 @@ export class DecodedVideoSource implements VideoSource {
     this.input = input;
     this.sink = sink;
     this.firstTimestamp = firstTimestamp;
+    this.reverse = sink ? new ReverseRun(sink, firstTimestamp, () => this.closed) : null;
     stats.open++;
     stats.opened++;
     stats.peak = Math.max(stats.peak, stats.open);
   }
 
-  frameAt(sourceTime: number): Promise<VideoFrame | null> {
+  frameAt(sourceTime: number): Promise<ImageBitmap | VideoFrame | null> {
     const run = this.queue.then(() => this.lookup(sourceTime));
     this.queue = run.catch(() => undefined);
     return run;
@@ -78,13 +87,28 @@ export class DecodedVideoSource implements VideoSource {
     this.closed = true;
     stats.open--;
     this.dropIterator();
+    this.reverse?.dispose();
     this.input.dispose();
   }
 
-  private async lookup(sourceTime: number): Promise<VideoFrame | null> {
+  private async lookup(sourceTime: number): Promise<ImageBitmap | VideoFrame | null> {
     if (this.closed) throw new Error('VideoSource is closed');
     if (!this.sink) return null;
     const t = Math.max(Number.isFinite(sourceTime) ? sourceTime : 0, this.firstTimestamp);
+    const reverse = this.reverse;
+    reverse?.endLookup();
+    const inRun = reverse?.frameAt(t) ?? null;
+    if (inRun) return inRun;
+    if (reverse?.active) {
+      // Below the window: the next pass of reverse playback; beyond its end: the clip went forward again.
+      if (t < reverse.start - EPS && reverse.start - t <= REVERSE_REACH) {
+        this.dropIterator();
+        const next = await reverse.fill(t, reverse.start);
+        if (next) return next;
+      } else {
+        reverse.release();
+      }
+    }
     let seeked = false;
     if (!this.iter) {
       this.seek(t);
@@ -103,7 +127,13 @@ export class DecodedVideoSource implements VideoSource {
         // A fresh seek starts at the frame covering t; if it starts later (gap, odd first timestamp), that
         // first frame is the answer. Never seek twice for one request.
         if (seeked) return cache[0].frame;
-        // Backward request before anything cached: seek via Mediabunny's timestamp lookup.
+        // Backward request before anything cached: a step of reverse playback decodes a window of frames ending here
+        // (served downwards afterwards); a far jump back just seeks via Mediabunny's timestamp lookup.
+        if (cache[0].start - t <= REVERSE_REACH) {
+          this.dropIterator();
+          const hit = await this.reverse?.fill(t, cache[0].start);
+          if (hit) return hit;
+        }
         this.seek(t);
         seeked = true;
         continue;
@@ -149,6 +179,7 @@ export class DecodedVideoSource implements VideoSource {
     } finally {
       sample.close();
     }
+    noteDecoded();
     this.cache.push({ start: sample.timestamp, end: sample.timestamp + sample.duration, frame });
     while (this.cache.length > MAX_CACHED_FRAMES) this.cache.shift()?.frame.close();
     return true;

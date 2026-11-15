@@ -2,7 +2,7 @@
 import { ALL_FORMATS, AudioBufferSink, BlobSource, Input } from 'mediabunny';
 import type { Project } from './core/model';
 import { exportProject } from './export/exporter';
-import { resetVideoSourceStats, videoSourceStats } from './media/decode';
+import { resetReverseBytes, resetVideoDecodeCount, resetVideoSourceStats, reverseBytes, videoDecodeCount, videoSourceStats } from './media/decode';
 import { MixdownStream, renderMixdown } from './audio/mixdown';
 import { audioStats, resetAudioStats } from './audio/stats';
 
@@ -125,6 +125,10 @@ export const exportHarness = {
   inspectMp4,
   videoSourceStats,
   resetVideoSourceStats,
+  videoDecodeCount,
+  resetVideoDecodeCount,
+  reverseBytes,
+  resetReverseBytes,
   /**
    * Exports `p` (quality '1080p', optional test-only long side) and inspects the result. With `abortAt`, aborts
    * once progress reaches that fraction. Never rejects: errors come back as `error`.

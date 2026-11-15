@@ -93,6 +93,11 @@ export function ensureFixtures(): string {
     '-f', 'lavfi', '-i', "color=black:s=128x72:r=30:d=4,format=yuv420p,geq=lum='if(lt(X\\,W/2)\\,16+6*mod(N\\,32)\\,16+6*floor(N/32))':cb=128:cr=128",
     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast', '-crf', '12', '-g', '30', '-an',
   ]);
+  // Long-GOP clips for the reverse decode guards: 10 s at 30 fps, 960x540, with a key frame every 300 frames (one GOP) and
+  // every 60 frames (a phone-like 2 s GOP). testsrc has motion everywhere so the frames are not trivially cheap.
+  for (const [name, gop] of [['long-gop.mp4', 300], ['phone-gop.mp4', 60]] as const) {
+    encode(at(name), ['-f', 'lavfi', '-i', 'testsrc2=size=960x540:rate=30', '-t', '10', ...VIDEO_ENC, '-preset', 'veryfast', '-g', String(gop), '-keyint_min', String(gop), '-sc_threshold', '0', '-an']);
+  }
   // Valid files in containers ClipForge cannot open.
   encode(at('legacy.avi'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '0.5', '-c:v', 'mpeg4']);
   encode(at('legacy.wmv'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '0.5', '-c:v', 'wmv2']);
