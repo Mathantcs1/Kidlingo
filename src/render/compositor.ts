@@ -4,7 +4,7 @@ import { BlurBackground } from './blur';
 import { composite } from './composite';
 import { FrameSources } from './frameSources';
 import { FxEngine } from './fx/engine';
-import { QuadRenderer, createContext } from './gl';
+import { QuadRenderer, createContext, letterbox } from './gl';
 import { withAttempts } from './glErrors';
 
 export interface Compositor {
@@ -34,6 +34,8 @@ export interface CompositorStats {
   fxTargets: number;
   /** Loaded LUT textures (one per distinct LUT in use). */
   lutTextures: number;
+  /** Cached overlay textures (bounded at 32). */
+  overlayTextures: number;
   imageTextures: number;
   maxImageSide: number;
 }
@@ -111,10 +113,11 @@ class GlCompositor implements Compositor {
 
   private async render(p: Project, t: number, sources: Map<Id, VideoSource>, opts: RenderOptions): Promise<void> {
     this.assertUsable();
+    const screenScale = letterbox({ width: p.format.width, height: p.format.height }, { width: this.canvas.width, height: this.canvas.height }).width / p.format.width;
     const draws = await this.frames.gather(p, t, sources, {
       check: () => this.assertUsable(),
       ok: () => !this.disposed && !this.lost,
-    });
+    }, screenScale);
     if (!opts.bypassFx) await this.fx.prepare(draws);
     this.assertUsable();
     const fx = opts.bypassFx ? { draws, targets: [] } : this.fx.process(draws, p, t, this.canvas);

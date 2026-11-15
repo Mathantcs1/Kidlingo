@@ -104,7 +104,15 @@ export function reframeProject(p: Project, key: FormatKey): Project {
   const oldUsable = old.width > 0 && old.height > 0 && Number.isFinite(old.width) && Number.isFinite(old.height);
   const rx = width / old.width;
   const ry = height / old.height;
+  // Overlays have no media to refit to: they always keep their relative placement (same rule as a customised clip).
+  const keepPlacement = (c: Clip): Clip => {
+    const t = c.transform;
+    const next = t.scale * Math.sqrt(rx * ry);
+    const scale = Number.isFinite(next) && next > 0 ? next : t.scale;
+    return { ...c, transform: { ...t, x: t.x * rx, y: t.y * ry, scale } };
+  };
   const reframe = (c: Clip): Clip => {
+    if (c.kind === 'overlay') return keepPlacement(c);
     const m = p.media[c.mediaId];
     if (c.kind === 'audio' || !m || !m.width || !m.height) return { ...c };
     const dims = { width: m.width, height: m.height };

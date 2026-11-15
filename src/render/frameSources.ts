@@ -1,9 +1,13 @@
 // Phase 1 of a frame: fetch every frame/bitmap of the clips visible at a time and upload each into its own texture.
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
+import { OVERLAY_SIZES, clampOverlayParams } from '../overlays/spec';
+import { overlayProgress } from '../overlays/progress';
 import { createTexture, frameOrientation, rotatedSize, uploadTexture, uvMatrix } from './gl';
 import type { Mat3, Size, TextureSlot } from './gl';
 import { ImageTextures } from './images';
+import { overlayRasterSize, rasterOverlay } from './overlays/raster';
+import { OverlayTextures } from './overlays/textures';
 import { visualClipsAt } from './visible';
 
 /** One clip ready to composite. */
@@ -28,22 +32,41 @@ export class FrameSources {
   /** Textures per video source; a source used by several clips in one frame gets one texture per use. */
   private readonly videoSlots = new Map<VideoSource, TextureSlot[]>();
   private readonly images: ImageTextures;
+  private readonly overlays: OverlayTextures;
 
   constructor(private readonly gl: WebGL2RenderingContext) {
     this.images = new ImageTextures(gl);
+    this.overlays = new OverlayTextures(gl);
+  }
+
+  /** An overlay clip's texture (cached by look, size and progress frame) as a draw; null if it has no spec. */
+  private overlayDraw(clip: Clip, p: Project, t: number, screenScale: number): Draw | null {
+    const spec = clip.overlay;
+    if (!spec) return null;
+    const params = clampOverlayParams(spec.type, spec.params);
+    const size = OVERLAY_SIZES[spec.type];
+    const px = overlayRasterSize(size, clip.transform.scale, screenScale);
+    const progress = spec.type === 'progress' ? overlayProgress(clip, p, t, params.source) : 0;
+    const key = [spec.type, spec.text, spec.subtext, JSON.stringify(params), px.width, px.height, spec.type === 'progress' ? progress.toFixed(5) : ''].join('|');
+    const slot = this.overlays.get(key, px.width, px.height, () => rasterOverlay({ ...spec, params }, px.width, px.height, progress));
+    return { clip, slot, size, uv: UPRIGHT };
   }
 
   /**
    * Nothing is drawn to the canvas here, so the browser can never present a half-composited frame while we wait on
    * decoders. Clips of unknown or missing media, and video clips without a source, are skipped.
    */
-  async gather(p: Project, t: number, sources: Map<Id, VideoSource>, guard: UsableGuard): Promise<Draw[]> {
+  async gather(p: Project, t: number, sources: Map<Id, VideoSource>, guard: UsableGuard, screenScale = 1): Promise<Draw[]> {
     const draws: Draw[] = [];
     const uses = new Map<VideoSource, number>();
     const shownImages = new Set<Id>();
     for (const clip of visualClipsAt(p, t)) {
-      // Overlay clips have no media; they are drawn by the overlay rasteriser (added with the overlay task).
-      if (clip.kind === 'overlay') continue;
+      // Overlay clips have no media: they are rasterised with Canvas2D.
+      if (clip.kind === 'overlay') {
+        const d = this.overlayDraw(clip, p, t, screenScale);
+        if (d) draws.push(d);
+        continue;
+      }
       const media = p.media[clip.mediaId];
       if (!media || media.missing) continue;
       if (clip.kind === 'image') {
@@ -77,16 +100,17 @@ export class FrameSources {
     return draws;
   }
 
-  stats(): { videoTextures: number; imageTextures: number; maxImageSide: number } {
+  stats(): { videoTextures: number; imageTextures: number; maxImageSide: number; overlayTextures: number } {
     let videoTextures = 0;
     for (const slots of this.videoSlots.values()) videoTextures += slots.length;
-    return { videoTextures, imageTextures: this.images.count, maxImageSide: this.images.maxSide };
+    return { videoTextures, imageTextures: this.images.count, maxImageSide: this.images.maxSide, overlayTextures: this.overlays.count };
   }
 
   dispose(): void {
     for (const slots of this.videoSlots.values()) for (const s of slots) this.gl.deleteTexture(s.tex);
     this.videoSlots.clear();
     this.images.dispose();
+    this.overlays.dispose();
   }
 
   private videoSlot(source: VideoSource, index: number): TextureSlot {
