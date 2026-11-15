@@ -2,6 +2,7 @@
 // on-canvas overlay (re-exported by src/ui/transformEdits.ts). Keyed writes live in keyframeEdits.ts (Plan 5).
 import { ANIMATED_REFUSAL } from './animTargets';
 import { fitTransform } from './merge';
+import { withPivotOffset } from './pivotFit';
 import type { KeyedTransformProp } from './keyTypes';
 import type { Clip, Id, Project, Transform, TransformKeys } from './model';
 import { overlayDefaultTransform } from './overlays';
@@ -56,9 +57,10 @@ export function resetClipTransform(p: Project, clipId: Id): Project {
     // An overlay has no media: it goes back to its type's default place.
     if (clip.kind === 'overlay' && clip.overlay) return overlayDefaultTransform(clip.overlay.type, p.format);
     const m = p.media[clip.mediaId];
-    return m?.width && m.height
-      ? fitTransform({ width: m.width, height: m.height }, p.format, clip.fit)
-      : { x: 0, y: 0, scale: cur.scale, rotation: 0, opacity: 1 };
+    if (!m?.width || !m.height) return { x: 0, y: 0, scale: cur.scale, rotation: 0, opacity: 1 };
+    const src = { width: m.width, height: m.height };
+    // With a static pivot the PICTURE (not the pivot) goes back to the fit framing (5E review wave).
+    return withPivotOffset(fitTransform(src, p.format, clip.fit), clip.anchor, src, 0);
   }, (clip) => clip.kind !== 'adjustment');
 }
 
@@ -74,7 +76,8 @@ function writeTransform(
   if (clip.kind === 'audio') throw new TimelineError('Audio clips have no picture to move');
   const cur = clip.transform;
   const next = fn(cur, clip);
-  const drop = clip.keys !== undefined && dropKeys(clip);
+  // Anchor keys survive a reset, so a clip with only those has nothing to drop.
+  const drop = withoutTransformKeys(clip.keys, ['anchor']) !== undefined && dropKeys(clip);
   if (!drop && KEYS.every((k) => next[k] === cur[k])) return p;
   // Reset drops the transform keys but keeps the anchor's (5E: the pivot is not part of the transform being reset).
   const { keys: _keys, ...noKeys } = clip;

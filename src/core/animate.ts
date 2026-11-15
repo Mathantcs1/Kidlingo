@@ -22,12 +22,12 @@ function effectAnimated(e: VideoEffect): boolean {
 
 function transformAnimated(clip: Clip): boolean {
   const k = clip.keys;
-  return k !== undefined && (has(k.position) || has(k.scale) || has(k.rotation) || has(k.opacity) || has(k.anchor));
+  return k !== undefined && (has(k.position) || has(k.scale) || has(k.rotation) || has(k.opacity));
 }
 
 /** True when any transform property or effect param has at least one key. */
 export function isAnimated(clip: Clip): boolean {
-  if (transformAnimated(clip)) return true;
+  if (transformAnimated(clip) || has(clip.keys?.anchor)) return true;
   for (const e of clip.effects) if (effectAnimated(e)) return true;
   return false;
 }

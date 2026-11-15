@@ -34,11 +34,14 @@ export function flipMatrix(flip: Flip): Mat3 {
 export function croppedUvMatrix(orientation: Mat3, crop: Crop | undefined, flip: Flip | undefined, inset = { x: 0, y: 0 }): Mat3 {
   let m = orientation;
   if (isCropped(crop)) {
+    // The inset never eats more than a quarter of what remains, so a sub-texel remainder cannot mirror the lookup (D7: clamped).
+    const ix = Math.max(0, Math.min(inset.x, (1 - crop.left - crop.right) / 4));
+    const iy = Math.max(0, Math.min(inset.y, (1 - crop.top - crop.bottom) / 4));
     const c: Crop = {
-      left: crop.left > 0 ? crop.left + inset.x : 0,
-      right: crop.right > 0 ? crop.right + inset.x : 0,
-      top: crop.top > 0 ? crop.top + inset.y : 0,
-      bottom: crop.bottom > 0 ? crop.bottom + inset.y : 0,
+      left: crop.left > 0 ? crop.left + ix : 0,
+      right: crop.right > 0 ? crop.right + ix : 0,
+      top: crop.top > 0 ? crop.top + iy : 0,
+      bottom: crop.bottom > 0 ? crop.bottom + iy : 0,
     };
     m = mulMat3(m, cropRectMatrix(c));
   }

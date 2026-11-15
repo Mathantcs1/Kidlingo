@@ -38,11 +38,11 @@ export default function AnchorFields({ clip, disabled, title }: { clip: Clip; di
         {field('x', 'X')}
         {field('y', 'Y')}
       </div>
-      <div className="crop-actions">
-        <button type="button" className="tf-reset" data-testid="anchor-to-crop" disabled={disabled || keyed || !clip.crop} title={title ?? 'Put the pivot at the centre of the cropped area'} onClick={() => anchorToCropCentreCmd(clip.id)}>
+      <div className="crop-actions" role="group" aria-label="Anchor actions">
+        <button type="button" className="tf-reset" data-testid="anchor-to-crop" aria-label="Put the anchor at the centre of the cropped area" disabled={disabled || keyed || !clip.crop} title={title ?? 'Put the pivot at the centre of the cropped area'} onClick={() => anchorToCropCentreCmd(clip.id)}>
           To crop centre
         </button>
-        <button type="button" className="tf-reset" data-testid="anchor-reset" disabled={disabled || keyed || !clip.anchor} title={title ?? 'Put the pivot back at the centre'} onClick={() => resetAnchorCmd(clip.id)}>
+        <button type="button" className="tf-reset" data-testid="anchor-reset" aria-label="Reset anchor" disabled={disabled || keyed || !clip.anchor} title={title ?? 'Put the pivot back at the centre'} onClick={() => resetAnchorCmd(clip.id)}>
           Reset
         </button>
       </div>

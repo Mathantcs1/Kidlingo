@@ -1,5 +1,7 @@
 import type { Clip } from '../core/model';
+import { useEditor } from '../state/store';
 import { toggleCropMode, useCropMode } from './cropModeStore';
+import { onClip } from './keyframeCommands';
 import { fitToCropCmd, resetCropCmd, setCropCmd, setFlipCmd } from './cropCommands';
 import NumberField from './NumberField';
 
@@ -16,6 +18,8 @@ const EDGES = [
  */
 export default function CropFields({ clip, disabled, title }: { clip: Clip; disabled: boolean; title?: string }) {
   const modeOn = useCropMode((s) => s.clipId === clip.id);
+  // The handles are drawn on the picture at the playhead: off the clip there is nothing to drag (a boolean: no re-render per frame).
+  const onPlayhead = useEditor((s) => onClip(clip, s.playhead));
   const crop = clip.crop;
   return (
     <div className="inspector-field" data-testid="crop-section">
@@ -37,17 +41,17 @@ export default function CropFields({ clip, disabled, title }: { clip: Clip; disa
           />
         ))}
       </div>
-      <div className="crop-actions">
-        <button type="button" className="tf-reset" data-testid="crop-mode-toggle" aria-pressed={modeOn} disabled={disabled} title={title ?? 'Drag the crop edges on the picture'} onClick={() => toggleCropMode(clip.id)}>
+      <div className="crop-actions" role="group" aria-label="Crop actions">
+        <button type="button" className="tf-reset" data-testid="crop-mode-toggle" aria-pressed={modeOn} disabled={disabled || !onPlayhead} title={title ?? (onPlayhead ? 'Drag the crop edges on the picture' : 'Move the playhead onto the clip to crop on the canvas')} onClick={() => toggleCropMode(clip.id)}>
           Crop on canvas
         </button>
-        <button type="button" className="tf-reset" data-testid="crop-fit" disabled={disabled || !crop} title={title ?? 'Fit the cropped area to the canvas'} onClick={() => fitToCropCmd(clip.id, 'fit')}>
+        <button type="button" className="tf-reset" data-testid="crop-fit" aria-label="Fit the cropped area to the canvas" disabled={disabled || !crop} title={title ?? 'Fit the cropped area to the canvas'} onClick={() => fitToCropCmd(clip.id, 'fit')}>
           Fit
         </button>
-        <button type="button" className="tf-reset" data-testid="crop-fill" disabled={disabled || !crop} title={title ?? 'Fill the canvas with the cropped area'} onClick={() => fitToCropCmd(clip.id, 'fill')}>
+        <button type="button" className="tf-reset" data-testid="crop-fill" aria-label="Fill the canvas with the cropped area" disabled={disabled || !crop} title={title ?? 'Fill the canvas with the cropped area'} onClick={() => fitToCropCmd(clip.id, 'fill')}>
           Fill
         </button>
-        <button type="button" className="tf-reset" data-testid="crop-reset" disabled={disabled || !crop} title={title ?? 'Remove the crop'} onClick={() => resetCropCmd(clip.id)}>
+        <button type="button" className="tf-reset" data-testid="crop-reset" aria-label="Reset crop" disabled={disabled || !crop} title={title ?? 'Remove the crop'} onClick={() => resetCropCmd(clip.id)}>
           Reset
         </button>
       </div>

@@ -1,5 +1,6 @@
 // Pure project edits behind the editor's buttons and shortcuts (composed from core/ operations).
 import { fitTransform, joinClips } from '../core/merge';
+import { withPivotOffset } from '../core/pivotFit';
 import { clipEnd } from '../core/model';
 import type { Clip, Id, MediaRef, Project, Track } from '../core/model';
 import { MIN_CLIP, TimelineError, addClip, assertUnlocked, deleteClip, findClip, splitClip } from '../core/timeline';
@@ -108,7 +109,9 @@ export function setClipFit(p: Project, clipId: Id, fit: Clip['fit']): Project {
     if (c.fit === fit) return c;
     const m = p.media[c.mediaId];
     if (!m?.width || !m.height) return { ...c, fit };
-    const transform = { ...fitTransform({ width: m.width, height: m.height }, p.format, fit), rotation: c.transform.rotation, opacity: c.transform.opacity };
+    const src = { width: m.width, height: m.height };
+    // A static pivot moves the position so the PICTURE (not the pivot) takes the fit framing (5E).
+    const transform = { ...withPivotOffset(fitTransform(src, p.format, fit), c.anchor, src, c.transform.rotation), rotation: c.transform.rotation, opacity: c.transform.opacity };
     // The fit defines the framing: position and scale keys go (Plan 5 D9); rotation and opacity keys stay.
     const { keys: _keys, ...rest } = c;
     const keys = withoutTransformKeys(c.keys, ['position', 'scale']);

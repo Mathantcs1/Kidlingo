@@ -6,6 +6,7 @@ import { ANCHOR_LIMIT, MAX_CROP_EDGE, clampCrop, cropMinimum, normaliseCrop } fr
 import type { Anchor, Crop, Flip } from './cropTypes';
 import type { Clip, Id, Project } from './model';
 import { TimelineError, assertUnlocked, findClip, replaceClip } from './timeline';
+import { REACH } from './transformLimits';
 
 const EDGES = ['left', 'top', 'right', 'bottom'] as const;
 const OPPOSITE = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' } as const;
@@ -132,11 +133,15 @@ export function movePivotTo(p: Project, clipId: Id, point: { x: number; y: numbe
   if ((k?.position?.length ?? 0) + (k?.scale?.length ?? 0) + (k?.rotation?.length ?? 0) + (k?.anchor?.length ?? 0) > 0) throw new TimelineError(ANIMATED_REFUSAL);
   const m = p.media[clip.mediaId];
   if (!m?.width || !m.height) throw new TimelineError('This clip has no known size');
+  if (!(clip.transform.scale > 0) || !Number.isFinite(clip.transform.scale)) throw new TimelineError('The pivot cannot be moved while the clip has no size');
   const f = frameFractionAt(point, clip.transform, { width: m.width, height: m.height }, clip.anchor, p.format);
-  const c = (v: number): number => Math.min(ANCHOR_LIMIT, Math.max(-ANCHOR_LIMIT, v)) + 0;
-  const anchor = { x: c(f.u - 0.5), y: c(f.v - 0.5) };
+  const anchor = { x: f.u - 0.5 + 0, y: f.v - 0.5 + 0 };
   const x = point.x - p.format.width / 2 + 0;
   const y = point.y - p.format.height / 2 + 0;
+  // Clamping would make the picture jump (the pivot must stay exactly where the picture says it is): refuse instead.
+  const far = !Number.isFinite(anchor.x + anchor.y) || Math.abs(anchor.x) > ANCHOR_LIMIT || Math.abs(anchor.y) > ANCHOR_LIMIT
+    || Math.abs(x) > REACH * p.format.width || Math.abs(y) > REACH * p.format.height;
+  if (far) throw new TimelineError('The pivot cannot go that far from the picture');
   const same = anchor.x === (clip.anchor?.x ?? 0) && anchor.y === (clip.anchor?.y ?? 0) && x === clip.transform.x && y === clip.transform.y;
   if (same) return p;
   const { anchor: _old, ...rest } = clip;

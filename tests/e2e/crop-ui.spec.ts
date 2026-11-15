@@ -112,6 +112,43 @@ test('a locked track disables every crop, flip and anchor control', async ({ pag
   for (const id of ['crop-left', 'crop-top', 'crop-right', 'crop-bottom', 'crop-mode-toggle', 'flip-h', 'flip-v', 'anchor-x', 'anchor-y', 'kf-toggle-anchor']) {
     await expect(page.getByTestId(id), id).toBeDisabled();
   }
+  await expect(page.getByTestId('crop-overlay')).toHaveCount(0);
+  await expect(page.getByTestId('anchor-handle')).toHaveCount(0);
+});
+
+test('crop mode on the canvas needs the clip under the playhead (the toggle says why when it is not)', async ({ page }) => {
+  await setupPip(page, 'split'); // the pip clip spans 0..2 s
+  await page.evaluate(() => window.__clipforge!.getState().setPlayhead(3));
+  await expect(page.getByTestId('crop-mode-toggle')).toBeDisabled();
+  await expect(page.getByTestId('crop-mode-toggle')).toHaveAttribute('title', /playhead/i);
+  await page.evaluate(() => window.__clipforge!.getState().setPlayhead(1));
+  await expect(page.getByTestId('crop-mode-toggle')).toBeEnabled();
+  await page.getByTestId('crop-mode-toggle').click();
+  await expect(page.getByTestId('crop-overlay')).toBeVisible();
+  // crop mode ends with the selection even when the preview overlay is not what notices
+  await page.evaluate(() => window.__clipforge!.getState().select([]));
+  await expect(page.getByTestId('crop-overlay')).toHaveCount(0);
+  await page.evaluate(() => window.__clipforge!.getState().select(['pip']));
+  await expect(page.getByTestId('crop-mode-toggle')).toHaveAttribute('aria-pressed', 'false');
+});
+
+test('a pivot drag far outside the picture is refused with a message, nothing changes', async ({ page }) => {
+  await setupPip(page, 'split'); // 300 px wide: more than 2 widths away is 600+ px
+  const b = await canvasBox(page);
+  const depth = await undoDepth(page);
+  const from = await center(page, 'anchor-handle');
+  const to = toPage(b, { x: 1800, y: 540 });
+  await page.keyboard.down('Shift');
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 6 });
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+  const c = await clipOf(page);
+  expect(c.anchor).toBeUndefined();
+  expect(c.transform.x).toBe(0);
+  expect(await undoDepth(page)).toBe(depth);
+  await expect(page.getByTestId('error-toast')).toContainText(/far/i);
 });
 
 async function center(page: Page, testId: string) {
@@ -272,7 +309,9 @@ test('without Shift a press on the dot still moves the clip; a keyed position ca
   await page.mouse.move(f2.x + 60, f2.y + 20, { steps: 4 });
   await page.mouse.up();
   await page.keyboard.up('Shift');
-  expect((await clipOf(page)).anchor).toBeUndefined();
-  expect(toPage(b, { x: 0, y: 0 }).x).toBeDefined();
-  expect(await undoDepth(page)).toBeGreaterThanOrEqual(depth); // a keyed move may add a key, never a pivot change
+  const after = await clipOf(page);
+  expect(after.anchor, 'no static pivot was set').toBeUndefined();
+  expect(after.keys?.anchor, 'no anchor keys were added').toBeUndefined();
+  expect(await undoDepth(page), 'Shift on a keyed position is just a normal drag, never a pivot step').toBeLessThanOrEqual(depth + 1);
+  expect(b.s).toBeGreaterThan(0);
 });
