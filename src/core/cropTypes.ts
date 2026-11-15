@@ -30,6 +30,10 @@ export const MIN_CROP_PIXELS = 8;
 /** The anchor stays within this many frame sizes of the centre (D4, D10). */
 export const ANCHOR_LIMIT = 2;
 
+/** The smallest visible fraction of an axis whose source side is `sidePx` long (2 %, or 8 px when the side is known). */
+export const cropMinimum = (sidePx?: number): number =>
+  Math.max(MIN_CROP_REMAINING, sidePx && sidePx > 0 ? MIN_CROP_PIXELS / sidePx : 0);
+
 const EDGES = ['left', 'top', 'right', 'bottom'] as const;
 
 export const NO_CROP: Crop = { left: 0, top: 0, right: 0, bottom: 0 };

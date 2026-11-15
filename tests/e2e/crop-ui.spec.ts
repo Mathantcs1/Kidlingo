@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { trackErrors } from './helpers';
-import { expectPixel, isBlue, isRed, isYellow, setupPip, undoDepth } from './pip-helpers';
+import { canvasBox, expectPixel, isBlue, isRed, isYellow, setupPip, toPage, undoDepth } from './pip-helpers';
 
 test.setTimeout(90_000);
 
@@ -112,4 +112,96 @@ test('a locked track disables every crop, flip and anchor control', async ({ pag
   for (const id of ['crop-left', 'crop-top', 'crop-right', 'crop-bottom', 'crop-mode-toggle', 'flip-h', 'flip-v', 'anchor-x', 'anchor-y', 'kf-toggle-anchor']) {
     await expect(page.getByTestId(id), id).toBeDisabled();
   }
+});
+
+async function center(page: Page, testId: string) {
+  const r = (await page.getByTestId(testId).boundingBox())!;
+  return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+}
+
+test('crop mode: handles replace the move handles; dragging an edge crops live, one undo step', async ({ page }) => {
+  const errors = trackErrors(page);
+  await setupPip(page, 'split'); // 300x100 at (960, 540): x 810..1110, y 490..590
+  await expect(page.getByTestId('crop-overlay')).toHaveCount(0);
+  await page.getByTestId('crop-mode-toggle').click();
+  await expect(page.getByTestId('crop-mode-toggle')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('crop-overlay')).toBeVisible();
+  await expect(page.getByTestId('overlay-handle-rotate')).toHaveCount(0);
+  for (const h of ['l', 'r', 't', 'b', 'tl', 'tr', 'br', 'bl']) await expect(page.getByTestId(`crop-handle-${h}`), h).toBeVisible();
+  const b = await canvasBox(page);
+  const depth = await undoDepth(page);
+  const from = await center(page, 'crop-handle-l');
+  const to = toPage(b, { x: 885, y: 540 });
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move((from.x + to.x) / 2, to.y, { steps: 4 });
+  await page.mouse.move(to.x, to.y, { steps: 4 });
+  // live: the preview already shows the crop while the button is held, and nothing is committed yet
+  await expectPixel(page, 830, 540, isBlue, 'live crop shows the background');
+  expect((await clipOf(page)).crop).toBeUndefined();
+  expect(await undoDepth(page)).toBe(depth);
+  await page.mouse.up();
+  const crop = (await clipOf(page)).crop!;
+  expect(crop.left).toBeCloseTo(0.25, 1);
+  expect(await undoDepth(page)).toBe(depth + 1);
+  await expectPixel(page, 830, 540, isBlue, 'cropped');
+  await expectPixel(page, 930, 540, isRed, 'visible part stays where it was');
+  await expect.poll(async () => Number(await page.getByTestId('crop-left').inputValue())).toBeCloseTo(25, 0);
+  await page.getByTestId('btn-undo').click();
+  expect((await clipOf(page)).crop).toBeUndefined();
+  expect(errors).toEqual([]);
+});
+
+test('crop mode: a corner drag crops two edges at once; Escape cancels without a step; leaving the mode restores the handles', async ({ page }) => {
+  await setupPip(page, 'split');
+  await page.getByTestId('crop-mode-toggle').click();
+  const b = await canvasBox(page);
+  const depth = await undoDepth(page);
+  const tl = await center(page, 'crop-handle-br');
+  const to = toPage(b, { x: 1060, y: 565 });
+  await page.mouse.move(tl.x, tl.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  expect((await clipOf(page)).crop).toBeUndefined();
+  expect(await undoDepth(page)).toBe(depth);
+  await expectPixel(page, 1100, 580, isYellow, 'nothing was cropped');
+  // now for real
+  const from2 = await center(page, 'crop-handle-br');
+  await page.mouse.move(from2.x, from2.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.mouse.up();
+  const c = (await clipOf(page)).crop!;
+  expect(c.right).toBeCloseTo(50 / 300, 1);
+  expect(c.bottom).toBeCloseTo(25 / 100, 1);
+  expect(await undoDepth(page)).toBe(depth + 1);
+  await page.getByTestId('crop-mode-toggle').click();
+  await expect(page.getByTestId('crop-overlay')).toHaveCount(0);
+  await expect(page.getByTestId('overlay-handle-rotate')).toBeVisible();
+});
+
+test('crop mode follows a rotated clip and ends when the selection changes', async ({ page }) => {
+  await setupPip(page, 'split');
+  await page.evaluate(() => window.__clipforge!.getState().apply((p) => ({ ...p, tracks: p.tracks.map((t) => (t.id === 'v2' ? { ...t, clips: t.clips.map((c) => ({ ...c, transform: { ...c.transform, rotation: 90 } })) } : t)) })));
+  await page.getByTestId('crop-mode-toggle').click();
+  const b = await canvasBox(page);
+  // Rotated 90 clockwise the picture covers x 910..1010, y 390..690 and the frame's TOP edge is on the screen's right
+  // (x = 1010): dragging that handle left by 25 px crops 25 % of the frame's 100 px height.
+  const from = await center(page, 'crop-handle-t');
+  expect(from.x).toBeGreaterThan(toPage(b, { x: 1000, y: 540 }).x);
+  const to = toPage(b, { x: 985, y: 540 });
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.mouse.up();
+  const crop = (await clipOf(page)).crop!;
+  expect(crop.top).toBeCloseTo(0.25, 1);
+  expect([crop.left, crop.right, crop.bottom].every((v) => v < 0.02)).toBe(true);
+  await page.evaluate(() => window.__clipforge!.getState().select(['bg']));
+  await expect(page.getByTestId('crop-overlay')).toHaveCount(0);
+  await page.evaluate(() => window.__clipforge!.getState().select(['pip']));
+  await expect(page.getByTestId('crop-overlay')).toHaveCount(0);
+  await expect(page.getByTestId('crop-mode-toggle')).toHaveAttribute('aria-pressed', 'false');
 });

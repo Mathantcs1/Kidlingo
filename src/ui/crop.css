@@ -1,0 +1,36 @@
+/* On-canvas crop mode (Plan 5E): the overlay itself lets presses through; only the handles take them. */
+.crop-overlay {
+  pointer-events: none;
+}
+
+.crop-overlay .crop-handle {
+  pointer-events: all;
+}
+
+.crop-handle-l,
+.crop-handle-r {
+  cursor: ew-resize;
+}
+
+.crop-handle-t,
+.crop-handle-b {
+  cursor: ns-resize;
+}
+
+.crop-handle-tl,
+.crop-handle-br {
+  cursor: nwse-resize;
+}
+
+.crop-handle-tr,
+.crop-handle-bl {
+  cursor: nesw-resize;
+}
+
+/* The full picture, including the cropped-away part. */
+.crop-frame {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.55);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}

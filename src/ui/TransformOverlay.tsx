@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, RefObject } from 'react';
 import { resolvedTransform, resolvedView } from '../core/animate';
 import type { Project, Transform } from '../core/model';
@@ -10,6 +10,9 @@ import { formatToCss, overlayTarget, toleranceInFormatPx } from './overlayMath';
 import type { Box } from './overlayMath';
 import { HANDLE_PX, ROTATE_PX, handleAt } from './overlayHit';
 import type { DragTarget, LiveTransform } from './overlayHit';
+import CropOverlay from './CropOverlay';
+import type { LiveCrop } from './CropOverlay';
+import { endCropMode, useCropMode } from './cropModeStore';
 import MotionPath from './MotionPath';
 import { PASS_THROUGH_PX, motionPathTarget, toFormat } from './motionPathMath';
 import { keyAtPlayhead } from './keyframeCommands';
@@ -30,6 +33,8 @@ interface Props {
   onLive: (l: LiveTransform | null) => void;
   /** A motion path drag (key dot or tangent handle) in progress; `project` already shows it. */
   onLivePath: (l: LivePath | null) => void;
+  /** A crop drag (crop mode) in progress; `project` is shown with it by the preview. */
+  onLiveCrop: (l: LiveCrop | null) => void;
 }
 
 /**
@@ -60,7 +65,13 @@ function cursorFor(handle: Handle | null, corners: Point[], centre: Point, dragg
  */
 export default function TransformOverlay(props: Props) {
   const selection = useEditor((s) => s.selection);
+  const cropClipId = useCropMode((s) => s.clipId);
   const target = overlayTarget(props.project, selection, props.playhead);
+  // Crop mode belongs to one visible, selected clip: it ends when that clip is deselected, locked or off the playhead.
+  const targetId = target?.clip.id;
+  useEffect(() => {
+    if (cropClipId !== null && cropClipId !== targetId) endCropMode();
+  }, [cropClipId, targetId]);
   // The selected clip's motion path (editable; read-only on a locked layer, where there are no handles).
   const pathClip = motionPathTarget(props.project, selection);
   if (!target && !pathClip) return null;
@@ -85,6 +96,10 @@ export default function TransformOverlay(props: Props) {
     if (Math.hypot(e.clientX - r.left - dot.x, e.clientY - r.top - dot.y) <= PASS_THROUGH_PX) toggleCornerCmd(pathClip.id, key.t);
   };
   // Keyed by clip: selecting another clip (or this one going away) unmounts the quad and ends its drag.
+  // Crop mode (5E) replaces the move/scale/rotate handles of its clip with the crop handles.
+  if (quadTarget && cropClipId === quadTarget.clipId) {
+    return <CropOverlay key={quadTarget.clipId} project={props.project} box={props.box} canvasRef={props.canvasRef} target={quadTarget} onLiveCrop={props.onLiveCrop} />;
+  }
   const quad = quadTarget && centre ? <OverlayQuad key={quadTarget.clipId} {...props} centre={centre} target={quadTarget} onDoubleClick={onDoubleClick} /> : null;
   return (
     <MotionPath project={props.project} clip={pathClip} playhead={props.playhead} box={props.box} centre={centre} editable={editable} canvasRef={props.canvasRef} onLivePath={props.onLivePath}>

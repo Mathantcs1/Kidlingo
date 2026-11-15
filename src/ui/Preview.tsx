@@ -15,6 +15,8 @@ import TransformOverlay from './TransformOverlay';
 import { withLiveValue } from './transformEdits';
 import { withLivePath } from '../core/pathEdits';
 import type { LivePath } from './usePathDrag';
+import type { LiveCrop } from './CropOverlay';
+import { withLiveCrop } from '../core/cropDrag';
 import { useElementSize } from './useElementSize';
 import type { LiveTransform } from './overlayHit';
 
@@ -52,9 +54,13 @@ export default function Preview({ editable }: { editable: boolean }) {
 
   const [live, setLive] = useState<LiveTransform | null>(null);
   const [livePath, setLivePath] = useState<LivePath | null>(null);
+  const [liveCrop, setLiveCrop] = useState<LiveCrop | null>(null);
   // A motion path drag (5B Task 8) exactly as its release commits it (withLivePath, unguarded): the overlay, the path
   // and the ghost follow it too.
-  const pathShown = useMemo(() => (livePath ? withLivePath(project, livePath.clipId, livePath.change) : project), [project, livePath]);
+  const pathShown = useMemo(() => {
+    const p = livePath ? withLivePath(project, livePath.clipId, livePath.change) : project;
+    return liveCrop ? withLiveCrop(p, liveCrop.clipId, liveCrop.crop) : p; // a crop-mode drag (5E), as its release commits it
+  }, [project, livePath, liveCrop]);
   // The drag's patch written at its playhead exactly as the release commits it (a key when animated), unguarded.
   const shown = useMemo(() => (live ? withLiveValue(pathShown, live.clipId, live.patch, live.t) : pathShown), [pathShown, live]);
 
@@ -129,7 +135,7 @@ export default function Preview({ editable }: { editable: boolean }) {
         />
         {editable && !failure && <MotionGhost project={pathShown} playhead={playhead} box={canvasBox} />}
         {editable && !failure && (
-          <TransformOverlay project={pathShown} playhead={playhead} box={canvasBox} canvasRef={canvasRef} live={live} onLive={setLive} onLivePath={setLivePath} />
+          <TransformOverlay project={pathShown} playhead={playhead} box={canvasBox} canvasRef={canvasRef} live={live} onLive={setLive} onLivePath={setLivePath} onLiveCrop={setLiveCrop} />
         )}
         {failure && 'message' in failure && (
           <p className="preview-message" role="status" data-testid="preview-unavailable">

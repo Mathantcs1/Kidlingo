@@ -1,7 +1,7 @@
 // Pure edits of a clip's crop, flip and anchor (Plan 5E D2, D3, D4, D8). Video and image clips only; locked tracks and
 // non-finite values are refused; a no-op returns the SAME project (no undo step). One call = one undo step.
 import { ANIMATED_REFUSAL } from './animTargets';
-import { ANCHOR_LIMIT, MAX_CROP_EDGE, MIN_CROP_PIXELS, MIN_CROP_REMAINING, clampCrop, normaliseCrop } from './cropTypes';
+import { ANCHOR_LIMIT, MAX_CROP_EDGE, clampCrop, cropMinimum, normaliseCrop } from './cropTypes';
 import type { Anchor, Crop, Flip } from './cropTypes';
 import type { Clip, Id, Project } from './model';
 import { TimelineError, assertUnlocked, findClip, replaceClip } from './timeline';
@@ -26,8 +26,7 @@ function put<K extends 'crop' | 'flip' | 'anchor'>(p: Project, clip: Clip, field
 /** The smallest fraction of each axis that must stay visible: 2 %, or 8 source pixels when the size is known (D2). */
 function minRemaining(p: Project, clip: Clip): { x: number; y: number } {
   const m = p.media[clip.mediaId];
-  const f = (side: number | undefined): number => Math.max(MIN_CROP_REMAINING, side && side > 0 ? MIN_CROP_PIXELS / side : 0);
-  return { x: f(m?.width), y: f(m?.height) };
+  return { x: cropMinimum(m?.width), y: cropMinimum(m?.height) };
 }
 
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
