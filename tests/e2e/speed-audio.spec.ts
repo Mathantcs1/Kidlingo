@@ -3,7 +3,7 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { audioFixtures } from './audio-fixtures';
-import { SR, withEffects } from './effect-helpers';
+import { SR, effect, withEffects } from './effect-helpers';
 import { importPaths, openHarness } from './harness-helpers';
 import type { Clip, Project } from '../../src/core/model';
 
@@ -96,3 +96,84 @@ for (const [name, over, onset] of [
     expect(Math.abs(videoAt - onset)).toBeLessThanOrEqual(2 / 30);
   });
 }
+
+// Pitch-preserving stretch (Plan 5D Task 9): the default for a retimed clip.
+test('stretch keeps 440 Hz at 0.25x, 0.5x, 2x and 4x (±2 %) with the mapped length', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.tone440]); // 3 s
+  for (const [speed, seconds] of [[0.25, 12], [0.5, 6], [2, 1.5], [4, 0.75]] as const) {
+    const r = await dominant(page, retimed(m, { speed }), seconds * 0.2, seconds * 0.8);
+    console.log(`stretch ${speed}x: ${r!.freq.toFixed(1)} Hz, ${r!.length} samples`);
+    expect(Math.abs(r!.freq / 440 - 1), `speed ${speed}`).toBeLessThan(0.02);
+    expect(r!.length).toBe(Math.round(seconds * SR));
+  }
+});
+
+test('stretch: 1 s windows equal one pass (restarts on a global grid) for constant speed, reverse and a ramp', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.noisy]); // 5 s
+  const ramp = [{ t: 0, v: 1, ease: { kind: 'linear' } }, { t: 5, v: 2, ease: { kind: 'linear' } }] as never;
+  for (const over of [{ speed: 1.5 }, { speed: 0.5, reverse: true as const }, { speedKeys: ramp }] as Partial<Clip>[]) {
+    const r = await page.evaluate(({ p, sr }) => window.cf.mixdownSeam(p, sr, 1), { p: retimed(m, over), sr: SR });
+    console.log(`stretch seam ${JSON.stringify(over).slice(0, 40)}: max ${r!.maxDiff}`);
+    expect(r!.lengths[0]).toBe(r!.lengths[1]);
+    expect(r!.peak).toBeGreaterThan(0.1);
+    expect(r!.maxDiff).toBeLessThan(1e-5);
+  }
+});
+
+test('stretch: live mixer equals the export mix (first live window is 2 s)', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.noisy]);
+  const r = await page.evaluate(({ p, sr }) => window.cf.liveVersusMixdown(p, 3, 20, sr), { p: retimed(m, { speed: 1.5 }), sr: SR });
+  expect(r!.covered).toBe(true);
+  expect(r!.maxDiff).toBeLessThan(1e-3);
+  expect(r!.schedule.some((s) => s.end - s.start <= 2.2)).toBe(true);
+});
+
+for (const [name, over, onset, tolerance] of [
+  ['0.25x stretch', { speed: 0.25 }, 4, 3 / 30],
+  ['4x stretch', { speed: 4 }, 0.25, 3 / 30],
+  ['2x stretch', { speed: 2 }, 0.5, 3 / 30],
+] as [string, Partial<Clip>, number, number][]) {
+  test(`A/V markers stay together under ${name}`, async ({ page }) => {
+    await openHarness(page);
+    const [m] = await importPaths(page, [sync]);
+    const p = project(AV_FMT, [m], [clipOf(m, { ...over, out: 4 })]);
+    const times = Array.from({ length: 45 }, (_, i) => onset - 0.2 + i / 30);
+    const frames = await render(page, p, times);
+    const bright = frames.findIndex((f) => f.data[0] > 128);
+    expect(bright).toBeGreaterThanOrEqual(0);
+    const windows = Array.from({ length: 120 }, (_, i) => [onset - 0.2 + i * 0.005, onset - 0.2 + (i + 1) * 0.005] as [number, number]);
+    const r = await page.evaluate(({ p, sr, windows }) => window.cf.mixdownChannelRms(p, sr, windows), { p, sr: SR, windows });
+    const loud = r!.rms.findIndex(([l]) => l > 0.1);
+    expect(loud).toBeGreaterThanOrEqual(0);
+    console.log(`${name}: video ${times[bright].toFixed(3)} audio ${windows[loud][0].toFixed(3)}`);
+    expect(Math.abs(times[bright] - windows[loud][0])).toBeLessThanOrEqual(tolerance);
+  });
+}
+
+test('stretch follows a 100 Hz -> 8 kHz sweep: the frequency at output time t is the footage frequency at the mapped time (±8 %: a 60 ms analysis window averages a moving tone)', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.sweep]);
+  for (const speed of [0.5, 2]) {
+    const p = retimed(m, { speed });
+    const seconds = 3 / speed;
+    for (const f of [0.2, 0.4, 0.6, 0.8]) {
+      const tau = f * seconds;
+      const r = await page.evaluate(({ p, sr, from, to }) => window.cf.mixdownDominantFrequency(p, sr, from, to, 100, 8000), { p, sr: SR, from: tau - 0.03, to: tau + 0.03 });
+      const want = 100 * 80 ** ((speed * tau) / 3);
+      console.log(`sweep ${speed}x at ${tau.toFixed(2)} s: ${r!.freq.toFixed(0)} Hz, want ${want.toFixed(0)}`);
+      expect(Math.abs(r!.freq / want - 1)).toBeLessThan(0.08);
+    }
+  }
+});
+
+test('the pitch effect composes with speed: a 0.5x clip with +12 semitones sounds an octave up and is twice as long', async ({ page }) => {
+  await openHarness(page);
+  const [m] = await importPaths(page, [fx.tone440]);
+  const p = withEffects(m, [effect('pitch', { semitones: 12 })], { speed: 0.5 });
+  const r = await dominant(page, p, 1, 5);
+  expect(Math.abs(r!.freq / 880 - 1)).toBeLessThan(0.02);
+  expect(r!.length).toBe(6 * SR);
+});

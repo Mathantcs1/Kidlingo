@@ -6,7 +6,8 @@ import type { DecodedAudio } from '../media/audioDecode';
 import { prepareSource } from './denoiseSource';
 import type { Margins } from './effects/params';
 import type { Segment } from './plan';
-import { audioSpan, footageToDecode, isRetimedAudio } from './retime/retimeMath';
+import { audioSpan, footageToDecode, isRetimedAudio, usesStretch } from './retime/retimeMath';
+import { ANCHOR_SECONDS } from './retime/wsola';
 import { retimeBuffer } from './retime/retime';
 
 /** Real source audio decoded past each window cut, so resampling at the cut sees its true neighbours. */
@@ -25,7 +26,10 @@ export async function loadSegmentAudio(seg: Segment, margins: Margins, ctx: Base
     const decoded = await decodeAudioRange(seg.mediaId, from, to, ctx, signal);
     return decoded && { ...decoded, buffer: await prepareSource(clip, decoded, ctx) };
   }
-  const [a, b] = footageToDecode(clip, from, to, MIN_RATE);
+  // A stretch chain restarts on a global grid: decode back to the restart (at most ANCHOR_SECONDS plus a hop before the window)
+  // and past the end by the grains that overlap it, so every window sees the footage the chain reads.
+  const [chainFrom, chainTo] = usesStretch(clip) ? [Math.max(0, from - ANCHOR_SECONDS - 0.05), Math.min(hi, to + 0.1)] : [from, to];
+  const [a, b] = footageToDecode(clip, chainFrom, chainTo, MIN_RATE);
   const decoded = await decodeAudioRange(seg.mediaId, a, b, ctx, signal);
   if (!decoded) return null;
   const prepared = { ...decoded, buffer: await prepareSource(clip, decoded, ctx) };

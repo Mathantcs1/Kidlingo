@@ -42,6 +42,8 @@ export const audioFixtures = () => ({
   bursts: wav('fx-bursts.wav', '(0.05*lt(t,2)+0.8*gte(t,2))*sin(2*PI*1000*t)', 4),
   /** 1 kHz: 0.8 amplitude for 2 s, then 0.01 for 6 s (a compressor's long recovery after loud audio). */
   loudThenQuiet: wav('fx-loud-quiet.wav', '(0.8*lt(t,2)+0.01*gte(t,2))*sin(2*PI*1000*t)', 8),
+  /** Logarithmic sweep 100 Hz -> 8 kHz over 3 s (instantaneous frequency 100*80^(t/3)), amplitude 0.25 (retiming metrics). */
+  sweep: wav('fx-sweep.wav', '0.25*sin(2*PI*100*3/log(80)*(pow(80,t/3)-1))', 3),
   /** 5 s burst of a 440 Hz tone plus pseudo-random noise (with a level step at 2.5 s), for the seam tests. */
   noisy: wav('fx-noisy.wav', '(0.15+0.25*gte(t,2.5))*sin(2*PI*440*t)+0.15*sin(n*n*0.0001+n*0.7)', 5),
 });

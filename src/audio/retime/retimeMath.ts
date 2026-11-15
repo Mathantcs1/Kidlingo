@@ -10,6 +10,14 @@ export function isRetimedAudio(c: Clip): boolean {
   return (c.kind === 'audio' || c.kind === 'video') && c.freeze === undefined && !isIdentityTime(c);
 }
 
+/**
+ * Whether the clip's audio is time-stretched (pitch kept, WSOLA) rather than resampled (pitch follows the speed): its speed
+ * is not 1 (or it has a ramp) and `preservePitch` is not off. A plain reverse at speed 1 is an exact mirror (resample).
+ */
+export function usesStretch(c: Clip): boolean {
+  return isRetimedAudio(c) && c.preservePitch !== false && (c.speedKeys !== undefined && c.speedKeys.length > 0 ? true : (c.speed ?? 1) !== 1);
+}
+
 /** The clip's virtual source range: [0, D] for a retimed clip, [in, out] otherwise (what a segment's srcFrom/srcTo live in). */
 export function audioSpan(c: Clip): [number, number] {
   return isRetimedAudio(c) ? [0, clipDuration(c)] : [c.in, c.out];

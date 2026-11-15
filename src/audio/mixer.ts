@@ -1,4 +1,5 @@
-import type { Project } from '../core/model';
+import type { Clip, Project } from '../core/model';
+import { usesStretch } from './retime/retimeMath';
 import { timelineDuration } from '../core/timeline';
 import { buildClipChain } from './chain';
 import { decodePieces, pieceTiming } from './mixerSchedule';
@@ -17,6 +18,16 @@ export const LIVE_WINDOW_SECONDS = 20;
 const START_LEAD = 0.05;
 /** Shortest wait between checks of whether the next window is due. */
 const MIN_WAIT_MS = 50;
+
+/** The first live window when a clip is time-stretched: its chain restarts cost decode time, so playback starts sooner (D10). */
+const STRETCH_FIRST_WINDOW = 2;
+
+/** The live windows from `from`: fixed-length windows, the first one short when a clip is time-stretched. */
+function liveWindows(clips: readonly Clip[], from: number, end: number, length: number): [number, number][] {
+  if (!clips.some(usesStretch) || length <= STRETCH_FIRST_WINDOW) return windowBounds(from, end, length);
+  const split = from + STRETCH_FIRST_WINDOW;
+  return split >= end ? [[from, end]] : [[from, split], ...windowBounds(split, end, length)];
+}
 
 class LiveMixer implements Mixer {
   private session: Session | null = null;
@@ -56,7 +67,7 @@ class LiveMixer implements Mixer {
       clips,
       trackVolumes: trackVolumes(p),
       duckPoints: clipDuckPoints(p),
-      windows: windowBounds(from, timelineDuration(p), this.window),
+      windows: liveWindows(clips, from, timelineDuration(p), this.window),
       next: 0,
       names: new Map(Object.values(p.media).map((m) => [m.id, m.name])),
       master: null,
