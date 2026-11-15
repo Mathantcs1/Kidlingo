@@ -1,9 +1,10 @@
 import { FORMATS } from './formats';
 import type { FormatKey } from './formats';
 import type { KeyLoop, Keyframe, PositionKeyframe, TransformKeys, Vec } from './keyTypes';
+import type { Anchor, Crop, Flip } from './cropTypes';
 import type { ClipMotion } from './motionTypes';
 
-export type { ClipMotion, KeyLoop, Keyframe, PositionKeyframe, TransformKeys, Vec };
+export type { Anchor, ClipMotion, Crop, Flip, KeyLoop, Keyframe, PositionKeyframe, TransformKeys, Vec };
 
 export type Id = string;
 export type TrackKind = 'video' | 'audio';
@@ -104,6 +105,10 @@ export interface Clip {
   keys?: TransformKeys;
   /** Data v7: the animation preset stack (in / emphasis / loop / out; absent = none). Never on audio clips. */
   motion?: ClipMotion;
+  /** Data v8 (Plan 5E): crop mask on the full frame (D1), mirror (D3) and pivot (D4). Video and image clips only; absent = none. */
+  crop?: Crop;
+  flip?: Flip;
+  anchor?: Anchor;
 }
 
 export interface Track {
@@ -137,7 +142,7 @@ export interface MediaRef {
 }
 
 /** The project data version this build writes (see src/core/migrate.ts). */
-export const CURRENT_VERSION = 7;
+export const CURRENT_VERSION = 8;
 
 export interface Project {
   version: typeof CURRENT_VERSION;

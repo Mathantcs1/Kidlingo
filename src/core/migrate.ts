@@ -1,4 +1,6 @@
 import { fitFades } from './clipAudio';
+
+import { withCropFlipAnchor } from './migrateCrop';
 import { toBlend, toClipEffects } from './migrateEffects';
 import { repairClipKeys, withKeys } from './migrateKeys';
 import { repairMotion, withMotion } from './migrateMotion';
@@ -79,7 +81,7 @@ function toDuck(raw: unknown): TrackDuck | null {
  */
 function toClip(c: Record<string, unknown>, trackKind: Track['kind']): Clip | null {
   const fixed = toClipFields(c, trackKind);
-  return fixed && (withMotion(withKeys(fixed, repairClipKeys(c.keys, c.kind)), repairMotion(c.motion, c.kind)) as unknown as Clip);
+  return fixed && (withCropFlipAnchor(withMotion(withKeys(fixed, repairClipKeys(c.keys, c.kind)), repairMotion(c.motion, c.kind)), c) as unknown as Clip);
 }
 
 function toClipFields(c: Record<string, unknown>, trackKind: Track['kind']): Record<string, unknown> | null {
@@ -122,7 +124,7 @@ function toTrack(raw: unknown): Track | null {
  * Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3-v7 are repaired per field (v4 → v5 adds nothing:
  * overlay and adjustment clips are new in v5; v5 → v6 adds nothing: keyframes are new in v6 and only repaired when
  * present; v6 → v7 adds nothing: presets, loops, tangents, orient and springs are new in v7 and only repaired when
- * present); newer versions are refused ('newer', so the save is never overwritten).
+ * present; v7 → v8 adds nothing: crop, flip and anchor are new in v8 and only repaired when present, video/image only); newer versions are refused ('newer', so the save is never overwritten).
  */
 export function migrateProject(raw: unknown): MigrateResult {
   if (!isObject(raw)) return { ok: false, reason: 'malformed' };

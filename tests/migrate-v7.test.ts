@@ -20,8 +20,8 @@ const every = (version: number) => saved(version, [
 ], [base('a1', 'audio')]);
 
 describe('v6 -> v7', () => {
-  it('the current version is 7', () => {
-    expect(CURRENT_VERSION).toBe(7);
+  it('the current version is at least 7', () => {
+    expect(CURRENT_VERSION).toBeGreaterThanOrEqual(7);
   });
 
   it('opens a v6 save of every clip kind (with keys) JSON-equal apart from the version; input not mutated; idempotent', () => {
@@ -39,10 +39,10 @@ describe('v6 -> v7', () => {
     for (let v = 1; v <= 7; v++) expect(migrateProject(saved(v, [])).ok).toBe(true);
   });
 
-  it('refuses {version: 8} as newer, and classifySaved reports it unsupported (never "none")', () => {
-    expect(migrateProject({ ...every(7), version: 8 })).toEqual({ ok: false, reason: 'newer' });
+  it('refuses a version above the current one as newer, and classifySaved reports it unsupported (never "none")', () => {
+    expect(migrateProject({ ...every(7), version: CURRENT_VERSION + 1 })).toEqual({ ok: false, reason: 'newer' });
     expect(migrateProject({ version: CURRENT_VERSION + 1 })).toEqual({ ok: false, reason: 'newer' });
-    const r = classifySaved({ ...every(7), version: 8 });
+    const r = classifySaved({ ...every(7), version: CURRENT_VERSION + 1 });
     expect(r.status).toBe('unsupported');
     if (r.status === 'unsupported') expect(r.reason).toContain('newer version');
   });
