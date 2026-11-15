@@ -57,12 +57,19 @@ async function isQuotaBody(res: Response): Promise<boolean> {
   }
 }
 
-async function failFor(res: Response): Promise<ElevenLabsError> {
-  if (res.status === 401) return new ElevenLabsError((await isQuotaBody(res)) ? 'quota' : 'invalid-key');
+async function failFor(res: Response, signal?: AbortSignal): Promise<ElevenLabsError> {
+  if (res.status === 401) {
+    const quota = await isQuotaBody(res);
+    if (signal?.aborted) return new ElevenLabsError('aborted');
+    return new ElevenLabsError(quota ? 'quota' : 'invalid-key');
+  }
   if (res.status === 402) return new ElevenLabsError('quota');
   if (res.status === 429) return new ElevenLabsError('rate-limit');
   return new ElevenLabsError('server');
 }
+
+/** Empty or dot-only ids survive encodeURIComponent and would be normalised out of the URL path. */
+const DOT_ONLY = /^\.*$/;
 
 export function createElevenLabs(opts: {
   getKey(): Promise<string | null>;
@@ -77,14 +84,19 @@ export function createElevenLabs(opts: {
     signal: AbortSignal | undefined,
     read: (res: Response) => Promise<T>,
   ): Promise<T> {
-    const key = await opts.getKey();
+    let key: string | null = null;
+    try {
+      key = await opts.getKey();
+    } catch {
+      key = null; // a failing key store reads as no key; its message is never surfaced
+    }
     if (!key) throw new ElevenLabsError('no-key');
     if (signal?.aborted) throw new ElevenLabsError('aborted');
     try {
       const headers: Record<string, string> = { 'xi-api-key': key, accept: init.accept };
       if (init.body !== undefined) headers['content-type'] = 'application/json';
       const res = await doFetch(`${ELEVENLABS_ORIGIN}${path}`, { method: init.method, headers, body: init.body, signal });
-      if (!res.ok) throw await failFor(res);
+      if (!res.ok) throw await failFor(res, signal);
       return await read(res);
     } catch (e) {
       if (e instanceof ElevenLabsError) throw e;
@@ -100,14 +112,14 @@ export function createElevenLabs(opts: {
         try {
           body = await res.json();
         } catch {
-          throw new ElevenLabsError('server');
+          throw new ElevenLabsError(signal?.aborted ? 'aborted' : 'server');
         }
         const list = (body as { voices?: unknown } | null)?.voices;
         if (!Array.isArray(list)) throw new ElevenLabsError('server');
         const out: Voice[] = [];
         for (const v of list) {
           const o = v as { voice_id?: unknown; name?: unknown } | null;
-          if (o && typeof o.voice_id === 'string' && o.voice_id && typeof o.name === 'string') out.push({ id: o.voice_id, name: o.name });
+          if (o && typeof o.voice_id === 'string' && !DOT_ONLY.test(o.voice_id) && typeof o.name === 'string') out.push({ id: o.voice_id, name: o.name });
         }
         return out;
       });
@@ -127,10 +139,15 @@ export function createElevenLabs(opts: {
 
     async synthesize({ text, voiceId, model }, signal) {
       if (text.trim().length === 0 || [...text].length > MAX_TEXT_CODE_POINTS) throw new ElevenLabsError('too-long');
-      // Dot-only ids ('.', '..') survive encodeURIComponent and would be normalised out of the path by URL parsing.
-      if (/^\.*$/.test(voiceId)) throw new ElevenLabsError('server');
+      let encoded: string;
+      try {
+        encoded = encodeURIComponent(voiceId); // throws URIError on a lone surrogate
+      } catch {
+        throw new ElevenLabsError('server');
+      }
+      if (DOT_ONLY.test(voiceId)) throw new ElevenLabsError('server');
       return request(
-        `/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
+        `/v1/text-to-speech/${encoded}?output_format=mp3_44100_128`,
         { method: 'POST', body: JSON.stringify({ text, model_id: model }), accept: 'audio/mpeg' },
         signal,
         async (res) => {

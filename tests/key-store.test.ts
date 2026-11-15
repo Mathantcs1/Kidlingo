@@ -4,10 +4,16 @@ const kv = vi.hoisted(() => {
   const data = new Map<string, unknown>();
   return {
     data,
-    createStore: vi.fn((db: string, store: string) => ({ db, store })),
-    get: vi.fn(async (k: string, _store?: unknown) => data.get(k)),
-    set: vi.fn(async (k: string, v: unknown, _store?: unknown) => void data.set(k, v)),
-    del: vi.fn(async (k: string, _store?: unknown) => void data.delete(k)),
+    createStore: vi.fn(),
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
+    install() {
+      this.createStore.mockReset().mockImplementation((db: string, store: string) => ({ db, store }));
+      this.get.mockReset().mockImplementation(async (k: string) => data.get(k));
+      this.set.mockReset().mockImplementation(async (k: string, v: unknown) => void data.set(k, v));
+      this.del.mockReset().mockImplementation(async (k: string) => void data.delete(k));
+    },
   };
 });
 vi.mock('idb-keyval', () => kv);
@@ -18,7 +24,7 @@ const KEY = 'sk_test_KEYLEAKCANARY_123456';
 
 beforeEach(() => {
   kv.data.clear();
-  for (const f of [kv.createStore, kv.get, kv.set, kv.del]) f.mockClear();
+  kv.install(); // mockReset drops any rejection left by an earlier test
   vi.stubGlobal('indexedDB', {});
 });
 afterEach(() => {
@@ -41,7 +47,6 @@ describe('keyStore', () => {
   it('uses its own idb database, never the default project store', async () => {
     vi.resetModules();
     const fresh = (await import('../src/ai/keyStore')).keyStore;
-    kv.createStore.mockImplementation((db: string, store: string) => ({ db, store }));
     await fresh.setKey(KEY);
     expect(kv.createStore).toHaveBeenCalledTimes(1);
     const [db] = kv.createStore.mock.calls[0]!;
@@ -50,10 +55,11 @@ describe('keyStore', () => {
     for (const c of kv.set.mock.calls) expect(c[2]).toEqual({ db, store: expect.any(String) });
   });
 
-  it.each(['', '   ', 'a b', 'ab\tcd', 'ab\u0000cd', 'a'.repeat(257), 'ab\ncd'])('rejects %j without echoing it', async (bad) => {
+  it.each(['', '   ', 'a b', 'ab\tcd', 'ab\u0000cd', 'a'.repeat(257), 'ab\ncd', 'ключ-ключ-ключ', 'abc\u00e9def', 'abc\u200bdef', 'abc\u007fdef'])('rejects %j without echoing it', async (bad) => {
     const e = await keyStore.setKey(bad).then(() => null, (x: Error) => x);
     expect(e).toBeInstanceOf(Error);
     if (bad.trim().length > 3) expect(e!.message).not.toContain(bad.trim());
+    expect(String(e)).not.toContain('ключ');
     expect(kv.set).not.toHaveBeenCalled();
   });
 
@@ -100,6 +106,7 @@ describe('keyStore', () => {
 
   it('ignores a non-string stored value', async () => {
     kv.data.set('apiKey', 42);
+    await expect(kv.get('apiKey')).resolves.toBe(42); // the fake really returns the bad value
     kv.data.set('consent', 'yes');
     expect(await keyStore.getKey()).toBeNull();
     expect(await keyStore.getConsent()).toBe(false);

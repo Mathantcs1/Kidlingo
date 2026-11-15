@@ -52,8 +52,8 @@ async function setKey(raw: string): Promise<void> {
   const k = raw.trim();
   if (k.length === 0) throw new Error('Enter your ElevenLabs API key.');
   if (k.length > MAX_KEY_LENGTH) throw new Error('That does not look like an API key (too long).');
-  // eslint-disable-next-line no-control-regex
-  if (/[\s\u0000-\u001f\u007f]/.test(k)) throw new Error('That does not look like an API key (it contains spaces or control characters).');
+  // Header-safe printable ASCII only (no spaces, control or non-Latin characters).
+  if (!/^[\x21-\x7e]+$/.test(k)) throw new Error('That does not look like an API key (use only letters, digits and symbols, no spaces).');
   try {
     const s = secretsStore();
     if (!s) throw new Error('unavailable');
