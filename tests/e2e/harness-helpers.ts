@@ -37,7 +37,7 @@ export function clipOf(m: MediaRef, over: Partial<Omit<Clip, 'transform'>> & { t
     in: 0,
     out: m.duration,
     volume: 1,
-    audio: defaultClipAudio(),
+    audio: defaultClipAudio(), fx: [],
     fit: 'fit',
     ...rest,
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1, ...transform },
@@ -50,7 +50,7 @@ export function project(format: Project['format'], media: MediaRef[], video: Cli
     { ...newTrack('video'), id: 'video', clips: video },
     { ...newTrack('audio'), id: 'audio' },
   ];
-  return { version: 3, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 4, format, tracks, media: Object.fromEntries(media.map((m) => [m.id, m])), luts: {} };
 }
 
 export function render(

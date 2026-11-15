@@ -29,7 +29,7 @@ const image = (page: Page, w: number, h: number, rgb: Rgb, opts?: { right?: Rgb 
   page.evaluate(({ w, h, rgb, opts }) => window.cf.putImageMedia(w, h, rgb, opts), { w, h, rgb, opts });
 
 function proj(tracks: Track[], media: MediaRef[]): Project {
-  return { version: 3, format: FMT, tracks: [...tracks, { ...newTrack('audio'), id: 'audio' }], media: Object.fromEntries(media.map((m) => [m.id, m])) };
+  return { version: 4, format: FMT, tracks: [...tracks, { ...newTrack('audio'), id: 'audio' }], media: Object.fromEntries(media.map((m) => [m.id, m])), luts: {} };
 }
 const vtrack = (id: string, clips: Clip[], over: Partial<Track> = {}): Track => ({ ...newTrack('video'), id, clips, ...over });
 

@@ -12,7 +12,7 @@ const clip = (over: Partial<Clip> = {}): Clip => ({
   out: 1,
   transform: defaultTransform(),
   volume: 1,
-  audio: defaultClipAudio(),
+  audio: defaultClipAudio(), fx: [],
   fit: 'fit',
   ...over,
 });
@@ -32,7 +32,7 @@ describe('model', () => {
 
   it('emptyProject defaults to youtube with one video and one audio track', () => {
     const p = emptyProject();
-    expect(p.version).toBe(3);
+    expect(p.version).toBe(4);
     expect(p.format).toEqual({ width: 1920, height: 1080, fps: 30 });
     expect(p.tracks.filter((t) => t.kind === 'video')).toHaveLength(1);
     expect(p.tracks.filter((t) => t.kind === 'audio')).toHaveLength(1);
@@ -52,5 +52,13 @@ describe('model', () => {
 
   it('defaultTransform is identity', () => {
     expect(defaultTransform()).toEqual({ x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 });
+  });
+});
+
+describe('isPictureClip', () => {
+  it('is true for video, image and overlay clips and false for audio', async () => {
+    const { isPictureClip } = await import('../src/core/timeline');
+    const base = { id: 'c', mediaId: 'm', start: 0, in: 0, out: 1, transform: defaultTransform(), volume: 1, audio: defaultClipAudio(), fx: [], fit: 'fit' as const };
+    expect((['video', 'image', 'overlay', 'audio'] as const).map((kind) => isPictureClip({ ...base, kind }))).toEqual([true, true, true, false]);
   });
 });

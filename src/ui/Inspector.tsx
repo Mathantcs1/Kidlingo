@@ -95,7 +95,7 @@ function ClipControls({ clip, media, editable, locked }: ControlsProps) {
   return (
     <>
       <p className="inspector-clip" title={media?.name}>
-        {media?.name ?? 'Unknown media'}
+        {media?.name ?? (clip.kind === 'overlay' ? 'Overlay' : 'Unknown media')}
       </p>
       {audible ? (
         <VolumeControl clip={clip} disabled={!editable} />

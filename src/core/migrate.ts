@@ -1,10 +1,11 @@
 import { fitFades } from './clipAudio';
+import { toFxList, toLuts, toOverlay } from './migrateFx';
 import { defaultClipAudio, newId } from './model';
 import type { AudioEffect, AudioEffectType, Clip, ClipAudio, Project, Track, TrackDuck } from './model';
 
 export type MigrateResult = { ok: true; project: Project } | { ok: false; reason: 'newer' | 'malformed' };
 
-const CURRENT = 3;
+const CURRENT = 4;
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const num = (v: unknown, fallback: number, min: number, max: number): number =>
@@ -65,6 +66,12 @@ function toDuck(raw: unknown): TrackDuck | null {
   };
 }
 
+function toClip(c: Record<string, unknown>): Clip {
+  const { overlay: _overlay, ...rest } = c;
+  const clip = { ...rest, audio: toClipAudio(c.audio, clipSeconds(c)), fx: toFxList(c.fx) };
+  return (c.kind === 'overlay' ? { ...clip, overlay: toOverlay(c.overlay) } : clip) as unknown as Clip;
+}
+
 /** Validates a track's outline and fills/repairs the v2/v3 fields. Clips only need to be objects. */
 function toTrack(raw: unknown): Track | null {
   if (!isObject(raw)) return null;
@@ -81,16 +88,16 @@ function toTrack(raw: unknown): Track | null {
     locked: raw.locked === true,
     volume: num(raw.volume, 1, 0, 2),
     duck: toDuck(raw.duck),
-    clips: raw.clips.map((c) => ({ ...c, audio: toClipAudio(c.audio, clipSeconds(c)) }) as unknown as Clip),
+    clips: raw.clips.map(toClip),
   };
 }
 
-/** Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3 is repaired per field; newer versions are refused. */
+/** Pure and idempotent: never mutates `raw`. v1-v3 gain defaults; v4 is repaired per field; newer versions are refused. */
 export function migrateProject(raw: unknown): MigrateResult {
   if (!isObject(raw)) return { ok: false, reason: 'malformed' };
   const { version } = raw;
   if (typeof version === 'number' && version > CURRENT) return { ok: false, reason: 'newer' };
-  if (version !== 1 && version !== 2 && version !== CURRENT) return { ok: false, reason: 'malformed' };
+  if (version !== 1 && version !== 2 && version !== 3 && version !== CURRENT) return { ok: false, reason: 'malformed' };
   if (!isObject(raw.format) || !Array.isArray(raw.tracks) || !isObject(raw.media)) return { ok: false, reason: 'malformed' };
   const tracks: Track[] = [];
   for (const t of raw.tracks) {
@@ -98,6 +105,6 @@ export function migrateProject(raw: unknown): MigrateResult {
     if (!track) return { ok: false, reason: 'malformed' };
     tracks.push(track);
   }
-  const project = { ...raw, version: CURRENT, tracks } as unknown as Project;
+  const project = { ...raw, version: CURRENT, tracks, luts: toLuts(raw.luts) } as unknown as Project;
   return { ok: true, project };
 }

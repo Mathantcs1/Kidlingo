@@ -27,7 +27,7 @@ describe('persist', () => {
   });
 
   it('loadProject reports a newer version as unsupported, never as absent', async () => {
-    kv.get.mockResolvedValue({ ...emptyProject(), version: 4 });
+    kv.get.mockResolvedValue({ ...emptyProject(), version: 5 });
     expect(await loadProject()).toEqual({ status: 'unsupported', reason: expect.stringContaining('newer version') });
   });
 
@@ -45,7 +45,7 @@ describe('persist', () => {
     const r = await loadProject();
     expect(r.status).toBe('ok');
     if (r.status === 'ok') {
-      expect(r.project.version).toBe(3);
+      expect(r.project.version).toBe(4);
       expect(r.project.tracks[0]).toMatchObject({ id: 't', name: '', hidden: false, muted: false, solo: false, locked: false });
     }
   });

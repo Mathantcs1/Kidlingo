@@ -42,6 +42,8 @@ export class FrameSources {
     const uses = new Map<VideoSource, number>();
     const shownImages = new Set<Id>();
     for (const clip of visualClipsAt(p, t)) {
+      // Overlay clips have no media; they are drawn by the overlay rasteriser (added with the overlay task).
+      if (clip.kind === 'overlay') continue;
       const media = p.media[clip.mediaId];
       if (!media || media.missing) continue;
       if (clip.kind === 'image') {

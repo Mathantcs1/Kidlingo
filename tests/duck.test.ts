@@ -23,7 +23,7 @@ function clip(start: number, dur: number, over: Partial<Clip> = {}): Clip {
     in: 0,
     out: dur,
     volume: 1,
-    audio: defaultClipAudio(),
+    audio: defaultClipAudio(), fx: [],
     fit: 'fit',
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
     ...over,

@@ -1,5 +1,5 @@
 // Which clips make up the picture at a time: shared by the compositor, the preview's and the exporter's decoders.
-import { activeClipsAt } from '../core/timeline';
+import { activeClipsAt, isPictureClip } from '../core/timeline';
 import type { Clip, Id, Project } from '../core/model';
 
 /** Ids of every clip on a video track that is not hidden, at any time (the clips that can ever be drawn). */
@@ -17,5 +17,5 @@ export function shownClipIds(p: Project): Set<Id> {
  */
 export function visualClipsAt(p: Project, t: number): Clip[] {
   const shown = shownClipIds(p);
-  return activeClipsAt(p, t).filter((c) => shown.has(c.id) && (c.kind === 'video' || c.kind === 'image'));
+  return activeClipsAt(p, t).filter((c) => shown.has(c.id) && isPictureClip(c));
 }

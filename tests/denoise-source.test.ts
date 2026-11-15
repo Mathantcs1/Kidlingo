@@ -19,6 +19,7 @@ const clip = (id: string): Clip => ({
   volume: 1,
   audio: { ...defaultClipAudio(), effects: [{ id: 'd', type: 'denoise', enabled: true, params: { strength: 0.8 } }] },
   fit: 'fit',
+  fx: [],
   transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
 });
 

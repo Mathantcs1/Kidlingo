@@ -8,6 +8,9 @@ const EPS = 1e-9;
 
 export class TimelineError extends Error {}
 
+/** Clips that make up the picture: video, image and generated overlays (not audio). */
+export const isPictureClip = (c: Clip): boolean => c.kind !== 'audio';
+
 const trackKindFor = (c: Clip): Track['kind'] => (c.kind === 'audio' ? 'audio' : 'video');
 
 const byStart = (a: Clip, b: Clip): number => a.start - b.start;

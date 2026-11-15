@@ -14,6 +14,7 @@ function clip(kind: Clip['kind'], start: number, len: number): Clip {
     out: len,
     volume: 1,
     audio: defaultClipAudio(),
+    fx: [],
     fit: 'fit',
     transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
   };
@@ -91,5 +92,14 @@ describe('shownClipIds', () => {
       expect(visible).toHaveLength(4);
       expect(visible.every((c) => shown.has(c.id))).toBe(true);
     }
+  });
+});
+
+describe('overlay clips', () => {
+  it('count as picture clips: shown at their time, on non-hidden video tracks only', () => {
+    const o = clip('overlay', 1, 2);
+    const p = projectOf([track('video', [o]), track('video', [clip('overlay', 0, 5)], { hidden: true })]);
+    expect(visualClipsAt(p, 1.5).map((c) => c.id)).toEqual([o.id]);
+    expect(visualClipsAt(p, 0.5)).toEqual([]);
   });
 });

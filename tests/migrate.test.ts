@@ -26,17 +26,18 @@ const v1 = () => ({
 });
 
 const defaults = { name: '', hidden: false, muted: false, solo: false, locked: false, volume: 1, duck: null };
-const withAudio = <T extends object>(c: T) => ({ ...c, audio: defaultClipAudio() });
+const withAudio = <T extends object>(c: T) => ({ ...c, audio: defaultClipAudio(), fx: [] });
 
 describe('migrateProject', () => {
-  it('migrates v1 to v3, adding track and clip defaults and keeping clips and media intact', () => {
+  it('migrates v1 to v4, adding track and clip defaults and keeping clips and media intact', () => {
     const raw = v1();
     const r = migrateProject(raw);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.project.version).toBe(3);
+    expect(r.project.version).toBe(4);
     expect(r.project.format).toEqual(raw.format);
     expect(r.project.media).toEqual(raw.media);
+    expect(r.project.luts).toEqual({});
     r.project.tracks.forEach((t, i) => {
       expect(t).toMatchObject(defaults);
       expect(t.id).toBe(raw.tracks[i].id);
@@ -52,7 +53,7 @@ describe('migrateProject', () => {
     expect(raw).toEqual(copy);
   });
 
-  it('passes a v3 project through equal', () => {
+  it('passes a v4 project through equal', () => {
     const p = emptyProject();
     p.tracks[0].name = 'Main';
     p.tracks[0].muted = true;
@@ -81,7 +82,7 @@ describe('migrateProject', () => {
     expect(raw).toEqual(copy);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.project.version).toBe(3);
+    expect(r.project.version).toBe(4);
     for (const t of r.project.tracks) {
       expect(t).toMatchObject({ volume: 1, duck: null });
       for (const c of t.clips) expect(c.audio).toEqual(defaultClipAudio());
@@ -150,8 +151,73 @@ describe('migrateProject', () => {
     expect(r.ok && (r.project.tracks[0].clips[0] as unknown as { future: number }).future).toBe(1);
   });
 
+  it('migrates a v3 project: every clip gets fx [], luts {}, audio effects stay untouched', () => {
+    const eq = { id: 'e1', type: 'eq', enabled: true, params: { low: 3 } };
+    const raw = {
+      ...v1(), version: 3,
+      tracks: [
+        { id: 'v', kind: 'video', volume: 1, duck: null, clips: [clip('a', { audio: { ...defaultClipAudio(), effects: [eq] } }), clip('b', { kind: 'image', start: 2, audio: defaultClipAudio() })] },
+        { id: 'a', kind: 'audio', volume: 1, duck: null, clips: [clip('c', { kind: 'audio', audio: defaultClipAudio() })] },
+      ],
+    };
+    const copy = structuredClone(raw);
+    const r = migrateProject(raw);
+    expect(raw).toEqual(copy);
+    if (!r.ok) throw new Error('expected ok');
+    expect(r.project.version).toBe(4);
+    expect(r.project.luts).toEqual({});
+    const clips = r.project.tracks.flatMap((t) => t.clips);
+    expect(clips).toHaveLength(3);
+    for (const c of clips) expect(c.fx).toEqual([]);
+    expect(clips[0].audio.effects).toEqual([eq]);
+  });
+
+  it('repairs malformed fx per field: unknown types and non-objects dropped, params kept finite, duplicate ids re-id', () => {
+    const blur = (id: string, params: Record<string, unknown>) => ({ id, type: 'blur', enabled: true, params });
+    const r = migrateProject({
+      ...v1(), version: 4,
+      tracks: [{ id: 't', kind: 'video', clips: [clip('c1', { audio: defaultClipAudio(), fx: [{ type: 'nope', id: 'x', enabled: true, params: {} }, 7, blur('f', { radius: 'x', amount: 5, ok: 3 }), blur('f', {}), { id: 'g', type: 'lut', enabled: false, params: {}, ref: 'l1' }] })] }],
+    });
+    if (!r.ok) throw new Error('expected ok');
+    const fx = r.project.tracks[0].clips[0].fx;
+    expect(fx.map((e) => e.type)).toEqual(['blur', 'blur', 'lut']);
+    expect(fx[0].params).toEqual({ amount: 5, ok: 3 });
+    expect(fx[0].id).toBe('f');
+    expect(fx[1].id).not.toBe('f');
+    expect(fx[2]).toMatchObject({ enabled: false, ref: 'l1' });
+    const again = migrateProject(r.project);
+    expect(again.ok && again.project.tracks[0].clips[0].fx.map((e) => e.id)).toEqual(fx.map((e) => e.id));
+  });
+
+  it('keeps a valid overlay spec on overlay clips, repairs a missing one to a default lower third, strips it elsewhere', () => {
+    const base = { mediaId: '', audio: defaultClipAudio(), fx: [] };
+    const r = migrateProject({
+      ...v1(), version: 4,
+      tracks: [{ id: 't', kind: 'video', clips: [
+        clip('o1', { ...base, kind: 'overlay', overlay: { type: 'progress', text: 'x'.repeat(500), subtext: 5, params: { fill: 2, bad: 'x' } } }),
+        clip('o2', { ...base, kind: 'overlay' }),
+        clip('v', { ...base, overlay: { type: 'sticker', text: '', subtext: '', params: {} } }),
+      ] }],
+    });
+    if (!r.ok) throw new Error('expected ok');
+    const [o1, o2, v] = r.project.tracks[0].clips;
+    expect(o1.overlay).toEqual({ type: 'progress', text: 'x'.repeat(200), subtext: '', params: { fill: 2 } });
+    expect(o2.overlay).toMatchObject({ type: 'lowerThird' });
+    expect(v.overlay).toBeUndefined();
+  });
+
+  it('repairs the LUT library: entries need id, name and size', () => {
+    const r = migrateProject({
+      ...v1(), version: 4,
+      luts: { a: { id: 'a', name: 'Warm', size: 33 }, b: { id: 'b', name: 5, size: 33 }, c: 'x', d: { id: 'd', name: 'N', size: -1 }, e: { id: 'e', name: 'Miss', size: 17, missing: true } },
+    });
+    if (!r.ok) throw new Error('expected ok');
+    expect(Object.keys(r.project.luts).sort()).toEqual(['a', 'e']);
+    expect(r.project.luts.e.missing).toBe(true);
+  });
+
   it('reports a newer version', () => {
-    expect(migrateProject({ version: 4 })).toEqual({ ok: false, reason: 'newer' });
+    expect(migrateProject({ version: 5 })).toEqual({ ok: false, reason: 'newer' });
     expect(migrateProject({ ...emptyProject(), version: 99 })).toEqual({ ok: false, reason: 'newer' });
   });
 

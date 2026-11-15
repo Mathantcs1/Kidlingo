@@ -70,7 +70,7 @@ export function dropStart(p: Project, x: number, pps: number, duration: number):
 }
 
 /** Why a lane of `trackKind` refuses media of `mediaKind`, or null when it accepts it. */
-export function laneRejects(trackKind: TrackKind, mediaKind: MediaRef['kind']): string | null {
+export function laneRejects(trackKind: TrackKind, mediaKind: MediaRef['kind'] | 'overlay'): string | null {
   const wanted: TrackKind = mediaKind === 'audio' ? 'audio' : 'video';
   if (wanted === trackKind) return null;
   return mediaKind === 'audio' ? 'Audio goes on an audio track' : 'Video and images go on a video track';

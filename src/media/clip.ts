@@ -23,6 +23,6 @@ export function clipFromMedia(
     transform,
     volume: 1,
     fit: 'fit',
-    audio: defaultClipAudio(),
+    audio: defaultClipAudio(), fx: [],
   };
 }

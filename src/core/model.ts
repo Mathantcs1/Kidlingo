@@ -16,6 +16,40 @@ export interface Transform {
 export type AudioEffectType =
   | 'eq' | 'highpass' | 'lowpass' | 'compressor' | 'reverb' | 'echo' | 'pitch' | 'denoise' | 'gain';
 
+export const FX_TYPES = [
+  'color', 'look', 'lut', 'bw', 'sepia', 'invert', 'vignette', 'grain', 'blur', 'sharpen', 'glow', 'pixelate',
+  'rgbsplit', 'glitch', 'vhs', 'mirror', 'chroma',
+] as const;
+export type FxType = (typeof FX_TYPES)[number];
+
+/** A visual effect on a clip. Params are numbers only (colour = packed 0xRRGGBB, select = index, bool = 0/1); `ref` is a LUT id. */
+export interface VisualEffect {
+  id: Id;
+  type: FxType;
+  enabled: boolean;
+  params: Record<string, number>;
+  ref?: Id;
+}
+
+export const OVERLAY_TYPES = ['lowerThird', 'subscribe', 'progress', 'sticker'] as const;
+export type OverlayType = (typeof OVERLAY_TYPES)[number];
+
+/** A generated graphic (clip kind 'overlay', mediaId ''). */
+export interface OverlaySpec {
+  type: OverlayType;
+  text: string;
+  subtext: string;
+  params: Record<string, number>;
+}
+
+/** An imported `.cube` LUT kept in OPFS; `size` is the cube edge (2..65). */
+export interface LutRef {
+  id: Id;
+  name: string;
+  size: number;
+  missing?: boolean;
+}
+
 /** `gain` is the Normalise result (param `gainDb`). */
 export interface AudioEffect {
   id: Id;
@@ -45,7 +79,7 @@ export interface TrackDuck {
 export interface Clip {
   id: Id;
   mediaId: Id;
-  kind: 'video' | 'audio' | 'image';
+  kind: 'video' | 'audio' | 'image' | 'overlay';
   start: number;
   in: number;
   out: number;
@@ -53,6 +87,10 @@ export interface Clip {
   volume: number;
   fit: 'fit' | 'fill' | 'blur';
   audio: ClipAudio;
+  /** Visual effect stack, bottom first. Always present; empty for audio clips. */
+  fx: VisualEffect[];
+  /** Only on overlay clips. */
+  overlay?: OverlaySpec;
 }
 
 export interface Track {
@@ -83,10 +121,12 @@ export interface MediaRef {
 }
 
 export interface Project {
-  version: 3;
+  version: 4;
   format: { width: number; height: number; fps: number };
   tracks: Track[];
   media: Record<Id, MediaRef>;
+  /** Imported LUT library. */
+  luts: Record<Id, LutRef>;
 }
 
 export function newId(): Id {
@@ -107,10 +147,11 @@ export function newTrack(kind: TrackKind, name = ''): Track {
 
 export function emptyProject(formatKey: FormatKey = 'youtube'): Project {
   return {
-    version: 3,
+    version: 4,
     format: { ...FORMATS[formatKey], fps: 30 },
     tracks: [newTrack('video'), newTrack('audio')],
     media: {},
+    luts: {},
   };
 }
 

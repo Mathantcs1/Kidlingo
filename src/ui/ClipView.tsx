@@ -22,7 +22,7 @@ interface ClipViewProps {
 /** A clip on a lane: click selects, the body drags to move, the edge handles drag to trim. */
 export default function ClipView({ clip, media, pps, selected, locked, dragging, onDragStart }: ClipViewProps) {
   const missing = media?.missing === true;
-  const name = media?.name ?? 'Unknown media';
+  const name = media?.name ?? (clip.kind === 'overlay' ? 'Overlay' : 'Unknown media');
   const onClick = (e: MouseEvent): void => {
     e.stopPropagation();
     const { selection, select } = useEditor.getState();
