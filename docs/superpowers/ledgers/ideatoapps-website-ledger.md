@@ -119,3 +119,9 @@ Task 8: minor (deferred): zip mime check rejects octet-stream/x-zip imports -> B
 Task 8: complete (commits 87c12b5..1ad813f, review clean)
 BASE_T9=1ad813f
 Task 9: CARRY: JSON-LD ideatoapps_app_jsonld must strip rating/review RECURSIVELY (T6 M-1) and fill the single-app seam; noindex /product/* (Woo product page /product/clipforge/ public) and cart/checkout/my-account/wp-admin; consume ideatoapps_default_og_image() + per-theme theme-color media pair; /sitemap.xml rewrite to wp-sitemap.xml (ruling); array_is_list fix; Learn hidden with no videos so no empty sitemap/links.
+
+## Task 9 (72fb077): APPROVED by independent review, no Critical
+- Ruling: SEO output off if Yoast/RankMath/AIOSEO/SEOPress/SEOFramework active; canonical = constant https://ideatoapps.net; noindex pages carry no canonical/OG; JSON-LD offers only when live+sellable; ratings stripped recursively, seam fails closed.
+- Carry to Task 10 (do in T10): I1 add pageerror ("jQuery is not defined") assertion on /cart/ and /checkout/ + ENVIRONMENT.md note; I2 say fail-closed seam branch is verified by reading, not a test; M1 decide robots Disallow vs noindex for account/cart/checkout (document); M5 launch checklist: WordPress site address must be the apex; M6 exclude /.well-known/acme-challenge/ from the HTTPS redirect in HTACCESS_SNIPPET.md; owner todo: trash "Sample Page"; legal pages stay indexable while DRAFT.
+- Not re-run after the app-detail.spec fix: full e2e chain (do in the Task 10 full gate); zip-runs and screenshot specs not run.
+- Unverified: .htaccess on Apache/LiteSpeed, real gzip size, MySQL, Stripe, Google rich-result validation, PHP 8.0 runtime.
