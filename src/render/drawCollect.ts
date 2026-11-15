@@ -1,6 +1,6 @@
 import { resolveClip } from '../core/animate';
 import { maxDrawnScale } from '../core/drawnScale';
-import { sourceTimeAt } from '../core/clipTime';
+import { videoSourceTime } from '../core/clipTime';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { croppedUvMatrix } from './cropGeometry';
@@ -128,7 +128,7 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
     }
     const source = sources.get(clip.id) ?? sources.get(clip.mediaId);
     if (!source) continue;
-    const frame = await source.frameAt(sourceTimeAt(clip, t));
+    const frame = await source.frameAt(videoSourceTime(clip, t, p.format.fps));
     ctx.assertUsable();
     if (!frame) continue;
     const width = 'displayWidth' in frame ? frame.displayWidth : frame.width;

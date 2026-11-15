@@ -87,6 +87,12 @@ export function ensureFixtures(): string {
     '-f', 'lavfi', '-i', 'color=c=red:s=80x80', '-f', 'lavfi', '-i', 'color=c=blue:s=80x80',
     '-filter_complex', 'hstack', '-frames:v', '1',
   ]);
+  // 128x72, 30 fps, 4 s, a key frame every second: frame N is encoded as grey levels (left half 16 + 6*(N mod 32), right half
+  // 16 + 6*floor(N/32), inside the limited luma range so H.264 noise and range clipping cannot alias neighbouring frames).
+  encode(at('frame-index.mp4'), [
+    '-f', 'lavfi', '-i', "color=black:s=128x72:r=30:d=4,format=yuv420p,geq=lum='if(lt(X\\,W/2)\\,16+6*mod(N\\,32)\\,16+6*floor(N/32))':cb=128:cr=128",
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast', '-crf', '12', '-g', '30', '-an',
+  ]);
   // Valid files in containers ClipForge cannot open.
   encode(at('legacy.avi'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '0.5', '-c:v', 'mpeg4']);
   encode(at('legacy.wmv'), ['-f', 'lavfi', '-i', 'testsrc=size=160x90:rate=25', '-t', '0.5', '-c:v', 'wmv2']);
