@@ -20,6 +20,17 @@ function ideatoapps_is_semver( $version ) {
 }
 
 /**
+ * Persist the version list. update_post_meta() unslashes its input, so slash first or
+ * backslashes in changelogs are lost.
+ *
+ * @param int     $app_id   App post ID.
+ * @param array[] $versions Version rows.
+ */
+function ideatoapps_store_versions( int $app_id, array $versions ): void {
+	update_post_meta( $app_id, IDEATOAPPS_VERSIONS_META, wp_slash( array_values( $versions ) ) );
+}
+
+/**
  * Versions of an app, newest first (by semantic version, not insertion order).
  *
  * @param int $app_id App post ID.
@@ -73,6 +84,50 @@ function ideatoapps_add_version( int $app_id, string $version, string $changelog
 		'changelog'     => sanitize_textarea_field( $changelog ),
 		'attachment_id' => absint( $attachment_id ),
 	);
-	update_post_meta( $app_id, IDEATOAPPS_VERSIONS_META, $versions );
+	ideatoapps_store_versions( $app_id, $versions );
+	return true;
+}
+
+/**
+ * Change the changelog and file of an existing version (the version string is immutable).
+ *
+ * @param int    $app_id        App post ID.
+ * @param string $version       Existing version.
+ * @param string $changelog     New changelog.
+ * @param int    $attachment_id New attachment ID.
+ * @return bool False when the version does not exist.
+ */
+function ideatoapps_update_version( int $app_id, string $version, string $changelog, int $attachment_id ): bool {
+	$versions = ideatoapps_get_versions( $app_id );
+	foreach ( $versions as $i => $row ) {
+		if ( $row['version'] === $version ) {
+			$versions[ $i ]['changelog']     = sanitize_textarea_field( $changelog );
+			$versions[ $i ]['attachment_id'] = absint( $attachment_id );
+			ideatoapps_store_versions( $app_id, $versions );
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Remove a version.
+ *
+ * @param int    $app_id  App post ID.
+ * @param string $version Version to remove.
+ * @return bool False when the version does not exist.
+ */
+function ideatoapps_remove_version( int $app_id, string $version ): bool {
+	$versions  = ideatoapps_get_versions( $app_id );
+	$remaining = array_filter(
+		$versions,
+		static function ( $row ) use ( $version ) {
+			return $row['version'] !== $version;
+		}
+	);
+	if ( count( $remaining ) === count( $versions ) ) {
+		return false;
+	}
+	ideatoapps_store_versions( $app_id, $remaining );
 	return true;
 }

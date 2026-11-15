@@ -52,12 +52,59 @@ function ideatoapps_decode_list( $value ) {
 }
 
 /**
+ * Encode a list the way it is stored (readable unicode, unescaped slashes).
+ *
+ * @param array $list List.
+ * @return string
+ */
+function ideatoapps_encode_list( array $list ) {
+	return wp_json_encode( array_values( $list ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+}
+
+/**
+ * Remember whether the last sanitised value for a JSON meta key was invalid input.
+ * The sanitise callback cannot see the old value, so the update filter below uses this flag.
+ *
+ * @param string    $key  Meta key.
+ * @param bool|null $set  New state, or null to only read.
+ * @return bool
+ */
+function ideatoapps_json_invalid_flag( $key, $set = null ) {
+	static $flags = array();
+	if ( null !== $set ) {
+		$flags[ $key ] = $set;
+	}
+	return ! empty( $flags[ $key ] );
+}
+
+/**
+ * Whether a raw JSON meta value is acceptable (empty string clears the list).
+ *
+ * @param mixed $value Raw value.
+ * @return bool
+ */
+function ideatoapps_json_list_valid( $value ) {
+	if ( is_array( $value ) ) {
+		return array_is_list( $value );
+	}
+	if ( ! is_string( $value ) ) {
+		return false;
+	}
+	if ( '' === trim( $value ) ) {
+		return true;
+	}
+	$data = json_decode( $value, true );
+	return is_array( $data ) && array_is_list( $data );
+}
+
+/**
  * FAQ: JSON list of {q, a} objects; malformed entries are dropped.
  *
  * @param mixed $value Raw value.
  * @return string JSON.
  */
 function ideatoapps_sanitize_faq( $value ) {
+	ideatoapps_json_invalid_flag( 'faq', ! ideatoapps_json_list_valid( $value ) );
 	$out = array();
 	foreach ( ideatoapps_decode_list( $value ) as $row ) {
 		if ( is_array( $row ) && isset( $row['q'], $row['a'] ) && is_string( $row['q'] ) && is_string( $row['a'] ) ) {
@@ -67,7 +114,7 @@ function ideatoapps_sanitize_faq( $value ) {
 			);
 		}
 	}
-	return wp_json_encode( $out );
+	return ideatoapps_encode_list( $out );
 }
 
 /**
@@ -77,14 +124,36 @@ function ideatoapps_sanitize_faq( $value ) {
  * @return string JSON.
  */
 function ideatoapps_sanitize_features( $value ) {
+	ideatoapps_json_invalid_flag( 'features', ! ideatoapps_json_list_valid( $value ) );
 	$out = array();
 	foreach ( ideatoapps_decode_list( $value ) as $row ) {
 		if ( is_string( $row ) ) {
 			$out[] = sanitize_text_field( $row );
 		}
 	}
-	return wp_json_encode( $out );
+	return ideatoapps_encode_list( $out );
 }
+
+/**
+ * Keep the previous FAQ/features when the new value was invalid JSON (runs right after sanitising).
+ * Also tells the editor why nothing changed.
+ *
+ * @param mixed  $check     Short-circuit value (null to continue).
+ * @param int    $object_id Post ID.
+ * @param string $meta_key  Meta key.
+ * @return mixed
+ */
+function ideatoapps_keep_previous_on_invalid_json( $check, $object_id, $meta_key ) {
+	if ( in_array( $meta_key, array( 'faq', 'features' ), true ) && 'app' === get_post_type( $object_id ) && ideatoapps_json_invalid_flag( $meta_key ) ) {
+		ideatoapps_json_invalid_flag( $meta_key, false );
+		/* translators: %s: field name (faq or features). */
+		ideatoapps_add_notice( (int) $object_id, sprintf( __( 'The %s value was not valid and was not saved; the previous value was kept.', 'ideatoapps-core' ), $meta_key ) );
+		return false;
+	}
+	return $check;
+}
+add_filter( 'update_post_metadata', 'ideatoapps_keep_previous_on_invalid_json', 10, 3 );
+add_filter( 'add_post_metadata', 'ideatoapps_keep_previous_on_invalid_json', 10, 3 );
 
 /**
  * Register all app meta keys.

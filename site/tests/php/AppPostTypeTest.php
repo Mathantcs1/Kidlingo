@@ -65,8 +65,24 @@ final class AppPostTypeTest extends WPTestCase {
 		$this->assertSame( array( array( 'q' => 'Q 1', 'a' => 'A1' ) ), json_decode( get_post_meta( $id, 'faq', true ), true ) );
 		update_post_meta( $id, 'features', '["One <i>x</i>","Two",5]' );
 		$this->assertSame( array( 'One x', 'Two' ), json_decode( get_post_meta( $id, 'features', true ), true ) );
+		// Invalid input keeps the previous value instead of wiping it.
 		update_post_meta( $id, 'features', '"scalar"' );
+		$this->assertSame( array( 'One x', 'Two' ), json_decode( get_post_meta( $id, 'features', true ), true ) );
+		update_post_meta( $id, 'features', '["a",]' );
+		$this->assertSame( array( 'One x', 'Two' ), json_decode( get_post_meta( $id, 'features', true ), true ) );
+		$notices = ideatoapps_pull_notices( $id );
+		$this->assertNotEmpty( $notices );
+		$this->assertSame( array(), ideatoapps_pull_notices( $id ), 'notices are shown once' );
+		// Explicitly clearing is allowed.
+		update_post_meta( $id, 'features', '[]' );
 		$this->assertSame( '[]', get_post_meta( $id, 'features', true ) );
+	}
+
+	public function test_json_meta_keeps_unicode_and_quotes(): void {
+		$id = $this->make_app();
+		$raw = 'Café — 24/7 "x" \\ back\\slash';
+		update_post_meta( $id, 'features', wp_slash( wp_json_encode( array( $raw ) ) ) );
+		$this->assertSame( array( $raw ), json_decode( get_post_meta( $id, 'features', true ), true ) );
 	}
 
 	public function test_woo_product_id_is_int(): void {
