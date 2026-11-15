@@ -11,6 +11,14 @@ const KEY_ID = 'apiKey';
 const CONSENT_ID = 'consent';
 const MAX_KEY_LENGTH = 256;
 
+/** The only messages setKey can throw (fixed strings, never containing the value); UIs may show exactly these. */
+export const KEY_ERROR_MESSAGES: readonly string[] = [
+  'Enter your ElevenLabs API key.',
+  'That does not look like an API key (too long).',
+  'That does not look like an API key (use only letters, digits and symbols, no spaces).',
+  'Could not save the key in this browser.',
+];
+
 let store: UseStore | undefined;
 function secretsStore(): UseStore | null {
   if (typeof indexedDB === 'undefined') return null;

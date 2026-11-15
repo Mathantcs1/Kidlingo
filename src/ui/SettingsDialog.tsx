@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createElevenLabs, ElevenLabsError } from '../ai/elevenlabs';
-import { keyStore } from '../ai/keyStore';
+import { KEY_ERROR_MESSAGES, keyStore } from '../ai/keyStore';
 import { currentModality, focusAs } from './inputModality';
 import { useSettings } from './settingsState';
 import './settings.css';
@@ -15,7 +15,7 @@ interface Notice {
 function errorText(e: unknown): string {
   // ElevenLabsError and setKey errors carry fixed messages that never contain the key.
   if (e instanceof ElevenLabsError) return e.message;
-  if (e instanceof Error && e.message.length < 120) return e.message;
+  if (e instanceof Error && KEY_ERROR_MESSAGES.includes(e.message)) return e.message;
   return 'Something went wrong. Try again.';
 }
 
@@ -63,7 +63,10 @@ export default function SettingsDialog() {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   useDialogKeys(rootRef);
+  // Closing the dialog cancels an in-flight Test.
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   async function load(): Promise<void> {
     const k = await keyStore.getKey();
@@ -88,18 +91,21 @@ export default function SettingsDialog() {
   }
 
   async function test(): Promise<void> {
+    const ctl = new AbortController();
+    abortRef.current = ctl;
     setBusy(true);
     setNotice({ kind: 'info', text: 'Testing…' });
     try {
       const api = createElevenLabs({ getKey: keyStore.getKey });
-      await api.listVoices();
-      const sub = await api.subscription();
+      await api.listVoices(ctl.signal);
+      const sub = await api.subscription(ctl.signal);
+      if (ctl.signal.aborted) return;
       const left = sub ? ` ${Math.max(0, sub.limit - sub.used).toLocaleString('en-US')} characters left this period.` : '';
       setNotice({ kind: 'ok', text: `Key works.${left}` });
     } catch (e) {
-      setNotice({ kind: 'error', text: errorText(e) });
+      if (!ctl.signal.aborted) setNotice({ kind: 'error', text: errorText(e) });
     } finally {
-      setBusy(false);
+      if (!ctl.signal.aborted) setBusy(false);
     }
   }
 
@@ -108,6 +114,7 @@ export default function SettingsDialog() {
     await keyStore.setConsent(false);
     setNotice({ kind: 'info', text: 'Key removed from this browser.' });
     await load();
+    inputRef.current?.focus();
   }
 
   return (
@@ -123,7 +130,7 @@ export default function SettingsDialog() {
         <h2 id="settings-title">Settings</h2>
         <div className="settings-status-box" data-testid="eleven-key-status" aria-live="polite">
           <p className="settings-status">{masked ? `ElevenLabs key saved: ${masked}` : 'No key saved'}</p>
-          {notice && <p className={`settings-status is-${notice.kind}`}>{notice.text}</p>}
+          {notice && <p className={`settings-status is-${notice.kind}`} role={notice.kind === 'error' ? 'alert' : undefined}>{notice.text}</p>}
         </div>
         <div className="modal-fields">
           <label>
@@ -141,13 +148,13 @@ export default function SettingsDialog() {
           </label>
         </div>
         <div className="modal-actions">
-          <button type="button" data-testid="eleven-key-save" onClick={() => void save()}>
+          <button type="button" data-testid="eleven-key-save" disabled={busy} onClick={() => void save()}>
             Save
           </button>
           <button type="button" data-testid="eleven-key-test" disabled={busy} onClick={() => void test()}>
             Test key
           </button>
-          <button type="button" className="btn-danger" data-testid="eleven-key-remove" disabled={!masked} onClick={() => void remove()}>
+          <button type="button" className="btn-danger" data-testid="eleven-key-remove" disabled={!masked || busy} onClick={() => void remove()}>
             Remove
           </button>
           <button type="button" data-testid="settings-done" onClick={closeSettings}>
