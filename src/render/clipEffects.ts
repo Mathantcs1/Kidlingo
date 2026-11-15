@@ -1,6 +1,7 @@
 // A draw's picture after its clip's effect stack (the compositor's per-clip effect step).
 import type { BlendMode, Clip, Id, Project, VideoEffectType } from '../core/model';
 import type { Draw } from './drawCollect';
+import { croppedSize } from './cropGeometry';
 import { EffectPipeline, effectWorkingSize, frameIndex, snapToFrame } from './effects/pipeline';
 import type { EffectContext, LoadedLut } from './effects/types';
 import { uvMatrix } from './gl';
@@ -24,7 +25,7 @@ export function applyClipEffects(
   // Overlays never run effects (D7; the core refuses them, this guards hand-made projects).
   if (d.clip.kind === 'overlay' || !d.clip.effects || d.clip.effects.length === 0) return d;
   const ctx = clipEffectContext(d.clip, p, t, luts, onUnavailable);
-  const slot = effects.run(d.slot, effectWorkingSize(d.size, d.texels, format), d.uv, d.clip.effects, ctx);
+  const slot = effects.run(d.slot, effectWorkingSize(croppedSize(d.size, d.clip.crop), croppedSize(d.texels, d.clip.crop), format), d.uv, d.clip.effects, ctx);
   // Effect results are upright and stored top row first, like an uploaded texture.
   return slot === d.slot ? d : { slot, uv: UPRIGHT };
 }

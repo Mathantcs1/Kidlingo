@@ -2,6 +2,7 @@ import { resolveClip } from '../core/animate';
 import { maxDrawnScale } from '../core/drawnScale';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
+import { croppedUvMatrix } from './cropGeometry';
 import { createTexture, frameOrientation, rotatedSize, uploadTexture, uvMatrix } from './gl';
 import type { Mat3, Size, TextureSlot } from './gl';
 import type { ImageTextures } from './images';
@@ -48,6 +49,15 @@ export interface DrawContext {
 }
 
 const UPRIGHT = uvMatrix(0);
+
+/**
+ * The texture lookup of a picture whose uploaded texels are `texels` (display orientation): `orientation` composed with
+ * the clip's crop sub-rectangle and flip (Plan 5E D1, D3). The crop edges are inset by half a texel so bilinear
+ * sampling never reads cropped-away pixels (D7). The orientation itself when the clip has neither.
+ */
+function pictureUv(clip: Clip, orientation: Mat3, texels: Size): Mat3 {
+  return croppedUvMatrix(orientation, clip.crop, clip.flip, { x: 0.5 / texels.width, y: 0.5 / texels.height });
+}
 
 function videoSlot(ctx: DrawContext, source: VideoSource, index: number): TextureSlot {
   let slots = ctx.videoSlots.get(source);
@@ -109,7 +119,10 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
       shownImages.add(clip.mediaId);
       // Transforms are in the image's own pixels, whatever resolution its texture was decoded at.
       const size = media.width && media.height ? { width: media.width, height: media.height } : slot;
-      if (slot && size) draws.push({ clip, slot, size, uv: UPRIGHT, texels: { width: slot.width, height: slot.height } });
+      if (slot && size) {
+        const texels = { width: slot.width, height: slot.height };
+        draws.push({ clip, slot, size, uv: pictureUv(clip, UPRIGHT, texels), texels });
+      }
       continue;
     }
     const source = sources.get(clip.id) ?? sources.get(clip.mediaId);
@@ -128,7 +141,7 @@ export async function collectDraws(ctx: DrawContext, p: Project, t: number, sour
     const { rotation, mirror } = frameOrientation(source, frame as { rotation?: unknown; flip?: unknown });
     const size = rotatedSize({ width, height }, rotation);
     // The frame is uploaded at its display size, so the texels match `size` once rotated.
-    draws.push({ clip, slot, size, uv: uvMatrix(rotation, false, mirror), texels: size });
+    draws.push({ clip, slot, size, uv: pictureUv(clip, uvMatrix(rotation, false, mirror), size), texels: size });
   }
   pruneVideoSlots(ctx, sources);
   ctx.images.prune(shownImages, p);

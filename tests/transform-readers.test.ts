@@ -18,7 +18,7 @@ type Allowed = [string, string, string, number?];
 const ALLOWED: Allowed[] = [
   // ---- src/render: the compositor. Draw.clip / AdjustmentDraw.clip are resolved in collectDraws (drawCollect.ts).
   ['src/render/drawPicture.ts', 'const { opacity } = d.clip.transform', 'reads resolved clip (Draw.clip)'],
-  ['src/render/drawPicture.ts', 'clipMatrix(d.size, d.clip.transform, format)', 'reads resolved clip (Draw.clip)'],
+  ['src/render/drawPicture.ts', 'clipMatrix(d.size, d.clip.transform, format, {', 'reads resolved clip (Draw.clip): transform, and (5E) the crop sub-rectangle and anchor pivot of the quad'],
   ['src/render/clipEffects.ts', "d.clip.kind === 'overlay' || !d.clip.effects", 'reads resolved clip (Draw.clip)'],
   ['src/render/clipEffects.ts', 'd.uv, d.clip.effects, ctx', 'reads resolved clip (Draw.clip): evaluated params'],
   ['src/render/adjustment.ts', '(clip.effects ?? []).some((e) => e.enabled)', 'reads resolved clip (AdjustmentDraw.clip): enabled is never animated'],
@@ -33,6 +33,16 @@ const ALLOWED: Allowed[] = [
   ['src/render/effects/unavailable.ts', 's.effects.map((t) => VIDEO_EFFECTS[t].label)', 'not a clip: ExportSkips summary'],
   // 5B: the resolved clip carries no `motion`; the lower third's built-in slide is decided from the RAW clip's in/out slots.
   ['src/render/drawCollect.ts', 'const builtIn = { in: !raw.motion?.in, out: !raw.motion?.out }', 'reads stored value on purpose: the RAW clip\'s in/out preset slots switch the lower third\'s built-in slide off (D13); the picture itself comes from the resolved clip'],
+  // 5E: crop, flip and anchor are static per clip (v8; anchor keys arrive in Task 5 and are resolved into the drawn clip).
+  ['src/render/drawCollect.ts', 'croppedUvMatrix(orientation, clip.crop, clip.flip', 'reads resolved clip (collectDraws passes the resolved clip): crop sub-rect and flip into the texture lookup'],
+  ['src/render/drawPicture.ts', 'croppedSize(d.size, d.clip.crop), uv, opacity', 'reads resolved clip (Draw.clip): the blur backdrop covers the frame from the cropped size'],
+  ['src/render/geometry.ts', 'const anchor = view?.anchor;', 'not a clip: the optional view argument of the pure clipMatrix'],
+  ['src/render/geometry.ts', 'if (!isCropped(view?.crop)) return m;', 'not a clip: the optional view argument of the pure clipMatrix'],
+  ['src/render/geometry.ts', 'const c = view!.crop!;', 'not a clip: the optional view argument of the pure clipMatrix'],
+  ['src/render/geometry.ts', 'track.flip !== (frame.flip === true)', 'not a clip: a media track / VideoFrame mirror flag'],
+  ['src/render/overlayGeometry.ts', 'const crop = view?.crop;', 'not a clip: the optional view argument of the pure clipCorners'],
+  ['src/render/overlayGeometry.ts', 'const anchor = view?.anchor;', 'not a clip: the optional view argument of the pure clipCorners'],
+  ['src/render/overlayGeometry.ts', 'view?.anchor ? { anchor: view.anchor }', 'not a clip: the optional view argument of the pure frameCorners'],
   // ---- src/ui: inspectors, on-canvas handles and commands.
   ['src/ui/effectParams.tsx', '(effect.params[key] ?? fallback)', 'reads resolved value at the playhead when animated (targetValueAt), the stored value on purpose when not'],
   ['src/ui/VideoEffectRow.tsx', 'schema.params.filter(', 'not a clip: effect schema'],
@@ -44,6 +54,10 @@ const ALLOWED: Allowed[] = [
   ['src/ui/EffectsInspector.tsx', 'count={clip.effects.length}', 'reads stored value on purpose: the stack itself (ids, order), not params'],
   // Task 6: TransformFields shows `resolvedTransform(clip, playhead, fps)` (no direct read); Preview previews a drag
   // through `withLiveValue(project, clipId, patch, t)` (no direct read).
+  ['src/ui/AnimationInspector.tsx', 'anchor={open.anchor}', 'not a clip: the popover anchor rectangle'],
+  ['src/ui/PresetBrowser.tsx', 'export default function PresetBrowser({ clip, slot, anchor, onClose }', 'not a clip: the popover anchor rectangle'],
+  ['src/ui/easeEditorStore.ts', 'returnTo: el, anchor: r ?', 'not a clip: the popover anchor rectangle'],
+  ['src/ui/useEasePanelChrome.ts', 'const a = open.anchor;', 'not a clip: the popover anchor rectangle'],
   ['src/ui/overlayHit.ts', 'clipCorners(target.size, target.transform, format)', 'hit box from the target transform: resolved at the playhead by TransformOverlay (or the live drag)'],
   ['src/ui/useTransformDrag.ts', 'storeTransform: clip.transform', 'reads stored value on purpose: detects an external store change (drag start = resolvedTransform at the playhead)'],
   ['src/ui/dragStale.ts', 'now.transform !== g.storeTransform', 'reads stored value on purpose: detects an external store change of the transform, keys or preset stack (moved from useTransformDrag.ts, 5B Task 1; motion 5B Task 8)'],
@@ -81,7 +95,7 @@ function detectors(fields: string): RegExp[] {
     new RegExp(`[(,]\\s*\\{[^}]*\\b${f}\\b[^}]*\\}\\s*:`),
   ];
 }
-const ALL = detectors('transform|params|effects|motion|loops|orient');
+const ALL = detectors('transform|params|effects|motion|loops|orient|crop|flip|anchor');
 /** src/export, src/media and src/audio: audio effects/params are everywhere there, so only the animation data is audited. */
 const ANIM = detectors('motion|loops|orient');
 /** Members of the compositor/pipeline objects named `effects`, not clip data. */
