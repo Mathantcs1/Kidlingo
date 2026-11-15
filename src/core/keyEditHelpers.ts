@@ -28,7 +28,8 @@ export function assertInside(clip: Clip, t: number): void {
   if (!(t >= clip.start - EPS && t < clipEnd(clip) - EPS)) throw new TimelineError(OUTSIDE_REFUSAL);
 }
 
-export const isPosition = (target: AnimTarget): boolean => target.kind === 'transform' && target.prop === 'position';
+/** Targets whose value is {x, y} (position and, 5E, anchor). */
+export const isVec2 = (target: AnimTarget): boolean => target.kind === 'transform' && (target.prop === 'position' || target.prop === 'anchor');
 export const keyToValue = (k: AnyKey): AnimValue => ('v' in k ? k.v : { x: k.x, y: k.y });
 
 /** The distinct targets of `refs`, each with the indices of its keys that the refs select (nearest within KEY_EPS). */

@@ -8,7 +8,7 @@ import { PRESET_CATEGORIES, cleanPresetName } from '../core/userPresets';
 import type { UserPreset } from '../core/userPresets';
 import type { Id } from '../core/model';
 import type { MotionSlot, PresetKey } from '../core/motionTypes';
-import { repairKeyList, repairPositionKeys } from '../core/migrateKeys';
+import { repairAnchorKeys, repairKeyList, repairPositionKeys } from '../core/migrateKeys';
 
 export const LIBRARY_KEY = 'clipforge:presets';
 export const LIBRARY_VERSION = 1;
@@ -52,8 +52,8 @@ function isPreset(v: unknown): v is UserPreset {
 /** A stored key list is sound when the repair functions of saved data drop none of its keys. */
 const listOk = (l: unknown, repair: (x: unknown) => unknown[] | undefined): boolean => Array.isArray(l) && l.length > 0 && repair(l)?.length === l.length;
 function keyListsOk(keys: Record<string, unknown>): boolean {
-  return (['position', 'scale', 'rotation', 'opacity'] as const).every((q) => keys[q] === undefined
-    || listOk(keys[q], q === 'position' ? repairPositionKeys : (x) => repairKeyList(x, -Infinity, Infinity)));
+  return (['position', 'scale', 'rotation', 'opacity', 'anchor'] as const).every((q) => keys[q] === undefined
+    || listOk(keys[q], q === 'position' ? repairPositionKeys : q === 'anchor' ? repairAnchorKeys : (x) => repairKeyList(x, -Infinity, Infinity)));
 }
 
 const isFav = (v: unknown): v is FavRef =>

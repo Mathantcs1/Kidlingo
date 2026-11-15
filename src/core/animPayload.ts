@@ -40,7 +40,7 @@ export interface AnimPayload {
   /** The source's visible local start; `span` its visible duration. Key times and the emphasis `at` are stored relative to `lo`; the loop `phase` is raw. */
   lo: number;
   span: number;
-  keys?: { position?: AnyKey[]; scale?: AnyKey[]; rotation?: AnyKey[]; opacity?: AnyKey[]; loops?: Record<string, KeyLoop>; orient?: true };
+  keys?: { position?: AnyKey[]; scale?: AnyKey[]; rotation?: AnyKey[]; opacity?: AnyKey[]; anchor?: AnyKey[]; loops?: Record<string, KeyLoop>; orient?: true };
   effects: EffectAnim[];
   motion?: ClipMotion;
   /** User presets: position keys are offsets from the first position key (applied relative to the destination's rest). */
@@ -115,7 +115,7 @@ export function copyAnimation(p: Project, clipId: Id): AnimPayload {
   if (clip.keys) {
     const k = clip.keys;
     const keys: NonNullable<AnimPayload['keys']> = {};
-    for (const prop of ['position', 'scale', 'rotation', 'opacity'] as const) if (k[prop]?.length) keys[prop] = copyList(k[prop]!, lo);
+    for (const prop of ['position', 'scale', 'rotation', 'opacity', 'anchor'] as const) if (k[prop]?.length) keys[prop] = copyList(k[prop]!, lo);
     if (k.loops) keys.loops = copyLoops(k.loops);
     if (k.orient) keys.orient = true;
     if (Object.keys(keys).some((x) => x !== 'loops' && x !== 'orient')) out.keys = keys;

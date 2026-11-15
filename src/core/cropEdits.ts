@@ -62,17 +62,25 @@ export function setFlip(p: Project, clipId: Id, patch: { h?: boolean; v?: boolea
   return put(p, clip, 'flip', flip.h || flip.v ? flip : undefined);
 }
 
+/** A keyed anchor is edited at the playhead (setValueAt), never through the static edits (5E D5, like every keyed property). */
+function assertStaticAnchor(clip: Clip): void {
+  if ((clip.keys?.anchor?.length ?? 0) > 0) throw new TimelineError(ANIMATED_REFUSAL);
+}
+
 /** Moves the pivot (fractions of the full frame from its centre, ±2). The picture moves with it (D4, no compensation). */
 export function setAnchor(p: Project, clipId: Id, a: Anchor): Project {
   if (!finite(a.x) || !finite(a.y)) throw new TimelineError('Invalid anchor value');
   const clip = target(p, clipId);
+  assertStaticAnchor(clip);
   const c = (v: number): number => Math.min(ANCHOR_LIMIT, Math.max(-ANCHOR_LIMIT, v)) + 0;
   const next = { x: c(a.x), y: c(a.y) };
   return put(p, clip, 'anchor', next.x === 0 && next.y === 0 ? undefined : next);
 }
 
 export function resetAnchor(p: Project, clipId: Id): Project {
-  return put(p, target(p, clipId), 'anchor', undefined);
+  const clip = target(p, clipId);
+  assertStaticAnchor(clip);
+  return put(p, clip, 'anchor', undefined);
 }
 
 /** Pivot = the centre of the visible rectangle (the pivot moves, so does the picture: D4). */
@@ -92,7 +100,8 @@ export function fitToCrop(p: Project, clipId: Id, mode: 'fit' | 'fill'): Project
   const m = p.media[clip.mediaId];
   const crop = clip.crop;
   if (!crop || !m?.width || !m.height) return p;
-  if ((clip.keys?.position?.length ?? 0) > 0 || (clip.keys?.scale?.length ?? 0) > 0) throw new TimelineError(ANIMATED_REFUSAL);
+  // The result depends on the pivot too: a keyed anchor has no single pivot to place the crop centre from.
+  if ((clip.keys?.position?.length ?? 0) > 0 || (clip.keys?.scale?.length ?? 0) > 0 || (clip.keys?.anchor?.length ?? 0) > 0) throw new TimelineError(ANIMATED_REFUSAL);
   const cw = m.width * (1 - crop.left - crop.right);
   const ch = m.height * (1 - crop.top - crop.bottom);
   const sx = p.format.width / cw;

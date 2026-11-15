@@ -8,20 +8,21 @@ import type { Clip, Id, Keyframe, PositionKeyframe, TransformKeys } from './mode
 import { evalPosition } from './spatialPath';
 import { TimelineError } from './timeline';
 import { targetLoop, withParamLoop, withPropLoop } from './targetLoops';
+import { ANCHOR_LIMIT } from './cropTypes';
 import { normaliseDegrees } from './transformLimits';
 import { VIDEO_EFFECTS, animatableParam } from './videoEffects';
 
-export type TransformProp = 'position' | 'scale' | 'rotation' | 'opacity';
+export type TransformProp = 'position' | 'scale' | 'rotation' | 'opacity' | 'anchor';
 export type AnimTarget = { kind: 'transform'; prop: TransformProp } | { kind: 'effect'; effectId: Id; param: string };
 /** One key of one target; `t` is clip-LOCAL seconds (D3). */
 export interface KeyRef { target: AnimTarget; t: number }
-/** Position takes {x, y}; every other target a number. */
+/** Position and anchor take {x, y}; every other target a number. */
 export type AnimValue = number | { x: number; y: number };
 
 /** D8: static edits (fields, sliders) refuse an animated property instead of silently doing nothing. */
 export const ANIMATED_REFUSAL = 'This setting is animated: change it at the playhead';
 
-export const TRANSFORM_PROPS: readonly TransformProp[] = ['position', 'scale', 'rotation', 'opacity'];
+export const TRANSFORM_PROPS: readonly TransformProp[] = ['position', 'scale', 'rotation', 'opacity', 'anchor'];
 
 export const sameTarget = (a: AnimTarget, b: AnimTarget): boolean =>
   a.kind === 'transform' ? b.kind === 'transform' && a.prop === b.prop
@@ -36,6 +37,7 @@ export function assertTarget(clip: Clip, target: AnimTarget): void {
   if (target.kind === 'transform') {
     if (!TRANSFORM_PROPS.includes(target.prop)) throw new TimelineError('This setting cannot be animated');
     if (clip.kind === 'adjustment' && target.prop !== 'opacity') throw new TimelineError('Adjustment layers only animate opacity');
+    if (target.prop === 'anchor' && clip.kind !== 'video' && clip.kind !== 'image') throw new TimelineError('The anchor applies to video and image clips');
     return;
   }
   if (clip.kind === 'overlay') throw new TimelineError('Overlays cannot have effects');
@@ -66,6 +68,7 @@ function range(clip: Clip, target: AnimTarget): [number, number] {
 export function staticValue(clip: Clip, target: AnimTarget): AnimValue {
   if (target.kind === 'effect') return effectOf(clip, target.effectId)?.params[target.param] ?? NaN;
   const t = clip.transform;
+  if (target.prop === 'anchor') return { x: clip.anchor?.x ?? 0, y: clip.anchor?.y ?? 0 };
   return target.prop === 'position' ? { x: t.x, y: t.y } : t[target.prop];
 }
 
@@ -75,12 +78,17 @@ export function valueAtLocal(clip: Clip, target: AnimTarget, u: number): AnimVal
   if (!list) return staticValue(clip, target);
   const loop = targetLoop(clip, target);
   if (target.kind === 'transform' && target.prop === 'position') return evalPosition(list as PositionKeyframe[], loop, u);
+  if (target.kind === 'transform' && target.prop === 'anchor') return clampAnchor(evalPosition(list as PositionKeyframe[], loop, u));
   return evalKeys(list as Keyframe[], loop, u, ...range(clip, target));
 }
 
 /** The value seen at TIMELINE time `t` (the inspector's value at the playhead). */
 export const targetValueAt = (clip: Clip, target: AnimTarget, t: number, fps: number): AnimValue =>
   valueAtLocal(clip, target, localTime(clip, t, fps));
+
+/** An evaluated anchor within ±ANCHOR_LIMIT (the resolver's clamp; −0 stored as 0). */
+export const clampAnchor = (a: { x: number; y: number }): { x: number; y: number } =>
+  ({ x: Math.min(ANCHOR_LIMIT, Math.max(-ANCHOR_LIMIT, a.x)) + 0, y: Math.min(ANCHOR_LIMIT, Math.max(-ANCHOR_LIMIT, a.y)) + 0 });
 
 const hasList = (keys: TransformKeys): boolean => TRANSFORM_PROPS.some((q) => (keys[q]?.length ?? 0) > 0);
 
@@ -114,13 +122,18 @@ export function withTargetKeys(clip: Clip, target: AnimTarget, list: readonly An
   };
 }
 
-/** `clip` with the static value written (rotation normalised to (−180, 180], −0 stored as 0). No clamping. */
+/** `clip` with the static value written (rotation normalised to (−180, 180], −0 stored as 0). No clamping (the anchor is clamped to ±2). */
 export function withStaticValue(clip: Clip, target: AnimTarget, v: AnimValue): Clip {
   if (target.kind === 'effect') {
     const n = (v as number) + 0;
     return { ...clip, effects: clip.effects.map((e) => (e.id === target.effectId ? { ...e, params: { ...e.params, [target.param]: n } } : e)) };
   }
   const t = clip.transform;
+  if (target.prop === 'anchor') {
+    const q = clampAnchor(v as { x: number; y: number });
+    const { anchor: _old, ...rest } = clip;
+    return q.x === 0 && q.y === 0 ? rest : { ...rest, anchor: q };
+  }
   if (target.prop === 'position') {
     const q = v as { x: number; y: number };
     return { ...clip, transform: { ...t, x: q.x + 0, y: q.y + 0 } };

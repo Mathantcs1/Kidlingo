@@ -41,7 +41,7 @@ export interface KeyLoop {
 export const LOOP_COUNT_MAX = 1000;
 
 /** The transform properties that carry key lists. */
-export type KeyedTransformProp = 'position' | 'scale' | 'rotation' | 'opacity';
+export type KeyedTransformProp = 'position' | 'scale' | 'rotation' | 'opacity' | 'anchor';
 
 /**
  * A clip's transform keys. A property is animated iff its list has >= 1 key (one key = constant); absent or empty =
@@ -52,6 +52,8 @@ export interface TransformKeys {
   scale?: Keyframe[];
   rotation?: Keyframe[];
   opacity?: Keyframe[];
+  /** v8 (Plan 5E D5): the pivot, fractions of the full frame from its centre (±2). Position-shaped keys, never with tangents. Video and image clips only. */
+  anchor?: PositionKeyframe[];
   /** v7 (D4): a loop per animated property (only for properties with a key list). */
   loops?: Partial<Record<KeyedTransformProp, KeyLoop>>;
   /** v7 (D7): rotate along the position path (only with position keys). */

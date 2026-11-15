@@ -63,6 +63,7 @@ export function mapTransformKeys(
   const out: TransformKeys = {};
   // An oriented path is kept whole too (5B D7): a heading fallback may read a segment beyond the half's own range.
   if (keys.position) out.position = pos(keys.position, keys.loops?.position !== undefined || keys.orient === true);
+  if (keys.anchor) out.anchor = pos(keys.anchor, keys.loops?.anchor !== undefined);
   for (const prop of ['scale', 'rotation', 'opacity'] as const) {
     const l = keys[prop];
     if (l) out[prop] = num(l, keys.loops?.[prop] !== undefined);

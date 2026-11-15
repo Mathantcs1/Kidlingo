@@ -11,7 +11,7 @@ import { TimelineError, assertUnlocked, findClip } from './timeline';
 import { REACH, clamp, normaliseDegrees } from './transformLimits';
 
 const KEYS = ['x', 'y', 'scale', 'rotation', 'opacity'] as const;
-const KEYED: readonly KeyedTransformProp[] = ['position', 'scale', 'rotation', 'opacity'];
+const KEYED: readonly KeyedTransformProp[] = ['position', 'scale', 'rotation', 'opacity', 'anchor'];
 const PROP_OF = { x: 'position', y: 'position', scale: 'scale', rotation: 'rotation', opacity: 'opacity' } as const;
 
 /**
@@ -76,8 +76,10 @@ function writeTransform(
   const next = fn(cur, clip);
   const drop = clip.keys !== undefined && dropKeys(clip);
   if (!drop && KEYS.every((k) => next[k] === cur[k])) return p;
-  const { keys: _keys, ...bare } = clip;
-  const updated: Clip = { ...(drop ? bare : clip), transform: next };
+  // Reset drops the transform keys but keeps the anchor's (5E: the pivot is not part of the transform being reset).
+  const { keys: _keys, ...noKeys } = clip;
+  const kept: Clip = clip.keys?.anchor ? { ...noKeys, keys: { anchor: clip.keys.anchor, ...(clip.keys.loops?.anchor ? { loops: { anchor: clip.keys.loops.anchor } } : {}) } } : noKeys;
+  const updated: Clip = { ...(drop ? kept : clip), transform: next };
   return {
     ...p,
     tracks: p.tracks.map((t) => (t.id === track.id ? { ...t, clips: t.clips.map((c) => (c.id === clipId ? updated : c)) } : t)),

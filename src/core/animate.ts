@@ -4,6 +4,7 @@ import { evalKeys } from './keyLoops';
 import { localTime } from './keyframes';
 import type { Clip, Keyframe, Transform, VideoEffect } from './model';
 import { composeMotion, motionAt } from './motion';
+import { clampAnchor } from './animTargets';
 import { evalPosition, orientHeading } from './spatialPath';
 import { animatableParam } from './videoEffects';
 
@@ -21,7 +22,7 @@ function effectAnimated(e: VideoEffect): boolean {
 
 function transformAnimated(clip: Clip): boolean {
   const k = clip.keys;
-  return k !== undefined && (has(k.position) || has(k.scale) || has(k.rotation) || has(k.opacity));
+  return k !== undefined && (has(k.position) || has(k.scale) || has(k.rotation) || has(k.opacity) || has(k.anchor));
 }
 
 /** True when any transform property or effect param has at least one key. */
@@ -99,5 +100,6 @@ export function resolveClip(clip: Clip, t: number, format: ResolveFormat): Clip 
     ...rest,
     transform: o ? composeMotion(base, o) : base,
     effects: anyEffect ? clip.effects.map((e) => resolveEffect(e, u)) : clip.effects,
+    ...(has(clip.keys?.anchor) ? { anchor: clampAnchor(evalPosition(clip.keys!.anchor!, clip.keys!.loops?.anchor, localTime(clip, t, fps))) } : {}),
   };
 }

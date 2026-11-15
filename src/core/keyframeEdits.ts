@@ -4,7 +4,9 @@ import { staticValue, targetKeys, valueAtLocal, withStaticValue, withTargetKeys 
 import type { AnimTarget, AnimValue, KeyRef } from './animTargets';
 import { isSameEase, repairEase } from './easing';
 import type { Ease } from './easing';
-import { assertInside, commitClip, isPosition, keyToValue, locate, sameFrame, selection } from './keyEditHelpers';
+import { setAnchor } from './cropEdits';
+import { ANCHOR_LIMIT } from './cropTypes';
+import { assertInside, commitClip, isVec2, keyToValue, locate, sameFrame, selection } from './keyEditHelpers';
 import { upsertKey } from './keyLists';
 import type { AnyKey, KeyValue } from './keyLists';
 import {
@@ -35,6 +37,10 @@ function keyValue(p: Project, clip: Clip, target: AnimTarget, v: AnimValue, cur?
     const e = clip.effects.find((x) => x.id === target.effectId)!;
     const d = animatableParam(e.type, target.param)!;
     return { v: clamp(v as number, d.min, d.max) + 0 };
+  }
+  if (target.prop === 'anchor') {
+    const q = v as { x: number; y: number };
+    return { x: clamp(q.x, -ANCHOR_LIMIT, ANCHOR_LIMIT) + 0, y: clamp(q.y, -ANCHOR_LIMIT, ANCHOR_LIMIT) + 0 };
   }
   if (target.prop === 'position') {
     const q = v as { x: number; y: number };
@@ -68,7 +74,7 @@ export function setAnimated(p: Project, clipId: Id, target: AnimTarget, on: bool
 }
 
 function assertValue(target: AnimTarget, v: AnimValue): void {
-  const ok = isPosition(target)
+  const ok = isVec2(target)
     ? typeof v === 'object' && v !== null && Number.isFinite(v.x) && Number.isFinite(v.y)
     : typeof v === 'number' && Number.isFinite(v);
   if (!ok) throw new TimelineError('Invalid value');
@@ -88,6 +94,7 @@ export function setValueAt(p: Project, clipId: Id, target: AnimTarget, value: An
   const list = targetKeys(clip, target);
   if (!list) {
     if (target.kind === 'effect') return updateVideoEffect(p, clipId, target.effectId, { params: { [target.param]: value as number } });
+    if (target.prop === 'anchor') return setAnchor(p, clipId, value as { x: number; y: number });
     return setClipTransform(p, clipId, typeof value === 'number' ? { [target.prop]: value } : { x: value.x, y: value.y });
   }
   assertInside(clip, t);

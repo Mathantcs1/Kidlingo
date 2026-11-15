@@ -134,3 +134,19 @@ test('effects run on the cropped picture only: the working target is smaller', a
   expect(full).toBeGreaterThan(0);
   expect(half, 'half-width crop allocates about half the effect target memory').toBeLessThan(full * 0.6);
 });
+
+test('a keyed anchor moves the pivot over time: the same rotation lands differently at t=0 and t=0.5 (5E D5)', async ({ page }) => {
+  await openHarness(page);
+  const m = await quad(page);
+  const lin = { kind: 'linear' as const };
+  const keys = { anchor: [{ t: 0, x: -0.5, y: -0.5, ease: lin }, { t: 1, x: 0.5, y: 0.5, ease: lin }] };
+  const p = project(FORMAT, [m], [clipOf(m, { out: 1, transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 }, keys })]);
+  const [a, b, c] = await render(page, p, [0, 0.5, 29 / 30]);
+  // t=0: the pivot is the TL corner at the canvas centre, so the picture sits down-right: (40,40) red, (10,10) black.
+  is(a, 40, 40, RED, 't=0 picture down-right'); is(a, 10, 10, BLACK, 't=0 nothing up-left');
+  // t=0.5: the pivot is the frame centre at the canvas centre: the plain centred picture.
+  is(b, 10, 10, RED, 't=0.5 centred TL'); is(b, 50, 10, GREEN, 't=0.5 centred TR'); is(b, 50, 50, BLUE, 't=0.5 centred BR');
+  // the last frame: the pivot is nearly the BR corner at the centre: the picture sits up-left.
+  is(c, 20, 20, BLUE.map((v) => v) as Rgb, 'last frame up-left shows the BR corner area');
+  is(c, 50, 50, BLACK, 'last frame nothing down-right');
+});

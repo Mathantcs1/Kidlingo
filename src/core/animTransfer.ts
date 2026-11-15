@@ -49,6 +49,7 @@ function repairList(clip: Clip, target: AnimTarget, list: AnyKey[]): AnyKey[] | 
     return repairEffectKeys({ [target.param]: list }, e.type)?.[target.param];
   }
   if (target.prop === 'position') return repairPositionKeys(list);
+  if (target.prop === 'anchor') return repairClipKeys({ anchor: list }, clip.kind)?.anchor;
   return repairClipKeys({ [target.prop]: list }, clip.kind)?.[target.prop];
 }
 
@@ -148,13 +149,13 @@ function pasteAnimInto(p: Project, clip: Clip, a: AnimPayload, anchor: Anchor, t
   let out: Clip = { ...bare, effects: clip.effects.map(({ keys: _a, loops: _b, ...e }) => e) };
   if (a.keys) {
     const raw: Record<string, unknown> = {};
-    for (const prop of ['position', 'scale', 'rotation', 'opacity'] as const) {
+    for (const prop of ['position', 'scale', 'rotation', 'opacity', 'anchor'] as const) {
       if (a.keys[prop]) raw[prop] = shiftedKeys(a.keys[prop]!, s, prop, ratio, prop === 'position' ? rest : null);
     }
     if (a.keys.loops) raw.loops = a.keys.loops;
     if (a.keys.orient) raw.orient = true;
     const keys = repairClipKeys(raw, clip.kind);
-    skipped += Object.keys(raw).filter((q) => ['position', 'scale', 'rotation', 'opacity'].includes(q) && !keys?.[q as 'scale']).length;
+    skipped += Object.keys(raw).filter((q) => ['position', 'scale', 'rotation', 'opacity', 'anchor'].includes(q) && !keys?.[q as 'scale']).length;
     if (keys) out = { ...out, keys };
   }
   for (const ea of a.effects) {

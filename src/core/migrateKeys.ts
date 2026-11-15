@@ -3,6 +3,7 @@
 // per property, keys of unknown or non-animatable params dropped. An emptied list (or keys object) is removed.
 // v7 (Plan 5B D14): tangents finite and within ±KEYED_POSITION_LIMIT, `broken`/`orient` only `true`, loops only for
 // properties/params that have keys (valid mode, count integer 1..1000 or null), spring eases via repairEase.
+import { ANCHOR_LIMIT } from './cropTypes';
 import { repairEase } from './easing';
 import { KEYED_POSITION_LIMIT, KEYED_ROTATION_LIMIT, KEYED_SCALE_LIMIT, MAX_KEYS, tooClose } from './keyframes';
 import { LOOP_COUNT_MAX, LOOP_MODES } from './keyTypes';
@@ -80,9 +81,17 @@ export function repairPositionKeys(raw: unknown): PositionKeyframe[] | undefined
   return normalise(keys);
 }
 
+/** Anchor keys (v8): position-shaped, values within ±ANCHOR_LIMIT, never with tangents or `broken`. */
+export function repairAnchorKeys(raw: unknown): PositionKeyframe[] | undefined {
+  const list = repairPositionKeys(raw);
+  if (!list) return undefined;
+  const c = (v: number): number => clamp(v, -ANCHOR_LIMIT, ANCHOR_LIMIT);
+  return list.map((k) => ({ t: k.t, x: c(k.x), y: c(k.y), ease: k.ease }));
+}
+
 /**
  * A clip's transform keys by kind: audio clips have none; adjustment clips only opacity (their position, scale and
- * rotation are not used, D1); video, image and overlay clips all four. Unknown properties are dropped.
+ * rotation are not used, D1); video, image and overlay clips all four (v8: the anchor on video and image clips only). Unknown properties are dropped.
  */
 export function repairClipKeys(raw: unknown, kind: Clip['kind'] | unknown): TransformKeys | undefined {
   if (!isObject(raw) || kind === 'audio') return undefined;
@@ -92,11 +101,13 @@ export function repairClipKeys(raw: unknown, kind: Clip['kind'] | unknown): Tran
   const scale = full ? repairKeyList(raw.scale, 0, KEYED_SCALE_LIMIT) : undefined;
   const rotation = full ? repairKeyList(raw.rotation, -KEYED_ROTATION_LIMIT, KEYED_ROTATION_LIMIT) : undefined;
   const opacity = repairKeyList(raw.opacity, 0, 1);
+  const anchor = kind === 'video' || kind === 'image' ? repairAnchorKeys(raw.anchor) : undefined;
   if (position) keys.position = position;
   if (scale) keys.scale = scale;
   if (rotation) keys.rotation = rotation;
   if (opacity) keys.opacity = opacity;
-  const props = (['position', 'scale', 'rotation', 'opacity'] as const).filter((q): q is KeyedTransformProp => keys[q] !== undefined);
+  if (anchor) keys.anchor = anchor;
+  const props = (['position', 'scale', 'rotation', 'opacity', 'anchor'] as const).filter((q): q is KeyedTransformProp => keys[q] !== undefined);
   if (props.length === 0) return undefined;
   const loops = repairLoops(raw.loops, props);
   if (loops) keys.loops = loops;

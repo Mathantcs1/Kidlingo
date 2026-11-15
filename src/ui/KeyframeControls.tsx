@@ -132,7 +132,7 @@ export default function KeyframeControls({ clip, target, group, label, ids, disa
   );
 }
 
-const PROP_LABELS: Record<TransformProp, string> = { position: 'Position', scale: 'Scale', rotation: 'Rotation', opacity: 'Opacity' };
+const PROP_LABELS: Record<TransformProp, string> = { position: 'Position', scale: 'Scale', rotation: 'Rotation', opacity: 'Opacity', anchor: 'Anchor' };
 
 /** The keyframe rows of a clip's transform properties (`props`: an adjustment layer animates opacity only). */
 export function TransformKeyframes({ clip, props, disabled, title }: { clip: Clip; props: readonly TransformProp[]; disabled: boolean; title?: string }) {
