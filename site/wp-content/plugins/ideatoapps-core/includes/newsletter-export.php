@@ -44,19 +44,33 @@ function ideatoapps_csv_safe( $value ) {
 }
 
 /**
+ * One CSV line with LF ending. fputcsv() only accepts a line-ending argument from PHP 8.1 and this plugin supports
+ * PHP 8.0, so the line is written to a temp stream with the default ending and normalised here.
+ *
+ * @param resource           $stream Temp stream.
+ * @param array<int, string> $cells  Cells.
+ * @return string
+ */
+function ideatoapps_csv_line( $stream, array $cells ) {
+	ftruncate( $stream, 0 );
+	rewind( $stream );
+	fputcsv( $stream, $cells, ',', '"', '\\' );
+	rewind( $stream );
+	return rtrim( (string) stream_get_contents( $stream ), "\r\n" ) . "\n";
+}
+
+/**
  * The list as CSV text (header email,consent_at).
  *
  * @return string
  */
 function ita_subscribers_csv() {
-	$out = fopen( 'php://temp', 'w+' );
-	fputcsv( $out, array( 'email', 'consent_at' ), ',', '"', '\\', "\n" );
+	$tmp = fopen( 'php://temp', 'w+' );
+	$csv = ideatoapps_csv_line( $tmp, array( 'email', 'consent_at' ) );
 	foreach ( ita_subscribers() as $row ) {
-		fputcsv( $out, array( ideatoapps_csv_safe( $row['email'] ), $row['consent_at'] ), ',', '"', '\\', "\n" );
+		$csv .= ideatoapps_csv_line( $tmp, array( ideatoapps_csv_safe( $row['email'] ), $row['consent_at'] ) );
 	}
-	rewind( $out );
-	$csv = (string) stream_get_contents( $out );
-	fclose( $out );
+	fclose( $tmp );
 	return $csv;
 }
 

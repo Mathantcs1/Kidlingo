@@ -299,6 +299,51 @@ test.describe('Newsletter', () => {
     expect((await post({ email: 'x@example.com', consent: true }, {})).status(), 'no nonce').toBe(403);
   });
 
+  const fillNewsletter = async (page: Page) => {
+    const section = page.getByTestId('newsletter');
+    await section.getByLabel('Email address', { exact: true }).fill(`stale${Date.now()}@example.com`);
+    await section.getByRole('checkbox').check();
+    await page.getByRole('button', { name: 'Subscribe' }).click();
+    return section;
+  };
+
+  test('a stale cached nonce is refreshed once and the sign-up then succeeds', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('form[data-nonce]').first().evaluate((f) => f.setAttribute('data-nonce', 'deadbeef00'));
+    const posts: (string | undefined)[] = [];
+    let refreshes = 0;
+    await page.route('**/ideatoapps/v1/newsletter*', (route) => { posts.push(route.request().headers()['x-wp-nonce']); return route.continue(); });
+    await page.route('**/ideatoapps/v1/nonce*', (route) => { refreshes++; return route.continue(); });
+    const section = await fillNewsletter(page);
+    await expect(section.getByTestId('form-status')).toHaveText('Thanks, you are on the list.', { timeout: 20_000 });
+    expect(refreshes, 'one refresh').toBe(1);
+    expect(posts).toHaveLength(2);
+    expect(posts[0]).toBe('deadbeef00');
+    expect(posts[1]).toMatch(/^[a-f0-9]{10}$/);
+    expect(posts[1]).not.toBe('deadbeef00');
+  });
+
+  test('when the nonce is still refused after the one retry the visitor sees a fixed message and nothing loops', async ({ page }) => {
+    await page.goto('/');
+    let posts = 0;
+    let refreshes = 0;
+    await page.route('**/ideatoapps/v1/newsletter*', (route) => { posts++; return route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ code: 'ideatoapps_bad_nonce', message: 'SERVER TEXT MUST NOT BE SHOWN' }) }); });
+    await page.route('**/ideatoapps/v1/nonce*', (route) => { refreshes++; return route.continue(); });
+    const section = await fillNewsletter(page);
+    await expect(section.getByTestId('form-status')).toHaveText('Something went wrong. Please reload the page and try again.', { timeout: 20_000 });
+    await expect(page.getByRole('button', { name: 'Subscribe' })).toBeEnabled();
+    await page.waitForTimeout(500);
+    expect(posts, 'exactly one retry').toBe(2);
+    expect(refreshes, 'exactly one refresh').toBe(1);
+  });
+
+  test('the nonce refresh endpoint answers with a nonce and is never cacheable', async ({ page }) => {
+    const res = await page.request.get(wpJson('/ideatoapps/v1/nonce'));
+    expect(res.status()).toBe(200);
+    expect((await res.json()).nonce).toMatch(/^[a-f0-9]{10}$/);
+    expect(res.headers()['cache-control']).toContain('no-store');
+  });
+
   test('a rate-limit answer is shown to the visitor and the form stays usable', async ({ page }) => {
     await page.goto('/');
     await page.route('**/ideatoapps/v1/newsletter*', (route) => route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ message: 'Too many requests. Please wait a minute and try again.' }) }));

@@ -20,7 +20,6 @@ final class ContactTest extends WPTestCase {
 
 	protected function tearDown(): void {
 		delete_option( 'ideatoapps_contact_enabled' );
-		delete_transient( ideatoapps_rate_limit_key( 'contact' ) );
 		unset( $_SERVER['REMOTE_ADDR'] );
 		parent::tearDown();
 	}

@@ -6,7 +6,6 @@ final class NewsletterTest extends WPTestCase {
 	}
 
 	protected function tearDown(): void {
-		delete_transient( ideatoapps_rate_limit_key( 'newsletter' ) );
 		unset( $_SERVER['REMOTE_ADDR'] );
 		parent::tearDown();
 	}
@@ -69,7 +68,6 @@ final class NewsletterTest extends WPTestCase {
 	public function test_invalid_email_is_rejected(): void {
 		foreach ( array( '', 'nope', 'a@', '<script>@x.com', 'a b@example.com' ) as $bad ) {
 			$this->assertSame( 400, $this->post( array( 'email' => $bad, 'consent' => true ) )->get_status(), $bad );
-			delete_transient( ideatoapps_rate_limit_key( 'newsletter' ) );
 		}
 		$this->assertSame( array(), $this->subscribers() );
 	}
@@ -91,7 +89,6 @@ final class NewsletterTest extends WPTestCase {
 		$this->assertCount( 5, $this->subscribers() );
 		$_SERVER['REMOTE_ADDR'] = '198.51.100.7';
 		$this->assertSame( 200, $this->post( array( 'email' => 'other@example.com', 'consent' => true ) )->get_status(), 'another IP has its own budget' );
-		delete_transient( ideatoapps_rate_limit_key( 'newsletter' ) );
 	}
 
 	public function test_same_email_twice_is_stored_once_and_looks_identical(): void {
@@ -119,6 +116,17 @@ final class NewsletterTest extends WPTestCase {
 		$this->assertStringContainsString( 'one@example.com,', $csv );
 		$this->assertStringNotContainsString( "\n+evil", $csv );
 		$this->assertStringContainsString( "'+evil@example.com", $csv );
+	}
+
+	public function test_csv_export_needs_no_php_81_features_and_uses_lf_rows(): void {
+		$src = (string) file_get_contents( IDEATOAPPS_CORE_DIR . 'includes/newsletter-export.php' );
+		// fputcsv() got its $eol argument in PHP 8.1; the plugin declares PHP 8.0.
+		$this->assertDoesNotMatchRegularExpression( '/fputcsv\s*\([^;]*"\\\\n"\s*\)/', $src );
+		$this->post( array( 'email' => 'a@example.com', 'consent' => true ) );
+		$csv = ita_subscribers_csv();
+		$this->assertStringNotContainsString( "\r", $csv );
+		$this->assertStringEndsWith( "\n", $csv );
+		$this->assertCount( 3, explode( "\n", $csv ) ); // header, one row, trailing empty.
 	}
 
 	public function test_export_requires_manage_options_and_a_nonce(): void {

@@ -17,7 +17,7 @@ if ( ! ideatoapps_newsletter_available() ) {
 	<div class="container">
 		<div class="newsletter">
 			<?php ideatoapps_part( 'section-heading', array( 'id' => 'newsletter-title', 'title' => __( 'Join the list', 'ideatoapps' ), 'text' => __( 'Leave your email address to be on the list for news about new apps.', 'ideatoapps' ) ) ); ?>
-			<form class="newsletter__form" method="post" action="<?php echo esc_url( rest_url( 'ideatoapps/v1/newsletter' ) ); ?>" data-ideatoapps-form data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
+			<form class="newsletter__form" method="post" action="<?php echo esc_url( rest_url( 'ideatoapps/v1/newsletter' ) ); ?>" data-ideatoapps-form data-nonce-url="<?php echo esc_url( rest_url( 'ideatoapps/v1/nonce' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
 				<label for="newsletter-email"><?php esc_html_e( 'Email address', 'ideatoapps' ); ?></label>
 				<div class="newsletter__row">
 					<input class="field" type="email" id="newsletter-email" name="email" autocomplete="email" required>

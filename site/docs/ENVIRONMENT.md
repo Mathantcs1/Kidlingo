@@ -52,3 +52,34 @@ theme and the `ideatoapps-core` plugin loaded (`tests/php/bootstrap.php`, `env.p
 
 - Site state of the dev server is a sqlite DB under `.wp/wordpress/wp-content/database`; delete it to reset.
 - PHPUnit uses the SQLite engine, not MySQL: avoid MySQL-only SQL in plugin code.
+
+## Client IP and the rate limit
+
+The newsletter and contact REST routes allow 5 requests per minute per visitor (429 after that). The count is atomic:
+one `add_option()` creates the counter row, later requests run a single SQL `UPDATE ... option_value = option_value + 1`
+and read the value back from the database (or `wp_cache_incr()` when a persistent object cache exists), so parallel
+requests cannot slip past the limit. Counter rows are named `ita_rl_<form>_<md5 of IP>_<minute>` and rows of old minutes
+are purged automatically; no IP is stored in plain text.
+
+`ideatoapps_client_ip()` (plugin `includes/rest-guard.php`) uses **`REMOTE_ADDR` only**. `X-Forwarded-For` is
+client-controlled and is never trusted by default. Behind a proxy or CDN (Cloudflare, Bluehost proxy cache) all visitors
+share the proxy's address, so the site owner must map the real one with the `ideatoapps_client_ip` filter, only when
+`REMOTE_ADDR` is one of their own proxies, and validate the header:
+
+```php
+add_filter( 'ideatoapps_client_ip', function ( $ip ) {
+	$proxies = array( '203.0.113.10' ); // your proxy / CDN egress addresses.
+	$fwd     = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? explode( ',', wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) : array();
+	$client  = trim( (string) end( $fwd ) ); // the entry appended by YOUR proxy, not the first (spoofable) one.
+	return in_array( $ip, $proxies, true ) && false !== filter_var( $client, FILTER_VALIDATE_IP ) ? $client : $ip;
+} );
+```
+
+The result is validated again (`FILTER_VALIDATE_IP`); anything else becomes `0.0.0.0`.
+
+## Cached pages and the REST nonce
+
+Forms carry a nonce in the (possibly cached) HTML. When it has expired, the REST call answers 403
+(`ideatoapps_bad_nonce`, or core's `rest_cookie_invalid_nonce` for signed-in visitors). `forms.js` then fetches a fresh
+nonce from `GET /wp-json/ideatoapps/v1/nonce` (sent `no-store`) and retries the submission exactly once; if that also
+fails it shows a fixed client-side message.

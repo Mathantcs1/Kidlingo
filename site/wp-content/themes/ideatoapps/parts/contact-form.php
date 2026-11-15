@@ -20,7 +20,7 @@ if ( ! ideatoapps_contact_available() ) {
 	return;
 }
 ?>
-<form class="form" method="post" action="<?php echo esc_url( rest_url( 'ideatoapps/v1/contact' ) ); ?>" data-ideatoapps-form data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>" data-testid="contact-form">
+<form class="form" method="post" action="<?php echo esc_url( rest_url( 'ideatoapps/v1/contact' ) ); ?>" data-ideatoapps-form data-nonce-url="<?php echo esc_url( rest_url( 'ideatoapps/v1/nonce' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>" data-testid="contact-form">
 	<div class="form__row">
 		<label for="contact-name"><?php esc_html_e( 'Name', 'ideatoapps' ); ?></label>
 		<input class="field" type="text" id="contact-name" name="name" autocomplete="name" maxlength="100" required>
