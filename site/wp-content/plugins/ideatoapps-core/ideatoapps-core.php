@@ -8,3 +8,10 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+
+define( 'IDEATOAPPS_CORE_DIR', plugin_dir_path( __FILE__ ) );
+
+require_once IDEATOAPPS_CORE_DIR . 'includes/post-type.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/meta.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/versions.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/meta-boxes.php';
