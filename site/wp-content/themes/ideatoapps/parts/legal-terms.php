@@ -20,7 +20,7 @@ $ideatoapps_confirm = static function ( string $text ): void {
 <p><?php $ideatoapps_confirm( __( 'how taxes (sales tax or VAT) are handled and shown at checkout.', 'ideatoapps' ) ); ?></p>
 
 <h2><?php esc_html_e( 'Downloads', 'ideatoapps' ); ?></h2>
-<p><?php esc_html_e( 'A download is available to the account that bought it, while the order is paid. A refunded or cancelled order no longer gives access to the download.', 'ideatoapps' ); ?></p>
+<p><?php esc_html_e( 'You download from your library after signing in. The download link works only while you are signed in to the account that bought it and the order is paid. A refunded or cancelled order no longer gives access to the download.', 'ideatoapps' ); ?></p>
 
 <h2><?php esc_html_e( 'Licence', 'ideatoapps' ); ?></h2>
 <p><?php $ideatoapps_confirm( __( 'what the buyer may do with the app (number of devices, personal or commercial use, redistribution) and the licence text shipped inside the download.', 'ideatoapps' ) ); ?></p>

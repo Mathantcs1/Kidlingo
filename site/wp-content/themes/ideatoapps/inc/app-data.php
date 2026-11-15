@@ -87,7 +87,8 @@ function ideatoapps_app_action_links( int $app_id ): array {
 
 /**
  * What the buy area shows: `buy` (label + add-to-cart href), `soon` (Coming soon, no price) or `none` (nothing to offer).
- * A buy button needs a live app, a linked product that exists, and WooCommerce active. Checkout itself is not handled here.
+ * A buy button needs a live app, a linked published product, WooCommerce active AND at least one version with a valid
+ * file (ideatoapps_app_is_sellable): a live buy button before any zip exists would sell nothing, so it shows "Coming soon".
  *
  * @return array{kind: string, label?: string, href?: string}
  */
@@ -99,6 +100,9 @@ function ideatoapps_app_buy_state( WP_Post $app ): array {
 	$product_id = (int) get_post_meta( $app->ID, 'woo_product_id', true );
 	if ( 'live' !== $status || $product_id <= 0 || ! function_exists( 'ideatoapps_woocommerce_active' ) || ! ideatoapps_woocommerce_active() || 'product' !== get_post_type( $product_id ) || 'publish' !== get_post_status( $product_id ) ) {
 		return array( 'kind' => 'none' );
+	}
+	if ( ! function_exists( 'ideatoapps_app_is_sellable' ) || ! ideatoapps_app_is_sellable( $app->ID ) ) {
+		return array( 'kind' => 'soon' );
 	}
 	$price = trim( (string) get_post_meta( $app->ID, 'price_label', true ) );
 	$title = get_the_title( $app );

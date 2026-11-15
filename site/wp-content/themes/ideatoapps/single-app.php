@@ -17,6 +17,11 @@ while ( have_posts() ) {
 	?>
 	<article class="app">
 		<?php
+		if ( function_exists( 'wc_print_notices' ) ) {
+			echo '<div class="container">';
+			wc_print_notices(); // e.g. "cannot be purchased": a refused Buy click must say why instead of doing nothing.
+			echo '</div>';
+		}
 		ideatoapps_part( 'app-hero', array( 'app' => $ideatoapps_app ) );
 		ideatoapps_part( 'app-details', array( 'app' => $ideatoapps_app ) );
 		ideatoapps_part( 'app-faq', array( 'app' => $ideatoapps_app ) );

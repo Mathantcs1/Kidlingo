@@ -130,6 +130,8 @@ final class SeedClipforgeTest extends WPTestCase {
 
 	public function test_the_seeded_page_renders_without_download_leaks_or_unbacked_claims(): void {
 		$id   = ideatoapps_seed_clipforge();
+		$file = wp_upload_bits( 'ClipForge-1.0.0.zip', null, "PK\x05\x06" . str_repeat( "\0", 18 ) ); // T8: no zip, no buy button.
+		ideatoapps_add_version( $id, '1.0.0', 'First.', (int) wp_insert_attachment( array( 'post_mime_type' => 'application/zip', 'post_title' => 'z', 'post_status' => 'inherit' ), $file['file'] ) );
 		$html = $this->render_single( $id );
 		$this->assertStringContainsString( 'Buy ClipForge, $24.99 one-time', $html );
 		$this->assertStringContainsString( 'add-to-cart=' . (int) get_post_meta( $id, 'woo_product_id', true ), $html );
@@ -142,7 +144,8 @@ final class SeedClipforgeTest extends WPTestCase {
 			$this->assertStringNotContainsStringIgnoringCase( $banned, $text, $banned );
 		}
 		$this->assertDoesNotMatchRegularExpression( '/\breviews?\b|\bstars?\b|\busers?\b/i', $text ); // "preview" is a feature word, not a review claim
-		$this->assertStringNotContainsString( 'data-testid="app-whats-new"', $html );
+		$this->assertStringContainsString( 'data-testid="app-whats-new"', $html ); // T8: the test adds 1.0.0 above; the seed itself adds none.
+		$this->assertStringNotContainsString( 'woocommerce_uploads', $html );
 	}
 
 	public function test_without_woocommerce_the_app_is_created_without_a_product_link(): void {

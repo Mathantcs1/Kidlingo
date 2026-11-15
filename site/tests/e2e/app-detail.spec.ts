@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { axeProblems } from './helpers/a11y';
 import { horizontalOverflow } from './helpers/layout';
-import { addVersion, adminApi, cleanup, createApp, createCategory, createWooProduct, resetContent, uploadFile, uploadImage, type AppInput, type Api } from './helpers/wp';
+import { addVersion, adminApi, cleanup, createApp, createCategory, createWooProduct, resetContent, uploadFile, uploadImage, uploadZip, type AppInput, type Api } from './helpers/wp';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -43,7 +43,8 @@ const BANNED = /free to try|audio editing|effects|animation|\brat(ing|ings)\b|\b
 test.describe('ClipForge listing', () => {
   test('shows the title, tagline, breadcrumb and the exact buy button linking to add-to-cart', async ({ page }) => {
     const product = await createWooProduct(api, 'ClipForge');
-    await createApp(api, clipforge({ wooProductId: product }));
+    // T8: the buy button only exists once a version has a real zip, so the fixture adds one.
+    await createApp(api, clipforge({ wooProductId: product, version: { version: '1.0.0', changelog: 'First release.', attachment: await uploadZip(api, '1.0.0') } }));
     await page.goto('/apps/clipforge/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('ClipForge');
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
@@ -88,7 +89,7 @@ test.describe('ClipForge listing', () => {
 
   test('never claims anything it cannot back: no free trial, audio editing, effects, animation, ratings or counts', async ({ page }) => {
     const product = await createWooProduct(api, 'ClipForge');
-    await createApp(api, clipforge({ wooProductId: product, launchUrl: 'https://example.org/launch', demoUrl: 'https://example.org/demo' }));
+    await createApp(api, clipforge({ wooProductId: product, launchUrl: 'https://example.org/launch', demoUrl: 'https://example.org/demo', version: { version: '1.0.0', changelog: 'First release.', attachment: await uploadZip(api, '1.0.0') } }));
     await page.goto('/apps/clipforge/');
     const text = await page.locator('body').innerText();
     expect(text).not.toMatch(BANNED);
@@ -234,8 +235,8 @@ for (const theme of ['dark', 'light'] as const) {
       const product = await createWooProduct(api, 'ClipForge');
       const media = await uploadImage(api);
       const input = clipforge({ wooProductId: product, launchUrl: 'https://example.org/launch', demoUrl: 'https://example.org/demo', categories: [cat], media });
-      const id = await createApp(api, { ...input, version: { version: '1.0.0', changelog: 'First public release.' } });
-      await addVersion(api, id, input, { version: '1.1.0', changelog: 'Small fixes.' });
+      const id = await createApp(api, { ...input, version: { version: '1.0.0', changelog: 'First public release.', attachment: await uploadZip(api, '1.0.0') } });
+      await addVersion(api, id, input, { version: '1.1.0', changelog: 'Small fixes.', attachment: await uploadZip(api, '1.1.0') });
       await createApp(api, { title: 'A much longer app name that has to wrap on small screens', tagline: 'Another useful idea.', price: '$4.00 one-time' });
     });
     test.afterAll(async () => { await cleanup(api); });

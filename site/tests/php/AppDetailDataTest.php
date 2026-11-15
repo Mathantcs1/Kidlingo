@@ -30,22 +30,36 @@ final class AppDetailDataTest extends WPTestCase {
 		$this->assertFalse( ideatoapps_app_is_visible( get_post( $this->app( array(), 'E', array( 'post_status' => 'draft' ) ) ) ) );
 	}
 
-	public function test_buy_state(): void {
+	/** A live app with its own product. T8: the buy button also needs a version with a real zip, so $zip adds one. */
+	private function sellable( array $meta, string $title, bool $zip = true ): int {
 		$product = new WC_Product_Simple();
-		$product->set_name( 'P' );
+		$product->set_name( 'P ' . $title );
 		$product->set_regular_price( '5' );
 		$pid = $product->save();
-		$live = $this->app( array( 'woo_product_id' => $pid, 'price_label' => '$5.00 one-time' ), 'Buyable' );
+		$id  = $this->app( array( 'woo_product_id' => $pid ) + $meta, $title );
+		if ( $zip ) {
+			$file = wp_upload_bits( sanitize_title( $title ) . '.zip', null, "PK\x05\x06" . str_repeat( "\0", 18 ) );
+			ideatoapps_add_version( $id, '1.0.0', 'First.', (int) wp_insert_attachment( array( 'post_mime_type' => 'application/zip', 'post_title' => $title, 'post_status' => 'inherit' ), $file['file'] ) );
+		}
+		return $id;
+	}
+
+	public function test_buy_state(): void {
+		$live = $this->sellable( array( 'price_label' => '$5.00 one-time' ), 'Buyable' );
+		$pid  = (int) get_post_meta( $live, 'woo_product_id', true );
 		$buy  = ideatoapps_app_buy_state( get_post( $live ) );
 		$this->assertSame( 'buy', $buy['kind'] );
 		$this->assertSame( 'Buy Buyable, $5.00 one-time', $buy['label'] );
 		$this->assertSame( add_query_arg( 'add-to-cart', $pid, get_permalink( $live ) ), $buy['href'] );
 
-		$this->assertSame( 'Buy NoPrice', ideatoapps_app_buy_state( get_post( $this->app( array( 'woo_product_id' => $pid ), 'NoPrice' ) ) )['label'] );
+		$this->assertSame( 'Buy NoPrice', ideatoapps_app_buy_state( get_post( $this->sellable( array(), 'NoPrice' ) ) )['label'] );
 		$this->assertSame( 'none', ideatoapps_app_buy_state( get_post( $this->app( array(), 'No product' ) ) )['kind'] );
 		$this->assertSame( 'none', ideatoapps_app_buy_state( get_post( $this->app( array( 'woo_product_id' => 999999 ), 'Missing product' ) ) )['kind'] );
-		$soon = ideatoapps_app_buy_state( get_post( $this->app( array( 'delivery_status' => 'coming_soon', 'woo_product_id' => $pid, 'price_label' => '$5.00' ), 'Soon' ) ) );
+		$soon = ideatoapps_app_buy_state( get_post( $this->sellable( array( 'delivery_status' => 'coming_soon', 'price_label' => '$5.00' ), 'Soon' ) ) );
 		$this->assertSame( array( 'kind' => 'soon' ), $soon );
+		// Changed in T8: live + published product but no version file yet is "Coming soon", never a live buy button.
+		$nofile = ideatoapps_app_buy_state( get_post( $this->sellable( array( 'price_label' => '$5.00' ), 'No file yet', false ) ) );
+		$this->assertSame( array( 'kind' => 'soon' ), $nofile );
 	}
 
 	public function test_buy_button_needs_a_published_product(): void {

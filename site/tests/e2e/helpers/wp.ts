@@ -24,7 +24,7 @@ export async function adminApi(): Promise<Api> {
   return { ctx, nonce, made: [], settingsDirty: false };
 }
 
-async function send(api: Api, method: 'POST' | 'DELETE' | 'GET', path: string, data?: unknown, query = '') {
+export async function send(api: Api, method: 'POST' | 'PUT' | 'DELETE' | 'GET', path: string, data?: unknown, query = '') {
   const res = await api.ctx.fetch(rest(path, query), { method, headers: { 'X-WP-Nonce': api.nonce }, data: data as never });
   if (!res.ok()) throw new Error(`${method} ${path} -> ${res.status()} ${await res.text()}`);
   return res.json();
@@ -194,6 +194,26 @@ export async function uploadFile(api: Api, name: string, type: string, data: Buf
   return id;
 }
 
+/**
+ * A valid (empty) zip whose end-of-archive comment carries `marker`, so each version's download is distinguishable.
+ * First bytes are 'PK', which is what the purchase test checks.
+ */
+export function zipBytes(marker: string): Buffer {
+  const comment = Buffer.from(marker, 'utf8');
+  const eocd = Buffer.alloc(22);
+  eocd.write('PK\x05\x06', 0, 'binary');
+  eocd.writeUInt16LE(comment.length, 20);
+  return Buffer.concat([eocd, comment]);
+}
+
+/** A release zip in the media library (the version picker's job in wp-admin); returns the attachment id. */
+export const uploadZip = (api: Api, version: string) => uploadFile(api, `ClipForge-${version}.zip`, 'application/zip', zipBytes(`ClipForge ${version}`));
+
+/** Enable WooCommerce's offline Cash on delivery gateway: the stand-in for Stripe, which has no test keys here. */
+export async function enableOfflineGateway(api: Api): Promise<void> {
+  await send(api, 'PUT', '/wc/v3/payment_gateways/cod', { enabled: true });
+}
+
 /** Save the IdeaToApps settings through the real admin form (nonce included). Returns the redirect URL. */
 export async function saveSettings(api: Api, s: { featured?: number[]; channel?: string; contact?: boolean }): Promise<string> {
   api.settingsDirty = s.featured?.length || s.channel || s.contact ? true : false;
@@ -226,7 +246,9 @@ export async function resetContent(api: Api): Promise<void> {
     ['/wp/v2/video', 'status=any&per_page=100'],
     ['/wp/v2/posts', 'status=any&per_page=100'],
     ['/wp/v2/app_category', 'per_page=100'],
-    ['/wp/v2/media', 'per_page=100'],
+    ['/wp/v2/media', 'per_page=100&status=inherit,private'],
+    ['/wc/v3/orders', 'per_page=100&status=any'],
+    ['/wc/v3/customers', 'per_page=100'],
     ['/wc/v3/products', 'per_page=100&status=any'],
   ] as const) {
     const listed = await api.ctx.fetch(rest(route, query), { headers: { 'X-WP-Nonce': api.nonce } });

@@ -61,6 +61,11 @@ function ideatoapps_get_versions( int $app_id ): array {
 	return $versions;
 }
 
+/*
+ * Every successful add, update or remove fires `ideatoapps_version_changed( $app_id, $version, 'added'|'updated'|'removed' )`
+ * after the list is stored; includes/entitlements.php uses it to keep the WooCommerce product's files and buyers' access in step.
+ */
+
 /**
  * Add a version to an app.
  *
@@ -85,6 +90,7 @@ function ideatoapps_add_version( int $app_id, string $version, string $changelog
 		'attachment_id' => absint( $attachment_id ),
 	);
 	ideatoapps_store_versions( $app_id, $versions );
+	do_action( 'ideatoapps_version_changed', $app_id, $version, 'added' );
 	return true;
 }
 
@@ -104,6 +110,7 @@ function ideatoapps_update_version( int $app_id, string $version, string $change
 			$versions[ $i ]['changelog']     = sanitize_textarea_field( $changelog );
 			$versions[ $i ]['attachment_id'] = absint( $attachment_id );
 			ideatoapps_store_versions( $app_id, $versions );
+			do_action( 'ideatoapps_version_changed', $app_id, $version, 'updated' );
 			return true;
 		}
 	}
@@ -129,5 +136,6 @@ function ideatoapps_remove_version( int $app_id, string $version ): bool {
 		return false;
 	}
 	ideatoapps_store_versions( $app_id, $remaining );
+	do_action( 'ideatoapps_version_changed', $app_id, $version, 'removed' );
 	return true;
 }

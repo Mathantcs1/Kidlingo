@@ -18,10 +18,26 @@ abstract class WPTestCase extends TestCase {
 		return wp_insert_user( array( 'user_login' => 'u_' . $role . wp_generate_password( 6, false ), 'user_pass' => 'x', 'role' => $role ) );
 	}
 
+	/** Release zips the tests create (the DB rolls back, the filesystem does not): protected folder plus any .zip in uploads. */
+	private static function remove_test_files(): void {
+		$base = wp_upload_dir( null, false )['basedir'];
+		foreach ( array( $base . '/woocommerce_uploads/ideatoapps' ) as $dir ) {
+			if ( is_dir( $dir ) ) {
+				foreach ( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ), RecursiveIteratorIterator::CHILD_FIRST ) as $f ) {
+					$f->isDir() ? rmdir( $f->getPathname() ) : unlink( $f->getPathname() );
+				}
+			}
+		}
+		foreach ( glob( $base . '/*/*/*.zip' ) ?: array() as $zip ) {
+			unlink( $zip );
+		}
+	}
+
 	protected function tearDown(): void {
 		global $wpdb;
 		$wpdb->query( 'ROLLBACK' );
 		wp_cache_flush();
+		self::remove_test_files();
 		if ( function_exists( 'WC' ) && WC()->cart ) {
 			WC()->cart->empty_cart();
 		}

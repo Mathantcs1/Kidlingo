@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-import { adminApi, cleanup, createApp, createCategory, createWooProduct, resetContent, type Api } from './helpers/wp';
+import { adminApi, cleanup, createApp, createCategory, createWooProduct, resetContent, uploadZip, type Api } from './helpers/wp';
 
 // Task 6 review screenshots. Not a test of behaviour: skipped unless SCREENSHOTS=1 (npm run test:e2e with SCREENSHOTS=1).
 test.skip(!process.env.SCREENSHOTS, 'set SCREENSHOTS=1 to regenerate docs/screenshots/task-6');
@@ -31,7 +31,7 @@ test('populated catalog, zero results and the ClipForge page', async ({ page }) 
   const utilities = await createCategory(api, 'Utilities');
   const product = await createWooProduct(api, 'ClipForge');
   await createApp(api, {
-    title: 'ClipForge', price: '$24.99 one-time', tagline: 'Edit videos in your browser. Your files stay on your device.', categories: [creator], wooProductId: product,
+    title: 'ClipForge', price: '$24.99 one-time', tagline: 'Edit videos in your browser. Your files stay on your device.', categories: [creator], wooProductId: product, version: { version: '1.0.0', changelog: 'First public release.', attachment: await uploadZip(api, '1.0.0') },
     platforms: 'Chromium-based desktop browser (Safari untested); Python 3 or Node.js to run the local launcher',
     content: '<p>Chromium-based desktop browser (Safari untested). Python 3 or Node.js is needed to run the included local launcher.</p>',
     features: ['Import video, audio and images, including screen recordings without sound', 'Arrange, trim and split clips on a timeline; ripple delete; snapping', 'Stack video layers and audio tracks (up to 8 of each) with mute, solo, lock and hide', 'Move, scale and rotate a clip on the preview for picture-in-picture', 'YouTube 16:9, Vertical 9:16, Square 1:1 and Portrait 4:5 formats', 'Undo/redo and autosave in your browser', 'Export MP4 (H.264 + AAC) at 1080p or 4K', 'Runs locally: your media is never uploaded'],

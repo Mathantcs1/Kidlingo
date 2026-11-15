@@ -19,7 +19,7 @@ $ideatoapps_confirm = static function ( string $text ): void {
 <ul>
 	<li><?php esc_html_e( 'Newsletter: if you join the list, your email address and the time you agreed are stored on this site. Nothing else is asked.', 'ideatoapps' ); ?></li>
 	<li><?php esc_html_e( 'Contact form: when the form is available, the name, email address and message you type are sent to the site owner.', 'ideatoapps' ); ?></li>
-	<li><?php esc_html_e( 'Purchases and accounts: when buying is enabled, the site keeps the order and account details needed to deliver your download and to show your past orders.', 'ideatoapps' ); ?> <?php $ideatoapps_confirm( __( 'payment provider, what it receives and what this site never stores.', 'ideatoapps' ) ); ?></li>
+	<li><?php esc_html_e( 'Purchases and accounts: to buy an app you create an account. The site keeps your name, email address, the password you chose (stored hashed), your orders, the download access that goes with them and a log of each download (time, account and IP address). Your account page shows your past orders and your library of downloads. Card details are entered with the payment provider and are not stored on this site.', 'ideatoapps' ); ?> <?php $ideatoapps_confirm( __( 'payment provider, what it receives and what this site never stores.', 'ideatoapps' ) ); ?></li>
 	<li><?php esc_html_e( 'Your colour theme choice is remembered in your own browser. It is not sent anywhere.', 'ideatoapps' ); ?></li>
 </ul>
 

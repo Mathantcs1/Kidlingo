@@ -18,7 +18,7 @@ while ( have_posts() ) {
 	$ideatoapps_body  = '' !== trim( wp_strip_all_tags( get_the_content() ) );
 	?>
 	<article class="section page" data-testid="page-<?php echo esc_attr( $ideatoapps_slug ); ?>">
-		<div class="container container--narrow">
+		<div class="container<?php echo ideatoapps_is_commerce_page() ? '' : ' container--narrow'; ?>">
 			<?php ideatoapps_part( 'section-heading', array( 'level' => 1, 'title' => get_the_title() ) ); ?>
 			<?php
 			if ( $ideatoapps_legal ) {

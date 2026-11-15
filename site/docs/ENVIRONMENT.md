@@ -83,3 +83,15 @@ Forms carry a nonce in the (possibly cached) HTML. When it has expired, the REST
 (`ideatoapps_bad_nonce`, or core's `rest_cookie_invalid_nonce` for signed-in visitors). `forms.js` then fetches a fresh
 nonce from `GET /wp-json/ideatoapps/v1/nonce` (sent `no-store`) and retries the submission exactly once; if that also
 fails it shows a fixed client-side message.
+
+## Commerce tests (Task 8)
+
+- PHP: `tests/php/EntitlementsTest.php`, `CommerceGateTest.php`, `CommerceFilesTest.php` (helpers in `CommerceTestCase.php`). They create
+  real zip files in the throw-away uploads folder; `WPTestCase` deletes them after every test (the DB rolls back, the filesystem does not).
+  Full-page renders of `single-app.php` can only happen once per PHP process (`get_header()` uses `require_once`): render parts instead.
+- Browser: `tests/e2e/purchase.spec.ts` buys ClipForge with WooCommerce's offline Cash on delivery gateway (Stripe has no test keys here),
+  with real accounts and real signed download links. It enables the gateway through the REST API and `resetContent()` removes its
+  orders, customers and zips afterwards.
+- The Playground dev server serves static files straight from disk and ignores `.htaccess`. The raw-zip 403/404 check in the browser
+  test therefore also depends on the unguessable directory name; on Bluehost (Apache/LiteSpeed) `.htaccess` denies the whole
+  `woocommerce_uploads` folder. See `docs/STRIPE_SETUP.md` for payments.

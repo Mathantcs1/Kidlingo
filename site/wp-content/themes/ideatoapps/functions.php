@@ -18,6 +18,8 @@ require_once get_template_directory() . '/inc/home.php';
 require_once get_template_directory() . '/inc/app-data.php';
 require_once get_template_directory() . '/inc/catalog.php';
 require_once get_template_directory() . '/inc/content.php';
+require_once get_template_directory() . '/inc/commerce.php';
+require_once get_template_directory() . '/inc/library.php';
 
 add_action(
 	'after_setup_theme',
