@@ -3,6 +3,7 @@ import { FX_TYPES } from '../../core/model';
 import type { FxType } from '../../core/model';
 import { colorFx } from './effects/color';
 import { chromaFx } from './effects/chroma';
+import { lookFx } from './effects/look';
 import { lutFx } from './effects/lut';
 import { glitchFx, grainFx, mirrorFx, rgbsplitFx, vhsFx } from './effects/stylise';
 import { blurFx, glowFx, pixelateFx, sharpenFx } from './effects/spatial';
@@ -28,6 +29,7 @@ const BUILT: Partial<Record<FxType, FxDef>> = {
   grain: grainFx,
   chroma: chromaFx,
   lut: lutFx,
+  look: lookFx,
 };
 
 export const EFFECT_DEFS = Object.fromEntries(FX_TYPES.map((t) => [t, BUILT[t] ?? pending(t)])) as Record<FxType, FxDef>;
