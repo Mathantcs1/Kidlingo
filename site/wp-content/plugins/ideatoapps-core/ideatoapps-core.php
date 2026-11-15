@@ -31,6 +31,7 @@ require_once IDEATOAPPS_CORE_DIR . 'includes/meta-boxes.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/activation.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/woocommerce-state.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/download-files.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/media-picker.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/entitlements.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/entitlements-grant.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/commerce-rules.php';

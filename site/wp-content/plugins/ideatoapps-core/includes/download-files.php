@@ -24,13 +24,15 @@ function ideatoapps_download_id( int $app_id, string $version ): string {
 
 /**
  * The real path of a version file, or '' when the attachment is not an acceptable zip.
- * Acceptable: an attachment post with a zip mime type, a file inside the uploads folder, extension .zip, ZIP signature in the first bytes.
+ * Acceptable: an attachment post with a zip (or generic binary) mime type, a file inside the uploads folder, extension .zip, ZIP signature in the first bytes.
  *
  * @param int $attachment_id Attachment post ID.
  * @return string Absolute path or ''.
  */
 function ideatoapps_valid_zip_attachment( int $attachment_id ): string {
-	if ( $attachment_id <= 0 || 'attachment' !== get_post_type( $attachment_id ) || ! in_array( get_post_mime_type( $attachment_id ), array( 'application/zip', 'application/x-zip-compressed' ), true ) ) {
+	$mime = $attachment_id > 0 && 'attachment' === get_post_type( $attachment_id ) ? get_post_mime_type( $attachment_id ) : '';
+	// Some hosts and importers label real zips application/octet-stream or application/x-zip; the .zip extension and the PK header checked below still have to hold.
+	if ( ! in_array( $mime, array( 'application/zip', 'application/x-zip-compressed', 'application/x-zip', 'application/octet-stream' ), true ) ) {
 		return '';
 	}
 	$file = get_attached_file( $attachment_id );

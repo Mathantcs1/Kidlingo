@@ -176,4 +176,82 @@ final class CommerceProtectTest extends CommerceTestCase {
 		$_POST = array();
 		$this->assertSame( 0, ideatoapps_get_versions( $app )[0]['attachment_id'], 'the foreign attachment was not attached' );
 	}
+
+	public function test_an_author_still_sees_their_own_protected_zip_in_the_media_picker_but_not_other_peoples(): void {
+		$author = self::make_user( 'author' );
+		$other  = self::make_user( 'author' );
+		wp_set_current_user( $author );
+		$this->assertFalse( current_user_can( 'read_private_posts' ), 'precondition: authors cannot read private posts' );
+		$mine   = $this->zip_attachment( 'mine.zip' );
+		$theirs = $this->zip_attachment( 'theirs.zip' );
+		wp_update_post( array( 'ID' => $mine, 'post_author' => $author ) );
+		wp_update_post( array( 'ID' => $theirs, 'post_author' => $other ) );
+		$this->assertSame( 'private', get_post_status( $mine ) );
+		// The media modal sends these query args (wp_ajax_query_attachments) for a user without read_private_posts.
+		$args  = apply_filters( 'ajax_query_attachments_args', array( 'post_type' => 'attachment', 'post_status' => 'inherit', 'posts_per_page' => 40, 'fields' => 'ids' ) );
+		$found = array_map( 'intval', ( new WP_Query( $args ) )->posts );
+		$this->assertContains( $mine, $found, 'own zip is listed, so it can be re-picked' );
+		$this->assertNotContains( $theirs, $found, 'someone else\'s private zip is not' );
+		wp_set_current_user( 0 );
+		$anon = array_map( 'intval', ( new WP_Query( array( 'post_type' => 'attachment', 'post_status' => 'inherit', 'fields' => 'ids', 'posts_per_page' => -1 ) ) )->posts );
+		$this->assertNotContains( $mine, $anon, 'still not public' );
+	}
+
+	public function test_an_octet_stream_or_x_zip_import_with_a_zip_extension_and_pk_header_is_accepted(): void {
+		foreach ( array( 'application/octet-stream', 'application/x-zip', 'application/x-zip-compressed' ) as $mime ) {
+			$up  = wp_upload_bits( 'imp-' . md5( $mime ) . '.zip', null, "PK\x05\x06\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" );
+			$att = (int) wp_insert_attachment( array( 'post_mime_type' => $mime, 'post_title' => 'i', 'post_status' => 'inherit' ), $up['file'] );
+			$this->assertNotSame( '', ideatoapps_valid_zip_attachment( $att ), $mime );
+		}
+		$up  = wp_upload_bits( 'liar.zip', null, 'not a zip at all' );
+		$att = (int) wp_insert_attachment( array( 'post_mime_type' => 'application/octet-stream', 'post_title' => 'l', 'post_status' => 'inherit' ), $up['file'] );
+		$this->assertSame( '', ideatoapps_valid_zip_attachment( $att ), 'octet-stream without the PK header is refused' );
+		$file = wp_upload_dir()['path'] . '/blob.bin'; // wp_upload_bits() refuses this extension; an importer would not.
+		file_put_contents( $file, "PK\x05\x06\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" );
+		$att = (int) wp_insert_attachment( array( 'post_mime_type' => 'application/octet-stream', 'post_title' => 'b', 'post_status' => 'inherit' ), $file );
+		register_shutdown_function( 'unlink', $file );
+		$this->assertSame( '', ideatoapps_valid_zip_attachment( $att ), 'octet-stream without the .zip extension is refused' );
+	}
+
+	public function test_a_refused_foreign_attachment_on_an_existing_row_or_a_new_version_shows_a_notice(): void {
+		$app    = $this->unlinked_app();
+		$editor = self::make_user( 'editor' );
+		$mine   = $this->zip_attachment( 'mine.zip' );
+		$theirs = $this->zip_attachment( 'theirs.zip' );
+		wp_update_post( array( 'ID' => $mine, 'post_author' => $editor ) );
+		wp_update_post( array( 'ID' => $theirs, 'post_author' => self::make_user( 'administrator' ) ) );
+		ideatoapps_add_version( $app, '1.0.0', 'x', $mine );
+		wp_set_current_user( $editor );
+		$nonce = wp_create_nonce( 'ideatoapps_save_versions' );
+		ideatoapps_pull_notices( $app );
+
+		$_POST = array( 'ideatoapps_versions_nonce' => $nonce, 'ita_ver' => array( '1.0.0' => array( 'changelog' => 'y', 'attachment' => (string) $theirs ) ) );
+		ideatoapps_save_versions( $app );
+		$_POST = array();
+		$this->assertSame( $mine, ideatoapps_get_versions( $app )[0]['attachment_id'], 'reverted to the current file' );
+		$notices = ideatoapps_pull_notices( $app );
+		$this->assertCount( 1, $notices );
+		$this->assertStringContainsString( '1.0.0', $notices[0] );
+
+		$_POST = array( 'ideatoapps_versions_nonce' => $nonce, 'ita_new_version' => '1.1.0', 'ita_new_changelog' => 'z', 'ita_new_attachment' => (string) $theirs );
+		ideatoapps_save_versions( $app );
+		$_POST = array();
+		$notices = ideatoapps_pull_notices( $app );
+		$this->assertCount( 1, $notices, 'the new version row also explains why no file was attached' );
+		$this->assertStringContainsString( '1.1.0', $notices[0] );
+	}
+
+	public function test_a_file_that_is_not_a_valid_zip_gets_a_notice_that_buying_stays_off(): void {
+		$app = $this->unlinked_app();
+		wp_set_current_user( self::make_user( 'administrator' ) );
+		$up  = wp_upload_bits( 'fake.zip', null, 'not a zip' );
+		$bad = (int) wp_insert_attachment( array( 'post_mime_type' => 'application/zip', 'post_title' => 'f', 'post_status' => 'inherit' ), $up['file'] );
+		ideatoapps_pull_notices( $app );
+		$_POST = array( 'ideatoapps_versions_nonce' => wp_create_nonce( 'ideatoapps_save_versions' ), 'ita_new_version' => '1.0.0', 'ita_new_changelog' => 'z', 'ita_new_attachment' => (string) $bad );
+		ideatoapps_save_versions( $app );
+		$_POST = array();
+		$notices = ideatoapps_pull_notices( $app );
+		$this->assertCount( 1, $notices );
+		$this->assertStringContainsString( 'not a valid zip', $notices[0] );
+	}
 }

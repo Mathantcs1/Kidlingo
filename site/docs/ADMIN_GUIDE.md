@@ -65,7 +65,7 @@ Past buyers get every new version automatically (see below). To release one:
 
 Notes: a version's file can be set only by an administrator or the person who uploaded it. Avoid **Remove** on a version someone already owns; add a newer one instead. The zip is moved into a protected folder the moment it is uploaded to the media library (before you save the version) and the media item becomes private; the public media library address of the zip must not be shared.
 
-**Every zip you upload becomes private while WooCommerce is active.** This applies to any `.zip` added through the media library or the Versions picker, not only release zips, so a public zip for a blog post or a free download will not work: host such files elsewhere (another service, or a plain link). Only Administrators and Editors should use the **Versions** box: it lists private files, which needs the `read_private_posts` capability (Authors do not have it, so they would not see an uploaded zip again after reopening the page).
+**Every zip you upload becomes private while WooCommerce is active.** This applies to any `.zip` added through the media library or the Versions picker, not only release zips, so a public zip for a blog post or a free download will not work: host such files elsewhere (another service, or a plain link). If you choose a file that is not a real zip, or someone else's upload, the page shows a yellow notice after **Update** explaining what was ignored (buying stays off until a real zip is attached). In **Choose file**, administrators and editors see every zip; authors see only the zips they uploaded themselves.
 
 ## 5. Handle an order
 
