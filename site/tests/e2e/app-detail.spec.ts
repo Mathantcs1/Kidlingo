@@ -21,12 +21,12 @@ const FEATURES = [
   'Export MP4 (H.264 + AAC) at 1080p or 4K',
   'Runs locally: your media is never uploaded',
 ];
-const NOTE = 'Chromium-based desktop browser (Chrome or Edge); Safari is untested. Python 3 or Node.js is needed to run the included local launcher.';
-const PLATFORMS = 'Desktop browser (Chrome or Edge); Windows, macOS or Linux with Python 3 or Node.js to run the local launcher';
+const NOTE = 'Chromium-based desktop browser (Safari untested). Python 3 or Node.js is needed to run the included local launcher.';
+const PLATFORMS = 'Chromium-based desktop browser (Safari untested); Python 3 or Node.js to run the local launcher';
 const FAQ = [
   { q: 'Do I need an internet connection?', a: 'Once downloaded it runs from your computer. Your media never leaves it.' },
-  { q: 'Which browsers work?', a: 'Chrome and Edge on desktop are tested. Safari is untested.' },
-  { q: 'How do I get updates?', a: 'Later versions are added to your account library after purchase.' },
+  { q: 'Which browsers work?', a: 'ClipForge is tested in desktop Chrome. Safari is untested.' },
+  { q: 'How do I get updates?', a: 'New versions are listed under What\'s new on this page when they are released.' },
 ];
 const clipforge = (extra: Partial<AppInput> = {}): AppInput => ({
   title: 'ClipForge',

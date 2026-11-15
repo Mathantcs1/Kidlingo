@@ -13,6 +13,7 @@ get_header();
 while ( have_posts() ) {
 	the_post();
 	$ideatoapps_app = get_post();
+	ideatoapps_part( 'app-schema', array( 'app' => $ideatoapps_app ) );
 	?>
 	<article class="app">
 		<?php

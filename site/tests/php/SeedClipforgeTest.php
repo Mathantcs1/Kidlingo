@@ -16,7 +16,7 @@ final class SeedClipforgeTest extends WPTestCase {
 		$this->assertSame( 'ClipForge', $post->post_title );
 		$this->assertSame( 'publish', $post->post_status );
 		$this->assertSame( 'Edit videos in your browser. Your files stay on your device.', get_post_meta( $id, 'tagline', true ) );
-		$this->assertSame( 'Desktop browser (Chrome or Edge); Windows, macOS or Linux with Python 3 or Node.js to run the local launcher', get_post_meta( $id, 'platforms', true ) );
+		$this->assertSame( 'Chromium-based desktop browser (Safari untested); Python 3 or Node.js to run the local launcher', get_post_meta( $id, 'platforms', true ) );
 		$this->assertSame( '$24.99 one-time', get_post_meta( $id, 'price_label', true ) );
 		$this->assertSame( 'live', get_post_meta( $id, 'delivery_status', true ) );
 		$this->assertSame( array( 'Creator' ), wp_get_object_terms( $id, 'app_category', array( 'fields' => 'names' ) ) );
@@ -34,7 +34,7 @@ final class SeedClipforgeTest extends WPTestCase {
 			ideatoapps_app_features( $id )
 		);
 		$this->assertSame( array( 'Do I need an internet connection?', 'Which browsers work?', 'How do I get updates?' ), array_column( ideatoapps_app_faq( $id ), 'q' ) );
-		$this->assertStringContainsString( 'Safari is untested', $post->post_content );
+		$this->assertStringContainsString( 'Safari untested', $post->post_content );
 
 		$product = wc_get_product( (int) get_post_meta( $id, 'woo_product_id', true ) );
 		$this->assertInstanceOf( WC_Product_Simple::class, $product );
@@ -43,6 +43,50 @@ final class SeedClipforgeTest extends WPTestCase {
 		$this->assertTrue( $product->is_virtual() );
 		$this->assertTrue( $product->is_downloadable() );
 		$this->assertSame( array(), $product->get_downloads() );
+	}
+
+	public function test_copy_makes_no_claims_the_readme_does_not_back(): void {
+		$id   = ideatoapps_seed_clipforge();
+		$post = get_post( $id );
+		$all  = $post->post_content . ' ' . get_post_meta( $id, 'platforms', true ) . ' ' . get_post_meta( $id, 'tagline', true ) . ' ' . get_post_meta( $id, 'faq', true ) . ' ' . get_post_meta( $id, 'features', true );
+		$this->assertDoesNotMatchRegularExpression( '/\bEdge\b|Windows|macOS|Linux|account library/i', $all );
+		$this->assertStringContainsString( 'Safari untested', $post->post_content );
+	}
+
+	public function test_rerun_restores_a_trashed_app_instead_of_duplicating_it(): void {
+		$first = ideatoapps_seed_clipforge();
+		wp_trash_post( $first );
+		$second = ideatoapps_seed_clipforge();
+		$this->assertSame( $first, $second );
+		$this->assertSame( 'publish', get_post_status( $first ) );
+		$this->assertSame( 'clipforge', get_post( $first )->post_name );
+		$this->assertCount( 1, get_posts( array( 'post_type' => 'app', 'post_status' => array( 'any', 'trash' ), 'numberposts' => -1 ) ) );
+	}
+
+	public function test_rerun_links_a_product_when_woocommerce_was_inactive_the_first_time(): void {
+		add_filter( 'ideatoapps_woocommerce_active', '__return_false' );
+		$id = ideatoapps_seed_clipforge();
+		remove_filter( 'ideatoapps_woocommerce_active', '__return_false' );
+		$this->assertSame( 0, (int) get_post_meta( $id, 'woo_product_id', true ) );
+		$this->assertSame( $id, ideatoapps_seed_clipforge() );
+		$pid = (int) get_post_meta( $id, 'woo_product_id', true );
+		$this->assertSame( 'product', get_post_type( $pid ) );
+		$this->assertSame( $pid, (int) get_post_meta( $id, 'woo_product_id', true ) );
+		ideatoapps_seed_clipforge();
+		$this->assertCount( 1, get_posts( array( 'post_type' => 'product', 'post_status' => array( 'any', 'trash' ), 'numberposts' => -1 ) ) );
+	}
+
+	public function test_rerun_reuses_the_apps_existing_product_when_the_link_was_lost_and_repairs_a_trashed_one(): void {
+		$id  = ideatoapps_seed_clipforge();
+		$pid = (int) get_post_meta( $id, 'woo_product_id', true );
+		delete_post_meta( $id, 'woo_product_id' );
+		ideatoapps_seed_clipforge();
+		$this->assertSame( $pid, (int) get_post_meta( $id, 'woo_product_id', true ) );
+		wp_trash_post( $pid );
+		ideatoapps_seed_clipforge();
+		$this->assertSame( $pid, (int) get_post_meta( $id, 'woo_product_id', true ) );
+		$this->assertSame( 'publish', get_post_status( $pid ) );
+		$this->assertCount( 1, get_posts( array( 'post_type' => 'product', 'post_status' => array( 'any', 'trash' ), 'numberposts' => -1 ) ) );
 	}
 
 	public function test_adds_no_versions_or_files(): void {
@@ -67,12 +111,11 @@ final class SeedClipforgeTest extends WPTestCase {
 		$this->assertStringNotContainsString( 'wp-content/uploads', $html );
 		preg_match( '#<main.*?</main>#s', $html, $main );
 		$text = wp_strip_all_tags( $main[0] ?? '' );
-		$this->assertStringContainsString( 'Safari is untested', $text );
+		$this->assertStringContainsString( 'Safari untested', $text );
 		foreach ( array( 'Free to try', 'audio editing', 'effects', 'animation', 'rating', 'testimonial', 'customers' ) as $banned ) {
 			$this->assertStringNotContainsStringIgnoringCase( $banned, $text, $banned );
 		}
 		$this->assertDoesNotMatchRegularExpression( '/\breviews?\b|\bstars?\b|\busers?\b/i', $text ); // "preview" is a feature word, not a review claim
-		$this->assertStringNotContainsString( 'What&#039;s new', $html );
 		$this->assertStringNotContainsString( 'data-testid="app-whats-new"', $html );
 	}
 

@@ -48,6 +48,35 @@ final class AppDetailDataTest extends WPTestCase {
 		$this->assertSame( array( 'kind' => 'soon' ), $soon );
 	}
 
+	public function test_buy_button_needs_a_published_product(): void {
+		foreach ( array( 'draft', 'private' ) as $status ) {
+			$product = new WC_Product_Simple();
+			$product->set_name( 'P ' . $status );
+			$product->set_regular_price( '5' );
+			$product->set_status( $status );
+			$pid = $product->save();
+			$id  = $this->app( array( 'woo_product_id' => $pid, 'price_label' => '$5.00' ), 'App ' . $status );
+			$this->assertSame( 'none', ideatoapps_app_buy_state( get_post( $id ) )['kind'], $status );
+		}
+	}
+
+	public function test_schema_seam_is_empty_by_default_and_never_carries_ratings(): void {
+		$id = $this->app();
+		$this->assertSame( array(), ideatoapps_app_schema( $id ) );
+		add_filter( 'ideatoapps_app_schema', static fn( $s, $pid ) => array( '@type' => 'SoftwareApplication', 'name' => 'X', 'aggregateRating' => array( 'ratingValue' => 5 ), 'review' => array( 'a' ), 'ratingCount' => 3 ), 10, 2 );
+		$schema = ideatoapps_app_schema( $id );
+		$this->assertSame( array( '@type' => 'SoftwareApplication', 'name' => 'X' ), $schema );
+		ob_start();
+		ideatoapps_part( 'app-schema', array( 'app' => get_post( $id ) ) );
+		$out = (string) ob_get_clean();
+		$this->assertStringContainsString( 'application/ld+json', $out );
+		$this->assertDoesNotMatchRegularExpression( '/rating|review/i', $out );
+		remove_all_filters( 'ideatoapps_app_schema' );
+		ob_start();
+		ideatoapps_part( 'app-schema', array( 'app' => get_post( $id ) ) );
+		$this->assertSame( '', ob_get_clean() );
+	}
+
 	public function test_related_apps_are_other_live_apps_only(): void {
 		$me = $this->app( array(), 'Me' );
 		$this->assertSame( array(), ideatoapps_related_apps( $me ) );

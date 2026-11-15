@@ -20,7 +20,6 @@ function ideatoapps_details_fields() {
 		'launch_url'  => __( 'Launch URL', 'ideatoapps-core' ),
 		'demo_url'    => __( 'Demo URL', 'ideatoapps-core' ),
 		'video_id'    => __( 'Video ID', 'ideatoapps-core' ),
-		'woo_product_id' => __( 'WooCommerce product ID', 'ideatoapps-core' ),
 	);
 }
 
@@ -78,6 +77,13 @@ function ideatoapps_render_details_box( $post ) {
 		printf( '<option value="%1$s"%2$s>%3$s</option>', esc_attr( $option ), selected( $status, $option, false ), esc_html( $label ) );
 	}
 	echo '</select></td></tr>';
+	if ( current_user_can( 'manage_options' ) ) { // Linking a product decides what the buy button charges: administrators only.
+		printf(
+			'<tr><th><label for="ita_woo_product_id">%1$s</label></th><td><input type="text" class="regular-text" id="ita_woo_product_id" name="ita_woo_product_id" value="%2$s"></td></tr>',
+			esc_html__( 'WooCommerce product ID', 'ideatoapps-core' ),
+			esc_attr( (string) get_post_meta( $post->ID, 'woo_product_id', true ) )
+		);
+	}
 	printf(
 		'<tr><th><label for="ita_features">%1$s</label></th><td><textarea class="large-text" rows="5" id="ita_features" name="ita_features">%2$s</textarea><p class="description">%3$s</p></td></tr>',
 		esc_html__( 'Features', 'ideatoapps-core' ),

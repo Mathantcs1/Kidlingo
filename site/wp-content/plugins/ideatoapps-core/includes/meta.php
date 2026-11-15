@@ -21,6 +21,19 @@ function ideatoapps_meta_auth( $allowed, $meta_key, $post_id, $user_id ) {
 }
 
 /**
+ * woo_product_id picks the product the buy button sells, so only administrators may change it (UI, save handler and REST).
+ *
+ * @param bool   $allowed  Unused.
+ * @param string $meta_key Unused.
+ * @param int    $post_id  Unused.
+ * @param int    $user_id  User ID.
+ * @return bool
+ */
+function ideatoapps_meta_auth_admin( $allowed, $meta_key, $post_id, $user_id ) {
+	return user_can( $user_id, 'manage_options' );
+}
+
+/**
  * Sanitise a URL; only http(s) is accepted, anything else becomes an empty string.
  *
  * @param mixed $value Raw value.
@@ -180,7 +193,7 @@ function ideatoapps_register_app_meta() {
 		register_post_meta(
 			'app',
 			$key,
-			$common + array(
+			( 'woo_product_id' === $key ? array( 'auth_callback' => 'ideatoapps_meta_auth_admin' ) + $common : $common ) + array(
 				'type'              => $def[0],
 				'sanitize_callback' => $def[1],
 				'default'           => $def[2],

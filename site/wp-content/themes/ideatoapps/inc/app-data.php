@@ -97,7 +97,7 @@ function ideatoapps_app_buy_state( WP_Post $app ): array {
 		return array( 'kind' => 'soon' );
 	}
 	$product_id = (int) get_post_meta( $app->ID, 'woo_product_id', true );
-	if ( 'live' !== $status || $product_id <= 0 || ! function_exists( 'ideatoapps_woocommerce_active' ) || ! ideatoapps_woocommerce_active() || 'product' !== get_post_type( $product_id ) ) {
+	if ( 'live' !== $status || $product_id <= 0 || ! function_exists( 'ideatoapps_woocommerce_active' ) || ! ideatoapps_woocommerce_active() || 'product' !== get_post_type( $product_id ) || 'publish' !== get_post_status( $product_id ) ) {
 		return array( 'kind' => 'none' );
 	}
 	$price = trim( (string) get_post_meta( $app->ID, 'price_label', true ) );
@@ -145,3 +145,21 @@ add_action(
 	},
 	5
 );
+
+/**
+ * Structured data for an app page: an empty array unless a filter supplies it. Rating and review properties are removed
+ * whatever the filter returns, because the site has no real ratings to claim.
+ *
+ * @param int $app_id App post ID.
+ * @return array<string, mixed>
+ */
+function ideatoapps_app_schema( int $app_id ): array {
+	$schema = apply_filters( 'ideatoapps_app_schema', array(), $app_id );
+	if ( ! is_array( $schema ) ) {
+		return array();
+	}
+	foreach ( array( 'aggregateRating', 'review', 'reviews', 'rating', 'ratingValue', 'reviewCount', 'ratingCount' ) as $key ) {
+		unset( $schema[ $key ] );
+	}
+	return $schema;
+}

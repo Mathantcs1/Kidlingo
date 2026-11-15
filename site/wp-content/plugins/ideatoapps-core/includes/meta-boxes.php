@@ -107,6 +107,9 @@ function ideatoapps_save_details( $post_id ) {
 			update_post_meta( $post_id, $key, wp_slash( wp_unslash( $_POST[ 'ita_' . $key ] ) ) );
 		}
 	}
+	if ( current_user_can( 'manage_options' ) && isset( $_POST['ita_woo_product_id'] ) && is_string( $_POST['ita_woo_product_id'] ) ) {
+		update_post_meta( $post_id, 'woo_product_id', absint( wp_unslash( $_POST['ita_woo_product_id'] ) ) );
+	}
 	if ( isset( $_POST['ita_features'] ) && is_string( $_POST['ita_features'] ) ) {
 		update_post_meta( $post_id, 'features', wp_slash( ideatoapps_features_from_text( wp_unslash( $_POST['ita_features'] ) ) ) );
 	}

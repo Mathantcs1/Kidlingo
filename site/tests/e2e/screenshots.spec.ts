@@ -32,13 +32,13 @@ test('populated catalog, zero results and the ClipForge page', async ({ page }) 
   const product = await createWooProduct(api, 'ClipForge');
   await createApp(api, {
     title: 'ClipForge', price: '$24.99 one-time', tagline: 'Edit videos in your browser. Your files stay on your device.', categories: [creator], wooProductId: product,
-    platforms: 'Desktop browser (Chrome or Edge); Windows, macOS or Linux with Python 3 or Node.js to run the local launcher',
-    content: '<p>Chromium-based desktop browser (Chrome or Edge); Safari is untested. Python 3 or Node.js is needed to run the included local launcher.</p>',
+    platforms: 'Chromium-based desktop browser (Safari untested); Python 3 or Node.js to run the local launcher',
+    content: '<p>Chromium-based desktop browser (Safari untested). Python 3 or Node.js is needed to run the included local launcher.</p>',
     features: ['Import video, audio and images, including screen recordings without sound', 'Arrange, trim and split clips on a timeline; ripple delete; snapping', 'Stack video layers and audio tracks (up to 8 of each) with mute, solo, lock and hide', 'Move, scale and rotate a clip on the preview for picture-in-picture', 'YouTube 16:9, Vertical 9:16, Square 1:1 and Portrait 4:5 formats', 'Undo/redo and autosave in your browser', 'Export MP4 (H.264 + AAC) at 1080p or 4K', 'Runs locally: your media is never uploaded'],
     faq: [
       { q: 'Do I need an internet connection?', a: 'Once downloaded, ClipForge runs from your computer, and your media never leaves it.' },
-      { q: 'Which browsers work?', a: 'Chrome and Edge on desktop are tested. Safari is untested.' },
-      { q: 'How do I get updates?', a: 'Later versions are added to your account library after purchase.' },
+      { q: 'Which browsers work?', a: 'ClipForge is tested in desktop Chrome. Safari is untested.' },
+      { q: 'How do I get updates?', a: 'New versions are listed under What\'s new on this page when they are released.' },
     ],
   });
   await createApp(api, { title: 'Budget Buddy', price: '$9.00 one-time', tagline: 'Track what you spend.', categories: [utilities] });

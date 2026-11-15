@@ -23,6 +23,32 @@ final class AppMetaBoxTest extends WPTestCase {
 		$this->assertSame( 'https://example.org/x', get_post_meta( $id, 'launch_url', true ) );
 	}
 
+	public function test_woo_product_id_is_admin_only_in_the_form_save_and_rest(): void {
+		$id = $this->app();
+		update_post_meta( $id, 'woo_product_id', 7 );
+		$post = array( 'ideatoapps_details_nonce' => wp_create_nonce( 'ideatoapps_save_details' ), 'ita_woo_product_id' => '99' );
+
+		$this->as_role( 'editor' );
+		$_POST = $post;
+		ideatoapps_save_details( $id );
+		$this->assertSame( 7, (int) get_post_meta( $id, 'woo_product_id', true ), 'editor save must not change it' );
+		ob_start();
+		ideatoapps_render_details_box( get_post( $id ) );
+		$this->assertStringNotContainsString( 'ita_woo_product_id', (string) ob_get_clean() );
+		$this->assertFalse( ideatoapps_meta_auth_admin( true, 'woo_product_id', $id, get_current_user_id() ) );
+		$this->assertFalse( current_user_can( 'edit_post_meta', $id, 'woo_product_id' ), 'REST meta writes use this capability check' );
+		$this->assertTrue( current_user_can( 'edit_post_meta', $id, 'tagline' ) );
+
+		$this->as_role( 'administrator' );
+		$_POST = array( 'ideatoapps_details_nonce' => wp_create_nonce( 'ideatoapps_save_details' ), 'ita_woo_product_id' => '99' );
+		ideatoapps_save_details( $id );
+		$this->assertSame( 99, (int) get_post_meta( $id, 'woo_product_id', true ) );
+		ob_start();
+		ideatoapps_render_details_box( get_post( $id ) );
+		$this->assertStringContainsString( 'ita_woo_product_id', (string) ob_get_clean() );
+		$this->assertTrue( current_user_can( 'edit_post_meta', $id, 'woo_product_id' ) );
+	}
+
 	public function test_missing_nonce_changes_nothing(): void {
 		$id = $this->app();
 		$this->as_role( 'administrator' );
