@@ -1,3 +1,4 @@
+import { cloneFx } from './clipFx';
 import { cloneEffects, fitFades, withAudio } from './clipAudio';
 import { adoptFirstClipFps } from './fps';
 import { clipDuration, clipEnd, newId } from './model';
@@ -108,11 +109,11 @@ export function splitClip(p: Project, clipId: Id, time: number): Project {
   // The left half keeps the fade-in, the right half the fade-out; effects are copied with new ids to both.
   // Each half's fade is re-clamped to the half's own duration.
   const left: Clip = {
-    ...clip, out: cut,
+    ...clip, out: cut, fx: cloneFx(clip.fx),
     audio: fitFades({ ...clip.audio, fadeOut: 0, effects: cloneEffects(clip.audio.effects) }, cut - clip.in),
   };
   const right: Clip = {
-    ...clip, id: newId(), start: time, in: cut,
+    ...clip, id: newId(), start: time, in: cut, fx: cloneFx(clip.fx),
     audio: fitFades({ ...clip.audio, fadeIn: 0, effects: cloneEffects(clip.audio.effects) }, clip.out - cut),
   };
   return mapClips(p, (t) =>
