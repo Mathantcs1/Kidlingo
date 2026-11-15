@@ -268,4 +268,16 @@ final class AppMetaBoxTest extends WPTestCase {
 		$this->assertFalse( is_wp_error( apply_filters( 'rest_pre_insert_app', new stdClass(), $req ) ), 'valid JSON and clearing pass' );
 		$this->assertFalse( is_wp_error( apply_filters( 'rest_pre_insert_app', new stdClass(), new WP_REST_Request( 'POST', '/wp/v2/apps/1' ) ) ), 'no meta at all' );
 	}
+
+	public function test_an_invalid_new_version_string_gets_only_its_own_notice_not_an_attachment_notice(): void {
+		$id = $this->app();
+		$this->as_role( 'editor' );
+		$theirs = wp_insert_attachment( array( 'post_mime_type' => 'application/zip', 'post_title' => 't', 'post_status' => 'inherit', 'post_author' => AppPostTypeTest::factory_user( 'administrator' ) ), wp_upload_bits( 'x.zip', null, 'PK' )['file'] );
+		ideatoapps_pull_notices( $id );
+		$_POST = array( 'ideatoapps_versions_nonce' => wp_create_nonce( 'ideatoapps_save_versions' ), 'ita_new_version' => 'abc', 'ita_new_attachment' => (string) $theirs );
+		ideatoapps_save_versions( $id );
+		$notices = ideatoapps_pull_notices( $id );
+		$this->assertCount( 1, $notices );
+		$this->assertStringContainsString( 'was not added', $notices[0] );
+	}
 }

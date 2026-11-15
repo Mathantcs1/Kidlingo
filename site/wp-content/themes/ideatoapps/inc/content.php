@@ -88,8 +88,9 @@ function ideatoapps_blog_page_number(): int {
 }
 
 /**
- * Where to send a visitor who asked for a page past the end of a list (`?pg=99`, `?paged=999`): the last page that exists,
- * so they never see an empty state that claims there is nothing. 0 means the request is fine as it is.
+ * Blog only (`/blog/?pg=99`): where to send a visitor who asked for a page past the end, the last page that exists, so
+ * they never see an empty state that claims there is nothing. (The apps catalog needs none: WordPress core already
+ * answers 404 for a catalog page past the end.) 0 means the request is fine as it is.
  *
  * @param int $page      Requested page (1-based).
  * @param int $max_pages Pages the list really has (0 when it is empty).

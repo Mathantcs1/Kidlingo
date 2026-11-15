@@ -51,7 +51,7 @@ Menu names on Bluehost change; the intent matters more than the wording (unverif
 1. Log in to Bluehost > **Websites** > **Add Site** > **WordPress** (or "Empty environment" and install WordPress yourself via the installer in cPanel).
 2. Create the site on the **temporary URL** Bluehost offers (you may attach `ideatoapps.net` as the domain later, in Phase B).
 3. Let Bluehost issue its SSL certificate for the temporary URL and wait until it opens without a warning (private window).
-4. Leave **Settings > General** addresses as they are (the temporary URL). Gate G4 belongs to Phase B.
+4. Leave **Settings > General** addresses as they are (the temporary URL), but check that **WordPress Address** and **Site Address** use the real scheme (`https://`, matching how you open the site). The nonce route behind the newsletter and contact forms trusts a request only when its Origin equals the site address in scheme, host and port, so an `http://` address on an https site (or the reverse) makes signed-in visitors get an anonymous nonce and forms may fail. Gate G4 belongs to Phase B.
 5. **Settings > Permalinks**: choose **Post name** and Save. (Needed for `/apps/clipforge/`.)
 6. Remove Bluehost's bundled sample content and any plugins you do not want (gate G5).
 

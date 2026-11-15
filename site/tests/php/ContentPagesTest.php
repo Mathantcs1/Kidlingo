@@ -162,4 +162,13 @@ final class ContentPagesTest extends WPTestCase {
 		ideatoapps_ensure_pages();
 		$this->assertNotNull( get_page_by_path( 'about' ), 'created once the failure is gone' );
 	}
+
+	public function test_blog_helper_sends_a_page_past_the_end_to_the_last_page(): void {
+		$this->assertSame( 0, ideatoapps_overflow_target_page( 1, 3 ), 'page 1 is never an overflow' );
+		$this->assertSame( 0, ideatoapps_overflow_target_page( 3, 3 ), 'the last page is fine' );
+		$this->assertSame( 0, ideatoapps_overflow_target_page( 1, 0 ), 'an empty list on page 1 is the real empty state' );
+		$this->assertSame( 3, ideatoapps_overflow_target_page( 99, 3 ) );
+		$this->assertSame( 1, ideatoapps_overflow_target_page( 2, 1 ) );
+		$this->assertSame( 1, ideatoapps_overflow_target_page( 5, 0 ), 'nothing at all: back to page 1' );
+	}
 }

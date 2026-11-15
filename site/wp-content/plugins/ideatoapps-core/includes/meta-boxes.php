@@ -181,11 +181,10 @@ function ideatoapps_save_versions( $post_id ) {
 	}
 	$changelog = isset( $_POST['ita_new_changelog'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ita_new_changelog'] ) ) : '';
 	$attach    = isset( $_POST['ita_new_attachment'] ) ? absint( wp_unslash( $_POST['ita_new_attachment'] ) ) : 0;
-	$attach    = ideatoapps_checked_version_attachment( $post_id, $version, $attach, 0 );
 	if ( ! ideatoapps_is_semver( $version ) ) {
 		/* translators: %s: the version the editor typed. */
 		ideatoapps_add_notice( $post_id, sprintf( __( "Version '%s' was not added: use the form 1.2.3.", 'ideatoapps-core' ), $version ) );
-	} elseif ( ! ideatoapps_add_version( $post_id, $version, $changelog, $attach ) ) {
+	} elseif ( ! ideatoapps_add_version( $post_id, $version, $changelog, ideatoapps_checked_version_attachment( $post_id, $version, $attach, 0 ) ) ) {
 		/* translators: %s: version number. */
 		ideatoapps_add_notice( $post_id, sprintf( __( 'Version %s already exists.', 'ideatoapps-core' ), $version ) );
 	}
