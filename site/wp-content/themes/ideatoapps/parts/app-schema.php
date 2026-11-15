@@ -1,6 +1,6 @@
 <?php
 /**
- * SoftwareApplication JSON-LD seam. Outputs nothing until something hooks `ideatoapps_app_schema` (Task 9 fills it).
+ * SoftwareApplication JSON-LD seam. Printed from `ideatoapps_app_schema`, which the IdeaToApps Core plugin fills (seo.php).
  * Nothing is invented here, and rating/review properties are always stripped.
  *
  * Args: app (WP_Post).

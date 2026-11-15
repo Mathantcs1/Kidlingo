@@ -151,19 +151,17 @@ add_action(
 );
 
 /**
- * Structured data for an app page: an empty array unless a filter supplies it. Rating and review properties are removed
- * whatever the filter returns, because the site has no real ratings to claim.
+ * Structured data for an app page: an empty array unless a filter supplies it (the IdeaToApps Core plugin does). Rating and
+ * review data is removed at every depth whatever the filter returns, because the site has no real ratings to claim. If the
+ * plugin's stripper is missing, nothing is printed rather than trusting unfiltered data.
  *
  * @param int $app_id App post ID.
  * @return array<string, mixed>
  */
 function ideatoapps_app_schema( int $app_id ): array {
 	$schema = apply_filters( 'ideatoapps_app_schema', array(), $app_id );
-	if ( ! is_array( $schema ) ) {
+	if ( ! is_array( $schema ) || ! $schema || ! function_exists( 'ideatoapps_strip_rating_data' ) ) {
 		return array();
 	}
-	foreach ( array( 'aggregateRating', 'review', 'reviews', 'rating', 'ratingValue', 'reviewCount', 'ratingCount' ) as $key ) {
-		unset( $schema[ $key ] );
-	}
-	return $schema;
+	return ideatoapps_strip_rating_data( $schema );
 }

@@ -222,7 +222,12 @@ test.describe('ClipForge listing', () => {
     await page.goto('/apps/esc-app/');
     await page.waitForTimeout(300);
     expect(dialog).toBe(false);
-    await expect(page.locator('main img[src="x"], main script')).toHaveCount(0);
+    await expect(page.locator('main img[src="x"], main script:not([type="application/ld+json"])')).toHaveCount(0);
+    // Task 9: the structured data is a script too. Its text must hold no raw markup (JSON_HEX_TAG escapes < and >) and parse as JSON.
+    const ld = await page.locator('main script[type="application/ld+json"]').evaluateAll((els) => els.map((e) => e.textContent ?? ''));
+    expect(ld).toHaveLength(1);
+    expect(ld[0]).not.toMatch(/<|>/);
+    expect(JSON.parse(ld[0]).name).toBe('Esc <b>App</b>');
     await expect(page.locator('main b, main u, main i')).toHaveCount(0);
   });
 });

@@ -74,10 +74,11 @@ final class AppDetailDataTest extends WPTestCase {
 		}
 	}
 
-	public function test_schema_seam_is_empty_by_default_and_never_carries_ratings(): void {
+	public function test_schema_seam_is_filled_by_the_plugin_and_never_carries_ratings(): void {
 		$id = $this->app();
-		$this->assertSame( array(), ideatoapps_app_schema( $id ) );
-		add_filter( 'ideatoapps_app_schema', static fn( $s, $pid ) => array( '@type' => 'SoftwareApplication', 'name' => 'X', 'aggregateRating' => array( 'ratingValue' => 5 ), 'review' => array( 'a' ), 'ratingCount' => 3 ), 10, 2 );
+		$this->assertSame( 'SoftwareApplication', ideatoapps_app_schema( $id )['@type'], 'Task 9: the plugin fills the seam' );
+		$dirty = static fn( $s, $pid ) => array( '@type' => 'SoftwareApplication', 'name' => 'X', 'aggregateRating' => array( 'ratingValue' => 5 ), 'review' => array( 'a' ), 'ratingCount' => 3 );
+		add_filter( 'ideatoapps_app_schema', $dirty, 11, 2 );
 		$schema = ideatoapps_app_schema( $id );
 		$this->assertSame( array( '@type' => 'SoftwareApplication', 'name' => 'X' ), $schema );
 		ob_start();
@@ -85,10 +86,16 @@ final class AppDetailDataTest extends WPTestCase {
 		$out = (string) ob_get_clean();
 		$this->assertStringContainsString( 'application/ld+json', $out );
 		$this->assertDoesNotMatchRegularExpression( '/rating|review/i', $out );
+		remove_filter( 'ideatoapps_app_schema', $dirty, 11 );
+		$saved = clone $GLOBALS['wp_filter']['ideatoapps_app_schema']; // remove_all_filters empties the hook object in place.
 		remove_all_filters( 'ideatoapps_app_schema' );
-		ob_start();
-		ideatoapps_part( 'app-schema', array( 'app' => get_post( $id ) ) );
-		$this->assertSame( '', ob_get_clean() );
+		try {
+			ob_start();
+			ideatoapps_part( 'app-schema', array( 'app' => get_post( $id ) ) );
+			$this->assertSame( '', ob_get_clean(), 'with nothing hooked (plugin filter removed) the seam prints nothing' );
+		} finally {
+			$GLOBALS['wp_filter']['ideatoapps_app_schema'] = $saved; // the plugin's filter must survive for the other tests.
+		}
 	}
 
 	public function test_related_apps_are_other_live_apps_only(): void {

@@ -61,7 +61,7 @@ function ideatoapps_sanitize_delivery_status( $value ) {
  */
 function ideatoapps_decode_list( $value ) {
 	$data = is_array( $value ) ? $value : json_decode( is_string( $value ) ? $value : '', true );
-	return ( is_array( $data ) && array_is_list( $data ) ) ? $data : array();
+	return ( is_array( $data ) && ideatoapps_is_list( $data ) ) ? $data : array();
 }
 
 /**
@@ -98,7 +98,7 @@ function ideatoapps_json_invalid_flag( $key, $set = null ) {
  */
 function ideatoapps_json_list_valid( $value ) {
 	if ( is_array( $value ) ) {
-		return array_is_list( $value );
+		return ideatoapps_is_list( $value );
 	}
 	if ( ! is_string( $value ) ) {
 		return false;
@@ -107,7 +107,7 @@ function ideatoapps_json_list_valid( $value ) {
 		return true;
 	}
 	$data = json_decode( $value, true );
-	return is_array( $data ) && array_is_list( $data );
+	return is_array( $data ) && ideatoapps_is_list( $data );
 }
 
 /**

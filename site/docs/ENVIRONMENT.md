@@ -106,3 +106,22 @@ fails it shows a fixed client-side message.
 - `delete_attachment` leaves a stale product file entry; the buy gate (`ideatoapps_app_is_sellable`) catches it, so the app just stops being sellable.
 - Version zips are moved to `woocommerce_uploads/ideatoapps/` on add/update even when no product is linked yet, but only while WooCommerce is active.
 - A version's file can only be set by an admin (`manage_options`) or by the user who uploaded it (review M-1).
+
+## SEO, structured data and performance (Task 9)
+
+- Plugin files: `includes/seo.php` (canonical origin, `ideatoapps_app_jsonld()`, recursive rating/review stripper), `seo-site-schema.php`
+  (Organization + WebSite on the home page), `seo-noindex.php`, `seo-text.php` (titles and descriptions), `seo-head.php`
+  (canonical, description, Open Graph), `seo-robots.php` (robots.txt, `/sitemap.xml` rewrite, sitemap filters), `seo-headers.php`.
+- No SEO plugin is installed, so these ship in the plugin. They switch off when Yoast, Rank Math, AIOSEO, SEOPress or The SEO Framework is
+  active (or when the `ideatoapps_seo_enabled` filter returns false), so one can take over later. The app JSON-LD offer stays (it knows the product).
+- Canonical links, `og:url`, JSON-LD page URLs and the `Sitemap:` line use the constant `IDEATOAPPS_CANONICAL_ORIGIN` (`https://ideatoapps.net`),
+  never the request host. The filter `ideatoapps_canonical_origin_local_testing_only` exists only so a local run could point at another origin;
+  no test uses it. Core's sitemap lists real URLs from the site address, so on production (address = apex) they match.
+- Noindex (`noindex, follow`, no canonical): my-account, cart, checkout, shop and product pages, search, 404, author/date/category/tag/taxonomy
+  archives, empty apps/Learn archives, Blog with no posts, Contact while the form is off. The WordPress login page is noindex through core.
+- `/sitemap.xml` is a rewrite to core's sitemap (the canonical-redirect then answers 301 to `/wp-sitemap.xml`); the rule needs the rewrite flush that
+  the plugin version bump (0.4.0) triggers. Owner todo: trash the default "Sample Page" (WordPress adds it; it would be listed).
+- Browser UI colour: two `theme-color` meta tags (dark `#0B1230`, light `#F8FAFF`) selected by the OS colour scheme. The page's theme toggle cannot change them.
+- Payload budget (`tests/e2e/seo-perf.spec.ts`): HTML + CSS + JS of the home page under 250 kB, measured on the raw (decoded) bodies because the
+  Playground dev server does not compress; a gzip estimate is printed with it. Real transfer size on Bluehost is unverified.
+- Accessibility: `tests/e2e/a11y.spec.ts` (axe, both themes, 360 and 1440). Server headers: see `HTACCESS_SNIPPET.md`.
