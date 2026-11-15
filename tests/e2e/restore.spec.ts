@@ -81,6 +81,7 @@ async function failNextRead(page: Page): Promise<void> {
     const get = IDBObjectStore.prototype.get;
     let failures = 1;
     IDBObjectStore.prototype.get = function (this: IDBObjectStore, ...args: Parameters<IDBObjectStore['get']>) {
+      if (this.transaction.db.name === 'clipforge-ai-secrets') return get.apply(this, args); // key store is not the project
       if (failures-- > 0) throw new DOMException('Internal error', 'UnknownError');
       return get.apply(this, args);
     };
