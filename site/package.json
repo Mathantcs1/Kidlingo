@@ -1,0 +1,14 @@
+{
+  "name": "ideatoapps-site",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "wp:start": "node scripts/wp-start.mjs",
+    "test:php": "php vendor/bin/phpunit",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@wp-playground/cli": "3.1.64"
+  }
+}

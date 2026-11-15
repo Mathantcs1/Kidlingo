@@ -1,0 +1,10 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "landingPage": "/",
+  "steps": [
+    { "step": "activatePlugin", "pluginPath": "woocommerce/woocommerce.php" },
+    { "step": "setSiteOptions", "options": { "blogname": "IdeaToApps", "blogdescription": "Ideas into apps" } },
+    { "step": "activatePlugin", "pluginPath": "ideatoapps-core/ideatoapps-core.php" },
+    { "step": "activateTheme", "themeFolderName": "ideatoapps" }
+  ]
+}
