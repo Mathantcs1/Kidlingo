@@ -11,9 +11,11 @@ void main() {
 const HEADER = `precision highp float;
 in vec2 v_img;
 uniform sampler2D u_tex;
+uniform sampler2D u_tex1;
 uniform vec2 u_texel;
 out vec4 outColor;
 vec4 src(vec2 img) { return texture(u_tex, vec2(img.x, 1.0 - img.y)); }
+vec4 src1(vec2 img) { return texture(u_tex1, vec2(img.x, 1.0 - img.y)); }
 `;
 
 export const UNPREMULTIPLY = `vec3 unpremul(vec4 p) { return p.a > 0.0 ? p.rgb / p.a : vec3(0.0); }

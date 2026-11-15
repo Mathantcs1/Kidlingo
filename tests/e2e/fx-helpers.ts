@@ -18,7 +18,7 @@ export function flat(page: Page, rgb: Rgb, alpha = 1): Promise<MediaRef> {
   return page.evaluate(({ rgb, alpha, n }) => window.cf.putImageMedia(n, n, rgb, { alpha }), { rgb, alpha, n: SIZE });
 }
 
-export function image(page: Page, w: number, h: number, rgb: Rgb, opts: { right?: Rgb; alpha?: number } = {}): Promise<MediaRef> {
+export function image(page: Page, w: number, h: number, rgb: Rgb, opts: { right?: Rgb; alpha?: number; stripes?: number; dot?: number } = {}): Promise<MediaRef> {
   return page.evaluate(({ w, h, rgb, opts }) => window.cf.putImageMedia(w, h, rgb, opts), { w, h, rgb, opts });
 }
 

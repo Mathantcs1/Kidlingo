@@ -62,8 +62,8 @@ export class FullscreenPass {
     gl.bindVertexArray(null);
   }
 
-  /** Attribute 0 is `a_unit` (bound by location in createProgram's linked shaders via layout order). */
-  draw(prog: FxProgram, src: Target, dst: Target, uniforms: Uniforms): void {
+  /** `extra` targets are bound to texture units 1.. as `u_tex1`.. (read with `src1()` in the shader). */
+  draw(prog: FxProgram, src: Target, dst: Target, uniforms: Uniforms, extra: Target[] = []): void {
     const gl = this.gl;
     gl.bindFramebuffer(gl.FRAMEBUFFER, dst.fbo);
     gl.viewport(0, 0, dst.width, dst.height);
@@ -73,6 +73,12 @@ export class FullscreenPass {
     gl.bindVertexArray(this.vao);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, src.slot.tex);
+    extra.forEach((t, i) => {
+      gl.activeTexture(gl.TEXTURE1 + i);
+      gl.bindTexture(gl.TEXTURE_2D, t.slot.tex);
+      gl.uniform1i(prog.loc(`u_tex${i + 1}`), i + 1);
+    });
+    gl.activeTexture(gl.TEXTURE0);
     const texel = prog.loc('u_texel');
     if (texel) gl.uniform2f(texel, 1 / src.width, 1 / src.height);
     for (const [name, v] of Object.entries(uniforms)) {

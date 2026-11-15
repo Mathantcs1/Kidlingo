@@ -32,7 +32,7 @@ type Rgb = [number, number, number];
  * A PNG of the given size: solid `rgb`; or, with `right`, `rgb` on the left half and `right` on the right half; or,
  * with `stripes`, 1 px white columns every `stripes` px on black (a pattern that aliases badly when downscaled).
  */
-async function makePng(width: number, height: number, rgb: Rgb, opts: { right?: Rgb; stripes?: number; alpha?: number } = {}): Promise<Blob> {
+async function makePng(width: number, height: number, rgb: Rgb, opts: { right?: Rgb; stripes?: number; alpha?: number; dot?: number } = {}): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -48,6 +48,10 @@ async function makePng(width: number, height: number, rgb: Rgb, opts: { right?: 
   if (opts.stripes) {
     ctx.fillStyle = css(rgb);
     for (let x = 0; x < width; x += opts.stripes) ctx.fillRect(x, 0, 1, height);
+  }
+  if (opts.dot) {
+    ctx.fillStyle = 'rgb(255, 255, 255)';
+    ctx.fillRect(Math.round(width / 2 - opts.dot / 2), Math.round(height / 2 - opts.dot / 2), opts.dot, opts.dot);
   }
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
@@ -93,11 +97,11 @@ const cf = {
   /** Effect types whose shader failed to compile during the last renderPixels call. */
   fxErrors: [] as string[],
   /** Renders every time in one compositor and reports its resource stats halfway and at the end (leak checks). */
-  async renderStats(p: Project, times: number[]) {
+  async renderStats(p: Project, times: number[], size?: { width: number; height: number }) {
     const canvas = document.createElement('canvas');
     const compositor = createCompositor(canvas, { preserveDrawingBuffer: true });
     try {
-      compositor.resize(p.format.width, p.format.height);
+      compositor.resize(size?.width ?? p.format.width, size?.height ?? p.format.height);
       const sources = new Map<Id, VideoSource>();
       let mid = compositor.stats();
       for (const [i, t] of times.entries()) {
@@ -110,7 +114,7 @@ const cf = {
     }
   },
   /** Stores a PNG (see makePng) as image media under a fresh id; returns its MediaRef (not part of any project). */
-  async putImageMedia(width: number, height: number, rgb: Rgb, opts?: { right?: Rgb; stripes?: number; alpha?: number }): Promise<MediaRef> {
+  async putImageMedia(width: number, height: number, rgb: Rgb, opts?: { right?: Rgb; stripes?: number; alpha?: number; dot?: number }): Promise<MediaRef> {
     const id = newId();
     await putMedia(id, await makePng(width, height, rgb, opts));
     return { id, name: `${id}.png`, kind: 'image', duration: 5, width, height, hasAudio: false };
