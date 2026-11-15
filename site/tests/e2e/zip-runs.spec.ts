@@ -1,10 +1,10 @@
 // Proves the ClipForge buyer zip really runs: build it, unzip it somewhere else, start its launcher and load the
 // app in Chromium. Run with `npm run test:e2e:zip` (needs no WordPress server). CLIPFORGE_PORT overrides the port.
 import { execFileSync, spawn, spawnSync, type ChildProcess } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const repoRoot = join(__dirname, '..', '..', '..');
 const port = process.env.CLIPFORGE_PORT ?? '8123';
@@ -50,16 +50,19 @@ async function waitForServer(url: string) {
   throw new Error(`launcher did not serve ${url}`);
 }
 
-test('the unzipped launcher serves an app that loads, shows ClipForge and can write to OPFS', async ({ page }) => {
+/** Starts the unzipped launcher with the given PATH ("inherit" keeps the real one) and waits until it serves. */
+function startLauncher(path: string | 'inherit') {
   launcher = spawn(join(unzipped, 'start-linux.sh'), [], {
     cwd: tmpdir(), // the launcher must work no matter where it is started from
     detached: true,
     stdio: 'ignore',
-    env: { ...process.env, CLIPFORGE_NO_OPEN: '1', CLIPFORGE_PORT: port },
+    env: { ...process.env, ...(path === 'inherit' ? {} : { PATH: path }), CLIPFORGE_NO_OPEN: '1', CLIPFORGE_PORT: port },
   });
-  const url = `http://localhost:${port}/`;
-  await waitForServer(url);
+  return `http://localhost:${port}/`;
+}
 
+async function checkAppRuns(page: Page, url: string) {
+  await waitForServer(url);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(url);
@@ -81,6 +84,21 @@ test('the unzipped launcher serves an app that loads, shows ClipForge and can wr
   });
   expect(written).toBe('ok');
   expect(errors).toEqual([]);
+}
+
+test('the unzipped launcher runs serve.py (Python 3): app loads, shows ClipForge and can write to OPFS', async ({ page }) => {
+  const url = startLauncher('inherit');
+  await checkAppRuns(page, url);
+  expect((await fetch(url)).headers.get('server')).toContain('Python'); // BaseHTTPRequestHandler identifies itself
+});
+
+test('with Python hidden from PATH the launcher falls back to serve.mjs (Node) and the app still runs', async ({ page }) => {
+  const bin = join(work, 'node-only-bin');
+  mkdirSync(bin);
+  symlinkSync(process.execPath, join(bin, 'node'));
+  const url = startLauncher(bin);
+  await checkAppRuns(page, url);
+  expect((await fetch(url)).headers.get('server')).toBeNull(); // Node's http server sends no Server header
 });
 
 test('with no Python or Node on PATH the launcher prints the install message and exits non-zero', () => {

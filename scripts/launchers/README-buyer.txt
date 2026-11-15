@@ -16,21 +16,22 @@ Run it in three steps
 3. Your browser opens ClipForge at http://localhost:8123. Keep the launcher window open while you edit. Close it
    (or press Ctrl+C) to stop.
 
-The launcher needs either Python 3 (python.org) or Node.js (nodejs.org) installed. If neither is found it says:
+The launcher needs either Python 3 (python.org) or Node.js (nodejs.org) installed. Nothing else is downloaded and
+no internet connection is needed. If neither is found it says:
 "Install Python 3 (python.org) or Node.js (nodejs.org), then run this again". Macs and most Linux systems already
 have Python 3. If port 8123 is busy, set CLIPFORGE_PORT to another number before starting, then open that address.
 
 Why a launcher? Browsers do not let this kind of app run when you simply open index.html from a folder, so the
-launcher starts a tiny web server on your own computer (only used by you) and the app runs from there.
+launcher starts a tiny web server on your own computer (serve.py or serve.mjs in this folder; it only accepts
+connections from your own computer) and the app runs from there.
 
 Run it by hand
 --------------
 
-From inside this folder, any one of these starts the same server; then open http://localhost:8123 yourself:
+From inside this folder, either of these starts the server; then open http://localhost:8123 yourself:
 
-  python3 -m http.server 8123 --directory app
-  python -m http.server 8123 --directory app
-  npx --yes serve app -l 8123
+  python3 serve.py
+  node serve.mjs
 
 Browser
 -------

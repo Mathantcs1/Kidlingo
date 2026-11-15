@@ -1,5 +1,5 @@
 #!/bin/sh
-# ClipForge launcher (macOS). Starts a tiny local web server for the app/ folder and opens it in your browser.
+# ClipForge launcher (macOS). Starts a tiny local web server (serve.py or serve.mjs) for the app/ folder and opens it in your browser.
 # Set CLIPFORGE_NO_OPEN=1 to skip opening the browser; set CLIPFORGE_PORT to use another port (default 8123).
 case "$0" in */*) DIR=${0%/*} ;; *) DIR=. ;; esac
 cd "$DIR" || exit 1
@@ -19,17 +19,14 @@ open_browser_soon() {
 }
 
 if is_python3 python3; then
-  echo "ClipForge is running at $URL (stop it with Ctrl+C or by closing this window)."
   open_browser_soon
-  exec python3 -m http.server "$PORT" --directory app
+  exec python3 serve.py
 elif is_python3 python; then
-  echo "ClipForge is running at $URL (stop it with Ctrl+C or by closing this window)."
   open_browser_soon
-  exec python -m http.server "$PORT" --directory app
-elif command -v npx >/dev/null 2>&1; then
-  echo "ClipForge is running at $URL (stop it with Ctrl+C or by closing this window)."
+  exec python serve.py
+elif command -v node >/dev/null 2>&1; then
   open_browser_soon
-  exec npx --yes serve app -l "$PORT"
+  exec node serve.mjs
 fi
 
 echo "Install Python 3 (python.org) or Node.js (nodejs.org), then run this again" >&2

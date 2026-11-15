@@ -33,7 +33,7 @@ describe('buildZip', () => {
   it('has exactly the documented root: app/, three launchers, README.txt, LICENSE.txt, VERSION', () => {
     const all = names();
     const top = new Set(all.map((n) => n.split('/')[0]));
-    expect([...top].sort()).toEqual(['LICENSE.txt', 'README.txt', 'VERSION', 'app', 'start-linux.sh', 'start-mac.command', 'start-windows.bat']);
+    expect([...top].sort()).toEqual(['LICENSE.txt', 'README.txt', 'VERSION', 'app', 'serve.mjs', 'serve.py', 'start-linux.sh', 'start-mac.command', 'start-windows.bat']);
     expect(all).toContain('app/index.html');
     expect(all.filter((n) => n.startsWith('app/assets/')).length).toBeGreaterThan(0);
   });
@@ -57,12 +57,15 @@ describe('buildZip', () => {
   it('ships launchers that follow the agreed fallback order and the install message', () => {
     for (const file of ['start-linux.sh', 'start-mac.command', 'start-windows.bat']) {
       const text = read(file);
-      expect(text).toContain('http.server');
-      expect(text).toContain('npx --yes serve');
+      expect(text).toContain('serve.py');
+      expect(text).toContain('serve.mjs');
+      expect(text).not.toContain('npx');
+      expect(text).not.toContain('http.server');
       expect(text).toContain('CLIPFORGE_NO_OPEN');
       expect(text).toContain('Install Python 3 (python.org) or Node.js (nodejs.org), then run this again');
     }
     expect(read('start-windows.bat')).toContain('\r\n');
+    expect(read('start-windows.bat')).toContain('py -3 serve.py');
   });
 
   it('is honest: Safari untested, draft licence, IdeaToApps', () => {

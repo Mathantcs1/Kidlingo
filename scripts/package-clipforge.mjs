@@ -1,10 +1,10 @@
 // Builds the downloadable ClipForge zip that is sold to buyers:
 //   node scripts/package-clipforge.mjs --version 1.0.0 --out dist-zip
-// Zip root: app/ (production build with relative asset paths), the three launchers, README.txt, LICENSE.txt, VERSION.
+// Zip root: app/ (production build with relative asset paths), the three launchers, serve.py and serve.mjs, README.txt, LICENSE.txt, VERSION.
 // The app only runs from http://localhost (not file://), so the launchers start a tiny local web server.
 import { ZipArchive } from 'archiver';
 import { spawnSync } from 'node:child_process';
-import { createWriteStream, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { createWriteStream, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -18,6 +18,8 @@ const FILES = [
   ['start-windows.bat', 'start-windows.bat', 0o644, true],
   ['start-mac.command', 'start-mac.command', 0o755, false],
   ['start-linux.sh', 'start-linux.sh', 0o755, false],
+  ['serve.py', 'serve.py', 0o644, false],
+  ['serve.mjs', 'serve.mjs', 0o644, false],
   ['README.txt', 'README-buyer.txt', 0o644, false],
   ['LICENSE.txt', 'LICENSE-buyer.txt', 0o644, false],
 ];
@@ -25,6 +27,30 @@ const FILES = [
 function run(args) {
   const r = spawnSync(process.execPath, args, { cwd: root, stdio: ['ignore', 'inherit', 'inherit'] });
   if (r.status !== 0) throw new Error(`${args.slice(0, 2).join(' ')} failed (exit ${r.status})`);
+}
+
+/** Only one build at a time may use public/licenses (tests in parallel workers would otherwise clobber it). */
+async function withBuildLock(fn) {
+  const lock = join(tmpdir(), 'clipforge-build.lock');
+  for (;;) {
+    try {
+      mkdirSync(lock);
+      break;
+    } catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      try {
+        if (Date.now() - statSync(lock).mtimeMs > 120_000) rmSync(lock, { recursive: true, force: true }); // stale
+      } catch {
+        /* released meanwhile */
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    rmSync(lock, { recursive: true, force: true });
+  }
 }
 
 function* walk(dir) {
@@ -43,8 +69,10 @@ export async function buildZip({ version, out }) {
   const tmp = mkdtempSync(join(tmpdir(), 'clipforge-build-'));
   try {
     const appDir = join(tmp, 'app');
-    run([join(root, 'scripts', 'copy-licenses.mjs')]); // THIRD-PARTY notices go into the build via public/licenses
-    run([join(root, 'node_modules', 'vite', 'bin', 'vite.js'), 'build', '--base=./', '--outDir', appDir, '--emptyOutDir']);
+    await withBuildLock(async () => {
+      run([join(root, 'scripts', 'copy-licenses.mjs')]); // THIRD-PARTY notices go into the build via public/licenses
+      run([join(root, 'node_modules', 'vite', 'bin', 'vite.js'), 'build', '--base=./', '--outDir', appDir, '--emptyOutDir']);
+    });
 
     mkdirSync(resolve(out), { recursive: true });
     const zipPath = join(resolve(out), `ClipForge-${version}.zip`);
