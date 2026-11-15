@@ -10,6 +10,7 @@ const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: /zip-runs\.spec\.ts/, // needs no WordPress; run via playwright.zip.config.ts (npm run test:e2e:zip)
   timeout: 60_000,
   retries: 0,
   reporter: [['list']],

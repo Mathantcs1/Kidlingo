@@ -6,7 +6,8 @@
     "wp:start": "node scripts/wp-start.mjs",
     "wp:bootstrap": "node scripts/wp-bootstrap.mjs",
     "test:php": "php vendor/bin/phpunit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:zip": "playwright test -c playwright.zip.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.65.0",

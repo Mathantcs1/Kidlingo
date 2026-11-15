@@ -1,0 +1,32 @@
+ClipForge Personal Use Licence
+
+DRAFT, pending legal review. This text may change before it is final.
+
+Published by IdeaToApps ("we", "us"). By using ClipForge ("the software") you ("you") agree to the following.
+
+1. What you may do
+   - Install and use the software on computers you own or control, for your own personal or business video editing.
+   - Make a backup copy for your own use.
+   - Keep and publish the videos you make with it. We claim no rights over them.
+
+2. What you may not do
+   - Give, sell, rent, share or publish the software or this download (including the zip file) to anyone else.
+   - Remove this licence or the third-party notices.
+   - Use the software in a way that breaks the law.
+
+3. Third-party software
+   The software includes open-source components. They are covered by their own licences, listed in
+   app/licenses/THIRD-PARTY.txt, and nothing in this licence reduces your rights under them.
+
+4. No warranty
+   The software is provided "as it is", without warranty of any kind. It is tested in desktop Chrome only and may
+   not work in other browsers. Keep copies of your original video files; we are not responsible for lost data or
+   for any damage arising from the use of the software, to the extent the law allows.
+
+5. Ownership
+   We keep ownership of the software. You receive a licence to use it, not ownership of it.
+
+6. Ending
+   This licence ends if you break its terms. You must then delete your copies of the software.
+
+Questions about this licence: contact IdeaToApps through the website where you bought ClipForge.
