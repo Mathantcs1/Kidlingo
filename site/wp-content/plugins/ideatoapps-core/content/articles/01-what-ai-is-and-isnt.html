@@ -1,11 +1,11 @@
-<!--ita {"slug":"01-what-ai-is-and-isnt","title":"What AI is and isn't","category":"ai-basics","excerpt":"AI is software that learns patterns from data to make predictions. It isn't a mind, a search engine or always right. Here's the difference.","reviewed":"2026-11-16","gated":false,"check":["AI is a broad label for software that performs tasks such as recognising patterns, making predictions and generating text, often by learning from examples rather than following only hand-written rules.","Spam filters, phone keyboard suggestions and map travel-time estimates are common everyday uses of machine learning.","A chatbot built on a language model produces its answer by repeatedly predicting the next small piece of text (a token).","A model's built-in knowledge comes from its training data and stops at a cutoff date, unless the tool adds search results or documents to the conversation.","Language models can state false information fluently and confidently; this is often called hallucination.","The same prompt can produce different answers because the next piece is usually chosen with some randomness."]} -->
-<p>AI is software that learns patterns from lots of examples and uses them to make predictions: which email is spam, which word comes next, what a photo shows. That's it. It isn't a mind, it doesn't understand the world the way you do, and it can be confidently wrong.</p>
-<p>Once you see it that way, a lot of the hype and a lot of the fear get smaller. You can use these tools well without treating them as magic or as a threat.</p>
+<!--ita {"slug":"01-what-ai-is-and-isnt","title":"What AI is and isn't","category":"ai-basics","excerpt":"Most AI today is software that learns patterns from examples to make predictions. It isn't a mind, a search engine or always right.","reviewed":"2026-11-16","gated":false,"check":["AI is a broad label for software that does tasks such as recognizing patterns, making predictions and generating text; spam filters, phone keyboard suggestions and map travel-time estimates are common everyday uses of machine learning.","A chatbot built on a language model produces its answer by repeatedly predicting the next small piece of text (a token), and the same prompt can produce different answers because that piece is usually picked with some randomness.","Chat models are trained on large amounts of text and then tuned further, so their answers aim to sound helpful.","A model's built-in knowledge comes from its training data and stops at a cutoff date, unless the app adds search results or documents to the conversation.","Language models can state false information fluently and confidently; this is often called hallucination.","Models can repeat biases found in the human-written text they learned from."]} -->
+<p>Most of the AI you meet today is software that learns patterns from lots of examples and uses them to make predictions: which email is spam, which word comes next, what a photo shows. It isn't a mind, it doesn't understand the world the way you do, and it can be confidently wrong.</p>
+<p>Seen that way, both the hype and the fear shrink a little.</p>
 
 <h2>A working definition</h2>
-<p>"Artificial intelligence" is an umbrella term. It covers any software that does a task people used to think needed human judgement: recognising a face, translating a sentence, suggesting a route, writing a paragraph. There's no single machine called "AI". There are many different systems, built in different ways, for different jobs.</p>
-<p>Most of the AI you meet today is [ita_term define="A way of building software where the program learns patterns from examples instead of following only rules a person wrote by hand."]machine learning[/ita_term]. Instead of a programmer writing every rule ("if the email contains these words, it's spam"), the system is shown many examples and adjusts itself until its guesses match them well.</p>
-<p>You've probably used machine learning many times today without noticing:</p>
+<p>"Artificial intelligence" is an umbrella term. It covers software that does a task people used to think needed human judgment, such as recognizing a face, translating a sentence, suggesting a route or writing a paragraph. There's no single machine called "AI". There are many different systems, built in different ways for different jobs.</p>
+<p>Much of the AI around you is [ita_term define="A way of building software where the program learns patterns from examples instead of following only rules a person wrote by hand."]machine learning[/ita_term]. Instead of a programmer writing every rule ("if the email contains these words, it's spam"), the system is shown many examples and adjusts itself until its guesses match them well.</p>
+<p>You've probably used machine learning several times today without noticing:</p>
 <ul>
 <li>Your email's spam filter decides which messages to hide.</li>
 <li>Your phone keyboard suggests the next word as you type.</li>
@@ -15,27 +15,26 @@
 <p>Chatbots are the newest and most talked-about kind. They're built on a [ita_term define="A program trained on a very large amount of text to predict which piece of text is likely to come next."]language model[/ita_term], and that's where most of the confusion starts.</p>
 
 <h2>How a chatbot produces an answer</h2>
-<p>When you send a message to a chatbot, it doesn't look up a stored answer. It writes one, a small piece at a time.</p>
+<p>When you send a chatbot a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term], it doesn't look up a stored answer. It writes one, a small piece at a time.</p>
 [ita_figure name="chatbot-answer-flow" alt="Your message is split into pieces, the model predicts the next piece, adds it to the answer, and repeats until done." caption="A chatbot builds its answer one predicted piece at a time."]
-<p>Your text is first split into [ita_term define="A small piece of text, often a whole short word or part of a longer one, that a language model reads and writes."]tokens[/ita_term]. The model then predicts which token is likely to come next, adds it, and predicts again. It repeats this until the answer is complete. The result can read like careful thought, but each step is a prediction based on patterns the model picked up during training.</p>
-<p>This explains a lot of everyday behaviour. A chatbot is good at producing text that sounds right, because sounding right is exactly what it was trained to do. Being right is a different matter. Usually the two line up. Sometimes they don't.</p>
+<p>Your text is first split into [ita_term define="A small piece of text, often a whole short word or part of a longer one, that a language model reads and writes."]tokens[/ita_term]. The model then predicts which token is likely to come next, adds it, and predicts again, repeating until the answer is complete. The result can read like careful thought, even though each step is a prediction based on patterns the model picked up during training.</p>
+<p>This explains a lot of everyday behavior. A chatbot is good at producing text that sounds right, because it learned from a huge amount of text people wrote. It is then tuned toward answers people rate as helpful. Often sounding right and being right are the same thing, but not always.</p>
 [ita_why title="Why can the same question get different answers?"]
-<p>At each step the model doesn't pick one fixed next token. It produces a list of possible next tokens, each with a likelihood. The tool then picks one, usually with a bit of randomness, so the text doesn't get stiff and repetitive.</p>
-<p>Because one early choice changes everything after it, two runs of the same prompt can drift apart. That's normal, not a fault.</p>
-<p>The model's built-in knowledge also has an end date. It only "knows" what was in its [ita_term define="The large collection of text and other examples a model learned from before it was released."]training data[/ita_term], which stops at a cutoff. Some tools add web search results or your own files to the conversation, and the model can then use that extra text. Without that, it can't know about anything that happened after its training.</p>
+<p>At each step the model doesn't pick one fixed next token. It produces a list of possible next tokens, each with a likelihood. The app then picks one, usually with a bit of randomness, so the text doesn't get stiff and repetitive.</p>
+<p>Because one early choice changes everything after it, two runs of the same prompt can drift apart. That's expected behavior.</p>
 [/ita_why]
 
 <h2>What AI isn't</h2>
 <p>A few common beliefs cause most of the trouble people run into.</p>
-<p><strong>It isn't a person.</strong> When a chatbot says "I think" or "I'm happy to help", it's producing words that fit the conversation. That's how people write, so that's how it learned to write. Treat it as a tool that produces text, not as a friend or an expert with opinions of its own.</p>
-<p><strong>It isn't a search engine.</strong> Unless the tool is connected to search, the model is answering from patterns, not from a page it just read. It can mix up names, dates and numbers, or invent a source that doesn't exist. This is often called a [ita_term define="When a model states something false or made up as if it were true, usually in a fluent and confident tone."]hallucination[/ita_term].</p>
+<p><strong>It isn't a person.</strong> When a chatbot says "I think" or "I'm happy to help", it's producing words that fit the conversation, because that's how people write. Whether these systems understand anything is still argued about. What's clear is that they don't understand the world the way you do, so treat a chatbot as something that produces text and weigh its answers yourself.</p>
+<p><strong>It isn't a search engine.</strong> A model's built-in knowledge comes from its [ita_term define="The large collection of text and other examples a model learned from before it was released."]training data[/ita_term], which stops at a cutoff date. Some apps add web search results or your own files to the conversation, and the model can then use that extra text. Without them, it answers from patterns and can't know about anything that happened after its training. It can also mix up names, dates and numbers, or invent a source that doesn't exist. This is often called a [ita_term define="When a model states something false or made up as if it were true, usually in a fluent and confident tone."]hallucination[/ita_term].</p>
 <p><strong>It isn't neutral.</strong> Models learn from text written by people, and that text carries people's blind spots and biases. The output can repeat them.</p>
 <p><strong>It isn't one thing.</strong> A spam filter and a chatbot are both called AI, but they work differently and fail differently. "AI says" is never a good enough reason on its own.</p>
 
 <h2>Where it helps, and where to be careful</h2>
-<p>Chatbots are useful for jobs where a draft or a fresh angle helps and you can judge the result yourself: rewording an email, summarising your own notes, explaining an idea in simpler words, suggesting questions to ask, or turning a messy list into a tidy one.</p>
-<p>Be more careful with anything where a wrong answer costs you: facts you'll repeat, numbers, quotes, recent events, and anything about health, law or money. Use the answer as a starting point, then check it against a reliable source or a qualified person.</p>
-<p>A simple habit helps a lot: ask the chatbot to show you where it might be wrong.</p>
+<p>Chatbots are useful for jobs where a draft or a fresh angle helps and you can judge the result yourself: rewording an email, summarizing your own notes, explaining an idea in simpler words, or turning a messy list into a tidy one.</p>
+<p>Be more careful with anything where a wrong answer costs you. Facts you'll repeat, numbers, quotes and recent events all deserve a second look, and so does anything about health, law or money. Use the answer as a starting point, then check it against a reliable source or a qualified person.</p>
+<p>One simple habit helps: ask the chatbot to show you where it might be wrong.</p>
 [ita_prompt title="Ask for an explanation and its weak spots"]
 Explain what machine learning is in five short sentences, for someone with no technical background.
 Then list two things in your explanation that I should double-check, and why.
@@ -43,17 +42,17 @@ Then list two things in your explanation that I should double-check, and why.
 <p>The second part won't catch every mistake, but it nudges you into checking instead of just accepting.</p>
 
 [ita_quiz]
-[ita_q q="How does a chatbot usually produce its answer?" answers="It finds a stored answer in a database|It predicts the next small piece of text, again and again|It copies the top result from a search engine" correct="2" why="A language model builds its answer one predicted token at a time, based on patterns from training."]
-[ita_q q="A chatbot gives you a confident quote from a named expert. What should you do?" answers="Trust it, because it sounds specific|Check that the quote and the source really exist|Ask the chatbot if it is sure, and accept its reply" correct="2" why="Models can invent quotes and sources fluently, so check them somewhere independent."]
-[ita_q q="Which of these is an everyday example of machine learning?" answers="A light switch|A spam filter that learns from examples|A paper calendar" correct="2" why="Spam filters are commonly trained on many examples of spam and normal email."]
+[ita_q q="How does a chatbot usually produce its answer?" answers="It retrieves the closest answer it stored during training|It searches the web and summarizes the top page|It predicts the next small piece of text, again and again" correct="3" why="A language model builds its answer one predicted token at a time, based on patterns from training."]
+[ita_q q="A chatbot gives you a confident quote from a named expert. What should you do?" answers="Check the quote and its source somewhere independent|Trust it if the chatbot also names a book and a year|Ask the chatbot if it is sure, and accept its reply" correct="1" why="Models can invent quotes, books and dates fluently, so check them outside the chat."]
+[ita_q q="Without search, why can't a chatbot tell you about last week's news?" answers="It avoids news topics on purpose|Its built-in knowledge stops at its training cutoff|It only remembers news someone asked it about before" correct="2" why="A model only knows what was in its training data unless the app adds new text to the chat."]
 [/ita_quiz]
 
 <h2>Try it</h2>
-<p>Take five minutes to see prediction, not lookup, in action.</p>
+<p>Here's a five-minute way to see prediction at work.</p>
 <ol>
 <li>Open any AI chatbot you have access to and paste the prompt above.</li>
 <li>Read the answer and the two things it says to double-check.</li>
-<li>Start a new chat and paste the same prompt again. Compare the two answers: what stayed the same, and what changed?</li>
+<li>Start a new chat (with memory off if your app has it) and paste the same prompt again. Compare the two answers: what stayed the same, and what changed?</li>
 <li>Pick one sentence from either answer and check it against a source you trust, such as a textbook or a well-known encyclopedia.</li>
 </ol>
-<p>Notice how the wording shifts between runs while the main idea stays put. That's the prediction at work.</p>
+<p>If the wording changed, that's the random pick from the Why box. If a fact changed between runs, that's a good reason to check it.</p>

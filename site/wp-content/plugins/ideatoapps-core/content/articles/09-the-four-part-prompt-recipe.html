@@ -1,64 +1,64 @@
-<!--ita {"slug":"09-the-four-part-prompt-recipe","title":"The four-part prompt recipe","category":"prompting","excerpt":"Task, Context, Format, Limits: four quick parts that turn a vague request into a prompt a chatbot can answer well.","reviewed":"2026-11-16","gated":false,"check":["A chatbot only knows about your situation what is in the conversation (your messages, plus any files or saved memory the tool adds).","Asking for a specific format, such as a table, a bulleted list or a subject line plus short paragraphs, usually changes the shape of the answer.","Length limits are followed only roughly; a model asked for 150 words may write somewhat more or fewer.","Task, Context, Format and Limits is a teaching structure used on this site, not an official standard.","A short, vague prompt tends to get a generic answer because the model fills the gaps with common, typical choices."]} -->
-<p>A good [ita_term define="The message or instructions you type to an AI tool to tell it what you want."]prompt[/ita_term] answers four questions: what you want done, what the AI needs to know, what the answer should look like, and what to avoid. That's the whole recipe: <strong>Task, Context, Format, Limits</strong>.</p>
+<!--ita {"slug":"09-the-four-part-prompt-recipe","title":"The four-part prompt recipe","category":"prompting","excerpt":"Task, Context, Format, Limits: four quick parts that turn a vague request into a prompt a chatbot can answer well.","reviewed":"2026-11-16","gated":false,"check":["A chatbot only knows about your situation what is in the conversation (your messages, plus any files or saved memory the app adds); a short, vague prompt tends to get a generic answer because many answers fit and the most likely ones are typical.","Asking for a specific format, such as a table, a bulleted list or a subject line plus short paragraphs, usually changes the shape of the answer.","Length limits are followed only roughly; a model asked for 150 words may write somewhat more or fewer.","Task, Context, Format and Limits is a teaching structure used on this site, not an official standard.","Asking for several different tasks in one prompt can make each part of the answer weaker.","The order of the four parts matters less than including the information."]} -->
+<p>A useful [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] usually answers four questions: what you want done, what the AI needs to know, what the answer should look like, and what to avoid. Those are the four parts: <strong>Task, Context, Format, Limits</strong>.</p>
 <p>You don't need special words or tricks. You need to say the things a helpful stranger would ask you before starting the job.</p>
 
 <h2>The recipe at a glance</h2>
 [ita_figure name="prompt-recipe" alt="Four numbered parts of a prompt: task, context, format, and limits such as length and tone." caption="Task, Context, Format, Limits. Add the parts that matter."]
 <p>Here's what each part means in practice:</p>
 <ul>
-<li><strong>Task</strong>: the job, in one clear sentence that starts with a verb. "Write", "summarise", "compare", "suggest", "explain".</li>
-<li><strong>Context</strong>: the background only you know. Who it's for, what's already happened, what you've got to work with.</li>
-<li><strong>Format</strong>: the shape of the answer. A list, a table, an email with a subject line, three options to choose from.</li>
+<li><strong>Task</strong>: the job, in one clear sentence that starts with a verb such as "write", "summarize", "compare" or "explain".</li>
+<li><strong>Context</strong>: the background only you know, like who it's for and what has already happened.</li>
+<li><strong>Format</strong>: the shape of the answer. It might be a list, a table, an email with a subject line, or a few options to choose from.</li>
 <li><strong>Limits</strong>: length, tone, reading level, and anything to leave out.</li>
 </ul>
-<p>The names aren't an official standard. They're just an easy way to remember what a chatbot can't guess on its own.</p>
+<p>The names aren't an official standard. They're simply an easy way to remember what a chatbot can't guess on its own.</p>
 
 <h2>Weak prompt, better prompt</h2>
-<p>Say your heater has stopped working and you want to email your landlord. Here's the kind of prompt most people type first:</p>
+<p>Say your heater has stopped working and you want to email your landlord. Here's the kind of prompt many of us type first:</p>
 [ita_prompt title="Weak version"]
 Write an email about my broken heater.
 [/ita_prompt]
-<p>This will work, after a fashion. You'll get a polite, generic email. But the chatbot has to guess everything else: who you're writing to, how long the heater has been broken, whether this is the first time you've asked, and how formal to be. It fills each gap with the most typical choice, which is why the result sounds like a template.</p>
+<p>You'll get an email, probably a polite and generic one. The chatbot has to guess everything else: who you're writing to, how long the heater has been broken, whether this is the first time you've asked, and how formal to be. It fills each gap with the most typical choice, which is why the result sounds like a template.</p>
 <p>Now the same request with all four parts:</p>
 [ita_prompt title="Better version"]
-Task: Write an email to my landlord asking for the heater in my flat to be repaired.
+Task: Write an email to my landlord asking for the heater in my apartment to be repaired.
 
 Context: The heater stopped working three days ago. I reported it by phone on the first day and nothing has happened yet. The nights are getting cold. The landlord is usually friendly but slow to reply.
 
 Format: A subject line, then three short paragraphs: what's wrong, what I've already done, and what I'm asking for.
 
-Limits: Under 150 words. Polite but firm. Ask for a repair date, not an apology. No threats.
+Limits: Under 150 words. Polite but firm. Ask for a repair date rather than an apology. No threats.
 [/ita_prompt]
-<p>The second prompt takes about a minute longer to write. In return, the draft is usually much closer to something you'd actually send, so you spend less time editing.</p>
+<p>The second prompt takes a little longer to write. In return, the draft is usually much closer to something you'd actually send, so you spend less time editing.</p>
 
 <h2>Each part, a little deeper</h2>
 <h3>Task: one job at a time</h3>
-<p>If you ask for three different things in one breath, the answer often does all three half-well. Pick the main job. You can ask for the next one in a follow-up message.</p>
+<p>If you ask for three different things in one breath, the answer can end up doing each one less well. Pick the main job and ask for the next one in a follow-up message.</p>
 <h3>Context: what only you know</h3>
-<p>The chatbot only knows about your situation what's in the conversation: your messages, plus any files or saved [ita_term define="A feature in some AI tools that keeps notes about you between conversations and adds them to new chats."]memory[/ita_term] the tool adds. It doesn't know your landlord, your deadline or your reader. Two or three sentences of background often make a big difference.</p>
+<p>The chatbot only knows about your situation what's in the conversation: your messages, plus any files or saved [ita_term define="A feature in some AI apps that keeps notes about you between conversations and adds them to new chats."]memory[/ita_term] the app adds. It doesn't know your landlord or your deadline. Two or three sentences of background often make a big difference.</p>
 <h3>Format: describe the shape</h3>
-<p>If you want a table, say so, and name the columns. If you want a checklist you can print, say that. Naming the shape you want is far more useful than asking for "a good answer".</p>
+<p>If you want a table, say so, and name the columns. If you want a checklist you can print, say that too. A vague request for "a good answer" gives the chatbot nothing to aim at.</p>
 <h3>Limits: length, tone, and no-go areas</h3>
-<p>Limits stop the answer from wandering. Note that length limits are followed only roughly. Ask for 150 words and you may get a bit more or a bit less, so count if it really matters.</p>
+<p>Limits keep the answer the right size and tone. Length limits are followed only roughly, though. Ask for 150 words and you may get a bit more or a bit less, so count if it really matters.</p>
 [ita_why title="Why does context matter so much?"]
-<p>A chatbot writes its answer by predicting likely text, one piece at a time. With a short prompt, many different answers are equally likely, so it drifts toward the most common, middle-of-the-road version.</p>
-<p>Every detail you add narrows the options. "Email to my landlord" rules out a lot. "Reported by phone three days ago" rules out more. By the end, the most likely answer is one that fits your situation, not anyone's.</p>
-<p>That's also why the order of the four parts doesn't matter much. What matters is that the information is there. Labels like <code>Task:</code> and <code>Context:</code> simply make it easier for you to see what's missing.</p>
+<p>A chatbot writes its answer by predicting likely text, one piece at a time. With a short prompt, lots of answers fit, and the most likely ones are the generic, middle-of-the-road kind that would suit almost anyone.</p>
+<p>Every detail you add narrows the options. "Email to my landlord" rules out a lot, and "reported by phone three days ago" rules out more. By the end, the most likely answer is one that fits your situation, not everyone's.</p>
+<p>The order of the four parts matters less than having the information there at all. Labels like <code>Task:</code> and <code>Context:</code> simply make it easier for you to see what's missing.</p>
 [/ita_why]
-<p>You won't need all four parts every time. "Translate this sentence into Spanish" is a complete task. Add the other parts when the first answer comes back too generic, too long, or the wrong shape.</p>
+<p>You won't need all four parts every time. "Translate this sentence into Spanish" is a complete task on its own. Add the other parts when the first answer comes back too generic, too long or in the wrong shape.</p>
 
 [ita_quiz]
 [ita_q q="Which part of the recipe tells the chatbot what the answer should look like?" answers="Task|Context|Format|Limits" correct="3" why="Format describes the shape: a list, a table, an email with a subject line, and so on."]
-[ita_q q="Why does a short, vague prompt often give a generic answer?" answers="The chatbot is being lazy|It fills the gaps with the most typical choices|Short prompts are not allowed" correct="2" why="Without details, the most likely answer is a typical one that would fit almost anyone."]
-[ita_q q="You ask for 100 words and get 120. What is the most sensible reading?" answers="The chatbot is broken|Length limits are followed only roughly, so trim or ask again|You must always repeat the limit three times" correct="2" why="Models do not count words precisely, so treat length limits as approximate."]
+[ita_q q="Why does a short, vague prompt often give a generic answer?" answers="Many answers fit, and the likeliest ones are typical|The chatbot uses a fixed template for short requests|Short prompts get less of the model's attention" correct="1" why="Without details, the most likely answer is a typical one that would suit almost anyone."]
+[ita_q q="You ask for 100 words and get 120. What is the most sensible reading?" answers="The model ignored your limit on purpose|Length limits are followed only roughly, so trim it or ask again|Word limits only work if you repeat them" correct="2" why="Models do not count words precisely, so treat length limits as approximate."]
 [/ita_quiz]
 
 <h2>Try it</h2>
-<p>Pick a small real task you have this week: a message to a neighbour, a shopping list for a recipe, or a short plan for revising one topic.</p>
+<p>Pick a small real task you have this week. A message to a neighbor works, or a list for your weekly grocery shopping. So does a short plan for studying one topic.</p>
 <ol>
 <li>Write the weak version first, in one line, and send it to any chatbot you use.</li>
 <li>Now write the four parts on separate lines: Task, Context, Format, Limits. Keep each one short.</li>
 <li>Send the better version in a new chat.</li>
 <li>Put the two answers side by side and note one thing that improved and one thing you would still change.</li>
 </ol>
-<p>If the second answer still misses, don't start over. Add the missing detail to the part it belongs to and send it again.</p>
+<p>When the second answer still misses, add the missing detail to the part it belongs to and send it again instead of starting over.</p>

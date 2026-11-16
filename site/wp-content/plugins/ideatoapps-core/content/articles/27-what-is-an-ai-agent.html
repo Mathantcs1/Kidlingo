@@ -1,21 +1,23 @@
-<!--ita {"slug":"27-what-is-an-ai-agent","title":"What is an AI agent","category":"agents","excerpt":"An AI agent is a program that uses a model to decide the next step, use tools and repeat until a goal is met. Here's how that differs from a chatbot.","reviewed":"2026-11-16","gated":false,"check":["An AI agent is a program that uses a language model to decide which step to take next and to call tools, in a loop, until a goal is met or it is stopped.","A plain chatbot replies to each message and then waits; an agent can take several steps and actions on its own between your messages.","With tool calling, the model does not run the tool itself: it outputs a structured request (tool name and inputs), the surrounding program runs the tool and passes the result back to the model.","Mistakes in an early step of an agent can carry into later steps, because each step builds on the previous results.","Requiring a person to approve actions that are hard to undo, such as sending, paying or deleting, is a common safeguard for agents."]} -->
-<p>An AI agent is a program that uses an AI model to decide what to do next, does it with tools, looks at the result, and repeats until the goal is met. A chatbot answers your message and waits. An agent keeps going on its own, one step after another.</p>
-<p>That small difference, acting in a loop instead of replying once, is what makes agents useful. It's also what makes them riskier.</p>
+<!--ita {"slug":"27-what-is-an-ai-agent","title":"What is an AI agent","category":"agents","excerpt":"An AI agent is a program that uses a model to decide the next step, use tools and repeat until a goal is met. Here's how that differs from a chatbot.","reviewed":"2026-11-16","gated":false,"check":["An AI agent is a program that uses a language model to decide which step to take next and to call tools, in a loop, until a goal is met or it is stopped; a plain chatbot replies to each message and then waits.","Many chat apps now include agent-like features, such as searching the web before answering, so the line between chatbots and agents is blurry.","With tool calling, the model does not run the tool itself: it outputs a structured request (tool name and inputs), and the surrounding program runs the tool and passes the result back to the model.","Mistakes in an early step of an agent can carry into later steps, and without a step limit an agent can repeat a failing action indefinitely.","Agents that read web pages or emails can be manipulated by instructions hidden in that text, and there is no complete fix yet.","Requiring a person to approve actions that are hard to undo, such as sending, paying or deleting, is a common safeguard for agents."]} -->
+<p>An AI agent is a program that uses an AI model to decide what to do next, does it with tools, looks at the result, and repeats until the goal is met (or until it's stopped). A chatbot answers your message and waits. An agent keeps going on its own, one step after another.</p>
+<p>Acting in a loop is what makes agents useful, and also what makes them riskier.</p>
+<p>The line between chatbots and agents is blurry in practice: many chat apps now have agent-like features, such as searching the web before they answer.</p>
 
 <h2>The short definition</h2>
 <p>Three ingredients make something an agent:</p>
 <ul>
 <li><strong>A model that decides.</strong> A [ita_term define="A program trained on a very large amount of text to predict which piece of text is likely to come next."]language model[/ita_term] reads the goal and what has happened so far, and chooses the next step.</li>
-<li><strong>Tools.</strong> A [ita_term define="A capability the agent's program offers the model, such as searching the web, reading a file or adding a calendar entry."]tool[/ita_term] lets the agent do something besides writing text: look something up, read a document, run a calculation, fill in a form.</li>
+<li><strong>Tools.</strong> A [ita_term define="A capability the agent's program offers the model, such as searching the web, reading a file or adding a calendar entry."]tool[/ita_term] lets the agent do something besides writing text, for example look something up, read a document or fill out a form.</li>
 <li><strong>A loop.</strong> After each action, the result goes back to the model, which decides whether to take another step or stop.</li>
 </ul>
-<p>Take away the tools and you have a chatbot. Take away the loop and you have a chatbot that can use one tool once. Put all three together and you have an agent.</p>
+<p>Without tools, a model can only write text. Without the loop, it can use a tool once and hand back to you. With both, it can work through a task step by step.</p>
+<p>The agent is the whole program: the model plus the code that runs its tools.</p>
 
 <h2>Chatbot vs agent</h2>
 <p>Imagine you want to find a free hour for a meeting with two colleagues next week, then send them an invitation.</p>
-<p>A <strong>chatbot</strong> can help you think. It can suggest how to word the invitation or remind you to check time zones. But you do the checking and the sending. It only sees what you paste in.</p>
-<p>An <strong>agent</strong> with access to the right tools could do the steps itself: read the three calendars, find hours that are free for everyone, pick one, draft the invitation, and send it. You give it a goal, not a list of instructions.</p>
-<p>That's the trade. The agent saves you clicks, but it also makes decisions you used to make, and it can make them wrongly. Which calendar did it read? Did it understand "next week" the way you meant it? Did it send the invitation before you had a chance to look?</p>
+<p>A plain <strong>chatbot</strong> can help you think. It can suggest how to word the invitation or remind you to check time zones, while you do the checking and the sending yourself. It only sees what you paste in.</p>
+<p>An <strong>agent</strong> with access to the right tools could do the steps itself: read the three calendars, find hours that are free for everyone, pick one, draft the invitation and send it. You give it a goal, not a list of instructions.</p>
+<p>The agent saves you clicks, but it also makes decisions you used to make, and it can get them wrong. Which calendar did it read? Did it understand "next week" the way you meant it? Did it send the invitation before you had a chance to look?</p>
 
 <h2>The loop, step by step</h2>
 [ita_figure name="agent-loop" alt="A goal enters a loop of plan, act, observe and check; the check either goes back to plan or ends with a result." caption="The agent loop: plan, act, observe, check, and repeat until done."]
@@ -24,22 +26,24 @@
 <li><strong>Plan</strong>: the model looks at the goal and everything so far, and picks the next step.</li>
 <li><strong>Act</strong>: it asks for a tool to be used, such as "search the calendar for free hours on Tuesday".</li>
 <li><strong>Observe</strong>: the tool's result is added to what the model can see.</li>
-<li><strong>Check</strong>: the model decides whether the goal is met. If not, it goes round again.</li>
+<li><strong>Check</strong>: the model decides whether the goal is met. If it isn't, it goes around again.</li>
 </ol>
-<p>Well-built agents also have limits the model can't change: a maximum number of steps, a list of allowed tools, and points where a person must approve before anything happens.</p>
+<p>Well-built agents usually have limits the model can't change: a maximum number of steps, a list of allowed tools, and points where a person must approve before anything hard to undo happens.</p>
 [ita_why title="Who actually runs the tool?"]
-<p>The model itself never clicks a button or opens a file. It only produces text. With [ita_term define="A way for a model to ask the surrounding program to run a named tool with specific inputs, using a fixed, structured format."]tool calling[/ita_term], that text is a structured request: the name of a tool and the inputs to give it.</p>
-<p>The program around the model reads that request, checks it is allowed, runs the tool, and passes the result back as more text. Then the model predicts its next step.</p>
-<p>This matters for safety. Everything an agent can do is decided by which tools the program offers and what checks it runs before using them. The model's judgement is only one layer.</p>
+<p>The model itself never clicks a button or opens a file. It only produces text. With [ita_term define="A way for a model to ask the surrounding program to run a named tool with specific inputs, using a fixed, structured format."]tool calling[/ita_term], that text is a structured request containing the name of a tool and the inputs to give it.</p>
+<p>The program around the model reads that request, may check it is allowed, runs the tool, and passes the result back as more text. Then the model predicts its next step.</p>
+<p>This matters for safety. What an agent can do depends on which tools the program offers and what checks it runs before using them. The model's judgment is only one layer.</p>
 [/ita_why]
 
 <h2>Where agents go wrong</h2>
-<p>Agents inherit every weakness of the model inside them, and the loop can make those weaknesses bigger.</p>
-<p><strong>Small errors add up.</strong> If an early step gets something wrong, such as reading the wrong file, every later step builds on that mistake.</p>
-<p><strong>They can misread the goal.</strong> "Tidy up my downloads folder" could mean sorting files into folders, or deleting old ones. A person would ask. An agent may just pick one.</p>
-<p><strong>They can be misled.</strong> An agent that reads web pages or emails can come across text that looks like instructions. A careless setup might follow them.</p>
-<p><strong>They can get stuck.</strong> Without a step limit, an agent can repeat the same failing action over and over.</p>
-<p>None of this means agents are useless. It means they need the same thing a new assistant would: a clear goal, limited permissions, and someone checking the work before anything important goes out.</p>
+<p>Agents inherit every weakness of the model inside them, and the loop can make those weaknesses bigger. Four problems come up again and again:</p>
+<ul>
+<li>Small errors add up. If an early step reads the wrong file, every later step builds on that mistake.</li>
+<li>The goal gets misread. "Tidy up my downloads folder" could mean sorting files into folders or deleting old ones. A person would ask; an agent may just pick one.</li>
+<li>Hidden instructions mislead it. An agent that reads web pages or emails can come across text written to look like instructions. Even well-built agents can be fooled by this, which is why limiting their tools and approvals matters.</li>
+<li>It gets stuck. Without a step limit, an agent can repeat the same failing action over and over.</li>
+</ul>
+<p>In practice that means a clear goal, limited permissions, and someone checking the work before anything important goes out. The checklist below turns that into questions you can ask about any agent.</p>
 [ita_checklist id="agent-before-acting"]
 [ita_item]The goal is written in one clear sentence, including what "done" looks like.[/ita_item]
 [ita_item]The agent can only use the tools this task needs.[/ita_item]
@@ -49,18 +53,18 @@
 [/ita_checklist]
 
 [ita_quiz]
-[ita_q q="What is the main difference between a plain chatbot and an agent?" answers="An agent uses a bigger model|An agent can take several steps with tools in a loop without waiting for you|A chatbot cannot write text" correct="2" why="A chatbot replies and waits; an agent decides on steps, uses tools and repeats until the goal is met."]
-[ita_q q="With tool calling, who actually runs the tool?" answers="The model, directly|The program around the model, after reading the model's request|The person, every time" correct="2" why="The model outputs a structured request; the surrounding program runs the tool and returns the result."]
-[ita_q q="Which action is the most sensible to put behind a human approval step?" answers="Reading a calendar|Summarising a document|Sending an email to a client" correct="3" why="Sending is hard to undo, so a person should check it first."]
+[ita_q q="What is the main difference between a plain chatbot and an agent?" answers="An agent can take several steps with tools in a loop before handing back to you|An agent always runs on a larger, newer model|A chatbot can never use any outside information" correct="1" why="A chatbot replies and waits; an agent decides on steps, uses tools and repeats until the goal is met or it is stopped."]
+[ita_q q="With tool calling, who actually runs the tool?" answers="The model itself, while it writes its answer|The person, who copies each request by hand|The program around the model" correct="3" why="The model outputs a structured request; the surrounding program runs the tool and returns the result."]
+[ita_q q="Which action is the most sensible to put behind a human approval step?" answers="Reading a calendar to find free hours|Sending an email to a client|Summarizing a document you shared" correct="2" why="Sending is hard to undo, so a person should check it first."]
 [/ita_quiz]
 
 <h2>Try it</h2>
-<p>You don't need any software for this. You need paper, or a notes app, and five minutes.</p>
+<p>You don't need any software for this, only paper or a notes app and five minutes.</p>
 <ol>
-<li>Pick a small errand you do often, such as booking a haircut or planning a weekly shop.</li>
+<li>Pick a small errand you do often, such as booking a haircut or planning the weekly grocery shopping.</li>
 <li>Write the goal in one sentence, including what "done" looks like.</li>
 <li>List the tools an agent would need: which apps or information would it have to read or change?</li>
-<li>Write the steps of the loop: what would it plan, do, observe and check each time round?</li>
+<li>Write the steps of the loop: what would it plan, do, observe and check each time around?</li>
 <li>Circle every step that would be hard to undo. Those are the ones you'd want to approve yourself.</li>
 </ol>
-<p>Keep the page. It's a good test for any agent you try later: if you can't write the goal and the approval points clearly, the agent can't either.</p>
+<p>Keep the page; you can use it to judge any agent you try later. If you can't write the goal and the approval points clearly, the task isn't ready to hand to an agent yet.</p>
