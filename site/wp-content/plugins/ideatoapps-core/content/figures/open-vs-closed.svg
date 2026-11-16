@@ -1,19 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 330">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 318">
 <title>Open and closed models</title>
 <desc>Two panels. An open model has files you can download and run yourself, so you handle the setup. A closed model is used through its maker service, with less setup and less control.</desc>
 <g stroke-width="2">
-<rect x="20" y="10" width="440" height="130" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<rect x="20" y="160" width="440" height="130" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="10" y="10" width="340" height="124" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="10" y="150" width="340" height="124" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="240" y="44" font-weight="600">Open model</text>
-<text x="240" y="68">You can download the files</text>
-<text x="240" y="92">You can run it yourself</text>
-<text x="240" y="116">You handle setup and updates</text>
-<text x="240" y="194" font-weight="600">Closed model</text>
-<text x="240" y="218">You use the maker’s service</text>
-<text x="240" y="242">The maker runs it for you</text>
-<text x="240" y="266">Less setup, less control</text>
-<text x="240" y="316" font-size="18" fill="var(--ita-fig-muted)">Neither is always better.</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="180" y="44" font-weight="600">Open model</text>
+<text x="180" y="66">You can download the files</text>
+<text x="180" y="88">You can run it yourself</text>
+<text x="180" y="110">You handle setup and updates</text>
+<text x="180" y="184" font-weight="600">Closed model</text>
+<text x="180" y="206">You use the maker’s service</text>
+<text x="180" y="228">The maker runs it for you</text>
+<text x="180" y="250">Less setup, less control</text>
+<text x="180" y="304" fill="var(--ita-fig-muted)">Neither is always better.</text>
 </g>
 </svg>

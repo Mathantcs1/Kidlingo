@@ -1,35 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 340">
 <title>Guardrails and human approval</title>
 <desc>An agent proposes an action. A risk check follows. Low-risk actions run. Risky ones wait for a person, who approves and the action runs, or declines and it stops.</desc>
 <g stroke-width="2">
-<rect x="130" y="10" width="220" height="48" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<path d="M240 58L240 84" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M240 84L233.5 73L246.5 73Z" fill="var(--ita-fig-line)"/>
-<path d="M240 86L320 136L240 186L160 136Z" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
-<rect x="10" y="112" width="110" height="48" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<path d="M160 136L122 136" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M122 136L133 129.5L133 142.5Z" fill="var(--ita-fig-line)"/>
-<path d="M240 186L240 246" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M240 246L233.5 235L246.5 235Z" fill="var(--ita-fig-line)"/>
-<rect x="150" y="248" width="180" height="56" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<path d="M150 276L65 276L65 162" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M65 162L71.5 173L58.5 173Z" fill="var(--ita-fig-line)"/>
-<path d="M330 276L370 276" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M370 276L359 282.5L359 269.5Z" fill="var(--ita-fig-line)"/>
-<rect x="372" y="252" width="98" height="48" rx="12" fill="var(--ita-fig-5)" stroke="var(--ita-fig-5-s)"/>
+<rect x="80" y="10" width="200" height="52" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<path d="M180 62L180 82" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M180 82L173.5 71L186.5 71Z" fill="var(--ita-fig-line)"/>
+<path d="M180 84L240 126L180 168L120 126Z" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
+<rect x="10" y="102" width="80" height="48" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<path d="M120 126L92 126" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M92 126L103 119.5L103 132.5Z" fill="var(--ita-fig-line)"/>
+<path d="M180 168L180 222" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M180 222L173.5 211L186.5 211Z" fill="var(--ita-fig-line)"/>
+<rect x="110" y="224" width="140" height="56" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<path d="M110 252L50 252L50 152" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M50 152L56.5 163L43.5 163Z" fill="var(--ita-fig-line)"/>
+<path d="M250 252L292 252" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M292 252L281 258.5L281 245.5Z" fill="var(--ita-fig-line)"/>
+<rect x="294" y="228" width="56" height="48" rx="12" fill="var(--ita-fig-5)" stroke="var(--ita-fig-5-s)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="240" y="27" font-weight="600">Agent proposes</text>
-<text x="240" y="51">an action</text>
-<text x="240" y="142" font-weight="600">Risky?</text>
-<text x="65" y="141">Do it</text>
-<text x="141" y="126" font-size="18" fill="var(--ita-fig-muted)">No</text>
-<text x="252" y="222" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">Yes</text>
-<text x="240" y="269" font-weight="600">A person</text>
-<text x="240" y="293">decides</text>
-<text x="75" y="262" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">Approve</text>
-<text x="350" y="266" font-size="18" fill="var(--ita-fig-muted)">No</text>
-<text x="421" y="281">Stop</text>
-<text x="240" y="380" font-size="18" fill="var(--ita-fig-muted)">Guardrails set limits. People decide.</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="180" y="30" font-weight="600">Agent proposes</text>
+<text x="180" y="52">an action</text>
+<text x="180" y="132" font-weight="600">Risky?</text>
+<text x="50" y="131">Do it</text>
+<text x="106" y="118" fill="var(--ita-fig-muted)">No</text>
+<text x="192" y="200" text-anchor="start" fill="var(--ita-fig-muted)">Yes</text>
+<text x="180" y="246" font-weight="600">A person</text>
+<text x="180" y="268">decides</text>
+<text x="10" y="276" text-anchor="start" fill="var(--ita-fig-muted)">Approve</text>
+<text x="272" y="242" fill="var(--ita-fig-muted)">No</text>
+<text x="322" y="257">Stop</text>
+<text x="180" y="328" fill="var(--ita-fig-muted)">Rules set limits. People decide.</text>
 </g>
 </svg>

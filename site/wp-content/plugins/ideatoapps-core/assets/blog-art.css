@@ -1,10 +1,11 @@
 /* Colours for the blog's original SVG art (figures and heroes), dark by default and light under [data-theme="light"].
-   Text in figures uses --ita-fig-ink on --ita-fig-bg or on a soft fill --ita-fig-N (7.5:1 and 5.6:1 or better, both themes);
+   Text in figures uses --ita-fig-ink or --ita-fig-muted on --ita-fig-bg or on a soft fill --ita-fig-N (4.5:1 or better for every pair, both
+   themes; tests/php/BlogArtCssTest.php checks it);
    arrows and outlines use --ita-fig-line and the -s strokes (3:1 or better). */
 :root {
 	--ita-fig-bg: var(--bg-alt, #111c46);
 	--ita-fig-ink: #eef1fb;
-	--ita-fig-muted: #a9b4d0;
+	--ita-fig-muted: #d3dbf2;
 	--ita-fig-line: #8fa0d0;
 	--ita-fig-1: #4a3aa8; --ita-fig-2: #1f4fa8; --ita-fig-3: #0f6a6e; --ita-fig-4: #7a5210; --ita-fig-5: #8a2f5c;
 	--ita-fig-1-s: #a898ff; --ita-fig-2-s: #78a9ff; --ita-fig-3-s: #3fd4cb; --ita-fig-4-s: #f0b040; --ita-fig-5-s: #f58ab5;
@@ -34,5 +35,9 @@
 .ita-hero { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
 
 .ita-figure { margin: var(--s-3, 24px) 0; padding: var(--s-2, 16px); background: var(--ita-fig-bg); border: 1px solid var(--line, #dfe5f4); border-radius: var(--radius-card, 16px); color: var(--ita-fig-ink); }
-.ita-figure svg { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto; font-family: inherit; }
-.ita-figure figcaption { margin: var(--s-1, 8px) auto 0; max-width: 560px; color: var(--ita-fig-muted); font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
+.ita-figure svg { display: block; width: 100%; max-width: 440px; height: auto; margin: 0 auto; font-family: inherit; }
+.ita-figure figcaption { margin: var(--s-1, 8px) auto 0; max-width: 440px; color: var(--ita-fig-muted); font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+	.ita-figure { padding: 8px; }
+	.ita-why .ita-figure { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; } /* the Why box is already a panel in the same colour */ /* the diagrams are drawn 360 units wide: more width on a phone means bigger text */
+}

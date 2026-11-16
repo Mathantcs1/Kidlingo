@@ -43,7 +43,7 @@ test('figures render with caption and an accessible name; bad ones render nothin
   await expect(loop).toBeVisible();
   await expect(loop.locator('figcaption')).toHaveText('Figure agent-loop.');
   await expect(loop.getByRole('img', { name: ALT('agent-loop') })).toBeVisible();
-  await expect(loop.locator('svg')).toHaveAttribute('viewBox', /^0 0 480 \d+$/);
+  await expect(loop.locator('svg')).toHaveAttribute('viewBox', /^0 0 360 \d+$/);
   const main = await page.locator('main').innerText();
   expect(main).not.toMatch(/\[ita_figure|Hidden|Warning:|Notice:/);
   // colours really come from the CSS variables: the loop's first box is painted (not black, not none)
@@ -90,10 +90,12 @@ for (const w of [360, 768, 1440]) {
       await page.waitForLoadState('networkidle');
       expect(await horizontalOverflow(page), u).toBeLessThanOrEqual(0);
     }
-    if (w === 360) { // legible when scaled: smallest text in any figure is at least 11px on screen
+    if (w === 360) { // legible when scaled: every figure text renders at 14px or more
       await page.goto(postUrl);
-      const min = await page.locator('.ita-figure text').evaluateAll((els) => Math.min(...els.map((e) => e.getBoundingClientRect().height)));
-      expect(min).toBeGreaterThan(9);
+      await page.getByTestId('ita-why').getByText('More detail').click();
+      const sizes = await page.locator('.ita-figure svg text').evaluateAll((els) => els.map((e) => ({ t: e.textContent ?? '', px: (e as unknown as SVGGraphicsElement).getScreenCTM()!.a * parseFloat(getComputedStyle(e).fontSize) })));
+      expect(sizes.length).toBeGreaterThan(60);
+      for (const x of sizes) expect(x.px, `"${x.t}" renders at ${x.px.toFixed(1)}px`).toBeGreaterThanOrEqual(14);
     }
     await ctx.close();
   });

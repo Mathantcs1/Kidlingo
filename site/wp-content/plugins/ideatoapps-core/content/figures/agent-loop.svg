@@ -1,39 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 370">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 312">
 <title>The agent loop</title>
 <desc>A goal enters a loop of four steps: plan, act, observe and check. The check either sends the agent back to plan or ends with a result.</desc>
 <g stroke-width="2">
-<rect x="40" y="12" width="160" height="44" rx="22" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<rect x="40" y="96" width="160" height="56" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="280" y="96" width="160" height="56" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<rect x="280" y="216" width="160" height="56" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
-<rect x="40" y="216" width="160" height="56" rx="12" fill="var(--ita-fig-5)" stroke="var(--ita-fig-5-s)"/>
-<rect x="40" y="312" width="160" height="44" rx="22" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<path d="M120 56L120 94" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M120 94L113.5 83L126.5 83Z" fill="var(--ita-fig-line)"/>
-<path d="M200 124L278 124" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M278 124L267 130.5L267 117.5Z" fill="var(--ita-fig-line)"/>
-<path d="M360 152L360 214" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M360 214L353.5 203L366.5 203Z" fill="var(--ita-fig-line)"/>
-<path d="M280 244L202 244" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M202 244L213 237.5L213 250.5Z" fill="var(--ita-fig-line)"/>
-<path d="M100 216L100 154" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M100 154L106.5 165L93.5 165Z" fill="var(--ita-fig-line)"/>
-<path d="M120 272L120 310" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M120 310L113.5 299L126.5 299Z" fill="var(--ita-fig-line)"/>
+<rect x="20" y="10" width="120" height="36" rx="18" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="20" y="80" width="120" height="52" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="220" y="80" width="120" height="52" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="220" y="180" width="120" height="52" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
+<rect x="20" y="180" width="120" height="52" rx="12" fill="var(--ita-fig-5)" stroke="var(--ita-fig-5-s)"/>
+<rect x="20" y="266" width="120" height="36" rx="18" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<path d="M80 46L80 78" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M80 78L73.5 67L86.5 67Z" fill="var(--ita-fig-line)"/>
+<path d="M140 106L218 106" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M218 106L207 112.5L207 99.5Z" fill="var(--ita-fig-line)"/>
+<path d="M280 132L280 178" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M280 178L273.5 167L286.5 167Z" fill="var(--ita-fig-line)"/>
+<path d="M220 206L142 206" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M142 206L153 199.5L153 212.5Z" fill="var(--ita-fig-line)"/>
+<path d="M50 180L50 134" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M50 134L56.5 145L43.5 145Z" fill="var(--ita-fig-line)"/>
+<path d="M80 232L80 264" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M80 264L73.5 253L86.5 253Z" fill="var(--ita-fig-line)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="120" y="39" font-weight="600">Goal</text>
-<text x="120" y="117" font-weight="600">Plan</text>
-<text x="120" y="141">next step</text>
-<text x="360" y="117" font-weight="600">Act</text>
-<text x="360" y="141">use a tool</text>
-<text x="360" y="237" font-weight="600">Observe</text>
-<text x="360" y="261">read result</text>
-<text x="120" y="237" font-weight="600">Check</text>
-<text x="120" y="261">done yet?</text>
-<text x="120" y="339" font-weight="600">Result</text>
-<text x="172" y="190" text-anchor="end" font-size="18" fill="var(--ita-fig-muted)">not yet</text>
-<text x="130" y="296" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">yes</text>
-<text x="240" y="336" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">Repeat until done</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="80" y="33" font-weight="600">Goal</text>
+<text x="80" y="100" font-weight="600">Plan</text>
+<text x="80" y="122">next step</text>
+<text x="280" y="100" font-weight="600">Act</text>
+<text x="280" y="122">use a tool</text>
+<text x="280" y="200" font-weight="600">Observe</text>
+<text x="280" y="222">the result</text>
+<text x="80" y="200" font-weight="600">Check</text>
+<text x="80" y="222">done yet?</text>
+<text x="80" y="289" font-weight="600">Result</text>
+<text x="60" y="162" text-anchor="start" fill="var(--ita-fig-muted)">not yet</text>
+<text x="90" y="254" text-anchor="start" fill="var(--ita-fig-muted)">yes</text>
+<text x="186" y="290" text-anchor="start" fill="var(--ita-fig-muted)">Repeat until done</text>
 </g>
 </svg>

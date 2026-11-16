@@ -1,40 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 330">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 322">
 <title>Chatbot, workflow and agent</title>
 <desc>Three rows. A chatbot answers one question. A workflow follows fixed steps set by a person. An agent decides its own next steps and repeats until the goal is met.</desc>
 <g stroke-width="2">
-<rect x="20" y="40" width="130" height="44" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="190" y="40" width="130" height="44" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<path d="M150 62L188 62" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M188 62L177 68.5L177 55.5Z" fill="var(--ita-fig-line)"/>
-<rect x="20" y="140" width="120" height="44" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<rect x="180" y="140" width="120" height="44" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<rect x="340" y="140" width="120" height="44" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<path d="M140 162L178 162" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M178 162L167 168.5L167 155.5Z" fill="var(--ita-fig-line)"/>
-<path d="M300 162L338 162" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M338 162L327 168.5L327 155.5Z" fill="var(--ita-fig-line)"/>
-<rect x="20" y="240" width="100" height="44" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
-<rect x="165" y="240" width="100" height="44" rx="12" fill="var(--ita-fig-5)" stroke="var(--ita-fig-5-s)"/>
-<rect x="305" y="240" width="100" height="44" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<path d="M120 262L163 262" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M163 262L152 268.5L152 255.5Z" fill="var(--ita-fig-line)"/>
-<path d="M265 252L303 252" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M303 252L292 258.5L292 245.5Z" fill="var(--ita-fig-line)"/>
-<path d="M303 274L267 274" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M267 274L278 267.5L278 280.5Z" fill="var(--ita-fig-line)"/>
+<rect x="10" y="36" width="100" height="42" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="150" y="36" width="100" height="42" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<path d="M110 57L148 57" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M148 57L137 63.5L137 50.5Z" fill="var(--ita-fig-line)"/>
+<rect x="10" y="132" width="96" height="42" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="132" y="132" width="96" height="42" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="254" y="132" width="96" height="42" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<path d="M106 153L130 153" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M130 153L119 159.5L119 146.5Z" fill="var(--ita-fig-line)"/>
+<path d="M228 153L252 153" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M252 153L241 159.5L241 146.5Z" fill="var(--ita-fig-line)"/>
+<rect x="10" y="228" width="84" height="42" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
+<rect x="118" y="228" width="84" height="42" rx="12" fill="var(--ita-fig-5)" stroke="var(--ita-fig-5-s)"/>
+<rect x="258" y="228" width="84" height="42" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<path d="M94 249L116 249" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M116 249L105 255.5L105 242.5Z" fill="var(--ita-fig-line)"/>
+<path d="M202 240L256 240" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M256 240L245 246.5L245 233.5Z" fill="var(--ita-fig-line)"/>
+<path d="M256 260L204 260" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M204 260L215 253.5L215 266.5Z" fill="var(--ita-fig-line)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="20" y="28" text-anchor="start" font-weight="600">Chatbot: you ask, it answers</text>
-<text x="85" y="67">Ask</text>
-<text x="255" y="67">Answer</text>
-<text x="20" y="128" text-anchor="start" font-weight="600">Workflow: fixed steps you set</text>
-<text x="80" y="167">Step 1</text>
-<text x="240" y="167">Step 2</text>
-<text x="400" y="167">Step 3</text>
-<text x="20" y="228" text-anchor="start" font-weight="600">Agent: picks its own steps</text>
-<text x="70" y="267">Goal</text>
-<text x="215" y="267">Plan</text>
-<text x="355" y="267">Act</text>
-<text x="240" y="318" font-size="18" fill="var(--ita-fig-muted)">More freedom means more need for checks.</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="10" y="26" text-anchor="start" font-weight="600">Chatbot: you ask, it answers</text>
+<text x="60" y="62">Ask</text>
+<text x="200" y="62">Answer</text>
+<text x="10" y="122" text-anchor="start" font-weight="600">Workflow: fixed steps</text>
+<text x="58" y="158">Step 1</text>
+<text x="180" y="158">Step 2</text>
+<text x="302" y="158">Step 3</text>
+<text x="10" y="218" text-anchor="start" font-weight="600">Agent: picks its own steps</text>
+<text x="52" y="254">Goal</text>
+<text x="160" y="254">Plan</text>
+<text x="300" y="254">Act</text>
+<text x="180" y="308" fill="var(--ita-fig-muted)">More freedom needs more checks.</text>
 </g>
 </svg>

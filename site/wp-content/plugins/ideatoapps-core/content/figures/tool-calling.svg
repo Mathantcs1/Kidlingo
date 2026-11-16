@@ -1,29 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 350">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 316">
 <title>Tool calling</title>
 <desc>You ask a question. The model decides it needs a tool and sends a request. The tool sends a result back. The model then writes the final answer.</desc>
 <g stroke-width="2">
-<rect x="20" y="10" width="140" height="48" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<rect x="20" y="120" width="150" height="56" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="310" y="120" width="150" height="56" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<rect x="20" y="238" width="140" height="48" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
-<path d="M90 58L90 118" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M90 118L83.5 107L96.5 107Z" fill="var(--ita-fig-line)"/>
-<path d="M170 138L308 138" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M308 138L297 144.5L297 131.5Z" fill="var(--ita-fig-line)"/>
-<path d="M308 160L172 160" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M172 160L183 153.5L183 166.5Z" fill="var(--ita-fig-line)"/>
-<path d="M90 176L90 236" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M90 236L83.5 225L96.5 225Z" fill="var(--ita-fig-line)"/>
+<rect x="10" y="10" width="120" height="44" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="10" y="108" width="120" height="56" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="230" y="108" width="120" height="56" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="10" y="218" width="120" height="44" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
+<path d="M70 54L70 106" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M70 106L63.5 95L76.5 95Z" fill="var(--ita-fig-line)"/>
+<path d="M130 126L228 126" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M228 126L217 132.5L217 119.5Z" fill="var(--ita-fig-line)"/>
+<path d="M228 148L132 148" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M132 148L143 141.5L143 154.5Z" fill="var(--ita-fig-line)"/>
+<path d="M70 164L70 216" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M70 216L63.5 205L76.5 205Z" fill="var(--ita-fig-line)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="90" y="39">You ask</text>
-<text x="95" y="141" font-weight="600">Model</text>
-<text x="95" y="165">needs data</text>
-<text x="385" y="141" font-weight="600">Tool</text>
-<text x="385" y="165">e.g. search</text>
-<text x="90" y="267">Answer</text>
-<text x="240" y="128" font-size="18" fill="var(--ita-fig-muted)">request</text>
-<text x="240" y="184" font-size="18" fill="var(--ita-fig-muted)">result</text>
-<text x="20" y="334" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">The model asks. The tool does the work.</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="70" y="37">You ask</text>
+<text x="70" y="130" font-weight="600">Model</text>
+<text x="70" y="152">needs data</text>
+<text x="290" y="130" font-weight="600">Tool</text>
+<text x="290" y="152">web search</text>
+<text x="70" y="245">Answer</text>
+<text x="180" y="116" fill="var(--ita-fig-muted)">request</text>
+<text x="180" y="172" fill="var(--ita-fig-muted)">result</text>
+<text x="180" y="304" fill="var(--ita-fig-muted)">The model asks. The tool works.</text>
 </g>
 </svg>

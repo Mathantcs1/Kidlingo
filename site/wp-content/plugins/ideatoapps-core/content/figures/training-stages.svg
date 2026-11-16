@@ -1,22 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 330">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 300">
 <title>How a language model is trained</title>
 <desc>Three stages top to bottom: reading a huge amount of text to learn patterns, practising on example conversations, and improving from human feedback.</desc>
 <g stroke-width="2">
-<rect x="20" y="10" width="440" height="76" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="20" y="114" width="440" height="76" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<rect x="20" y="218" width="440" height="76" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<path d="M240 86L240 112" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M240 112L233.5 101L246.5 101Z" fill="var(--ita-fig-line)"/>
-<path d="M240 190L240 216" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M240 216L233.5 205L246.5 205Z" fill="var(--ita-fig-line)"/>
+<rect x="10" y="10" width="340" height="68" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="10" y="100" width="340" height="68" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="10" y="190" width="340" height="68" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<path d="M180 78L180 98" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M180 98L173.5 87L186.5 87Z" fill="var(--ita-fig-line)"/>
+<path d="M180 168L180 188" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M180 188L173.5 177L186.5 177Z" fill="var(--ita-fig-line)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="240" y="41" font-weight="600">1  Read lots of text</text>
-<text x="240" y="65">learns patterns in language</text>
-<text x="240" y="145" font-weight="600">2  Practise on examples</text>
-<text x="240" y="169">learns to follow instructions</text>
-<text x="240" y="249" font-weight="600">3  Learn from feedback</text>
-<text x="240" y="273">people rate answers, it improves</text>
-<text x="240" y="318" font-size="18" fill="var(--ita-fig-muted)">Simplified. Real training has more steps.</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="180" y="38" font-weight="600">1  Read lots of text</text>
+<text x="180" y="60">learns patterns in language</text>
+<text x="180" y="128" font-weight="600">2  Practise on examples</text>
+<text x="180" y="150">learns to follow instructions</text>
+<text x="180" y="218" font-weight="600">3  Learn from feedback</text>
+<text x="180" y="240">people rate its answers</text>
+<text x="180" y="288" fill="var(--ita-fig-muted)">A simplified view.</text>
 </g>
 </svg>

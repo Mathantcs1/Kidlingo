@@ -1,26 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 220">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 214">
 <title>Text split into tokens</title>
 <desc>The sentence Learning AI is fun. is shown as one line, then as six separate chips: Learn, ing, AI, is, fun and a full stop. A note says real tools split text differently.</desc>
 <g stroke-width="2">
-<rect x="40" y="10" width="400" height="48" rx="12" fill="var(--ita-fig-5)" stroke="var(--ita-fig-5-s)"/>
-<path d="M240 60L240 88" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M240 88L233.5 77L246.5 77Z" fill="var(--ita-fig-line)"/>
-<rect x="28" y="98" width="96" height="46" rx="10" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="132" y="98" width="66" height="46" rx="10" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<rect x="206" y="98" width="56" height="46" rx="10" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<rect x="270" y="98" width="56" height="46" rx="10" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
-<rect x="334" y="98" width="70" height="46" rx="10" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="412" y="98" width="40" height="46" rx="10" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="30" y="10" width="300" height="44" rx="12" fill="var(--ita-fig-5)" stroke="var(--ita-fig-5-s)"/>
+<path d="M180 56L180 86" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M180 86L173.5 75L186.5 75Z" fill="var(--ita-fig-line)"/>
+<rect x="16" y="96" width="70" height="44" rx="10" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="94" y="96" width="50" height="44" rx="10" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="152" y="96" width="42" height="44" rx="10" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="202" y="96" width="42" height="44" rx="10" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
+<rect x="252" y="96" width="54" height="44" rx="10" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="314" y="96" width="30" height="44" rx="10" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="240" y="39">Learning AI is fun.</text>
-<text x="76" y="126">Learn</text>
-<text x="165" y="126">ing</text>
-<text x="234" y="126">AI</text>
-<text x="298" y="126">is</text>
-<text x="369" y="126">fun</text>
-<text x="432" y="126">.</text>
-<text x="240" y="184" font-size="18" fill="var(--ita-fig-muted)">The model reads pieces, not whole words.</text>
-<text x="240" y="208" font-size="18" fill="var(--ita-fig-muted)">Example only. Real tools differ.</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="180" y="37">Learning AI is fun.</text>
+<text x="51" y="123">Learn</text>
+<text x="119" y="123">ing</text>
+<text x="173" y="123">AI</text>
+<text x="223" y="123">is</text>
+<text x="279" y="123">fun</text>
+<text x="329" y="123">.</text>
+<text x="180" y="178" fill="var(--ita-fig-muted)">The model reads pieces, not words.</text>
+<text x="180" y="202" fill="var(--ita-fig-muted)">Example only. Real tools differ.</text>
 </g>
 </svg>

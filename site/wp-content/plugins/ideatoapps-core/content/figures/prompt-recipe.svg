@@ -1,21 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 352">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 334">
 <title>The four-part prompt recipe</title>
 <desc>A prompt has four parts: the task, the context it needs, the format you want, and the limits such as length and tone.</desc>
 <g stroke-width="2">
-<rect x="20" y="10" width="440" height="66" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="20" y="88" width="440" height="66" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<rect x="20" y="166" width="440" height="66" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<rect x="20" y="244" width="440" height="66" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
+<rect x="10" y="10" width="340" height="64" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="10" y="84" width="340" height="64" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="10" y="158" width="340" height="64" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="10" y="232" width="340" height="64" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="240" y="36" font-weight="600">1  Task</text>
-<text x="240" y="60">what you want done</text>
-<text x="240" y="114" font-weight="600">2  Context</text>
-<text x="240" y="138">what it needs to know</text>
-<text x="240" y="192" font-weight="600">3  Format</text>
-<text x="240" y="216">how the answer should look</text>
-<text x="240" y="270" font-weight="600">4  Limits</text>
-<text x="240" y="294">length, tone, what to avoid</text>
-<text x="240" y="342" font-size="18" fill="var(--ita-fig-muted)">Add the parts that matter. Skip the rest.</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="180" y="36" font-weight="600">1  Task</text>
+<text x="180" y="58">what you want done</text>
+<text x="180" y="110" font-weight="600">2  Context</text>
+<text x="180" y="132">what it needs to know</text>
+<text x="180" y="184" font-weight="600">3  Format</text>
+<text x="180" y="206">how the answer should look</text>
+<text x="180" y="258" font-weight="600">4  Limits</text>
+<text x="180" y="280">length, tone, what to avoid</text>
+<text x="180" y="324" fill="var(--ita-fig-muted)">Add the parts that matter.</text>
 </g>
 </svg>

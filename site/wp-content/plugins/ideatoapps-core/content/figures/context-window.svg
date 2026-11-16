@@ -1,27 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 252">
 <title>A context window filling up</title>
 <desc>Two bars show the space a model can read at once. Early in a chat the bar is mostly empty. In a long chat it is full, and the oldest part is cut off.</desc>
 <g stroke-width="2">
-<rect x="20" y="44" width="90" height="52" rx="6" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="110" y="44" width="110" height="52" rx="6" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<rect x="220" y="44" width="110" height="52" rx="6" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<rect x="330" y="44" width="130" height="52" rx="6" fill="none" stroke="var(--ita-fig-5-s)" stroke-dasharray="6 5"/>
-<rect x="20" y="164" width="110" height="52" rx="6" fill="none" stroke="var(--ita-fig-5-s)" stroke-dasharray="6 5"/>
-<rect x="130" y="164" width="70" height="52" rx="6" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="200" y="164" width="120" height="52" rx="6" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<rect x="320" y="164" width="140" height="52" rx="6" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="10" y="38" width="68" height="46" rx="6" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="78" y="38" width="74" height="46" rx="6" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="152" y="38" width="80" height="46" rx="6" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="232" y="38" width="118" height="46" rx="6" fill="none" stroke="var(--ita-fig-5-s)" stroke-dasharray="6 5"/>
+<rect x="10" y="138" width="88" height="46" rx="6" fill="none" stroke="var(--ita-fig-5-s)" stroke-dasharray="6 5"/>
+<rect x="98" y="138" width="68" height="46" rx="6" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="166" y="138" width="74" height="46" rx="6" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="240" y="138" width="110" height="46" rx="6" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="20" y="30" text-anchor="start" font-weight="600">Early in a chat</text>
-<text x="65" y="75">Rules</text>
-<text x="165" y="75">You</text>
-<text x="275" y="75">Reply</text>
-<text x="20" y="150" text-anchor="start" font-weight="600">Late in a long chat</text>
-<text x="75" y="195">Cut off</text>
-<text x="165" y="195">Rules</text>
-<text x="260" y="195">You</text>
-<text x="390" y="195">Reply</text>
-<text x="20" y="262" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">The oldest text falls out first.</text>
-<text x="20" y="286" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">Dashed: empty room or dropped text.</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="10" y="26" text-anchor="start" font-weight="600">Early in a chat</text>
+<text x="44" y="66">Rules</text>
+<text x="115" y="66">You</text>
+<text x="192" y="66">Reply</text>
+<text x="10" y="126" text-anchor="start" font-weight="600">Late in a long chat</text>
+<text x="54" y="166">Cut off</text>
+<text x="132" y="166">Rules</text>
+<text x="203" y="166">You</text>
+<text x="295" y="166">Reply</text>
+<text x="10" y="218" text-anchor="start" fill="var(--ita-fig-muted)">The oldest text falls out first.</text>
+<text x="10" y="242" text-anchor="start" fill="var(--ita-fig-muted)">Dashed: empty or dropped text.</text>
 </g>
 </svg>

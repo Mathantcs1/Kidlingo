@@ -17,7 +17,8 @@ export const INCOMPLETE_CONTRAST_ALLOW: Array<{ selector: RegExp; why: string }>
   // Hero "Watch demos" (learn/) is pixel-sampled in home.spec.ts; the about/apps ones in contrast.spec.ts and the 404 page.
   { selector: /^(\.hero__actions > )?\.btn--secondary\.btn\[href\$="(about|apps|learn)\/"\]$/, why: `transparent secondary buttons over the glow: ${PIXEL}` },
   // SVG figure text: axe cannot resolve the rect painted under an SVG <text>, so it reports "incomplete". blog-figures.spec.ts computes
-  // each text's fill against the shape underneath and requires 4.5:1 in both themes.
+  // each text's fill against the shape underneath and requires 4.5:1 in both themes. Not scoped to .ita-figure: axe prints the shortest
+  // unique selector (often a bare text[y="38"]), so the ancestors are not reliably in the string; no other SVG text exists on the site.
   { selector: /(?:^|> )text\[[^>]*\]$/, why: 'blog figure text over its box: ratio computed in blog-figures.spec.ts' },
   { selector: /^a\[rel="home"\] > span$/, why: `header wordmark "To" gradient-clipped text: stops and background ${PIXEL}` },
   { selector: /^:root > span$/, why: `same header wordmark "To" span, reported by axe with a root-relative selector: ${PIXEL}` },

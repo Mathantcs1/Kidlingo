@@ -1,28 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 392">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 352">
 <title>How a chatbot answers</title>
 <desc>Four steps: you write a message, it is split into pieces, the model predicts the next piece, and that piece is added to the answer. Steps three and four repeat until the answer is finished.</desc>
 <g stroke-width="2">
-<rect x="30" y="10" width="300" height="52" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
-<rect x="30" y="100" width="300" height="52" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="30" y="190" width="300" height="70" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
-<rect x="30" y="280" width="300" height="70" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
-<path d="M180 62L180 98" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M180 98L173.5 87L186.5 87Z" fill="var(--ita-fig-line)"/>
-<path d="M180 152L180 188" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M180 188L173.5 177L186.5 177Z" fill="var(--ita-fig-line)"/>
-<path d="M180 260L180 278" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M180 278L173.5 267L186.5 267Z" fill="var(--ita-fig-line)"/>
-<path d="M330 315L400 315L400 225L332 225" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
-<path d="M332 225L343 218.5L343 231.5Z" fill="var(--ita-fig-line)"/>
+<rect x="20" y="10" width="220" height="46" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="20" y="84" width="220" height="62" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="20" y="174" width="220" height="62" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="20" y="264" width="220" height="62" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
+<path d="M130 56L130 82" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M130 82L123.5 71L136.5 71Z" fill="var(--ita-fig-line)"/>
+<path d="M130 146L130 172" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M130 172L123.5 161L136.5 161Z" fill="var(--ita-fig-line)"/>
+<path d="M130 236L130 262" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M130 262L123.5 251L136.5 251Z" fill="var(--ita-fig-line)"/>
+<path d="M240 295L284 295L284 205L242 205" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M242 205L253 198.5L253 211.5Z" fill="var(--ita-fig-line)"/>
 </g>
-<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
-<text x="180" y="41" font-weight="600">You write a message</text>
-<text x="180" y="131" font-weight="600">It is split into pieces</text>
-<text x="180" y="218" font-weight="600">The model predicts</text>
-<text x="180" y="242">the next piece</text>
-<text x="180" y="308" font-weight="600">The piece is added</text>
-<text x="180" y="332">to the answer</text>
-<text x="410" y="275" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">repeat</text>
-<text x="30" y="382" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">Every piece is a guess based on patterns.</text>
+<g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="130" y="38" font-weight="600">Your message</text>
+<text x="130" y="109" font-weight="600">It is split up</text>
+<text x="130" y="131">into pieces</text>
+<text x="130" y="199" font-weight="600">The model predicts</text>
+<text x="130" y="221">the next piece</text>
+<text x="130" y="289" font-weight="600">The piece is added</text>
+<text x="130" y="311">to the answer</text>
+<text x="294" y="254" text-anchor="start" fill="var(--ita-fig-muted)">repeat</text>
+<text x="20" y="346" text-anchor="start" fill="var(--ita-fig-muted)">Each piece is a guess.</text>
 </g>
 </svg>
