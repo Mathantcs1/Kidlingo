@@ -1,0 +1,28 @@
+/* Blog index (/blog/): search, category chips, result summary, featured card. Solid theme colours only (dark and light). */
+.blog-filters { display: grid; gap: var(--s-2); margin-bottom: var(--s-4); }
+.blog-search { display: grid; gap: 4px; max-width: 560px; }
+.blog-search label { font-size: 0.875rem; font-weight: 600; }
+.blog-search__row { display: flex; flex-wrap: wrap; gap: var(--s-1); }
+.blog-search__row .field { flex: 1 1 200px; min-width: 0; }
+
+.blog-chips ul { display: flex; flex-wrap: wrap; gap: var(--s-1); margin: 0; padding: 0; list-style: none; }
+.blog-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; background: var(--bg-alt); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+.blog-chip:hover { border-color: var(--muted); }
+.blog-chip[aria-current="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.blog-chip__count { font-size: 0.8125rem; font-weight: 700; opacity: 0.85; }
+
+.blog-summary { margin: 0; color: var(--muted-on-alt); font-size: 0.9375rem; overflow-wrap: anywhere; }
+
+.card__label { margin: 0; color: var(--link); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.card__meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+
+.blog-featured { margin-bottom: var(--s-3); }
+.card--featured .card__title { font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); overflow-wrap: anywhere; }
+.card--featured .card__text { font-size: 1.0625rem; }
+@media (min-width: 900px) {
+	.card--featured { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: var(--s-4); align-content: center; align-items: start; padding: var(--s-4); }
+	.card--featured .card__media { grid-column: 1; grid-row: 1 / span 6; margin: calc(var(--s-4) * -1) 0 calc(var(--s-4) * -1) calc(var(--s-4) * -1); height: calc(100% + 2 * var(--s-4)); aspect-ratio: auto; min-height: 240px; border-radius: calc(var(--radius-card-lg) - 1px) 0 0 calc(var(--radius-card-lg) - 1px); }
+	.card--featured .card__media svg, .card--featured .card__media img { height: 100%; object-fit: cover; }
+	.card--featured > :not(.card__media) { grid-column: 2; }
+	.card--featured:not(:has(.card__media)) { display: flex; }
+}

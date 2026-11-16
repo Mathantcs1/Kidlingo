@@ -2,7 +2,7 @@
 /**
  * Blog post cards, or an empty state when there are no posts.
  *
- * Args: posts (WP_Post[]).
+ * Args: posts (WP_Post[]), featured (WP_Post, optional: shown as a large card above the grid; pass it separately from `posts`).
  *
  * @package IdeaToApps
  */
@@ -11,8 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$ideatoapps_posts = (array) ( $args['posts'] ?? array() );
-if ( ! $ideatoapps_posts ) {
+$ideatoapps_posts    = (array) ( $args['posts'] ?? array() );
+$ideatoapps_featured = ( $args['featured'] ?? null ) instanceof WP_Post ? $args['featured'] : null;
+if ( ! $ideatoapps_posts && ! $ideatoapps_featured ) {
 	?>
 	<div class="empty-state" data-testid="blog-empty">
 		<h2 class="empty-state__title"><?php esc_html_e( 'No posts yet', 'ideatoapps' ); ?></h2>
@@ -21,22 +22,21 @@ if ( ! $ideatoapps_posts ) {
 	<?php
 	return;
 }
-?>
+if ( $ideatoapps_featured ) {
+	?>
+	<div class="blog-featured" data-testid="blog-featured">
+		<?php ideatoapps_part( 'card', array_merge( ideatoapps_blog_card_args( $ideatoapps_featured, 44 ), array( 'class' => 'card--featured' ) ) ); ?>
+	</div>
+	<?php
+}
+if ( $ideatoapps_posts ) {
+	?>
 <div class="grid" data-testid="blog-list">
 	<?php
 	foreach ( $ideatoapps_posts as $ideatoapps_post ) {
-		ideatoapps_part(
-			'card',
-			array(
-				'title'    => get_the_title( $ideatoapps_post ),
-				'href'     => get_permalink( $ideatoapps_post ),
-				'eyebrow'  => get_the_date( '', $ideatoapps_post ),
-				'text'     => wp_trim_words( wp_strip_all_tags( get_the_excerpt( $ideatoapps_post ) ), 28 ),
-				'image_id' => (int) get_post_thumbnail_id( $ideatoapps_post ),
-				'hero_html' => ideatoapps_card_hero( $ideatoapps_post ),
-				'heading'  => 2,
-			)
-		);
+		ideatoapps_part( 'card', ideatoapps_blog_card_args( $ideatoapps_post ) );
 	}
 	?>
 </div>
+	<?php
+}

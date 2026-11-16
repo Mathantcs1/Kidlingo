@@ -6,6 +6,7 @@
  *       class (extra classes), content (HTML, filtered with wp_kses_post),
  *       image_id (attachment ID shown above the title, lazy-loaded with width/height; decorative so alt is empty),
  *       placeholder ('play': decorative play tile when there is no image),
+ *       label (category name shown above the title), meta (small line below the text, such as "4 min read"),
  *       hero_html (trusted inline SVG from ideatoapps_card_hero(), shown in a 16:9 box when there is no image).
  *
  * @package IdeaToApps
@@ -32,6 +33,9 @@ $hero    = (string) ( $args['hero_html'] ?? '' );
 			<svg viewBox="0 0 24 24" focusable="false"><path d="M8 5.5v13l11-6.5z"/></svg>
 		</div>
 	<?php endif; ?>
+	<?php if ( ! empty( $args['label'] ) ) : ?>
+		<p class="card__label" data-testid="card-label"><?php echo esc_html( (string) $args['label'] ); ?></p>
+	<?php endif; ?>
 	<?php if ( ! empty( $args['eyebrow'] ) ) : ?>
 		<p class="card__eyebrow"><?php echo esc_html( (string) $args['eyebrow'] ); ?></p>
 	<?php endif; ?>
@@ -44,6 +48,9 @@ $hero    = (string) ( $args['hero_html'] ?? '' );
 	</h<?php echo (int) $level; ?>>
 	<?php if ( ! empty( $args['text'] ) ) : ?>
 		<p class="card__text"><?php echo esc_html( (string) $args['text'] ); ?></p>
+	<?php endif; ?>
+	<?php if ( ! empty( $args['meta'] ) ) : ?>
+		<p class="card__meta" data-testid="card-meta"><?php echo esc_html( (string) $args['meta'] ); ?></p>
 	<?php endif; ?>
 	<?php
 	if ( ! empty( $args['content'] ) ) {
