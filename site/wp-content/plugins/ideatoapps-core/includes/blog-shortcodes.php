@@ -91,6 +91,14 @@ function ideatoapps_blog_prompt( $atts, $content = '' ): string {
 }
 
 /**
+ * Content of an enclosing shortcode written on its own lines arrives from wpautop + shortcode_unautop as "</p>...<p>": drop the stray
+ * leading </p> and line break, the unclosed trailing <p> and line break, and empty paragraphs.
+ */
+function ideatoapps_blog_unautop_edges( string $html ): string {
+	return (string) preg_replace( array( '#\A(?:\s|</p>|<br\s*/?>)+#i', '#(?:\s|<p>|<br\s*/?>)+\z#i', '#<p>\s*</p>#i' ), '', $html );
+}
+
+/**
  * [ita_why title=""]text[/ita_why]: an expandable box (native details, so it needs no JavaScript).
  *
  * @param mixed  $atts    Attributes.
@@ -99,7 +107,7 @@ function ideatoapps_blog_prompt( $atts, $content = '' ): string {
  */
 function ideatoapps_blog_why( $atts, $content = '' ): string {
 	$atts = ideatoapps_blog_atts( $atts, array( 'title' => '' ), 'ita_why' );
-	$html = is_string( $content ) ? do_shortcode( $content ) : ''; // nested shortcodes first, then everything is filtered.
+	$html = is_string( $content ) ? do_shortcode( ideatoapps_blog_unautop_edges( $content ) ) : ''; // nested shortcodes first, then everything is filtered.
 	$held = ideatoapps_blog_figures_hold( $html ); // figures (inline SVG) would not survive wp_kses; they are already sanitised.
 	$body = wp_kses(
 		$html,
