@@ -157,6 +157,37 @@ export async function createPost(api: Api, title: string, opts: { status?: 'publ
   return body.id;
 }
 
+/**
+ * Sign a starter post off and publish it in one save, through the real classic edit form (the "Editorial review" box):
+ * seven ticks, a typed reviewer name and "Mark as human reviewed". Without this a starter post cannot be published.
+ */
+export async function signOffAndPublish(api: Api, id: number, reviewer = 'E2E Reviewer', opts: { ticks?: string[]; status?: string } = {}): Promise<void> {
+  const raw = await send(api, 'GET', `/wp/v2/posts/${id}`, undefined, 'context=edit');
+  const html = await (await api.ctx.get(`/wp-admin/post.php?post=${id}&action=edit`)).text();
+  const grab = (re: RegExp) => {
+    const m = re.exec(html);
+    if (!m) throw new Error(`post editor field missing: ${re}`);
+    return m[1];
+  };
+  const form = new URLSearchParams({
+    action: 'editpost',
+    originalaction: 'editpost',
+    post_type: 'post',
+    post_ID: String(id),
+    _wpnonce: grab(/id="_wpnonce" name="_wpnonce" value="([a-f0-9]+)"/),
+    ita_review_nonce: grab(/name="ita_review_nonce" value="([a-f0-9]+)"/),
+    post_title: raw.title.raw,
+    content: raw.content.raw,
+    excerpt: raw.excerpt.raw,
+    post_status: opts.status ?? 'publish',
+    ita_review_name: reviewer,
+    ita_review_sign: '1',
+  });
+  for (const t of opts.ticks ?? ['facts', 'examples', 'words', 'prompts', 'quiz', 'links', 'invented']) form.append('ita_review_check[]', t);
+  const res = await api.ctx.post('/wp-admin/post.php', { data: form.toString(), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, maxRedirects: 0 });
+  expect(res.status(), `sign off post ${id}`).toBe(302);
+}
+
 export async function createCategory(api: Api, name: string): Promise<number> {
   const id = (await send(api, 'POST', '/wp/v2/app_category', { name })).id;
   api.made.push({ route: '/wp/v2/app_category', id });

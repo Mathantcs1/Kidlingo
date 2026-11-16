@@ -195,3 +195,23 @@ Rebased onto origin fix round 2 (c1da28e). Status per item (details and RED/GREE
 - Ruling: unsubscribing deletes `resubscribe_requested_at`, so an opt-out withdraws any earlier comeback request and an old confirm link cannot re-confirm.
 - Ruling: the shutdown-hook test removes the hook in setUp so only the code under test can have registered it.
 - Deferred minors: (2) the identical-timing property only holds where `fastcgi_finish_request` / `litespeed_finish_request` exist; (6) the hostile-token test only proves the token is never echoed (the form no longer embeds it); (7) token format changed with the HMAC domain prefix and `\z` (harmless while the feature is off and no link has been mailed).
+
+## AI blog (Tasks 4 and 4c; local commits only, nothing pushed)
+
+Rulings copied from the plan (`docs/superpowers/plans/2026-11-16-ideatoapps-ai-blog.md`):
+
+- Ruling: gate = per-post checkbox "Subscribers only" (post meta `ita_gated`) in the editor; the installer flags 6 starter articles (the longest practical guides: 8, 14, 32, 36, 42, 44). The owner can change any post. Everything else stays open. (Task 4b; Task 4 stores `ita_gated` only, no gate is built yet.)
+- Ruling: the articles are AI-drafted and the site says so. Byline on every post: "Drafted with AI assistance. Edited and reviewed by <reviewer name> on <date>." Never "written by a person" unless true; no fake author. (Honest labelling is the owner-safe choice and is what search engines and readers' trust reward.)
+- Ruling: installer creates posts as drafts with `ita_review_status = ai_draft`. A post cannot stay published unless `ita_review_status = human_reviewed` with `ita_reviewer` (name, required) and `ita_reviewed_on` (date); otherwise a publish/schedule attempt (editor, bulk action, REST, XML-RPC) is forced back to draft with an admin notice. Capability: `publish_posts` holders only; the reviewer name is entered by the human, never prefilled.
+- Ruling: editor box "Editorial review" shows the sign-off checklist (all boxes required to mark reviewed): facts and claims checked against sources; examples tried or reworked; intro and examples rewritten or edited in the reviewer's own words; prompts tested in a real assistant; quiz answers correct; links and images checked; no invented stories/statistics. It also lists the article's `check` items (each writer must list the factual claims that most need verifying).
+- Ruling: editing the content of a reviewed post after sign-off resets it to `needs_review` (hash check) so changes are never published unreviewed; typo-sized edits can be re-signed in one click.
+- Ruling: admin list gets a "Review" column and filter (AI draft / needs review / reviewed) and a count in the dashboard so the owner can see progress through the 50.
+
+Builder rulings (Tasks 4 and 4c):
+
+- Ruling: the header `reviewed` date is the date the DRAFT was written; it is stored as `ita_drafted_on` and never shown as "reviewed". `ita_last_reviewed` is written only at human sign-off (= `ita_reviewed_on`).
+- Ruling: the installer skips a slug when any post of type post carries `ita_starter_slug` = slug in any status (trash included); it never overwrites, republishes or deletes. Existing categories are used as they are and never renamed.
+- Ruling: the publish guard lives in `wp_insert_post_data` (priority 99, after kses) and also in `transition_post_status` (for `wp_publish_post`) and `rest_after_insert_post` (REST writes meta after the insert, so starter meta sent with a publish request is caught).
+- Ruling: sign-off is processed inside the same save (`wp_insert_post_data`), so one click can sign and publish; it needs `publish_posts`, a nonce per post, a typed reviewer name (max 80), and all seven ticks. All review meta is protected (not writable through REST, XML-RPC or Custom Fields).
+- Ruling: `human_reviewed` counts only while the stored content hash equals `ita_reviewed_hash`; meta set without a matching hash never clears a post.
+- Mutation checks (each made the suite fail, reverted): installer capability check removed, installer nonce check removed, sign-off capability check removed, sign-off nonce check removed, content-hash guard removed, publish guard removed in the insert filter.

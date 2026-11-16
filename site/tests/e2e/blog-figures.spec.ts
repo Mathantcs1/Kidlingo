@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { axeProblems } from './helpers/a11y';
 import { horizontalOverflow } from './helpers/layout';
 import { parseColor, ratio, type RGB } from './helpers/contrast';
-import { adminApi, cleanup, createPost, resetContent, type Api } from './helpers/wp';
+import { adminApi, cleanup, createPost, resetContent, signOffAndPublish, type Api } from './helpers/wp';
 
 // Original inline SVG art: diagrams in articles, generated heroes on the post and on blog cards.
 test.describe.configure({ mode: 'serial' });
@@ -20,7 +20,8 @@ let plainUrl = '';
 test.beforeAll(async () => {
   api = await adminApi();
   await resetContent(api);
-  const id = await createPost(api, 'Figure fixture', { content: CONTENT, meta: { ita_starter_slug: '01-what-ai-is-and-isnt' } });
+  const id = await createPost(api, 'Figure fixture', { status: 'draft', content: CONTENT, meta: { ita_starter_slug: '01-what-ai-is-and-isnt' } });
+  await signOffAndPublish(api, id); // starter posts cannot be published without a human sign-off
   const plain = await createPost(api, 'Plain fixture', { content: '<p>No art here.</p>' });
   postUrl = `/?p=${id}`;
   plainUrl = `/?p=${plain}`;
