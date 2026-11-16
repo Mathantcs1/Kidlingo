@@ -96,12 +96,12 @@ function ideatoapps_blog_parse_article( string $path ) {
 		return $bad( 'Slug is not in topics.json.' );
 	}
 	$title = $text( $h['title'] ?? null, 200 );
-	if ( '' === $title ) {
-		return $bad( 'Title is missing.' );
+	if ( '' === $title || $title !== (string) ( $topic['title'] ?? '' ) ) {
+		return $bad( 'Title must match the topic title in topics.json.' );
 	}
 	$cats = array_unique( array_column( ideatoapps_blog_topic_list(), 'category' ) );
-	if ( ! isset( $h['category'] ) || ! is_string( $h['category'] ) || ! in_array( $h['category'], $cats, true ) ) {
-		return $bad( 'Category is not one of the six topic categories.' );
+	if ( ! isset( $h['category'] ) || ! is_string( $h['category'] ) || ! in_array( $h['category'], $cats, true ) || $h['category'] !== ( $topic['category'] ?? '' ) ) {
+		return $bad( 'Category is not the topic category from topics.json.' );
 	}
 	$excerpt = is_string( $h['excerpt'] ?? null ) ? trim( sanitize_text_field( $h['excerpt'] ) ) : '';
 	if ( '' === $excerpt || mb_strlen( $excerpt ) > 160 ) {

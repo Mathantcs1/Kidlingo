@@ -20,7 +20,7 @@ add_action(
 				'single'            => true,
 				'show_in_rest'      => true,
 				'sanitize_callback' => static fn( $value ): string => is_string( $value ) && 1 === preg_match( '/\A[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*\z/', trim( $value ) ) ? trim( $value ) : '',
-				'auth_callback'     => static fn( $allowed, $meta_key, $post_id ): bool => current_user_can( 'edit_post', (int) $post_id ),
+				'auth_callback'     => static fn(): bool => false, // Written only by the installer (update_post_meta); REST and Custom Fields cannot attach a post to the gate or detach it.
 			)
 		);
 	}

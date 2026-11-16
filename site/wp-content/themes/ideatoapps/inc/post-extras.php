@@ -35,7 +35,7 @@ add_action(
 				'single'            => true,
 				'show_in_rest'      => true,
 				'sanitize_callback' => static fn( $value ): string => ideatoapps_valid_review_date( is_string( $value ) ? trim( $value ) : $value ) ?? '',
-				'auth_callback'     => static fn( $allowed, $meta_key, $post_id ): bool => current_user_can( 'edit_post', (int) $post_id ),
+				'auth_callback'     => static fn( $allowed, $meta_key, $post_id ): bool => current_user_can( 'edit_post', (int) $post_id ) && ( ! function_exists( 'ideatoapps_review_status' ) || '' === ideatoapps_review_status( (int) $post_id ) ), // Set by the human sign-off on posts under review.
 			)
 		);
 	}
@@ -45,7 +45,9 @@ add_action(
  * The post's "last reviewed" date as `YYYY-MM-DD`, or null when it is missing or not a real date.
  */
 function ideatoapps_last_reviewed( int $post_id ): ?string {
-	return ideatoapps_valid_review_date( get_post_meta( $post_id, 'ita_last_reviewed', true ) );
+	$date = ideatoapps_valid_review_date( get_post_meta( $post_id, 'ita_last_reviewed', true ) );
+	$date = apply_filters( 'ideatoapps_last_reviewed', $date, $post_id ); // The plugin's human-review gate may replace or hide it.
+	return is_string( $date ) ? ideatoapps_valid_review_date( $date ) : null;
 }
 
 /**

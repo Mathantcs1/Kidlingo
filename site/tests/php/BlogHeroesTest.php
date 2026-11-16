@@ -112,8 +112,11 @@ final class BlogHeroesTest extends SeoTestCase {
 	}
 
 	public function test_single_post_shows_the_hero_in_a_testid_wrapper_with_a_fixed_ratio_class(): void {
-		$start = (int) wp_insert_post( array( 'post_status' => 'publish', 'post_title' => 'Start', 'post_content' => 'x' ) );
-		update_post_meta( $start, 'ita_starter_slug', $this->topics()[0]['slug'] );
+		wp_set_current_user( self::make_user( 'administrator' ) );
+		$start = (int) wp_insert_post( array( 'post_status' => 'draft', 'post_title' => 'Start', 'post_content' => 'x' ) );
+		update_post_meta( $start, 'ita_starter_slug', $this->topics()[0]['slug'] ); // starter posts publish only after a human sign-off.
+		ideatoapps_review_sign_off( $start, ideatoapps_review_fields( $start ), array( 'ita_review_nonce' => wp_create_nonce( 'ita_review_' . $start ), 'ita_review_name' => 'Rev', 'ita_review_check' => array_keys( ideatoapps_review_checklist() ) ) );
+		wp_update_post( array( 'ID' => $start, 'post_status' => 'publish' ) );
 		$this->go_to( get_permalink( $start ) );
 		global $wp_query;
 		ob_start();

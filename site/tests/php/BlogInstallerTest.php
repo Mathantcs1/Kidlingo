@@ -26,8 +26,17 @@ final class BlogInstallerTest extends WPTestCase {
 		return $this->dir;
 	}
 
+	public static function topic_title( string $slug ): string {
+		foreach ( json_decode( (string) file_get_contents( IDEATOAPPS_CORE_DIR . 'content/topics.json' ), true ) as $t ) {
+			if ( $t['slug'] === $slug ) {
+				return $t['title'];
+			}
+		}
+		return '';
+	}
+
 	private function header( string $slug, string $cat, bool $gated, array $over = array() ): string {
-		return '<!--ita ' . wp_json_encode( $over + array( 'slug' => $slug, 'title' => 'Title ' . $slug, 'category' => $cat, 'excerpt' => 'Short excerpt.', 'reviewed' => '2026-11-16', 'gated' => $gated, 'check' => array( 'claim "one" \\ x', 'claim two', 'claim three' ) ) ) . " -->\n<p>Body of {$slug} with a back\\slash.</p>\n";
+		return '<!--ita ' . wp_json_encode( $over + array( 'slug' => $slug, 'title' => self::topic_title( $slug ), 'category' => $cat, 'excerpt' => 'Short excerpt.', 'reviewed' => '2026-11-16', 'gated' => $gated, 'check' => array( 'claim "one" \\ x', 'claim two', 'claim three' ) ) ) . " -->\n<p>Body of {$slug} with a back\\slash.</p>\n";
 	}
 
 	private function article( string $slug, string $cat, bool $gated, array $over = array() ): string {
@@ -60,7 +69,7 @@ final class BlogInstallerTest extends WPTestCase {
 		$over = array(
 			array( 'slug' => '1-bad' ), array( 'slug' => '03-not-in-topics' ), array( 'category' => 'cooking' ), array( 'excerpt' => str_repeat( 'x', 161 ) ),
 			array( 'excerpt' => '' ), array( 'check' => array( 'a', 'b' ) ), array( 'check' => array( 'a', 'b', ' ' ) ), array( 'check' => array_fill( 0, 7, 'x' ) ),
-			array( 'check' => 'text' ), array( 'reviewed' => '2026-02-30' ), array( 'reviewed' => 'yesterday' ), array( 'title' => '' ), array( 'gated' => 'yes' ),
+			array( 'check' => 'text' ), array( 'reviewed' => '2026-02-30' ), array( 'reviewed' => 'yesterday' ), array( 'title' => '' ), array( 'title' => 'A different title' ), array( 'category' => 'prompting' ), array( 'gated' => 'yes' ),
 		);
 		foreach ( $over as $i => $o ) {
 			$cases[ 'over' . $i ] = $this->header( '01-what-ai-is-and-isnt', 'ai-basics', false, $o );
@@ -79,7 +88,7 @@ final class BlogInstallerTest extends WPTestCase {
 
 	public function test_install_creates_drafts_with_meta_and_category(): void {
 		$r = ideatoapps_blog_install();
-		$this->assertSame( array( 'created' => 3, 'skipped' => 0, 'errors' => 0 ), $r );
+		$this->assertSame( array( 'created' => 3, 'skipped' => 0, 'errors' => 0, 'locked' => false ), $r );
 		$id = $this->starter( '09-the-four-part-prompt-recipe' );
 		$p  = get_post( $id );
 		$this->assertSame( 'draft', $p->post_status );
@@ -110,7 +119,7 @@ final class BlogInstallerTest extends WPTestCase {
 	public function test_second_run_creates_nothing_and_never_publishes(): void {
 		ideatoapps_blog_install();
 		$r = ideatoapps_blog_install();
-		$this->assertSame( array( 'created' => 0, 'skipped' => 3, 'errors' => 0 ), $r );
+		$this->assertSame( array( 'created' => 0, 'skipped' => 3, 'errors' => 0, 'locked' => false ), $r );
 		$this->assertSame( 3, count( get_posts( array( 'post_status' => 'any', 'meta_key' => 'ita_starter_slug', 'numberposts' => -1 ) ) ) ); // phpcs:ignore
 		$this->assertSame( array(), get_posts( array( 'post_status' => 'publish', 'meta_key' => 'ita_starter_slug', 'numberposts' => -1 ) ) ); // phpcs:ignore
 	}
@@ -119,7 +128,7 @@ final class BlogInstallerTest extends WPTestCase {
 		ideatoapps_blog_install();
 		$id = $this->starter( '01-what-ai-is-and-isnt' );
 		wp_update_post( array( 'ID' => $id, 'post_content' => 'Owner edit', 'post_title' => 'Owner title' ) );
-		file_put_contents( $this->dir . '/01-what-ai-is-and-isnt.html', $this->header( '01-what-ai-is-and-isnt', 'ai-basics', false, array( 'title' => 'New' ) ) . 'changed' );
+		file_put_contents( $this->dir . '/01-what-ai-is-and-isnt.html', $this->header( '01-what-ai-is-and-isnt', 'ai-basics', false, array( 'excerpt' => 'New excerpt.' ) ) . 'changed' );
 		ideatoapps_blog_install();
 		$p = get_post( $id );
 		$this->assertSame( 'Owner edit', $p->post_content );
@@ -140,7 +149,7 @@ final class BlogInstallerTest extends WPTestCase {
 	public function test_malformed_file_counts_as_error_and_the_rest_installs(): void {
 		file_put_contents( $this->dir . '/02-ml-vs-deep-learning-vs-generative-ai.html', '<!--ita {broken -->x' );
 		$r = ideatoapps_blog_install();
-		$this->assertSame( array( 'created' => 2, 'skipped' => 0, 'errors' => 1 ), $r );
+		$this->assertSame( array( 'created' => 2, 'skipped' => 0, 'errors' => 1, 'locked' => false ), $r );
 		$this->assertSame( 0, $this->starter( '02-ml-vs-deep-learning-vs-generative-ai' ) );
 	}
 
@@ -175,10 +184,72 @@ final class BlogInstallerTest extends WPTestCase {
 		$html = (string) ob_get_clean();
 		$_GET = array();
 		$this->assertStringContainsString( '3 of 3 article files are installed', $html );
-		$this->assertStringContainsString( '0 of 3 starter articles human reviewed', $html );
+		$this->assertStringContainsString( '0 of 3 installed starter articles human reviewed', $html );
+		$this->assertStringContainsString( '0 article files not installed yet', $html );
 		$this->assertStringContainsString( 'value="ideatoapps_install_starter"', $html );
 		$this->assertStringContainsString( 'Install starter articles', $html );
 		$this->assertStringContainsString( '3 created as drafts, 0 already there (left alone), 1 with errors', $html );
 		$this->assertStringContainsString( 'edit.php?ita_review=ai_draft', $html );
+	}
+
+	/* Review fixes */
+
+	public function test_permanently_deleted_starter_post_is_not_recreated_until_reinstalled(): void {
+		ideatoapps_blog_install();
+		$id = $this->starter( '01-what-ai-is-and-isnt' );
+		$this->assertSame( $id, ideatoapps_blog_installed_slugs()['01-what-ai-is-and-isnt'] );
+		wp_delete_post( $id, true );
+		$r = ideatoapps_blog_install();
+		$this->assertSame( 0, $r['created'] );
+		$this->assertSame( 0, $this->starter( '01-what-ai-is-and-isnt' ) );
+		$this->assertSame( array( '01-what-ai-is-and-isnt' ), ideatoapps_blog_missing_slugs() );
+		$this->assertSame( 1, ideatoapps_blog_reinstall( '01-what-ai-is-and-isnt' )['created'] );
+		$this->assertGreaterThan( 0, $this->starter( '01-what-ai-is-and-isnt' ) );
+		$this->assertSame( array(), ideatoapps_blog_missing_slugs() );
+		$this->assertSame( 1, ideatoapps_blog_reinstall( '02-ml-vs-deep-learning-vs-generative-ai' )['skipped'], 'only a deleted article can be reinstalled' );
+	}
+
+	public function test_cleared_meta_does_not_make_the_installer_recreate_the_post(): void {
+		ideatoapps_blog_install();
+		$id = $this->starter( '09-the-four-part-prompt-recipe' );
+		delete_post_meta( $id, 'ita_starter_slug' );
+		$r = ideatoapps_blog_install();
+		$this->assertSame( 0, $r['created'], 'the recorded slug still blocks a copy' );
+	}
+
+	public function test_installed_slug_record_is_not_autoloaded(): void {
+		ideatoapps_blog_install();
+		global $wpdb;
+		$this->assertContains( $wpdb->get_var( "SELECT autoload FROM {$wpdb->options} WHERE option_name = 'ideatoapps_blog_installed_slugs'" ), array( 'no', 'off' ) );
+	}
+
+	public function test_a_second_run_while_one_is_in_progress_creates_nothing(): void {
+		add_option( 'ideatoapps_blog_install_lock', time(), '', false );
+		$r = ideatoapps_blog_install();
+		$this->assertTrue( $r['locked'] );
+		$this->assertSame( 0, $r['created'] );
+		$this->assertSame( 0, $this->starter( '01-what-ai-is-and-isnt' ) );
+		update_option( 'ideatoapps_blog_install_lock', time() - 120, false );
+		$this->assertSame( 3, ideatoapps_blog_install()['created'], 'a stale lock expires' );
+		$this->assertFalse( get_option( 'ideatoapps_blog_install_lock' ), 'the lock is released' );
+	}
+
+	public function test_only_admins_with_a_nonce_may_reinstall(): void {
+		$this->assertTrue( ideatoapps_blog_can_reinstall( wp_create_nonce( 'ideatoapps_reinstall_starter' ) ) );
+		$this->assertFalse( ideatoapps_blog_can_reinstall( wp_create_nonce( 'ideatoapps_install_starter' ) ) );
+		$this->assertFalse( ideatoapps_blog_can_reinstall( 'bad' ) );
+		wp_set_current_user( self::make_user( 'editor' ) );
+		$this->assertFalse( ideatoapps_blog_can_reinstall( wp_create_nonce( 'ideatoapps_reinstall_starter' ) ) );
+	}
+
+	public function test_settings_lists_deleted_articles_with_a_reinstall_button(): void {
+		ideatoapps_blog_install();
+		wp_delete_post( $this->starter( '01-what-ai-is-and-isnt' ), true );
+		ob_start();
+		ideatoapps_render_starter_section();
+		$html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'Reinstall a deleted article', $html );
+		$this->assertStringContainsString( 'value="01-what-ai-is-and-isnt"', $html );
+		$this->assertStringContainsString( '1 article files not installed yet', $html );
 	}
 }

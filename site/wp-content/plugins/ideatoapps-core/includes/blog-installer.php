@@ -33,61 +33,141 @@ function ideatoapps_blog_ensure_category( string $slug ): int {
 	return 0;
 }
 
+/** Slug => post id of every starter post this site has ever created (kept after the post is deleted). */
+function ideatoapps_blog_installed_slugs(): array {
+	$v = get_option( 'ideatoapps_blog_installed_slugs', array() );
+	return is_array( $v ) ? $v : array();
+}
+
+function ideatoapps_blog_record_slug( string $slug, int $post_id ): void {
+	$all          = ideatoapps_blog_installed_slugs();
+	$all[ $slug ] = $post_id;
+	update_option( 'ideatoapps_blog_installed_slugs', $all, false );
+}
+
 /**
- * Create the missing starter posts as drafts.
- *
- * @return array{created:int,skipped:int,errors:int}
+ * Take the install lock (one run at a time, a stale lock expires after 60 seconds).
  */
-function ideatoapps_blog_install(): array {
-	$out = array( 'created' => 0, 'skipped' => 0, 'errors' => 0 );
-	foreach ( ideatoapps_blog_article_files() as $path ) {
-		$article = ideatoapps_blog_parse_article( $path );
-		if ( is_wp_error( $article ) ) {
-			++$out['errors'];
-			continue;
+function ideatoapps_blog_lock(): bool {
+	if ( add_option( 'ideatoapps_blog_install_lock', time(), '', false ) ) {
+		return true;
+	}
+	if ( time() - (int) get_option( 'ideatoapps_blog_install_lock', 0 ) > 60 ) {
+		update_option( 'ideatoapps_blog_install_lock', time(), false );
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Create one article as a draft unless it is already there or was ever installed.
+ *
+ * @param array<string,mixed> $article Parsed article.
+ * @return string created, skipped or error.
+ */
+function ideatoapps_blog_install_one( array $article ): string {
+	$slug = (string) $article['slug'];
+	$have = ideatoapps_blog_find_starter( $slug );
+	if ( $have > 0 ) {
+		ideatoapps_blog_record_slug( $slug, $have );
+		return 'skipped';
+	}
+	if ( isset( ideatoapps_blog_installed_slugs()[ $slug ] ) ) {
+		return 'skipped'; // Deleted on purpose: only the "Reinstall" action brings it back.
+	}
+	$cat = ideatoapps_blog_ensure_category( $article['category'] );
+	if ( $cat <= 0 ) {
+		return 'error';
+	}
+	$id = wp_insert_post(
+		wp_slash(
+			array(
+				'post_type'     => 'post',
+				'post_status'   => 'draft',
+				'post_title'    => $article['title'],
+				'post_excerpt'  => $article['excerpt'],
+				'post_name'     => preg_replace( '/\A\d\d-/', '', $slug ),
+				'post_content'  => $article['body'],
+				'post_author'   => get_current_user_id(),
+				'post_category' => array( $cat ),
+			)
+		),
+		true
+	);
+	if ( is_wp_error( $id ) || ! $id ) {
+		return 'error';
+	}
+	$meta = array(
+		'ita_starter_slug'  => $slug,
+		'ita_starter_hash'  => hash( 'sha256', (string) get_post_field( 'post_content', $id ) ),
+		'ita_drafted_on'    => $article['reviewed'],
+		'ita_gated'         => $article['gated'] ? 1 : 0,
+		'ita_check'         => (string) wp_json_encode( $article['check'] ),
+		'ita_review_status' => 'ai_draft',
+	);
+	foreach ( $meta as $key => $value ) {
+		update_post_meta( $id, $key, is_string( $value ) ? wp_slash( $value ) : $value );
+	}
+	ideatoapps_blog_record_slug( $slug, (int) $id );
+	return 'created';
+}
+
+/**
+ * Create the missing starter posts as drafts. A second run while one is in progress creates nothing (`locked`).
+ *
+ * @return array{created:int,skipped:int,errors:int,locked:bool}
+ */
+function ideatoapps_blog_install( ?string $only = null ): array {
+	$out = array( 'created' => 0, 'skipped' => 0, 'errors' => 0, 'locked' => false );
+	if ( ! ideatoapps_blog_lock() ) {
+		$out['locked'] = true;
+		return $out;
+	}
+	try {
+		foreach ( ideatoapps_blog_article_files() as $path ) {
+			if ( null !== $only && basename( $path, '.html' ) !== $only ) {
+				continue;
+			}
+			$article = ideatoapps_blog_parse_article( $path );
+			$r       = is_wp_error( $article ) ? 'error' : ideatoapps_blog_install_one( $article );
+			++$out[ 'error' === $r ? 'errors' : $r ];
 		}
-		if ( ideatoapps_blog_find_starter( $article['slug'] ) > 0 ) {
-			++$out['skipped'];
-			continue;
-		}
-		$cat = ideatoapps_blog_ensure_category( $article['category'] );
-		if ( $cat <= 0 ) {
-			++$out['errors'];
-			continue;
-		}
-		$id = wp_insert_post(
-			wp_slash(
-				array(
-					'post_type'     => 'post',
-					'post_status'   => 'draft',
-					'post_title'    => $article['title'],
-					'post_excerpt'  => $article['excerpt'],
-					'post_name'     => preg_replace( '/\A\d\d-/', '', $article['slug'] ),
-					'post_content'  => $article['body'],
-					'post_author'   => get_current_user_id(),
-					'post_category' => array( $cat ),
-				)
-			),
-			true
-		);
-		if ( is_wp_error( $id ) || ! $id ) {
-			++$out['errors'];
-			continue;
-		}
-		$meta = array(
-			'ita_starter_slug'  => $article['slug'],
-			'ita_starter_hash'  => ideatoapps_review_hash( (string) get_post_field( 'post_content', $id ) ),
-			'ita_drafted_on'    => $article['reviewed'],
-			'ita_gated'         => $article['gated'] ? 1 : 0,
-			'ita_check'         => (string) wp_json_encode( $article['check'] ),
-			'ita_review_status' => 'ai_draft',
-		);
-		foreach ( $meta as $key => $value ) {
-			update_post_meta( $id, $key, is_string( $value ) ? wp_slash( $value ) : $value );
-		}
-		++$out['created'];
+	} finally {
+		delete_option( 'ideatoapps_blog_install_lock' );
 	}
 	return $out;
+}
+
+/**
+ * Recorded slugs whose post no longer exists (permanently deleted) and whose article file is still there.
+ *
+ * @return string[]
+ */
+function ideatoapps_blog_missing_slugs(): array {
+	$files = array_map( static fn( $p ) => basename( $p, '.html' ), ideatoapps_blog_article_files() );
+	return array_values( array_filter( array_keys( ideatoapps_blog_installed_slugs() ), static fn( $s ) => in_array( $s, $files, true ) && 0 === ideatoapps_blog_find_starter( (string) $s ) ) );
+}
+
+/**
+ * Explicitly recreate one deleted starter article as a fresh draft.
+ *
+ * @return array{created:int,skipped:int,errors:int,locked:bool}
+ */
+function ideatoapps_blog_reinstall( string $slug ): array {
+	if ( ! in_array( $slug, ideatoapps_blog_missing_slugs(), true ) ) {
+		return array( 'created' => 0, 'skipped' => 1, 'errors' => 0, 'locked' => false );
+	}
+	$all = ideatoapps_blog_installed_slugs();
+	unset( $all[ $slug ] );
+	update_option( 'ideatoapps_blog_installed_slugs', $all, false );
+	$r = ideatoapps_blog_install( $slug );
+	if ( 0 === $r['created'] && ! $r['locked'] ) { // Nothing came back (file error): keep the record so it is not silently recreated later.
+		ideatoapps_blog_record_slug( $slug, 0 );
+	}
+	if ( $r['locked'] ) {
+		ideatoapps_blog_record_slug( $slug, 0 );
+	}
+	return $r;
 }
 
 /**

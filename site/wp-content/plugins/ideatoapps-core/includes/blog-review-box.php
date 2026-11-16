@@ -40,7 +40,15 @@ function ideatoapps_review_render_box( $post ): void {
 	$labels = ideatoapps_review_statuses();
 	$name   = (string) get_post_meta( $id, 'ita_reviewer', true );
 	$on     = (string) get_post_meta( $id, 'ita_reviewed_on', true );
+	// The block editor reloads this box through a meta-box-loader request after saving and throws the HTML away; only a real page view uses the message up.
+	$res  = ideatoapps_review_recall( $id, empty( $_GET['meta-box-loader'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only.
+	$msgs = ideatoapps_review_messages();
 	echo '<div data-testid="review-box">';
+	if ( $res && isset( $msgs[ $res['code'] ] ) ) {
+		echo '<p data-testid="review-box-result" role="status"><strong>' . esc_html( $msgs[ $res['code'] ] ) . '</strong></p>';
+	} elseif ( 'human_reviewed' === $status && ! in_array( $post->post_status, array( 'publish', 'future' ), true ) ) {
+		echo '<p data-testid="review-box-result" role="status"><strong>' . esc_html( $msgs['signed'] ) . '</strong></p>';
+	}
 	echo '<p><strong>' . esc_html__( 'Status:', 'ideatoapps-core' ) . '</strong> <span data-testid="review-status">' . esc_html( $labels[ $status ] ) . '</span></p>';
 	if ( 'human_reviewed' === $status && '' !== $name ) {
 		/* translators: 1: reviewer name, 2: date. */
@@ -60,13 +68,22 @@ function ideatoapps_review_render_box( $post ): void {
 		wp_nonce_field( 'ita_review_' . $id, 'ita_review_nonce', false );
 		echo '<h4>' . esc_html__( 'Sign-off checklist', 'ideatoapps-core' ) . '</h4>';
 		foreach ( ideatoapps_review_checklist() as $key => $label ) {
-			echo '<p style="margin:.3em 0"><label><input type="checkbox" name="ita_review_check[]" value="' . esc_attr( $key ) . '"> ' . esc_html( $label ) . '</label></p>';
+			echo '<p style="margin:.3em 0"><label><input type="checkbox" name="ita_review_check[]" value="' . esc_attr( $key ) . '"' . checked( in_array( $key, $res['ticks'] ?? array(), true ), true, false ) . '> ' . esc_html( $label ) . '</label></p>';
 		}
 		echo '<p><label for="ita-review-name"><strong>' . esc_html__( 'Reviewer name (required)', 'ideatoapps-core' ) . '</strong></label><br>';
-		echo '<input type="text" id="ita-review-name" name="ita_review_name" class="widefat" maxlength="80" value="" aria-required="true" autocomplete="off"></p>';
+		echo '<input type="text" id="ita-review-name" name="ita_review_name" class="widefat" maxlength="80" value="' . esc_attr( $res['name'] ?? '' ) . '" aria-required="true" autocomplete="off"></p>';
 		$label = 'needs_review' === $status ? __( 'Re-sign: mark as human reviewed again', 'ideatoapps-core' ) : __( 'Mark as human reviewed', 'ideatoapps-core' );
 		echo '<p><label><input type="checkbox" name="ita_review_sign" value="1" data-testid="review-sign"> <strong>' . esc_html( $label ) . '</strong></label></p>';
 		echo '<p class="description">' . esc_html__( 'Takes effect when you save, and only with your name and all seven boxes ticked.', 'ideatoapps-core' ) . '</p>';
 	}
 	echo '</div>';
 }
+
+add_action(
+	'admin_enqueue_scripts',
+	static function ( $hook ): void {
+		if ( in_array( $hook, array( 'post.php', 'post-new.php' ), true ) && 'post' === get_post_type( (int) ( $_GET['post'] ?? 0 ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only.
+			wp_enqueue_script( 'ita-review-editor', plugins_url( 'assets/review-editor.js', IDEATOAPPS_CORE_FILE ), array( 'wp-data', 'wp-notices' ), IDEATOAPPS_CORE_VERSION, true );
+		}
+	}
+);

@@ -52,7 +52,10 @@ add_action(
 	static function ( $q ): void {
 		global $pagenow;
 		if ( is_admin() && $q->is_main_query() && 'edit.php' === $pagenow && 'post' === ( $q->get( 'post_type' ) ?: 'post' ) && '' !== ideatoapps_review_filter_value() ) {
-			$q->set( 'meta_query', array( array( 'key' => 'ita_review_status', 'value' => ideatoapps_review_filter_value() ) ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- admin list filter.
+			$want = ideatoapps_review_filter_value();
+			$is   = array( 'key' => 'ita_review_status', 'value' => $want );
+			// A starter post without a stored status counts as an AI draft.
+			$q->set( 'meta_query', 'ai_draft' === $want ? array( 'relation' => 'OR', $is, array( 'relation' => 'AND', array( 'key' => 'ita_starter_slug', 'compare' => 'EXISTS' ), array( 'key' => 'ita_review_status', 'compare' => 'NOT EXISTS' ) ) ) : array( $is ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- admin list filter.
 		}
 	}
 );
@@ -66,22 +69,41 @@ add_action(
 function ideatoapps_review_byline( $html, $post_id = 0 ) {
 	$id   = (int) $post_id;
 	$post = get_post( $id );
-	if ( ! $post || '' !== (string) $html || 'human_reviewed' !== ideatoapps_review_status( $id ) || ! ideatoapps_review_is_cleared( $id, $post->post_content ) ) {
+	if ( ! $post || 'human_reviewed' !== ideatoapps_review_status( $id ) || ! ideatoapps_review_is_cleared( $id, ideatoapps_review_fields( $post ) ) ) {
 		return $html;
 	}
 	$on   = (string) get_post_meta( $id, 'ita_reviewed_on', true );
 	$date = date_i18n( get_option( 'date_format' ), (int) strtotime( $on . ' 00:00:00 UTC' ) );
 	/* translators: 1: reviewer name, 2: date. */
-	return esc_html( sprintf( __( 'Drafted with AI assistance. Edited and reviewed by %1$s on %2$s.', 'ideatoapps-core' ), (string) get_post_meta( $id, 'ita_reviewer', true ), $date ) );
+	$line = esc_html( sprintf( __( 'Drafted with AI assistance. Edited and reviewed by %1$s on %2$s.', 'ideatoapps-core' ), (string) get_post_meta( $id, 'ita_reviewer', true ), $date ) );
+	// The honest line always comes first; whatever another filter put there follows it and cannot replace it.
+	return '' === (string) $html ? $line : $line . ' ' . $html;
 }
-add_filter( 'ideatoapps_post_byline_html', 'ideatoapps_review_byline', 10, 2 );
+add_filter( 'ideatoapps_post_byline_html', 'ideatoapps_review_byline', 999, 2 );
+
+// "Last reviewed" for a post under review is the human review date; before sign-off there is none.
+add_filter(
+	'ideatoapps_last_reviewed',
+	static function ( $date, $post_id ) {
+		if ( '' === ideatoapps_review_status( (int) $post_id ) ) {
+			return $date;
+		}
+		$on = (string) get_post_meta( (int) $post_id, 'ita_reviewed_on', true );
+		return 'human_reviewed' === ideatoapps_review_status( (int) $post_id ) && ideatoapps_blog_valid_date( $on ) ? $on : null;
+	},
+	10,
+	2
+);
 
 /**
- * Counts for the Settings line: human reviewed starter posts out of the starter article files.
+ * Progress for the Settings line: human reviewed out of the installed starter posts, and the article files with no post yet.
  *
- * @return array{reviewed:int,total:int}
+ * @return array{reviewed:int,installed:int,missing:int}
  */
 function ideatoapps_review_progress(): array {
-	$ids = get_posts( array( 'post_type' => 'post', 'post_status' => array( 'draft', 'pending', 'private', 'publish', 'future' ), 'numberposts' => -1, 'fields' => 'ids', 'meta_query' => array( array( 'key' => 'ita_starter_slug', 'compare' => 'EXISTS' ), array( 'key' => 'ita_review_status', 'value' => 'human_reviewed' ) ) ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- a few dozen rows.
-	return array( 'reviewed' => count( $ids ), 'total' => count( ideatoapps_blog_article_files() ) );
+	$base = array( 'post_type' => 'post', 'post_status' => array( 'draft', 'pending', 'private', 'publish', 'future' ), 'numberposts' => -1, 'fields' => 'ids' );
+	$have = get_posts( $base + array( 'meta_query' => array( array( 'key' => 'ita_starter_slug', 'compare' => 'EXISTS' ) ) ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- a few dozen rows.
+	$done = get_posts( $base + array( 'meta_query' => array( array( 'key' => 'ita_starter_slug', 'compare' => 'EXISTS' ), array( 'key' => 'ita_review_status', 'value' => 'human_reviewed' ) ) ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+	$st   = ideatoapps_blog_install_status();
+	return array( 'reviewed' => count( $done ), 'installed' => count( $have ), 'missing' => $st['total'] - $st['installed'] );
 }
