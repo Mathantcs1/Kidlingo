@@ -19,7 +19,7 @@ const MIN_RATE = 8000;
 /** null when the media has no audio in the range. Throws what decodeAudioRange throws (abort, unreadable file). */
 export async function loadSegmentAudio(seg: Segment, margins: Margins, ctx: BaseAudioContext, signal?: AbortSignal): Promise<DecodedAudio | null> {
   const { clip } = seg;
-  const [lo, hi] = audioSpan(clip);
+  const [lo, hi] = audioSpan(clip, seg.xfade);
   const from = Math.max(lo, seg.srcFrom - CUT_MARGIN - margins.pre);
   const to = Math.min(hi, seg.srcTo + CUT_MARGIN + margins.post);
   if (!isRetimedAudio(clip)) {
@@ -28,8 +28,8 @@ export async function loadSegmentAudio(seg: Segment, margins: Margins, ctx: Base
   }
   // A stretch chain restarts on a global grid: decode back to the restart (at most ANCHOR_SECONDS plus a hop before the window)
   // and past the end by the grains that overlap it, so every window sees the footage the chain reads.
-  const [chainFrom, chainTo] = usesStretch(clip) ? [Math.max(0, from - ANCHOR_SECONDS - 0.05), Math.min(hi, to + 0.1)] : [from, to];
-  const [a, b] = footageToDecode(clip, chainFrom, chainTo, MIN_RATE);
+  const [chainFrom, chainTo] = usesStretch(clip) ? [Math.max(lo, from - ANCHOR_SECONDS - 0.05), Math.min(hi, to + 0.1)] : [from, to];
+  const [a, b] = footageToDecode(clip, chainFrom, chainTo, MIN_RATE, seg.xfade);
   const decoded = await decodeAudioRange(seg.mediaId, a, b, ctx, signal);
   if (!decoded) return null;
   const prepared = { ...decoded, buffer: await prepareSource(clip, decoded, ctx) };

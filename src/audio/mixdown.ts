@@ -4,6 +4,8 @@ import { timelineDuration } from '../core/timeline';
 import { ExportError } from '../export/errors';
 import { buildClipChain } from './chain';
 import { chainLatency, chainMargins } from './effects/params';
+import { crossfadeInfo } from './crossfade';
+import type { ClipCrossfade } from './crossfade';
 import { clipDuckPoints } from './duck';
 import type { GainPoint } from './fade';
 import { audibleClips, planWindow, trackVolumes } from './plan';
@@ -41,6 +43,7 @@ export class MixdownStream {
   private readonly clips: Clip[];
   private readonly trackVolumes: Map<Id, number>;
   private readonly duckPoints: Map<Id, GainPoint[]>;
+  private readonly xfades: Map<Id, ClipCrossfade>;
   private readonly windowLength: number;
 
   constructor(
@@ -52,6 +55,7 @@ export class MixdownStream {
     this.clips = audibleClips(p);
     this.trackVolumes = trackVolumes(p);
     this.duckPoints = clipDuckPoints(p);
+    this.xfades = crossfadeInfo(p, this.clips);
     this.length = duration > 0 ? Math.ceil(duration * sampleRate) : 0;
     const seconds = opts.windowSeconds ?? EXPORT_WINDOW_SECONDS;
     this.windowLength = Number.isFinite(seconds) ? Math.max(1, Math.round(seconds * sampleRate)) : this.length;
@@ -68,7 +72,7 @@ export class MixdownStream {
     if (from >= this.length) return null;
     const to = Math.min(this.length, from + this.windowLength);
     const t0 = from / this.sampleRate;
-    const segs = planWindow(this.clips, t0, to / this.sampleRate, this.trackVolumes, this.duckPoints);
+    const segs = planWindow(this.clips, t0, to / this.sampleRate, this.trackVolumes, this.duckPoints, this.xfades);
     // Effects need earlier audio (D7): the context starts `pre` frames before the window and that part is dropped.
     const preMax = Math.max(0, ...segs.map((s) => chainMargins(s.clip.audio.effects).pre));
     const pre = Math.ceil((preMax * this.sampleRate) / QUANTUM) * QUANTUM;

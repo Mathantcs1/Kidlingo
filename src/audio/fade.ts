@@ -68,3 +68,26 @@ export function windowPoints(points: readonly GainPoint[], from: number, to: num
   if (to > from) out.push({ t: to, gain: envelopeAt(points, to) });
   return out;
 }
+
+/** Crossfade envelopes of a clip's two sides (see crossfade.ts); the structural subset fade.ts needs. */
+export interface FadeCrossfade {
+  inPoints?: GainPoint[];
+  outPoints?: GainPoint[];
+}
+
+/**
+ * The clip gain (fades × crossfade) over [from, to] as breakpoints. Without a crossfade it is `fadePoints`. On an edge that
+ * has a crossfade the clip's own fade is replaced by it (D12: the stored fade is kept, it just does not sound there); the
+ * result has the fade knees and every crossfade breakpoint inside the window.
+ */
+export function clipGainPoints(clip: Clip, from: number, to: number, xf?: FadeCrossfade): GainPoint[] {
+  if (!xf || (!xf.inPoints && !xf.outPoints)) return fadePoints(clip, from, to);
+  const c: Clip = { ...clip, audio: { ...clip.audio, fadeIn: xf.inPoints ? 0 : clip.audio.fadeIn, fadeOut: xf.outPoints ? 0 : clip.audio.fadeOut } };
+  const base = fadePoints(c, from, to).map((p) => p.t);
+  const extra = [...(xf.inPoints ?? []), ...(xf.outPoints ?? [])].map((p) => p.t).filter((t) => t > from && t < to);
+  const ts = [...new Set([...base, ...extra])].sort((a, b) => a - b);
+  return ts.map((t) => ({
+    t,
+    gain: fadeGain(c, t) * (xf.inPoints ? envelopeAt(xf.inPoints, t) : 1) * (xf.outPoints ? envelopeAt(xf.outPoints, t) : 1),
+  }));
+}

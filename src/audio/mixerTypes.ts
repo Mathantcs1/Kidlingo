@@ -1,6 +1,7 @@
 // Types of the live playback mixer (see mixer.ts).
 import type { Clip, Id, Project } from '../core/model';
 import type { ClipChain } from './chain';
+import type { ClipCrossfade } from './crossfade';
 import type { GainPoint } from './fade';
 
 /** Live playback of a project's audio through an AudioContext. */
@@ -54,6 +55,8 @@ export interface Session {
   trackVolumes: Map<Id, number>;
   /** Clip id → its track's duck envelope (see duck.clipDuckPoints). */
   duckPoints: Map<Id, GainPoint[]>;
+  /** Clip id → its crossfade halves (see crossfade.crossfadeInfo). */
+  xfades: Map<Id, ClipCrossfade>;
   windows: [number, number][];
   next: number;
   names: Map<Id, string>;

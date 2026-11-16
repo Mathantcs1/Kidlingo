@@ -1,6 +1,6 @@
 // DOM-free auto-ducking (D5): a track's gain dips while the audible clips of one chosen source track play.
-import { clipEnd } from '../core/model';
 import type { Id, Project, Track } from '../core/model';
+import { audibleSpanOf, crossfadeInfo } from './crossfade';
 import type { GainPoint } from './fade';
 import { audibleClips } from './plan';
 
@@ -56,9 +56,10 @@ export function duckPointsFor(p: Project, track: Track): GainPoint[] | undefined
   const source = p.tracks.find((t) => t.id === duck.sourceTrackId);
   if (!source || source.id === track.id) return undefined;
   const ids = new Set(source.clips.map((c) => c.id));
-  const intervals = audibleClips(p)
-    .filter((c) => ids.has(c.id))
-    .map((c): [number, number] => [c.start, clipEnd(c)]);
+  const audible = audibleClips(p);
+  const xf = crossfadeInfo(p, audible);
+  // A clip that crossfades sounds on into its handles: those seconds duck the track too.
+  const intervals = audible.filter((c) => ids.has(c.id)).map((c): [number, number] => audibleSpanOf(c, xf.get(c.id)));
   if (!intervals.length) return undefined;
   const points = duckEnvelope(intervals, duck);
   return points.length ? points : undefined;

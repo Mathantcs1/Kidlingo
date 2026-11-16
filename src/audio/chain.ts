@@ -3,7 +3,7 @@ import { clipEnd } from '../core/model';
 import type { Clip } from '../core/model';
 import { hasTail } from './effects/params';
 import { buildEffects } from './effects/registry';
-import { fadePoints, windowPoints } from './fade';
+import { clipGainPoints, windowPoints } from './fade';
 import type { GainPoint } from './fade';
 import type { Segment } from './plan';
 
@@ -65,11 +65,11 @@ export function balanceGains(pan: number): [number, number] {
  * Every other chain keeps the hard step at the clip end, so dry audio stays continuous across splits and joins.
  * Window cuts always keep the exact step; the ramp belongs to the clip's own end, the same in every render.
  */
-function gate(ctx: BaseAudioContext, clip: Clip, from: number, to: number, ctxStart: number): GainNode {
+function gate(ctx: BaseAudioContext, clip: Clip, from: number, to: number, ctxStart: number, after = 0): GainNode {
   const g = ctx.createGain();
   g.gain.value = 0;
   // The clip-end ramp is a property of the clip, not of the segment: a window cut inside it lands on the same line.
-  const end = clipEnd(clip);
+  const end = clipEnd(clip) + after; // a crossfade lets the clip sound on into its handle (D12): the gate closes at the audible end
   const r = hasTail(clip.audio.effects) ? Math.min(TAIL_RAMP, Math.max(0, end - clip.start)) : 0;
   const points = r > 0 ? windowPoints([{ t: end - r, gain: 1 }, { t: end, gain: 0 }], from, to) : [{ t: from, gain: 1 }];
   // Every gate event on a whole frame; the close shares its time with a ramp ending at `to` and follows it.
@@ -109,12 +109,12 @@ export function buildClipChain(spec: ChainSpec): ClipChain {
 
   const input = ctx.createGain();
   const effects = buildEffects(ctx, clip.audio.effects, { phase0: ctxStart + clip.start, end: ctxStart + to });
-  const seam = effects ? gate(ctx, clip, from, to, ctxStart) : null;
+  const seam = effects ? gate(ctx, clip, from, to, ctxStart, seg.xfade?.after ?? 0) : null;
   const clipGain = ctx.createGain();
   clipGain.channelCount = 2;
   clipGain.channelCountMode = 'explicit';
   clipGain.channelInterpretation = 'speakers';
-  scheduleGain(clipGain.gain, fadePoints(clip, from, to), clip.volume, ctxStart);
+  scheduleGain(clipGain.gain, clipGainPoints(clip, from, to, seg.xfade), clip.volume, ctxStart);
 
   const split = ctx.createChannelSplitter(2);
   const left = ctx.createGain();

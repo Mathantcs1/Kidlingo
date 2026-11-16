@@ -2,6 +2,7 @@
 import { clipDuration, clipEnd, sourceTimeAt } from '../core/clipTime';
 import type { Clip, Id, Project, Track } from '../core/model';
 import type { GainPoint } from './fade';
+import type { ClipCrossfade } from './crossfade';
 import { isRetimedAudio } from './retime/retimeMath';
 
 /**
@@ -23,6 +24,8 @@ export interface Segment {
    * automation the clip chain reads; undefined means no ducking.
    */
   duckPoints?: GainPoint[];
+  /** The clip's crossfade halves (Plan 5C D12) when it sounds beyond its own span; absent without transitions. */
+  xfade?: ClipCrossfade;
 }
 
 /**
@@ -81,6 +84,7 @@ export function windowBounds(from: number, end: number, length: number): [number
  * scheduled back to back are sample-continuous. Whole clips keep their exact `in` / `out`. `trackVolumes` (from
  * trackVolumes(p); required so no engine forgets it) gives each segment its track's volume; a clip absent from it
  * plays at track volume 1. `duckPoints` (from clipDuckPoints(p)) gives each segment its track's duck envelope.
+ * `xfades` (from crossfadeInfo) extends a clip's audible span into its transition handles.
  */
 export function planWindow(
   clips: readonly Clip[],
@@ -88,12 +92,14 @@ export function planWindow(
   to: number,
   trackVolumes: ReadonlyMap<Id, number>,
   duckPoints?: ReadonlyMap<Id, GainPoint[]>,
+  xfades?: ReadonlyMap<Id, ClipCrossfade>,
 ): Segment[] {
   const out: Segment[] = [];
   for (const clip of clips) {
     const end = clipEnd(clip);
-    const a = Math.max(clip.start, from);
-    const b = Math.min(end, to);
+    const xf = xfades?.get(clip.id);
+    const a = Math.max(clip.start - (xf?.before ?? 0), from);
+    const b = Math.min(end + (xf?.after ?? 0), to);
     if (!(b > a)) continue;
     // A retimed clip is a virtual speed-1 source over clip-local timeline seconds [0, D] (see retime/retimeMath.ts).
     const virtual = isRetimedAudio(clip);
@@ -102,6 +108,7 @@ export function planWindow(
     if (!(srcTo > srcFrom)) continue;
     const trackVolume = trackVolumes.get(clip.id) ?? 1;
     const seg: Segment = { clipId: clip.id, mediaId: clip.mediaId, srcFrom, srcTo, when: a, whenEnd: b, clip, trackVolume };
+    if (xf) seg.xfade = xf;
     const duck = duckPoints?.get(clip.id);
     if (duck) seg.duckPoints = duck;
     out.push(seg);

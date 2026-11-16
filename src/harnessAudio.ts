@@ -87,6 +87,24 @@ export const audioHarness = {
     const den = l - 2 * top + r;
     return { freq: den < 0 ? best + (0.5 * (l - r)) / den : best, length: b.length };
   },
+  /** Largest absolute sample difference between the export mixes of two projects over [from, to) seconds (the null test of a crossfade). */
+  async mixdownDiff(p: Project, q: Project, sampleRate: number, from: number, to: number) {
+    const [x, y] = [await renderMixdown(p, sampleRate), await renderMixdown(q, sampleRate)];
+    if (!x || !y) return null;
+    const a = Math.max(0, Math.round(from * sampleRate));
+    const e = Math.min(x.length, y.length, Math.round(to * sampleRate));
+    let diff = 0;
+    let peak = 0;
+    for (let c = 0; c < 2; c++) {
+      const l = x.getChannelData(c);
+      const r = y.getChannelData(c);
+      for (let i = a; i < e; i++) {
+        diff = Math.max(diff, Math.abs(l[i] - r[i]));
+        peak = Math.max(peak, Math.abs(l[i]));
+      }
+    }
+    return { diff, peak, lengths: [x.length, y.length] };
+  },
   /** Renders the export mixdown and returns [left, right] RMS for each [from, to) window (seconds). */
   async mixdownChannelRms(p: Project, sampleRate: number, windows: [number, number][]) {
     const b = await renderMixdown(p, sampleRate);
@@ -144,15 +162,18 @@ export const audioHarness = {
     const shift = Math.round(ctxStart * sampleRate);
     const n = Math.round(seconds * sampleRate);
     let maxDiff = 0;
+    let maxAt = 0;
     let peak = 0;
     for (let c = 0; c < 2; c++) {
       const a = live.getChannelData(c);
       const b = mix.getChannelData(c);
       for (let i = 0; i < n; i++) {
-        maxDiff = Math.max(maxDiff, Math.abs(a[i + shift] - b[i]));
+        const d = Math.abs(a[i + shift] - b[i]);
+        if (d > maxDiff) maxAt = i / sampleRate;
+        maxDiff = Math.max(maxDiff, d);
         peak = Math.max(peak, Math.abs(b[i]));
       }
     }
-    return { maxDiff, peak, schedule, ctxStart, covered: covered() };
+    return { maxDiff, maxAt, peak, schedule, ctxStart, covered: covered() };
   },
 };

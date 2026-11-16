@@ -4,6 +4,7 @@ import { timelineDuration } from '../core/timeline';
 import { buildClipChain } from './chain';
 import { decodePieces, pieceTiming } from './mixerSchedule';
 import type { Piece } from './mixerSchedule';
+import { crossfadeInfo } from './crossfade';
 import { clipDuckPoints } from './duck';
 import { audibleClips, trackVolumes, windowBounds } from './plan';
 import type { Mixer, MixerOptions, Session } from './mixerTypes';
@@ -67,6 +68,7 @@ class LiveMixer implements Mixer {
       clips,
       trackVolumes: trackVolumes(p),
       duckPoints: clipDuckPoints(p),
+      xfades: crossfadeInfo(p, clips),
       windows: liveWindows(clips, from, timelineDuration(p), this.window),
       next: 0,
       names: new Map(Object.values(p.media).map((m) => [m.id, m.name])),
@@ -159,7 +161,12 @@ class LiveMixer implements Mixer {
     node.connect(chain.input);
     chain.output.connect(s.master);
     node.onended = () => this.release(s, node, false);
-    node.start(when, offset, duration);
+    // The node must end on the sample the planned cut falls on: `when + duration` carries float error (srcTo - srcFrom is not
+    // exactly whenEnd - when), and one sample too many double-counts the cut sample next to the following piece (a crossfade
+    // makes every window cut such a place). A hair before the frame lands on it whether the engine rounds or ceils.
+    const frame = Math.round((when + duration) * ctx.sampleRate);
+    const exact = (frame - 1e-3) / ctx.sampleRate - when;
+    node.start(when, offset, exact > 0 ? exact : duration);
     s.nodes.set(node, chain);
     noteLiveNodes(1);
   }

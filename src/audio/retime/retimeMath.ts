@@ -19,8 +19,12 @@ export function usesStretch(c: Clip): boolean {
 }
 
 /** The clip's virtual source range: [0, D] for a retimed clip, [in, out] otherwise (what a segment's srcFrom/srcTo live in). */
-export function audioSpan(c: Clip): [number, number] {
-  return isRetimedAudio(c) ? [0, clipDuration(c)] : [c.in, c.out];
+export function audioSpan(c: Clip, xf?: { before: number; after: number }): [number, number] {
+  const before = xf?.before ?? 0;
+  const after = xf?.after ?? 0;
+  // Into a transition handle the clip sounds beyond its in/out (plain: any footage the file has; retimed: virtual time past 0 / D).
+  if (isRetimedAudio(c)) return [-before, clipDuration(c) + after];
+  return [before > 0 ? -Infinity : c.in, after > 0 ? Infinity : c.out];
 }
 
 /** Half-width (input samples) of the resampling kernel at speed 1; it widens with the speed so a fast clip is low-passed. */
@@ -34,8 +38,8 @@ export function kernelMargin(rate: number): number {
 }
 
 /** The footage [from, to) to decode for the virtual range [vFrom, vTo): its span through the map plus the kernel margin, kept inside the clip. */
-export function footageToDecode(c: Clip, vFrom: number, vTo: number, rate: number): [number, number] {
+export function footageToDecode(c: Clip, vFrom: number, vTo: number, rate: number, xf?: { before: number; after: number }): [number, number] {
   const [a, b] = sourceSpan(c, vFrom, vTo);
   const m = kernelMargin(rate);
-  return [Math.max(c.in, a - m), Math.min(c.out, b + m)];
+  return [Math.max(xf?.before ? -Infinity : c.in, a - m), Math.min(xf?.after ? Infinity : c.out, b + m)];
 }
