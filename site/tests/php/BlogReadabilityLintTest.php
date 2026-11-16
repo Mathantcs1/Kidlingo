@@ -26,6 +26,40 @@ final class BlogReadabilityLintTest extends TestCase {
 			'capitals'       => array( 'Computer', 3 ),
 			'digits'         => array( '2026', 1 ),
 			'long'           => array( 'information', 4 ),
+			// Follow-up fixes, hand-counted.
+			'AI'             => array( 'AI', 2 ),
+			"AI's"           => array( "AI's", 2 ),
+			'consonant les'  => array( 'tables', 2 ),
+			'variables'      => array( 'variables', 4 ),
+			'examples'       => array( 'examples', 3 ),
+			'idea'           => array( 'idea', 3 ),
+			'area'           => array( 'area', 3 ),
+			'create'         => array( 'create', 2 ),
+			'science'        => array( 'science', 2 ),
+			'being'          => array( 'being', 2 ),
+			'seeing'         => array( 'seeing', 2 ),
+			'going'          => array( 'going', 2 ),
+			'quiet'          => array( 'quiet', 2 ),
+			'client'         => array( 'client', 2 ),
+			'experience'     => array( 'experience', 4 ),
+			'video'          => array( 'video', 3 ),
+			'radio'          => array( 'radio', 3 ),
+			'diagram'        => array( 'diagram', 3 ),
+			'actual'         => array( 'actual', 3 ),
+			'various'        => array( 'various', 3 ),
+			'theory'         => array( 'theory', 3 ),
+			// ...without over-counting these.
+			'something'      => array( 'something', 2 ),
+			'every'          => array( 'every', 2 ),
+			'business'       => array( 'business', 2 ),
+			'people'         => array( 'people', 2 ),
+			'nation (tion)'  => array( 'nation', 2 ),
+			'special (cial)' => array( 'special', 2 ),
+			'question (qu)'  => array( 'question', 2 ),
+			'language (gu)'  => array( 'language', 2 ),
+			'friend (ie)'    => array( 'friend', 1 ),
+			'patient (tie)'  => array( 'patient', 2 ),
+			'studies'        => array( 'studies', 2 ),
 		);
 	}
 
@@ -62,7 +96,7 @@ final class BlogReadabilityLintTest extends TestCase {
 
 	/** A body scoring between 50 and 60 passes intermediate and fails beginner: the levels really differ. */
 	public function test_a_middling_text_passes_intermediate_but_not_beginner(): void {
-		$mid = '<p>' . str_repeat( 'A language model predicts the following word using patterns learned from training examples. ', 20 ) . '</p>';
+		$mid = '<p>' . str_repeat( 'A language model predicts the next word using patterns from its training examples. ', 20 ) . '</p>';
 		$s   = ita_readability( $mid )['score'];
 		$this->assertGreaterThanOrEqual( 50, $s );
 		$this->assertLessThan( 60, $s );

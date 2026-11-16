@@ -12,16 +12,48 @@
  * heading without a full stop is not glued to the next paragraph; inside a block, ".", "!" or "?" followed by a space ends one.
  *
  * Syllables (a simple heuristic, good to about one syllable per long word, which is enough to compare drafts):
- *   1. lower-case the word and keep letters only; a hyphenated word is split and its parts summed; no letters counts as 1;
- *   2. words of 1-3 letters count as 1;
- *   3. drop a final "es" unless it follows s, x, z, ch or sh ("boxes" keeps it); drop a final "ed" unless it follows t or d
- *      ("wanted" keeps it); drop a final silent "e", except "-le" after a consonant ("table");
- *   4. count groups of consecutive vowels (a, e, i, o, u, y); at least 1.
+ *   1. a hyphenated word is split and its parts summed; a trailing possessive 's is dropped ("AI's" counts as "AI");
+ *   2. lower-case, letters only; no letters counts as 1; whole words in ITA_SYLLABLE_WORDS use the hand count there;
+ *   3. other words of 1-3 letters count as 1;
+ *   4. "qu" and "gu" before a vowel count as consonants ("question", "language");
+ *   5. a final "les" after a consonant keeps its syllable ("tables"); otherwise drop a final "es" unless it follows s, x, z, ch or
+ *      sh ("boxes" keeps it); drop a final "ed" unless it follows t or d ("wanted"); drop a final silent "e", except "-le" after
+ *      a consonant ("table");
+ *   6. count groups of consecutive vowels (a, e, i, o, u, y), then add one for each vowel pair usually said as two syllables:
+ *      "ia"/"io" not after c, s, t, g or x ("diagram", "radio", "various"; but "special", "nation", "region" stay one), "eo"
+ *      ("video", "theory"), "ua"/"uo" ("actual"), "iet" ("quiet"), "ien" + c/t not after c, s or t ("client", "experience"; not
+ *      "ancient", "patient", "friend"), and a vowel right before a final "ing" ("being", "going", "seeing"); at least 1.
+ * Known remaining bias: it still miscounts some words ("million" and "opinion" gain one, "ratio" and "creating" lose one,
+ * "every"-like compounds outside the table count their silent e), roughly balancing out over an article. Compare scores
+ * between drafts rather than treating one decimal as exact.
  * Used by BlogReadabilityLintTest and ita_lint_article(); not shipped in the plugin.
  */
 
 /** Minimum Flesch reading ease per level. */
 const ITA_READABILITY_MIN = array( 'beginner' => 60, 'intermediate' => 50, 'advanced' => 40 );
+
+/** Hand-counted words the rules get wrong (whole words, lower-case letters only). */
+const ITA_SYLLABLE_WORDS = array(
+	'ai'         => 2,
+	'idea'       => 3,
+	'ideas'      => 3,
+	'area'       => 3,
+	'areas'      => 3,
+	'create'     => 2,
+	'creates'    => 2,
+	'created'    => 3,
+	'creative'   => 3,
+	'science'    => 2,
+	'people'     => 2,
+	'every'      => 2,
+	'everyone'   => 3,
+	'everything' => 3,
+	'something'  => 2,
+	'sometimes'  => 2,
+	'someone'    => 2,
+	'business'   => 2,
+	'businesses' => 3,
+);
 
 /** Syllables in one word (see the heuristic above). */
 function ita_syllables( string $word ): int {
@@ -29,18 +61,27 @@ function ita_syllables( string $word ): int {
 	if ( count( $parts ) > 1 ) {
 		return array_sum( array_map( 'ita_syllables', array_filter( $parts, static fn( $p ) => '' !== $p ) ) ) ?: 1;
 	}
-	$w = (string) preg_replace( '/[^a-z]/', '', strtolower( $word ) );
+	$word = (string) preg_replace( "/['\x{2019}]s\z/iu", '', $word );
+	$w    = (string) preg_replace( '/[^a-z]/', '', strtolower( $word ) );
+	if ( isset( ITA_SYLLABLE_WORDS[ $w ] ) ) {
+		return ITA_SYLLABLE_WORDS[ $w ];
+	}
 	if ( strlen( $w ) <= 3 ) {
 		return 1;
 	}
-	if ( preg_match( '/(?<![sxz]|ch|sh)es\z/', $w ) ) {
+	$w = (string) preg_replace( '/([qg])u(?=[aeiouy])/', '$1', $w );
+	if ( preg_match( '/[^aeiouy]les\z/', $w ) ) {
+		$w = substr( $w, 0, -1 );
+	} elseif ( preg_match( '/(?<![sxz]|ch|sh)es\z/', $w ) ) {
 		$w = substr( $w, 0, -2 );
 	} elseif ( preg_match( '/(?<![td])ed\z/', $w ) ) {
 		$w = substr( $w, 0, -2 );
 	} elseif ( preg_match( '/e\z/', $w ) && ! preg_match( '/[^aeiouy]le\z/', $w ) ) {
 		$w = substr( $w, 0, -1 );
 	}
-	return max( 1, (int) preg_match_all( '/[aeiouy]+/', $w ) );
+	$n  = (int) preg_match_all( '/[aeiouy]+/', $w );
+	$n += (int) preg_match_all( '/(?<![cstgx])i(?=[ao])|eo|u[ao]|iet|(?<![cst])ien(?=[ct])|[aeiouy](?=ing\z)/', $w );
+	return max( 1, $n );
 }
 
 /**
