@@ -1,5 +1,6 @@
 // Store-bound transition commands (Plan 5C Task 8): each is ONE `apply` (one undo step); refusals (locked track, no
 // handle, adjustment clip, ...) become toasts through `guard`. The last type/duration used is remembered for "+" and `T`.
+import { joinTransitionReport } from '../core/merge';
 import { addTransition, removeTransition, setTransition, setTransitionDuration } from '../core/transitionEdits';
 import type { TransitionSpec } from '../core/transitionEdits';
 import { DEFAULT_TRANSITION_SECONDS } from '../core/transitionTypes';
@@ -9,6 +10,7 @@ import { useEditor } from '../state/store';
 import { selectedTransitionId, setSelectedTransition } from './transitionSelection';
 import { nearestCut } from './transitionDrag';
 import { cutsOf } from '../core/transitions';
+import { liveSelection, mergeClips } from './edits';
 import { guard, showError, showInfo } from './Toast';
 
 const editor = () => useEditor.getState();
@@ -96,4 +98,28 @@ export function addTransitionAtEdgeCmd(clipId: Id, edge: 'start' | 'end'): void 
   const cut = track ? cutsOf(track).find((c) => (edge === 'start' ? c.to.id : c.from.id) === clipId) : undefined;
   if (!track || !cut) return showError(edge === 'start' ? 'No clip meets this one at its start' : 'No clip meets this one at its end');
   addTransitionCmd(track.id, cut.from.id, cut.to.id);
+}
+
+/** The toast line of a merge with crossfades: how many were added, shortened to the footage, and skipped for lack of footage. */
+export function mergeReportMessage(r: { added: number; shortened: number; skipped: number }): string {
+  const parts = [`${r.added} crossfade${r.added === 1 ? '' : 's'} added`];
+  if (r.shortened > 0) parts.push(`${r.shortened} shortened to the footage available`);
+  if (r.skipped > 0) parts.push(`${r.skipped} cut${r.skipped === 1 ? '' : 's'} skipped: no footage beyond ${r.skipped === 1 ? 'it' : 'them'}`);
+  return `Merged: ${parts.join(', ')}`;
+}
+
+/**
+ * "Merge with crossfade": joins the selected clips (ONE step) and adds the last-used transition (a dissolve unless the last one
+ * was a picture type; an audio crossfade on an audio track) at every new cut between them; the toast says what was added or skipped.
+ */
+export function mergeSelectedWithTransitionCmd(): void {
+  guard(() => {
+    const p = editor().history.present;
+    const ids = liveSelection(p, editor().selection);
+    const onAudio = p.tracks.find((t) => t.clips.some((c) => c.id === ids[0]))?.kind === 'audio';
+    const spec: TransitionSpec = onAudio ? { type: 'audio', duration: lastSpec.duration } : lastSpec.type === 'audio' ? { ...lastSpec, type: 'dissolve' } : lastSpec;
+    const report = joinTransitionReport(p, ids, spec);
+    editor().apply((q) => mergeClips(q, ids, { transition: spec }));
+    showInfo(mergeReportMessage(report));
+  });
 }

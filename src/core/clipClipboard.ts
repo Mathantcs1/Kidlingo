@@ -6,6 +6,8 @@
 import { snapToFrame } from './fps';
 import { clipEnd, isSourceless, newId } from './model';
 import type { Clip, Id, Project, Track } from './model';
+import { reconcileTransitions, withTransitions } from './transitionReconcile';
+import type { Transition } from './transitionTypes';
 import { TimelineError, addClip, assertFinite, hasRoom } from './timeline';
 
 /** One copied clip: its snapshot, its start relative to the earliest copied clip and its track relative to the topmost copied track. */
@@ -23,6 +25,8 @@ export interface ClipPayload {
   anchorTrackId: Id;
   /** Tracks the payload covers below the anchor (0 = a single track). */
   trackSpan: number;
+  /** Transitions whose BOTH clips were copied (Plan 5C D9/O8): snapshots naming the copied clips' ids; absent = none. */
+  transitions?: Transition[];
 }
 
 const trackKindFor = (c: Clip): Track['kind'] => (c.kind === 'audio' ? 'audio' : 'video');
@@ -39,7 +43,13 @@ export function copyClips(p: Project, clipIds: readonly Id[]): ClipPayload {
   const clips = found
     .map((f) => ({ clip: structuredClone(f.clip), offset: f.clip.start - first, trackOffset: f.track - top }))
     .sort((a, b) => a.offset - b.offset || a.trackOffset - b.trackOffset);
+  const copied = new Set(found.map((f) => f.clip.id));
+  const transitions = p.tracks
+    .flatMap((t) => t.transitions ?? [])
+    .filter((tr) => copied.has(tr.fromClipId) && copied.has(tr.toClipId))
+    .map((tr) => structuredClone(tr));
   return {
+    ...(transitions.length > 0 ? { transitions } : {}),
     clips,
     span: Math.max(...found.map((f) => clipEnd(f.clip))) - first,
     anchorTrackId: p.tracks[top].id,
@@ -85,10 +95,12 @@ function place(p: Project, payload: ClipPayload, start: number, anchorId: Id): P
   const target = p.tracks.findIndex((t) => t.id === anchorId);
   if (target < 0) throw new TimelineError('Choose a track to paste onto');
   const map = mapTracks(p, payload, target);
+  const ids = new Map<Id, Id>(); // copied clip id -> its pasted copy's id (for the transitions)
   const planned = payload.clips.map((pc) => {
     const index = map.get(pc.trackOffset)!;
     const track = p.tracks[index];
     const clip = fresh(pc, start + pc.offset);
+    ids.set(pc.clip.id, clip.id);
     if (trackKindFor(clip) !== track.kind) throw new TimelineError(`Cannot paste ${clip.kind === 'video' ? 'a' : 'an'} ${clip.kind} clip onto the ${track.kind} track ${trackLabel(track, index)}`);
     if (track.locked) throw new TimelineError(`Cannot paste: the track ${trackLabel(track, index)} is locked`);
     if (!isSourceless(clip) && !p.media[clip.mediaId]) throw new TimelineError('Cannot paste: the media of the copied clip was removed from the project');
@@ -96,7 +108,26 @@ function place(p: Project, payload: ClipPayload, start: number, anchorId: Id): P
     return { track, clip };
   });
   // Clips sharing a track never overlap each other (they did not when copied), so the per-clip room check above is complete.
-  return planned.reduce((acc, { track, clip }) => addClip(acc, track.id, clip), p);
+  const placed = planned.reduce((acc, { track, clip }) => addClip(acc, track.id, clip), p);
+  return withPastedTransitions(placed, payload.transitions ?? [], ids, new Map(planned.map(({ track, clip }) => [clip.id, track.id])));
+}
+
+/**
+ * Adds the copied transitions between the pasted clips (new transition ids, ids of the pasted clips); a pair that landed on
+ * different tracks is dropped, and reconcile drops or shortens anything that no longer fits (adjacency, handles, durations).
+ */
+function withPastedTransitions(p: Project, copied: readonly Transition[], ids: ReadonlyMap<Id, Id>, trackOf: ReadonlyMap<Id, Id>): Project {
+  const byTrack = new Map<Id, Transition[]>();
+  for (const tr of copied) {
+    const from = ids.get(tr.fromClipId);
+    const to = ids.get(tr.toClipId);
+    const track = from ? trackOf.get(from) : undefined;
+    if (!from || !to || track === undefined || trackOf.get(to) !== track) continue;
+    byTrack.set(track, [...(byTrack.get(track) ?? []), { ...structuredClone(tr), id: newId(), fromClipId: from, toClipId: to }]);
+  }
+  if (byTrack.size === 0) return p;
+  const next = { ...p, tracks: p.tracks.map((t) => (byTrack.has(t.id) ? withTransitions(t, [...(t.transitions ?? []), ...byTrack.get(t.id)!]) : t)) };
+  return reconcileTransitions(next, [...byTrack.keys()]);
 }
 
 /**

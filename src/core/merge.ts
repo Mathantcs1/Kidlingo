@@ -6,12 +6,31 @@ import { withPivotOffset } from './pivotFit';
 import { overlayDefaultTransform, reframeOverlay } from './overlays';
 import { hasFramingKeys, scaleFramingKeys } from './reframeKeys';
 import { reconcileTransitions } from './transitionReconcile';
+import { addTransition } from './transitionEdits';
+import type { TransitionSpec } from './transitionEdits';
 import { TimelineError, assertUnlocked, findClip } from './timeline';
 
 const EPS = 1e-9;
 
+export interface JoinOptions {
+  /** Add this transition at every new cut BETWEEN consecutive selected clips that has none (Plan 5C D11), shortened to the footage available; a cut with no footage beyond it is skipped. */
+  transition?: TransitionSpec;
+}
+
+/** What `joinClips(p, ids, { transition })` did with the cuts between the selected clips (for the toast). Pure. */
+export function joinTransitionReport(p: Project, clipIds: Id[], spec: TransitionSpec): { added: number; shortened: number; skipped: number } {
+  const plain = joinClips(p, clipIds);
+  const joined = joinClips(p, clipIds, { transition: spec });
+  const before = new Set((plain.tracks.flatMap((t) => t.transitions ?? [])).map((t) => `${t.fromClipId}>${t.toClipId}`));
+  const made = joined.tracks.flatMap((t) => t.transitions ?? []).filter((t) => !before.has(`${t.fromClipId}>${t.toClipId}`));
+  const cuts = clipIds.length - 1;
+  const wanted = spec.duration ?? 1;
+  const added = made.length;
+  return { added, shortened: made.filter((t) => t.duration < wanted - 1e-9).length, skipped: cuts - before.size - added };
+}
+
 /** Closes the gaps between the selected clips by moving them back to back; every clip stays a separate clip and keeps its own audio settings. */
-export function joinClips(p: Project, clipIds: Id[]): Project {
+export function joinClips(p: Project, clipIds: Id[], opts: JoinOptions = {}): Project {
   if (clipIds.length < 2) throw new TimelineError('Select at least two clips to join');
   if (new Set(clipIds).size !== clipIds.length) throw new TimelineError('Duplicate clip ids');
   const found = clipIds.map((id) => findClip(p, id));
@@ -45,10 +64,26 @@ export function joinClips(p: Project, clipIds: Id[]): Project {
       throw new TimelineError('Joined clips would overlap another clip');
     }
   }
-  return reconcileTransitions({
+  const joined = reconcileTransitions({
     ...p,
     tracks: p.tracks.map((t) => (t.id === trackId ? { ...t, clips } : t)),
   });
+  return opts.transition ? withTransitionsAtCuts(joined, trackId, selected.map((c) => c.id), opts.transition) : joined;
+}
+
+/** Adds `spec` between each pair of consecutive `ids` that has no transition yet; a refusal (no footage, kind mismatch) skips that cut. */
+function withTransitionsAtCuts(p: Project, trackId: Id, ids: Id[], spec: TransitionSpec): Project {
+  let q = p;
+  for (let i = 0; i + 1 < ids.length; i++) {
+    const has = (q.tracks.find((t) => t.id === trackId)?.transitions ?? []).some((t) => t.fromClipId === ids[i] && t.toClipId === ids[i + 1]);
+    if (has) continue;
+    try {
+      q = addTransition(q, trackId, ids[i], ids[i + 1], spec);
+    } catch (e) {
+      if (!(e instanceof TimelineError)) throw e;
+    }
+  }
+  return q;
 }
 
 export function snapTime(p: Project, _trackId: Id, time: number, threshold: number): number {

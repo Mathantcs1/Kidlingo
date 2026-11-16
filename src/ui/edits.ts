@@ -1,5 +1,6 @@
 // Pure project edits behind the editor's buttons and shortcuts (composed from core/ operations).
 import { joinClips } from '../core/merge';
+import type { JoinOptions } from '../core/merge';
 import { clipEnd } from '../core/model';
 import type { Clip, Id, MediaRef, Project, Track } from '../core/model';
 import { MIN_CLIP, TimelineError, addClip, assertUnlocked, deleteClip, findClip, splitClip } from '../core/timeline';
@@ -94,9 +95,9 @@ export function setClipVolume(p: Project, clipId: Id, volume: number): Project {
 }
 
 /** Joins the clips ordered by their start time. */
-export function mergeClips(p: Project, ids: Id[]): Project {
+export function mergeClips(p: Project, ids: Id[], opts?: JoinOptions): Project {
   const ordered = [...ids].sort((a, b) => findClip(p, a).clip.start - findClip(p, b).clip.start);
-  return joinClips(p, ordered);
+  return joinClips(p, ordered, opts);
 }
 
 /** The selection restricted to clips that exist in `p`; the same array when nothing is stale. */

@@ -15,7 +15,7 @@ import type { MenuItem } from './contextMenuModel';
 import { resetCropCmd, setFlipCmd } from './cropCommands';
 import { toggleCropMode } from './cropModeStore';
 import { freezeFrameCmd, setReverseCmd, setSpeedCmd } from './speedCommands';
-import { addTransitionAtEdgeCmd, removeTransitionCmd } from './transitionCommands';
+import { addTransitionAtEdgeCmd, mergeSelectedWithTransitionCmd, removeTransitionCmd } from './transitionCommands';
 import { cutsOf, pairAllowed } from '../core/transitions';
 import { liveSelection } from './edits';
 import { onClip } from './keyframeCommands';
@@ -56,6 +56,7 @@ export function clipMenuItems(clipId: Id): MenuItem[] {
   ];
   if (clip.kind === 'video') items.push({ id: 'detach', label: 'Detach audio', disabled: !edit || detach !== null, title: detach ?? undefined, onSelect: detachSelectedAudio });
   if (sel.length >= 2) items.push({ id: 'merge', label: 'Merge', disabled: !canEdit, title: lockTitle, onSelect: mergeSelected });
+  if (sel.length >= 2) items.push({ id: 'merge-crossfade', testId: 'transition-menu-merge', label: 'Merge with crossfade', disabled: !canEdit, title: lockTitle, onSelect: mergeSelectedWithTransitionCmd });
   items.push('separator');
   items.push({ id: 'copy-anim', label: 'Copy animation', shortcut: 'Mod+Alt+C', disabled: !edit || !single || !animated, title: animated ? undefined : 'This clip has no animation', onSelect: copyAnimCmd });
   items.push({ id: 'paste-anim', label: 'Paste animation', shortcut: 'Mod+Alt+V', disabled: !canEdit || animPayload() === null, title: lockTitle, onSelect: () => pasteAnimCmd() });

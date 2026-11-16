@@ -1,0 +1,8 @@
+# Plan 5C Task 10 (join with a transition, clipboard carry)
+- `merge.ts`: `joinClips(p, ids, { transition })` adds the spec at every new cut BETWEEN consecutive selected clips that has none (an existing transition keeps its id and values), through `addTransition` so it is shortened to the footage available; a refused cut (no footage, kind mismatch) is skipped. `joinTransitionReport` (pure) returns `{added, shortened, skipped}`.
+- `clipClipboard.ts`: `ClipPayload.transitions?` holds snapshots of transitions whose BOTH clips were copied; paste/duplicate give them new ids and the pasted clips' ids, drop a pair that lands on different tracks, and `reconcileTransitions` drops or shortens anything that no longer fits.
+- UI: `mergeClips` takes the option; `mergeSelectedWithTransitionCmd` (one apply, the last-used transition, a dissolve if the last was `audio`, an audio crossfade on an audio track) with the toast from `mergeReportMessage`; context-menu item "Merge with crossfade" (`transition-menu-merge`).
+- merge-all (`mergeJob`) needed no change: it renders through `exportProject`, which already draws transitions (Tasks 4-5).
+- Tests: `transition-join.test.ts` (8), `transition-clipboard.test.ts` (6), e2e `transition-join.spec.ts` (4: merge = 2 transitions in ONE step + undo, skipped-cut toast, joined cut is a 50 % mix within 3/255, Ctrl+D carries the pair).
+- Mutations caught: transition at every cut of the track (not only between the selected clips), keeping the transition id on paste.
+- Deviations: the Toolbar's Merge button has no crossfade variant (menu only, as the plan says); "skipped" counts cuts that got no transition and had none before.
