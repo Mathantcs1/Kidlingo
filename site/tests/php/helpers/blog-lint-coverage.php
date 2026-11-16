@@ -23,16 +23,27 @@ const ITA_COVERAGE_AUDIENCE_MIN = array(
 const ITA_COVERAGE_PER_CATEGORY = array( 'beginner', 'intermediate' );
 
 /**
- * Counts per level, per audience and per category x level.
+ * The six topic categories, from the theme (ideatoapps_blog_topics()), in their fixed order.
+ *
+ * @return string[]
+ */
+function ita_coverage_categories(): array {
+	return function_exists( 'ideatoapps_blog_topics' ) ? ideatoapps_blog_topics() : array();
+}
+
+/**
+ * Counts per level, per audience and per category x level. Every one of the six categories gets a row, even with no topics;
+ * a topic in any other category gets its own row after them.
  *
  * @param array<int, array<string, mixed>> $topics Topics as in topics.json.
+ * @param string[]|null                    $cats   Category slugs; default the theme's six.
  * @return array{level: array<string,int>, audience: array<string,int>, category: array<string, array<string,int>>}
  */
-function ita_coverage_counts( array $topics ): array {
+function ita_coverage_counts( array $topics, ?array $cats = null ): array {
 	$out = array(
 		'level'    => array_fill_keys( array_keys( ITA_COVERAGE_LEVEL_MIN ), 0 ),
 		'audience' => array_fill_keys( array_keys( ITA_COVERAGE_AUDIENCE_MIN ), 0 ),
-		'category' => array(),
+		'category' => array_fill_keys( $cats ?? ita_coverage_categories(), array_fill_keys( array_keys( ITA_COVERAGE_LEVEL_MIN ), 0 ) ),
 	);
 	foreach ( $topics as $t ) {
 		$level = is_string( $t['level'] ?? null ) ? $t['level'] : '';
@@ -57,9 +68,10 @@ function ita_coverage_counts( array $topics ): array {
  * Problems with the topic list (empty = fine).
  *
  * @param array<int, array<string, mixed>> $topics Topics as in topics.json.
+ * @param string[]|null                    $cats   Category slugs; default the theme's six (tests pass others).
  * @return string[]
  */
-function ita_lint_coverage( array $topics ): array {
+function ita_lint_coverage( array $topics, ?array $cats = null ): array {
 	$out = array();
 	foreach ( $topics as $i => $t ) {
 		$name = is_string( $t['slug'] ?? null ) ? $t['slug'] : '#' . ( $i + 1 );
@@ -77,7 +89,16 @@ function ita_lint_coverage( array $topics ): array {
 			}
 		}
 	}
-	$c = ita_coverage_counts( $topics );
+	$cats = $cats ?? ita_coverage_categories();
+	if ( 6 !== count( $cats ) ) {
+		$out[] = 'Expected the six topic categories from ideatoapps_blog_topics(), found ' . count( $cats ) . '.';
+	}
+	foreach ( $topics as $i => $t ) {
+		if ( ! in_array( $t['category'] ?? null, $cats, true ) ) {
+			$out[] = ( is_string( $t['slug'] ?? null ) ? $t['slug'] : '#' . ( $i + 1 ) ) . ': category is not one of the six topic categories.';
+		}
+	}
+	$c = ita_coverage_counts( $topics, $cats );
 	foreach ( ITA_COVERAGE_LEVEL_MIN as $level => $min ) {
 		if ( $c['level'][ $level ] < $min ) {
 			$out[] = "Only {$c['level'][ $level ]} {$level} topics; at least {$min} needed.";

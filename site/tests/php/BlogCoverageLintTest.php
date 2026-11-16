@@ -83,6 +83,32 @@ final class BlogCoverageLintTest extends TestCase {
 		$this->assertContains( 'Category llms has no intermediate topic.', $problems );
 	}
 
+	public function test_the_six_categories_come_from_the_theme(): void {
+		$this->assertSame( array( 'ai-basics', 'prompting', 'llms', 'agents', 'work-and-learning', 'safety-and-judgment' ), ita_coverage_categories() );
+		$five = array_slice( ita_coverage_categories(), 0, 5 );
+		$this->assertContains( 'Expected the six topic categories from ideatoapps_blog_topics(), found 5.', ita_lint_coverage( self::topics(), $five ) );
+		$seven = array_merge( ita_coverage_categories(), array( 'cooking' ) );
+		$problems = ita_lint_coverage( self::topics(), $seven );
+		$this->assertContains( 'Expected the six topic categories from ideatoapps_blog_topics(), found 7.', $problems );
+		$this->assertContains( 'Category cooking has no beginner topic.', $problems, 'a listed category with no topics fails' );
+	}
+
+	/** A category with no topics at all (here: every safety topic moved elsewhere) fails, as does an unknown category. */
+	public function test_a_category_with_no_topics_or_an_unknown_category_fails(): void {
+		$fixture = array_map(
+			static function ( array $t ): array {
+				$t['category'] = 'safety-and-judgment' === $t['category'] ? 'work-and-learning' : $t['category'];
+				return $t;
+			},
+			self::topics()
+		);
+		$problems = ita_lint_coverage( $fixture );
+		$this->assertContains( 'Category safety-and-judgment has no beginner topic.', $problems );
+		$this->assertContains( 'Category safety-and-judgment has no intermediate topic.', $problems );
+		$fixture[0]['category'] = 'cooking';
+		$this->assertContains( '01-what-ai-is-and-isnt: category is not one of the six topic categories.', ita_lint_coverage( $fixture ) );
+	}
+
 	public function test_bad_level_and_audience_values_fail(): void {
 		$base = self::topics();
 		$bad  = array(
