@@ -8,7 +8,7 @@ import { clipEnd } from '../core/clipTime';
 import type { Clip, Id, Project, Transform } from '../core/model';
 import { clipCorners } from '../render/overlayGeometry';
 import type { Corners, Point } from '../render/overlayGeometry';
-import { visualClipsAt } from '../render/visible';
+import { activeVisualClipsAt as visualClipsAt } from '../render/visible';
 import { sourceSizeFor } from './overlayMath';
 
 const sameGeometry = (a: Transform, b: Transform): boolean =>

@@ -1,13 +1,13 @@
-import { resolveClip } from '../core/animate';
-import { maxDrawnScale } from '../core/drawnScale';
 import type { Clip, Id, Project } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { uvMatrix } from './gl';
 import type { Mat3, Size, TextureSlot } from './gl';
-import { imageDraw, pruneVideoSlots, videoDraw } from './drawCollectPicture';
+import { pruneVideoSlots } from './drawCollectPicture';
 import type { ImageTextures } from './images';
 import type { OverlayTextures } from './overlays/textures';
-import { visualClipsAt } from './visible';
+import { clipDraw, transitionDraw } from './drawCollectTransition';
+import type { TransitionDraw } from './drawCollectTransition';
+import { frameStepsAt, isTransitionStep } from './visible';
 
 export interface Draw {
   /** The clip as seen at the frame's time (resolveClip): evaluated transform and effect params, no keys. */
@@ -29,9 +29,13 @@ export interface AdjustmentDraw {
 }
 
 /** One step of a frame, bottom first: a picture to draw, or an adjustment applied to everything below it. */
-export type FrameDraw = Draw | AdjustmentDraw;
+export type FrameDraw = Draw | AdjustmentDraw | TransitionDraw;
+
+/** A step the compositor draws directly (a transition is expanded first). */
+export type PlainDraw = Draw | AdjustmentDraw;
 
 export const isAdjustmentDraw = (d: FrameDraw): d is AdjustmentDraw => 'adjustment' in d;
+export const isTransitionDraw = (d: FrameDraw): d is TransitionDraw => 'transition' in d;
 
 /** What Phase 1 needs from the compositor. */
 export interface DrawContext {
@@ -58,44 +62,19 @@ export const UPRIGHT = uvMatrix(0);
  */
 export async function collectDraws(ctx: DrawContext, p: Project, t: number, sources: Map<Id, VideoSource>): Promise<FrameDraw[]> {
   const draws: FrameDraw[] = [];
-  const uses = new Map<VideoSource, number>();
-  const shownImages = new Set<Id>();
-  const shownOverlays = new Set<Id>();
+  const state = { uses: new Map<VideoSource, number>(), shownImages: new Set<Id>(), shownOverlays: new Set<Id>() };
   ctx.overlays.beginFrame();
-  for (const raw of visualClipsAt(p, t)) {
-    const clip = resolveClip(raw, t, p.format);
-    if (clip.kind === 'adjustment') {
-      // No media and nothing to upload: the compositor applies it to the composite so far.
-      draws.push({ clip, adjustment: true });
-      continue;
-    }
-    if (clip.kind === 'overlay') {
-      // No media: drawn with Canvas2D (synchronous), never looked up in p.media or decoded. The texture is sized for
-      // the largest scale the clip can be drawn at (keys, key loops, presets: the RAW clip, capped), so an animated
-      // scale or a preset neither re-draws it per frame nor blurs it. A lower third's built-in slide is off at an edge
-      // that has an in/out preset (5B D13): the resolved clip has no `motion`, so the RAW clip decides.
-      ctx.assertUsable();
-      const builtIn = { in: !raw.motion?.in, out: !raw.motion?.out };
-      const o = ctx.overlays.get(clip, p.format, t, p.format.fps, ctx.pixelScale(p.format), maxDrawnScale(raw), builtIn);
-      if (o) draws.push({ clip, ...o, uv: UPRIGHT });
-      shownOverlays.add(clip.id);
-      continue;
-    }
-    const media = p.media[clip.mediaId];
-    // Clips of unknown or missing media are skipped.
-    if (!media || media.missing) continue;
-    if (clip.kind === 'image') {
-      const d = await imageDraw(ctx, clip, media, shownImages);
+  for (const step of frameStepsAt(p, t)) {
+    if (isTransitionStep(step)) {
+      const d = await transitionDraw(ctx, p, step, t, sources, state);
       if (d) draws.push(d);
       continue;
     }
-    const source = sources.get(clip.id) ?? sources.get(clip.mediaId);
-    if (!source) continue;
-    const d = await videoDraw(ctx, clip, source, t, p.format.fps, uses);
+    const d = await clipDraw(ctx, p, step.clip, t, t, sources, state);
     if (d) draws.push(d);
   }
   pruneVideoSlots(ctx, sources);
-  ctx.images.prune(shownImages, p);
-  ctx.overlays.prune(shownOverlays);
+  ctx.images.prune(state.shownImages, p);
+  ctx.overlays.prune(state.shownOverlays);
   return draws;
 }

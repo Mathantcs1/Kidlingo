@@ -6,7 +6,7 @@ import type { BlurBackground } from './blur';
 import { applyClipEffects, blendOf } from './clipEffects';
 import type { CompositeBuffer } from './compositeBuffer';
 import { isAdjustmentDraw } from './drawCollect';
-import type { FrameDraw } from './drawCollect';
+import type { PlainDraw } from './drawCollect';
 import { bindCanvas, drawPicture } from './drawPicture';
 import type { EffectPipeline } from './effects/pipeline';
 import type { LoadedLut } from './effects/types';
@@ -24,7 +24,7 @@ export interface StepDeps {
 }
 
 /** `composite` is true when the frame draws through the composite buffer (it has begun); false draws straight to the canvas. */
-export function drawSteps(deps: StepDeps, draws: FrameDraw[], p: Project, t: number, format: Size, viewport: Rect, composite: boolean): void {
+export function drawSteps(deps: StepDeps, draws: PlainDraw[], p: Project, t: number, format: Size, viewport: Rect, composite: boolean): void {
   const { gl } = deps;
     const bindOutput = composite ? () => deps.composite.bindCurrent() : () => bindCanvas(gl, viewport);
     bindOutput();

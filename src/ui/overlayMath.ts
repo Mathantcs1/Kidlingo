@@ -5,7 +5,7 @@ import { overlayBaseSize } from '../core/overlays';
 import { findClip } from '../core/timeline';
 import type { Point } from '../render/overlayGeometry';
 import type { Size } from '../render/geometry';
-import { visualClipsAt } from '../render/visible';
+import { activeVisualClipsAt as visualClipsAt } from '../render/visible';
 import { liveSelection } from './edits';
 
 /** The displayed canvas (content box) in the same CSS coordinate space as the points converted. */

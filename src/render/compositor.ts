@@ -6,6 +6,7 @@ import { CompositeBuffer } from './compositeBuffer';
 import type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
 import { needsComposite } from './adjustment';
 import { collectDraws } from './drawCollect';
+import { expandTransitions } from './transitionFallback';
 import { drawSteps } from './drawSteps';
 import type { DrawContext } from './drawCollect';
 import { LutTextures } from './effects/luts';
@@ -132,7 +133,7 @@ class GlCompositor implements Compositor {
   private async render(p: Project, t: number, sources: Map<Id, VideoSource>): Promise<void> {
     this.assertUsable();
     // Phase 1 (async): every frame/bitmap is uploaded before anything is drawn.
-    const draws = await collectDraws(this.drawContext, p, t, sources);
+    const draws = expandTransitions(await collectDraws(this.drawContext, p, t, sources));
     // LUT textures too, so the export never encodes an ungraded frame while a LUT file is still loading.
     for (const [id, m] of Object.entries(p.media)) if (m.kind === 'lut') this.lutNames.set(id, m.name);
     this.frameLuts = await this.luts.forFrame(p, draws.map((d) => d.clip));
