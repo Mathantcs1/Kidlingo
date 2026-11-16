@@ -58,6 +58,10 @@ function ideatoapps_render_starter_section(): void {
 	echo '<p data-testid="starter-count">' . esc_html( sprintf( __( '%1$d of %2$d article files are installed.', 'ideatoapps-core' ), $s['installed'], $s['total'] ) ) . '</p>';
 	/* translators: 1: reviewed, 2: installed starter articles. */
 	echo '<p data-testid="starter-reviewed">' . esc_html( sprintf( __( '%1$d of %2$d installed starter articles human reviewed', 'ideatoapps-core' ), $p['reviewed'], $p['installed'] ) ) . '</p>';
+	if ( $p['trashed'] > 0 ) {
+		/* translators: %d: starter posts in the trash. */
+		echo '<p data-testid="starter-trashed">' . esc_html( sprintf( __( '%d of the installed articles are in the trash.', 'ideatoapps-core' ), $p['trashed'] ) ) . '</p>';
+	}
 	/* translators: %d: article files without a post. */
 	echo '<p data-testid="starter-missing">' . esc_html( sprintf( __( '%d article files not installed yet', 'ideatoapps-core' ), $p['missing'] ) ) . '</p>';
 	echo '<p class="description">' . esc_html__( 'Articles are created as drafts and cannot be published until a person has signed them off in the "Editorial review" box. Installing again never changes or recreates a post you have edited, published or trashed.', 'ideatoapps-core' ) . '</p>';

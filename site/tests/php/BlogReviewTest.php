@@ -218,8 +218,6 @@ final class BlogReviewTest extends WPTestCase {
 		$html = (string) apply_filters( 'ideatoapps_post_byline_html', '', $id );
 		$this->assertSame( 'Drafted with AI assistance. Edited and reviewed by Ann O&#039;Neil on March 5, 2026.', $html );
 		$this->assertSame( 'Drafted with AI assistance. Edited and reviewed by Ann O&#039;Neil on March 5, 2026. Other', apply_filters( 'ideatoapps_post_byline_html', 'Other', $id ), 'another filter cannot suppress the AI line' );
-		add_filter( 'ideatoapps_post_byline_html', '__return_empty_string', 1000 );
-		remove_filter( 'ideatoapps_post_byline_html', '__return_empty_string', 1000 );
 		$this->assertStringNotContainsString( '<script', $html );
 		$this->assertStringNotContainsString( '2026-11-16', $html, 'the draft date is never shown as reviewed' );
 		$plain = (int) wp_insert_post( array( 'post_title' => 'Mine', 'post_status' => 'publish', 'post_content' => 'x' ) );
@@ -271,12 +269,12 @@ final class BlogReviewTest extends WPTestCase {
 		ob_start();
 		do_action( 'manage_post_posts_custom_column', 'ita_review', $id );
 		$this->assertStringContainsString( 'AI draft', (string) ob_get_clean() );
-		$this->assertSame( array( 'reviewed' => 0, 'installed' => 2, 'missing' => 0 ), ideatoapps_review_progress() );
+		$this->assertSame( array( 'reviewed' => 0, 'installed' => 2, 'missing' => 0, 'trashed' => 0 ), ideatoapps_review_progress() );
 		$this->sign( $id );
 		ob_start();
 		do_action( 'manage_post_posts_custom_column', 'ita_review', $id );
 		$this->assertStringContainsString( 'Human reviewed', (string) ob_get_clean() );
-		$this->assertSame( array( 'reviewed' => 1, 'installed' => 2, 'missing' => 0 ), ideatoapps_review_progress() );
+		$this->assertSame( array( 'reviewed' => 1, 'installed' => 2, 'missing' => 0, 'trashed' => 0 ), ideatoapps_review_progress() );
 		$this->assertArrayHasKey( 'ita_review', apply_filters( 'manage_post_posts_columns', array() ) );
 	}
 
@@ -297,10 +295,76 @@ final class BlogReviewTest extends WPTestCase {
 		}
 	}
 
+	private function stt( int $id ): string {
+		clean_post_cache( $id );
+		return get_post_status( $id ) . '/' . get_post_type( $id );
+	}
+
 	public function test_changing_the_post_type_cannot_publish_an_unreviewed_post(): void {
 		$id = $this->starter();
 		wp_update_post( array( 'ID' => $id, 'post_type' => 'page', 'post_status' => 'publish' ) );
+		$this->assertSame( 'draft/post', $this->stt( $id ) );
+	}
+
+	public function test_two_step_type_change_then_publish_stays_draft_post(): void {
+		$id = $this->starter();
+		wp_update_post( array( 'ID' => $id, 'post_type' => 'page' ) );
+		$this->assertSame( 'draft/post', $this->stt( $id ), 'the type change itself is refused' );
+		wp_update_post( array( 'ID' => $id, 'post_status' => 'publish' ) );
+		$this->assertSame( 'draft/post', $this->stt( $id ) );
+	}
+
+	public function test_set_post_type_then_wp_publish_post_is_pulled_back_to_a_draft_post(): void {
+		$id = $this->starter();
+		set_post_type( $id, 'page' ); // runs no filter.
+		wp_publish_post( $id );
+		$this->assertSame( 'draft/post', $this->stt( $id ) );
+	}
+
+	public function test_a_post_published_as_a_page_by_other_means_cannot_come_back_as_an_unreviewed_post(): void {
+		$id = $this->starter();
+		set_post_type( $id, 'page' );
+		global $wpdb;
+		$wpdb->update( $wpdb->posts, array( 'post_status' => 'publish' ), array( 'ID' => $id ) );
+		clean_post_cache( $id );
+		wp_update_post( array( 'ID' => $id, 'post_type' => 'post' ) );
+		$this->assertSame( 'draft/post', $this->stt( $id ) );
+	}
+
+	public function test_a_signed_off_post_still_publishes_normally_and_may_change_type(): void {
+		$id = $this->starter();
+		$this->sign( $id );
+		wp_update_post( array( 'ID' => $id, 'post_status' => 'publish' ) );
+		$this->assertSame( 'publish/post', $this->stt( $id ) );
+		wp_update_post( array( 'ID' => $id, 'post_type' => 'page' ) );
+		$this->assertSame( 'publish/page', $this->stt( $id ), 'a reviewed, unchanged post is not locked to its type' );
+	}
+
+	public function test_deleting_review_meta_cannot_turn_a_starter_post_into_an_ordinary_one(): void {
+		$id = $this->starter();
+		$this->sign( $id );
+		wp_update_post( array( 'ID' => $id, 'post_status' => 'publish' ) );
+		delete_post_meta( $id, 'ita_review_status' );
+		$this->assertSame( 'draft', $this->st( $id ), 'published, no longer cleared: back to draft' );
+		delete_post_meta( $id, 'ita_starter_slug' );
+		$this->assertSame( 'ai_draft', ideatoapps_review_status( $id ), 'the installer record keeps it gated' );
+		wp_update_post( array( 'ID' => $id, 'post_status' => 'publish' ) );
 		$this->assertSame( 'draft', $this->st( $id ) );
+		$this->assertSame( '', apply_filters( 'ideatoapps_post_byline_html', '', $id ) );
+	}
+
+	public function test_deleting_the_reviewed_hash_pulls_a_published_post_back(): void {
+		$id = $this->starter();
+		$this->sign( $id );
+		wp_update_post( array( 'ID' => $id, 'post_status' => 'publish' ) );
+		delete_post_meta( $id, 'ita_reviewed_hash' );
+		$this->assertSame( 'draft', $this->st( $id ) );
+	}
+
+	public function test_a_cleared_recorded_post_keeps_its_byline(): void {
+		$id = $this->starter();
+		$this->sign( $id );
+		$this->assertStringStartsWith( 'Drafted with AI assistance.', (string) apply_filters( 'ideatoapps_post_byline_html', '', $id ) );
 	}
 
 	public function test_importer_pattern_meta_added_after_publish_reverts_to_draft(): void {

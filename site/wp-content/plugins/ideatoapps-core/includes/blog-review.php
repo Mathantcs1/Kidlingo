@@ -79,17 +79,25 @@ function ideatoapps_review_busy( ?bool $set = null ): bool {
 }
 
 /**
- * The review status that applies to a post: the stored one, ai_draft for a starter post without one, '' for any other post.
+ * Whether a post id is one the installer created (recorded in ideatoapps_blog_installed_slugs). It stays gated even if its meta is deleted.
+ */
+function ideatoapps_review_is_recorded( int $post_id ): bool {
+	return $post_id > 0 && function_exists( 'ideatoapps_blog_installed_slugs' ) && in_array( $post_id, array_map( 'intval', array_values( ideatoapps_blog_installed_slugs() ) ), true );
+}
+
+/**
+ * The review status that applies to a post of ANY type: the stored one, ai_draft for a starter post without one (slug meta, or an id the
+ * installer recorded), '' for any other post.
  */
 function ideatoapps_review_status( int $post_id ): string {
-	if ( 'post' !== get_post_type( $post_id ) ) {
+	if ( $post_id <= 0 ) {
 		return '';
 	}
 	$status = get_post_meta( $post_id, 'ita_review_status', true );
 	if ( is_string( $status ) && isset( ideatoapps_review_statuses()[ $status ] ) ) {
 		return $status;
 	}
-	return '' !== (string) get_post_meta( $post_id, 'ita_starter_slug', true ) ? 'ai_draft' : '';
+	return '' !== (string) get_post_meta( $post_id, 'ita_starter_slug', true ) || ideatoapps_review_is_recorded( $post_id ) ? 'ai_draft' : '';
 }
 
 /**

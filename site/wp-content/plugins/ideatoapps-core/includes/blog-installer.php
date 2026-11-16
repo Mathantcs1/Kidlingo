@@ -17,6 +17,18 @@ function ideatoapps_blog_find_starter( string $slug ): int {
 }
 
 /**
+ * The existing post (any status, trash included) for a starter slug: found by its meta, or by the id the installer recorded, or 0.
+ */
+function ideatoapps_blog_post_for_slug( string $slug ): int {
+	$id = ideatoapps_blog_find_starter( $slug );
+	if ( $id > 0 ) {
+		return $id;
+	}
+	$rec = (int) ( ideatoapps_blog_installed_slugs()[ $slug ] ?? 0 );
+	return $rec > 0 && get_post( $rec ) instanceof WP_Post ? $rec : 0;
+}
+
+/**
  * Term id of a topic category; created with the topic's label when missing, an existing one is never renamed.
  */
 function ideatoapps_blog_ensure_category( string $slug ): int {
@@ -46,17 +58,31 @@ function ideatoapps_blog_record_slug( string $slug, int $post_id ): void {
 }
 
 /**
- * Take the install lock (one run at a time, a stale lock expires after 60 seconds).
+ * Take the install lock: one run at a time. The option holds "time:token"; add_option() is atomic, so of two simultaneous runs only one
+ * wins. A lock older than 60 seconds is treated as stale (a crashed run) and taken over; two runs that both see the same stale lock can
+ * still overlap, which is harmless because each article is also guarded by the post/slug record. A run releases only a lock that still
+ * carries its own token, so a slow run never frees a lock that someone else took over.
+ *
+ * @return string Token, or '' when another run holds the lock.
  */
-function ideatoapps_blog_lock(): bool {
-	if ( add_option( 'ideatoapps_blog_install_lock', time(), '', false ) ) {
-		return true;
+function ideatoapps_blog_lock(): string {
+	$token = wp_generate_password( 12, false );
+	if ( add_option( 'ideatoapps_blog_install_lock', time() . ':' . $token, '', false ) ) {
+		return $token;
 	}
-	if ( time() - (int) get_option( 'ideatoapps_blog_install_lock', 0 ) > 60 ) {
-		update_option( 'ideatoapps_blog_install_lock', time(), false );
-		return true;
+	$held = (string) get_option( 'ideatoapps_blog_install_lock', '' );
+	if ( time() - (int) $held > 60 ) {
+		update_option( 'ideatoapps_blog_install_lock', time() . ':' . $token, false );
+		return $token;
 	}
-	return false;
+	return '';
+}
+
+/** Release the lock if it is still ours. */
+function ideatoapps_blog_unlock( string $token ): void {
+	if ( '' !== $token && substr( (string) get_option( 'ideatoapps_blog_install_lock', '' ), -strlen( $token ) ) === $token ) {
+		delete_option( 'ideatoapps_blog_install_lock' );
+	}
 }
 
 /**
@@ -119,7 +145,8 @@ function ideatoapps_blog_install_one( array $article ): string {
  */
 function ideatoapps_blog_install( ?string $only = null ): array {
 	$out = array( 'created' => 0, 'skipped' => 0, 'errors' => 0, 'locked' => false );
-	if ( ! ideatoapps_blog_lock() ) {
+	$token = ideatoapps_blog_lock();
+	if ( '' === $token ) {
 		$out['locked'] = true;
 		return $out;
 	}
@@ -133,7 +160,7 @@ function ideatoapps_blog_install( ?string $only = null ): array {
 			++$out[ 'error' === $r ? 'errors' : $r ];
 		}
 	} finally {
-		delete_option( 'ideatoapps_blog_install_lock' );
+		ideatoapps_blog_unlock( $token );
 	}
 	return $out;
 }
@@ -145,7 +172,14 @@ function ideatoapps_blog_install( ?string $only = null ): array {
  */
 function ideatoapps_blog_missing_slugs(): array {
 	$files = array_map( static fn( $p ) => basename( $p, '.html' ), ideatoapps_blog_article_files() );
-	return array_values( array_filter( array_keys( ideatoapps_blog_installed_slugs() ), static fn( $s ) => in_array( $s, $files, true ) && 0 === ideatoapps_blog_find_starter( (string) $s ) ) );
+	$out   = array();
+	foreach ( ideatoapps_blog_installed_slugs() as $slug => $post_id ) {
+		// Deleted only when the recorded post is really gone (any status, trash included, counts as there) and no post carries the slug.
+		if ( in_array( $slug, $files, true ) && 0 === ideatoapps_blog_post_for_slug( (string) $slug ) ) {
+			$out[] = (string) $slug;
+		}
+	}
+	return $out;
 }
 
 /**
@@ -179,7 +213,7 @@ function ideatoapps_blog_install_status(): array {
 	$files = ideatoapps_blog_article_files();
 	$have  = 0;
 	foreach ( $files as $path ) {
-		$have += ideatoapps_blog_find_starter( basename( $path, '.html' ) ) > 0 ? 1 : 0;
+		$have += ideatoapps_blog_post_for_slug( basename( $path, '.html' ) ) > 0 ? 1 : 0;
 	}
 	return array( 'total' => count( $files ), 'installed' => $have );
 }

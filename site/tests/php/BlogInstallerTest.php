@@ -252,4 +252,40 @@ final class BlogInstallerTest extends WPTestCase {
 		$this->assertStringContainsString( 'value="01-what-ai-is-and-isnt"', $html );
 		$this->assertStringContainsString( '1 article files not installed yet', $html );
 	}
+
+	/* Round 2 */
+
+	public function test_missing_slugs_use_the_recorded_post_and_ignore_cleared_meta_or_type_changes(): void {
+		ideatoapps_blog_install();
+		$id = $this->starter( '01-what-ai-is-and-isnt' );
+		delete_post_meta( $id, 'ita_starter_slug' );
+		$this->assertSame( array(), ideatoapps_blog_missing_slugs(), 'the post still exists' );
+		$this->assertSame( 1, ideatoapps_blog_reinstall( '01-what-ai-is-and-isnt' )['skipped'] );
+		set_post_type( $id, 'page' );
+		$this->assertSame( array(), ideatoapps_blog_missing_slugs() );
+		wp_trash_post( $id );
+		$this->assertSame( array(), ideatoapps_blog_missing_slugs(), 'a trashed post still exists' );
+		wp_delete_post( $id, true );
+		$this->assertSame( array( '01-what-ai-is-and-isnt' ), ideatoapps_blog_missing_slugs() );
+	}
+
+	public function test_the_lock_is_released_only_by_its_owner(): void {
+		$mine = ideatoapps_blog_lock();
+		$this->assertNotSame( '', $mine );
+		$this->assertSame( '', ideatoapps_blog_lock(), 'held' );
+		ideatoapps_blog_unlock( 'someone-else' );
+		$this->assertNotFalse( get_option( 'ideatoapps_blog_install_lock' ), 'a foreign token does not release it' );
+		ideatoapps_blog_unlock( $mine );
+		$this->assertFalse( get_option( 'ideatoapps_blog_install_lock' ) );
+	}
+
+	public function test_progress_adds_up_with_missing_and_trashed_articles(): void {
+		ideatoapps_blog_install();
+		wp_trash_post( $this->starter( '01-what-ai-is-and-isnt' ) );
+		wp_delete_post( $this->starter( '02-ml-vs-deep-learning-vs-generative-ai' ), true );
+		$p = ideatoapps_review_progress();
+		$this->assertSame( 3, $p['installed'] + $p['missing'], 'installed (trash included) + not installed = files' );
+		$this->assertSame( array( 2, 1, 1 ), array( $p['installed'], $p['missing'], $p['trashed'] ) );
+		$this->assertSame( 0, $p['reviewed'] );
+	}
 }

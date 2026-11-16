@@ -25,7 +25,6 @@ function ideatoapps_review_flag_refusal(): void {
  */
 function ideatoapps_review_filter_insert( $data, $postarr ) {
 	$id = isset( $postarr['ID'] ) ? (int) $postarr['ID'] : 0;
-	// The stored type decides: changing a starter post to another type in the same save does not escape the gate.
 	if ( $id <= 0 || ! is_array( $data ) || '' === ideatoapps_review_status( $id ) ) {
 		return $data;
 	}
@@ -44,9 +43,12 @@ function ideatoapps_review_filter_insert( $data, $postarr ) {
 		update_post_meta( $id, 'ita_review_status', 'needs_review' ); // Title, excerpt or content edited after sign-off.
 		ideatoapps_review_busy( false );
 	}
-	if ( in_array( $data['post_status'] ?? '', array( 'publish', 'future' ), true ) && ! ideatoapps_review_is_cleared( $id, $fields ) ) {
-		$data['post_status'] = 'draft';
-		ideatoapps_review_flag_refusal();
+	if ( ! ideatoapps_review_is_cleared( $id, $fields ) ) {
+		$data['post_type'] = get_post_type( $id ); // An unreviewed post cannot be turned into a page or anything else.
+		if ( in_array( $data['post_status'] ?? '', array( 'publish', 'future' ), true ) ) {
+			$data['post_status'] = 'draft';
+			ideatoapps_review_flag_refusal();
+		}
 	}
 	return $data;
 }
@@ -58,7 +60,13 @@ add_filter( 'wp_insert_post_data', 'ideatoapps_review_filter_insert', 99, 2 );
  */
 function ideatoapps_review_force_draft( int $post_id ): void {
 	$post = get_post( $post_id );
-	if ( $post && 'post' === $post->post_type && in_array( $post->post_status, array( 'publish', 'future' ), true ) && '' !== ideatoapps_review_status( $post_id ) && ! ideatoapps_review_is_cleared( $post_id, ideatoapps_review_fields( $post ) ) ) {
+	if ( ! $post || '' === ideatoapps_review_status( $post_id ) || ideatoapps_review_is_cleared( $post_id, ideatoapps_review_fields( $post ) ) ) {
+		return;
+	}
+	if ( 'post' !== $post->post_type ) {
+		set_post_type( $post_id, 'post' ); // Runs no filter: an unreviewed post that was switched to another type comes back.
+	}
+	if ( in_array( $post->post_status, array( 'publish', 'future' ), true ) ) {
 		wp_update_post( array( 'ID' => $post_id, 'post_status' => 'draft' ) );
 		ideatoapps_review_flag_refusal();
 	}
@@ -75,12 +83,20 @@ add_action(
 	3
 );
 
+// Any save of a gated post is re-checked once it is stored (covers anything that changed type or status without the insert filter).
+add_action(
+	'wp_after_insert_post',
+	static function ( $post_id ): void {
+		ideatoapps_review_force_draft( (int) $post_id );
+	}
+);
+
 // Importer pattern: a post published first and given the starter / review meta afterwards (add_post_meta, update_post_meta).
-foreach ( array( 'added_post_meta', 'updated_post_meta' ) as $ideatoapps_hook ) {
+foreach ( array( 'added_post_meta', 'updated_post_meta', 'deleted_post_meta' ) as $ideatoapps_hook ) {
 	add_action(
 		$ideatoapps_hook,
 		static function ( $meta_id, $post_id, $key ): void {
-			if ( ! ideatoapps_review_busy() && in_array( $key, array( 'ita_review_status', 'ita_starter_slug' ), true ) ) {
+			if ( ! ideatoapps_review_busy() && in_array( $key, array( 'ita_review_status', 'ita_starter_slug', 'ita_reviewed_hash', 'ita_reviewer', 'ita_reviewed_on' ), true ) ) {
 				ideatoapps_review_force_draft( (int) $post_id );
 			}
 		},

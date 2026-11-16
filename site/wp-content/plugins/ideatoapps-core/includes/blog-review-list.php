@@ -96,14 +96,21 @@ add_filter(
 );
 
 /**
- * Progress for the Settings line: human reviewed out of the installed starter posts, and the article files with no post yet.
+ * Progress for the Settings line. Every article file is either installed (its post exists in any status; `trashed` of those are in the
+ * trash) or not installed, so installed + missing = number of files. `reviewed` counts human reviewed posts that are not in the trash.
  *
- * @return array{reviewed:int,installed:int,missing:int}
+ * @return array{reviewed:int,installed:int,missing:int,trashed:int}
  */
 function ideatoapps_review_progress(): array {
-	$base = array( 'post_type' => 'post', 'post_status' => array( 'draft', 'pending', 'private', 'publish', 'future' ), 'numberposts' => -1, 'fields' => 'ids' );
-	$have = get_posts( $base + array( 'meta_query' => array( array( 'key' => 'ita_starter_slug', 'compare' => 'EXISTS' ) ) ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- a few dozen rows.
-	$done = get_posts( $base + array( 'meta_query' => array( array( 'key' => 'ita_starter_slug', 'compare' => 'EXISTS' ), array( 'key' => 'ita_review_status', 'value' => 'human_reviewed' ) ) ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-	$st   = ideatoapps_blog_install_status();
-	return array( 'reviewed' => count( $done ), 'installed' => count( $have ), 'missing' => $st['total'] - $st['installed'] );
+	$st      = ideatoapps_blog_install_status();
+	$trashed = 0;
+	$done    = 0;
+	foreach ( ideatoapps_blog_article_files() as $path ) {
+		$id = ideatoapps_blog_post_for_slug( basename( $path, '.html' ) );
+		if ( $id > 0 ) {
+			$trashed += 'trash' === get_post_status( $id ) ? 1 : 0;
+			$done    += 'trash' !== get_post_status( $id ) && 'human_reviewed' === ideatoapps_review_status( $id ) ? 1 : 0;
+		}
+	}
+	return array( 'reviewed' => $done, 'installed' => $st['installed'], 'missing' => $st['total'] - $st['installed'], 'trashed' => $trashed );
 }
