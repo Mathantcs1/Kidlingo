@@ -1,7 +1,7 @@
 <?php
 /**
- * Blog index (/blog/): request parsing (`cat`, `q`, `pg`), WP_Query args, the category list, URLs and the featured-post rule.
- * Odd input is ignored or capped, never an error: arrays and non-strings are dropped, an unknown category is ignored.
+ * Blog index (/blog/): request parsing (`cat`, `level`, `q`, `pg`), WP_Query args, the category list, URLs and the featured-post rule.
+ * Odd input is ignored or capped, never an error: arrays and non-strings are dropped, an unknown category or level is ignored.
  *
  * @package IdeaToApps
  */
@@ -94,10 +94,11 @@ function ideatoapps_blog_search_usable( string $q ): bool {
 }
 
 /**
- * The blog request from a GET array (already unslashed): `cat` (an existing category slug that has posts), `q` and `pg`.
+ * The blog request from a GET array (already unslashed): `cat` (an existing category slug that has posts), `level` (one of the three
+ * levels, exactly), `q` and `pg`.
  *
  * @param array<string, mixed> $get Query parameters.
- * @return array{cat:string, q:string, pg:int}
+ * @return array{cat:string, level:string, q:string, pg:int}
  */
 function ideatoapps_blog_request( array $get ): array {
 	$q   = isset( $get['q'] ) && is_string( $get['q'] ) ? ideatoapps_blog_clean_search( $get['q'] ) : '';
@@ -107,7 +108,7 @@ function ideatoapps_blog_request( array $get ): array {
 	}
 	$pg = $get['pg'] ?? 1;
 	$pg = is_int( $pg ) ? $pg : ( is_string( $pg ) && 1 === preg_match( '/\A[0-9]{1,6}\z/', $pg ) ? (int) $pg : 1 );
-	return array( 'cat' => $cat, 'q' => $q, 'pg' => max( 1, $pg ) );
+	return array( 'cat' => $cat, 'level' => ideatoapps_blog_clean_level( $get['level'] ?? '' ), 'q' => $q, 'pg' => max( 1, $pg ) );
 }
 
 /**
@@ -135,23 +136,26 @@ function ideatoapps_blog_query_args( array $get ): array {
 	if ( '' !== $req['cat'] ) {
 		$args['category_name'] = $req['cat'];
 	}
+	if ( '' !== $req['level'] ) {
+		$args['meta_query'] = array( array( 'key' => 'ita_level', 'value' => $req['level'] ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- a filtered list of at most a few hundred posts.
+	}
 	return $args;
 }
 
 /**
- * Whether a category or a search is active.
+ * Whether a category, a level or a search is active.
  *
- * @param array{cat:string, q:string, pg:int} $req Request.
+ * @param array{cat:string, level?:string, q:string, pg:int} $req Request.
  */
 function ideatoapps_blog_is_filtered( array $req ): bool {
-	return '' !== $req['cat'] || '' !== $req['q'];
+	return '' !== $req['cat'] || '' !== $req['q'] || '' !== ( $req['level'] ?? '' );
 }
 
 /**
  * The newest post is shown as a large card on page 1 with no filters, when there are enough posts for a grid to remain.
  *
- * @param array{cat:string, q:string, pg:int} $req   Request.
- * @param int                                 $found Posts that match.
+ * @param array{cat:string, level?:string, q:string, pg:int} $req   Request.
+ * @param int                                                $found Posts that match.
  */
 function ideatoapps_blog_has_featured( array $req, int $found ): bool {
 	return ! ideatoapps_blog_is_filtered( $req ) && 1 === $req['pg'] && $found >= IDEATOAPPS_BLOG_FEATURED_MIN;
@@ -166,9 +170,9 @@ function ideatoapps_blog_base_url(): string {
 }
 
 /**
- * A blog URL that keeps the filters (urlencoded). Page 1 has no `pg`.
+ * A blog URL that keeps the filters (urlencoded; a level only when it is a known one). Page 1 has no `pg`.
  *
- * @param array{cat:string, q:string, pg?:int} $req  Request (only cat and q are used).
+ * @param array{cat:string, level?:string, q:string, pg?:int} $req Request (only cat, level and q are used).
  * @param int                                  $page Page number.
  * @param string                               $base Blog page URL; defaults to the blog page.
  */
@@ -177,6 +181,9 @@ function ideatoapps_blog_url( array $req, int $page = 1, string $base = '' ): st
 	if ( ! empty( $req['cat'] ) ) {
 		$query['cat'] = rawurlencode( (string) $req['cat'] );
 	}
+	if ( '' !== ideatoapps_blog_clean_level( $req['level'] ?? '' ) ) {
+		$query['level'] = $req['level'];
+	}
 	if ( ! empty( $req['q'] ) ) {
 		$query['q'] = rawurlencode( (string) $req['q'] );
 	}
@@ -184,38 +191,4 @@ function ideatoapps_blog_url( array $req, int $page = 1, string $base = '' ): st
 		$query['pg'] = (string) $page;
 	}
 	return add_query_arg( $query, '' !== $base ? $base : ideatoapps_blog_base_url() );
-}
-
-/**
- * Card args for a blog post (shared by the grid and the featured card).
- *
- * @return array<string, mixed>
- */
-function ideatoapps_blog_card_args( WP_Post $post, int $words = 28 ): array {
-	$label = '';
-	$rank  = 99;
-	$topics = ideatoapps_blog_topics();
-	foreach ( get_the_category( $post->ID ) as $term ) { // the best-ranked topic category, else the first other one.
-		if ( (int) $term->term_id === (int) get_option( 'default_category' ) ) {
-			continue;
-		}
-		$at   = array_search( $term->slug, $topics, true );
-		$here = false === $at ? 98 : (int) $at;
-		if ( $here < $rank ) {
-			$rank  = $here;
-			$label = $term->name;
-		}
-	}
-	return array(
-		'title'     => get_the_title( $post ),
-		'href'      => get_permalink( $post ),
-		'label'     => $label,
-		'eyebrow'   => get_the_date( '', $post ),
-		'text'      => wp_trim_words( wp_strip_all_tags( get_the_excerpt( $post ) ), $words ),
-		/* translators: %d: minutes to read. */
-		'meta'      => sprintf( __( '%d min read', 'ideatoapps' ), ideatoapps_reading_minutes( $post->ID ) ),
-		'image_id'  => (int) get_post_thumbnail_id( $post ),
-		'hero_html' => ideatoapps_card_hero( $post ),
-		'heading'   => 2,
-	);
 }

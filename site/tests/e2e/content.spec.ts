@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { axeProblems } from './helpers/a11y';
 import { horizontalOverflow } from './helpers/layout';
-import { adminApi, cleanup, createApp, createPost, createPostCategory, createVideo, resetContent, saveSettings, trash, type Api } from './helpers/wp';
+import { adminApi, cleanup, createApp, createPost, createPostCategory, createVideo, resetContent, saveSettings, setPostLevel, trash, type Api } from './helpers/wp';
 
 // These tests change site content; the server is shared, so run them one at a time and leave the site blank.
 test.describe.configure({ mode: 'serial' });
@@ -157,6 +157,7 @@ test.describe('Blog', () => {
   });
   // One shared fixture (17 published posts + 1 draft; built through the REST API, slow). Newest first: Tokens note (llms), Prompt two,
   // Prompt one (prompting), Basics 13..01 (ai-basics, 13 posts), Plain note (Uncategorized, oldest). 12 per page, so page 2 holds 5.
+  // Levels: Tokens note advanced, Prompt two intermediate, Prompt one and Basics 01-03 beginner, the rest none.
   test.describe('index with many posts', () => {
     test.use({ viewport: { width: 1280, height: 900 } });
     const titles = (page: Page) => page.getByTestId('blog-list').locator('article h2').allInnerTexts();
@@ -164,10 +165,13 @@ test.describe('Blog', () => {
       test.setTimeout(240_000);
       const [ai, pr, ll] = [await createPostCategory(api, 'AI basics', 'ai-basics'), await createPostCategory(api, 'Prompting', 'prompting'), await createPostCategory(api, 'LLMs', 'llms')];
       await createPost(api, 'Plain note', { date: '2026-03-01T10:00:00' });
-      for (let i = 1; i <= 13; i++) await createPost(api, `Basics ${String(i).padStart(2, '0')}`, { date: `2026-03-${String(i + 1).padStart(2, '0')}T10:00:00`, categories: [ai] });
-      await createPost(api, 'Prompt one', { date: '2026-03-15T10:00:00', categories: [pr] });
-      await createPost(api, 'Prompt two', { date: '2026-03-16T10:00:00', categories: [pr] });
-      await createPost(api, 'Tokens note', { date: '2026-03-17T10:00:00', categories: [ll] });
+      for (let i = 1; i <= 13; i++) {
+        const id = await createPost(api, `Basics ${String(i).padStart(2, '0')}`, { date: `2026-03-${String(i + 1).padStart(2, '0')}T10:00:00`, categories: [ai] });
+        if (i <= 3) await setPostLevel(api, id, 'beginner', 'beginners');
+      }
+      await setPostLevel(api, await createPost(api, 'Prompt one', { date: '2026-03-15T10:00:00', categories: [pr] }), 'beginner', 'beginners,students');
+      await setPostLevel(api, await createPost(api, 'Prompt two', { date: '2026-03-16T10:00:00', categories: [pr] }), 'intermediate', 'workers-and-business-owners');
+      await setPostLevel(api, await createPost(api, 'Tokens note', { date: '2026-03-17T10:00:00', categories: [ll] }), 'advanced', 'builders');
       await createPost(api, 'Secret draft', { status: 'draft', date: '2026-03-18T10:00:00', categories: [ai] });
       api.made.splice(0);
     });
@@ -331,6 +335,55 @@ test.describe('Blog', () => {
       expect((await robots('/blog/')).robots ?? '').not.toMatch(/noindex/);
     });
 
+    test('level chips: totals, a chip filters (no featured card), combines with category and search, cards show the level', async ({ page }) => {
+      await page.goto('/blog/');
+      const levels = page.getByTestId('blog-levels').getByRole('link');
+      await expect(page.getByRole('navigation', { name: 'Level' })).toBeVisible();
+      await expect(levels).toHaveText(['All levels', 'Beginner 4 articles', 'Intermediate 1 article', 'Advanced 1 article']);
+      await expect(levels.first()).toHaveAttribute('aria-current', 'page');
+      await expect(page.getByTestId('blog-featured').getByTestId('card-level')).toHaveText('Level: Advanced');
+      await levels.filter({ hasText: 'Beginner' }).click();
+      await expect(page).toHaveURL(/\/blog\/\?level=beginner$/);
+      expect(await titles(page)).toEqual(['Prompt one', 'Basics 03', 'Basics 02', 'Basics 01']);
+      await expect(page.getByTestId('blog-featured')).toHaveCount(0);
+      await expect(page.getByTestId('blog-summary')).toHaveText('4 articles');
+      await expect(levels.filter({ hasText: 'Beginner' })).toHaveAttribute('aria-current', 'page');
+      await expect(page.getByTestId('blog-list').getByTestId('card-level')).toHaveText(Array(4).fill('Level: Beginner'));
+      await page.getByTestId('blog-chips').getByRole('link', { name: /Prompting/ }).click(); // keeps the level
+      await expect(page).toHaveURL(/\?cat=prompting&level=beginner$/);
+      expect(await titles(page)).toEqual(['Prompt one']);
+      await page.goto('/blog/?level=beginner');
+      await page.getByRole('search').getByLabel('Search articles').fill('Basics');
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL(/level=beginner/);
+      expect(await titles(page)).toEqual(['Basics 03', 'Basics 02', 'Basics 01']);
+      await expect(page.getByTestId('blog-summary')).toHaveText('3 articles for "Basics"');
+      await expect(levels).toHaveText(['All levels', 'Beginner', 'Intermediate', 'Advanced']); // counts hidden while searching
+      await levels.first().click(); // "All levels" keeps the search
+      await expect(page).toHaveURL(/\?q=Basics$/);
+      await page.goto('/blog/?cat=ai-basics&level=beginner&q=Basics');
+      expect(await titles(page)).toEqual(['Basics 03', 'Basics 02', 'Basics 01']);
+    });
+
+    test('level views are noindex,follow; odd level input is ignored and escaped', async ({ page }) => {
+      await page.goto('/blog/?level=intermediate');
+      expect(await page.locator('meta[name="robots"]').getAttribute('content')).toMatch(/noindex.*follow|follow.*noindex/);
+      await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+      expect(await titles(page)).toEqual(['Prompt two']);
+      let dialogs = 0;
+      page.on('dialog', async (d) => { dialogs++; await d.dismiss(); });
+      for (const url of ['/blog/?level=Beginner', '/blog/?level[]=beginner', '/blog/?level=expert', '/blog/?level=' + encodeURIComponent('"><img src=x onerror=alert(1)>'), '/blog/?level=' + 'b'.repeat(500)]) {
+        const r = await page.goto(url);
+        expect(r!.status(), url).toBe(200);
+        await expect(page.getByTestId('blog-featured'), url).toHaveCount(1); // ignored: the plain first page
+        await expect(page.getByTestId('blog-summary'), url).toHaveText('17 articles');
+        await expect(page.getByTestId('blog-levels').getByRole('link').first(), url).toHaveAttribute('aria-current', 'page');
+        expect(await page.locator('main img[onerror]').count(), url).toBe(0);
+        expect(await page.locator('input[name="level"]').count(), url).toBe(0);
+      }
+      expect(dialogs).toBe(0);
+    });
+
     test('the post page category chip links to that category in the blog', async ({ page }) => {
       await page.goto('/blog/?q=Prompt+one');
       await page.getByRole('link', { name: 'Prompt one' }).click();
@@ -357,7 +410,7 @@ test.describe('Blog', () => {
     for (const width of [360, 768, 1440]) {
       test(`no horizontal overflow at ${width}px (plain, filtered, long search, no results); chips wrap and are 44px tall`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
-        for (const url of ['/blog/', '/blog/?cat=ai-basics', '/blog/?q=' + 'W'.repeat(80), '/blog/?cat=llms&q=zzzz']) {
+        for (const url of ['/blog/', '/blog/?cat=ai-basics', '/blog/?level=beginner', '/blog/?q=' + 'W'.repeat(80), '/blog/?cat=llms&q=zzzz']) {
           await page.goto(url);
           await page.evaluate(() => document.fonts.ready);
           expect(await horizontalOverflow(page), `${url} at ${width}px`).toBeLessThanOrEqual(0);
@@ -374,7 +427,7 @@ test.describe('Blog', () => {
         for (const width of [360, 1280]) {
           const ctx = await browser.newContext({ colorScheme: scheme, viewport: { width, height: 900 } });
           const page = await ctx.newPage();
-          for (const url of ['/blog/', '/blog/?cat=prompting', '/blog/?cat=llms&q=zzzz']) {
+          for (const url of ['/blog/', '/blog/?cat=prompting', '/blog/?level=beginner&cat=prompting', '/blog/?cat=llms&q=zzzz']) {
             await page.goto(url);
             await page.evaluate(() => document.fonts.ready);
             await page.waitForTimeout(300);
@@ -416,7 +469,12 @@ test.describe('Single post', () => {
   // One shared fixture of six posts (built through the REST API, slow). The file-wide afterEach cleanup would delete it, so it is
   // taken off the cleanup list and removed with resetContent after this block, which leaves the site blank for later blocks.
   let fixtureId = 0;
-  test.beforeAll(async () => { test.setTimeout(180_000); fixtureId = await longPostFixture(api); api.made.splice(0); });
+  test.beforeAll(async () => {
+    test.setTimeout(180_000);
+    fixtureId = await longPostFixture(api);
+    await setPostLevel(api, fixtureId, 'intermediate', 'workers-and-business-owners,parents-and-families,teachers-and-tutors'); // the longest labels
+    api.made.splice(0);
+  });
   test.afterAll(async () => { await resetContent(api); });
 
   test('hero, meta row, contents with unique ids, and "Read next" with three other published posts', async ({ page }) => {
@@ -437,6 +495,19 @@ test.describe('Single post', () => {
     await page.getByTestId('post-read-next').getByRole('link', { name: 'Delta note' }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Delta note');
     await expect(page.getByTestId('post-meta')).not.toContainText('Last reviewed');
+  });
+
+  test('level badge and "Who this is for" audience chips come from the post meta; a post without a level shows neither', async ({ page }) => {
+    await page.goto(`/?p=${fixtureId}`);
+    const who = page.getByTestId('post-audience');
+    await expect(who.getByTestId('post-level')).toHaveText('Level: Intermediate');
+    await expect(who.getByTestId('post-for')).toHaveText('Who this is for:');
+    await expect(who.getByRole('list', { name: 'Who this is for:' }).getByRole('listitem')).toHaveText(['Workers and business owners', 'Parents and families', 'Teachers and tutors']);
+    const heroOrder = await page.locator('.post-hero').evaluate((h) => [...h.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')));
+    expect(heroOrder.indexOf('post-audience')).toBeGreaterThan(heroOrder.indexOf('post-meta'));
+    await page.getByTestId('post-read-next').getByRole('link', { name: 'Delta note' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Delta note');
+    await expect(page.getByTestId('post-audience')).toHaveCount(0);
   });
 
   test('contents links scroll to their heading, below the sticky header, and the contents stay in view', async ({ page }) => {

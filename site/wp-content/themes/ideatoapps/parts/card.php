@@ -7,7 +7,8 @@
  *       image_id (attachment ID shown above the title, lazy-loaded with width/height; decorative so alt is empty),
  *       placeholder ('play': decorative play tile when there is no image),
  *       label (category name shown above the title), meta (small line below the text, such as "4 min read"),
- *       hero_html (trusted inline SVG from ideatoapps_card_hero(), shown in a 16:9 box when there is no image).
+ *       hero_html (trusted inline SVG from ideatoapps_card_hero(), shown in a 16:9 box when there is no image),
+ *       level_label (reader level such as "Beginner", shown below the meta line).
  *
  * @package IdeaToApps
  */
@@ -51,6 +52,9 @@ $hero    = (string) ( $args['hero_html'] ?? '' );
 	<?php endif; ?>
 	<?php if ( ! empty( $args['meta'] ) ) : ?>
 		<p class="card__meta" data-testid="card-meta"><?php echo esc_html( (string) $args['meta'] ); ?></p>
+	<?php endif; ?>
+	<?php if ( ! empty( $args['level_label'] ) ) : ?>
+		<p class="card__level" data-testid="card-level"><span class="screen-reader-text"><?php esc_html_e( 'Level:', 'ideatoapps' ); ?> </span><?php echo esc_html( (string) $args['level_label'] ); ?></p>
 	<?php endif; ?>
 	<?php
 	if ( ! empty( $args['content'] ) ) {

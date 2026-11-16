@@ -157,6 +157,11 @@ export async function createPost(api: Api, title: string, opts: { status?: 'publ
   return body.id;
 }
 
+/** Set a post's reader level and audiences meta through the test-only route in tests/e2e/fixtures/ita-test-articles.php (stored as given). */
+export async function setPostLevel(api: Api, id: number, level: string, audiences = ''): Promise<void> {
+  await send(api, 'POST', `/ita-test/v1/level/${id}`, { level, audiences });
+}
+
 /**
  * A starter post made by the real "Install starter articles" button (or "Reinstall a deleted article" when the site remembers
  * the slug), from tests/e2e/fixtures/articles. It is a draft with review status ai_draft. Returns its post id.

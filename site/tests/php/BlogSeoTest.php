@@ -41,6 +41,21 @@ final class BlogSeoTest extends SeoTestCase {
 		}
 	}
 
+	public function test_level_views_are_noindex_follow_and_an_unknown_level_is_the_plain_blog(): void {
+		$this->blog_with_posts();
+		foreach ( array( '/blog/?level=beginner', '/blog/?level=advanced&cat=prompting', '/blog/?level=intermediate&pg=2' ) as $path ) {
+			$this->go_to( home_url( $path ) );
+			$head = $this->head();
+			$this->assertStringContainsString( 'noindex', $this->robots( $head ), $path );
+			$this->assertStringContainsString( 'follow', $this->robots( $head ), $path );
+			$this->assertSame( array(), $this->canonicals( $head ), $path );
+		}
+		foreach ( array( '/blog/?level=Beginner', '/blog/?level=expert', '/blog/?level[]=beginner', '/blog/?level=%3Cscript%3E' ) as $path ) {
+			$this->go_to( home_url( $path ) );
+			$this->assertStringNotContainsString( 'noindex', $this->robots( $this->head() ), $path );
+		}
+	}
+
 	public function test_a_search_that_cleans_to_nothing_or_is_an_array_is_the_plain_blog(): void {
 		$this->blog_with_posts();
 		foreach ( array( '/blog/?q=', '/blog/?q=%3Cscript%3E', '/blog/?q[]=x', '/blog/?cat[]=y' ) as $path ) {

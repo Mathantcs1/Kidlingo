@@ -26,3 +26,6 @@
 	.card--featured > :not(.card__media) { grid-column: 2; }
 	.card--featured:not(:has(.card__media)) { display: flex; }
 }
+
+/* Reader level: chips reuse .blog-chip; cards show the level as a small outlined tag. */
+.card__level { align-self: flex-start; margin: 0; padding: 2px 10px; color: var(--ink); background: var(--bg-alt); border: 1px solid var(--line); border-radius: 999px; font-size: 0.8125rem; font-weight: 700; }

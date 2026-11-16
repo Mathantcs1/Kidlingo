@@ -1,6 +1,6 @@
 <?php
 /**
- * The article of a single blog post: hero, table of contents, content, "Read next". Rendered inside the loop by single.php.
+ * The article of a single blog post: hero (with level and audiences), table of contents, content, "Read next". Rendered inside the loop by single.php.
  *
  * Extension slots (filters return trusted HTML, the callback escapes it): `ideatoapps_post_byline_html` (below the title) and
  * `ideatoapps_post_hero_html` (image area under the meta row). The byline is empty by default; the hero is the generated art of starter posts.
@@ -34,6 +34,7 @@ $ideatoapps_hero    = (string) apply_filters( 'ideatoapps_post_hero_html', '', $
 				<div class="post-byline" data-testid="post-byline"><?php echo $ideatoapps_byline; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted slot, the filter callback escapes. ?></div>
 			<?php endif; ?>
 			<?php ideatoapps_part( 'post-meta', array( 'post_id' => $ideatoapps_id ) ); ?>
+			<?php ideatoapps_part( 'post-audience', array( 'post_id' => $ideatoapps_id ) ); ?>
 			<?php if ( '' !== $ideatoapps_hero ) : ?>
 				<div class="post-hero__media" data-testid="post-hero"><?php echo $ideatoapps_hero; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted slot, the filter callback escapes. ?></div>
 			<?php endif; ?>

@@ -34,17 +34,17 @@ function ideatoapps_seo_module_is_empty(): bool {
 }
 
 /**
- * The blog filters of the current request (`q` search text, `cat` category slug, `pg` page), parsed by the theme so the head says
- * exactly what the page renders. Without the theme (or off the blog page) nothing is filtered.
+ * The blog filters of the current request (`q` search text, `cat` category slug, `level` reader level, `pg` page), parsed by the
+ * theme so the head says exactly what the page renders. Without the theme (or off the blog page) nothing is filtered.
  *
- * @return array{cat:string, q:string, pg:int}
+ * @return array{cat:string, level:string, q:string, pg:int}
  */
 function ideatoapps_seo_blog_filters(): array {
-	$none = array( 'cat' => '', 'q' => '', 'pg' => 1 );
+	$none = array( 'cat' => '', 'level' => '', 'q' => '', 'pg' => 1 );
 	if ( ! is_page( 'blog' ) || ! function_exists( 'ideatoapps_blog_request' ) ) {
 		return $none;
 	}
-	return ideatoapps_blog_request( wp_unslash( $_GET ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filters.
+	return ideatoapps_blog_request( wp_unslash( $_GET ) ) + $none; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filters.
 }
 
 /**
@@ -86,6 +86,7 @@ function ideatoapps_seo_is_noindex(): bool {
 		|| is_singular( 'product' ) || is_post_type_archive( 'product' )
 		|| ideatoapps_seo_is_woo_page()
 		|| '' !== ideatoapps_seo_blog_filters()['q'] // a blog search is thin and endless; a category view is a real list and stays indexable.
+		|| '' !== ideatoapps_seo_blog_filters()['level'] // a level view repeats posts the category views already list.
 		|| ideatoapps_seo_module_is_empty();
 	return (bool) apply_filters( 'ideatoapps_seo_noindex', $no );
 }
