@@ -172,6 +172,154 @@ test.describe('Blog', () => {
   });
 });
 
+// A long article: four sections (two share a heading), about 1,000 words (4 x 7 paragraphs of 36 words), plus other posts for "Read next".
+const PARA = 'Plain words about one idea at a time, with a short example you can try today and a note on what to check afterwards, so the point sticks and you can reuse it the next time.';
+const para = (n: number) => Array(n).fill(`<p>${PARA}</p>`).join('');
+const LONG = ['Getting started', 'Setup', 'Setup', 'Wrapping up'].map((h) => `<h2>${h}</h2>${para(7)}`).join('\n');
+async function longPostFixture(a: Api, title = 'Long guide'): Promise<number> {
+  for (const [i, t] of ['Alpha note', 'Beta note', 'Gamma note', 'Delta note'].entries()) await createPost(a, t, { date: `2026-02-0${i + 1}T10:00:00` });
+  await createPost(a, 'Hidden draft', { status: 'draft', date: '2026-02-09T10:00:00' });
+  return createPost(a, title, { content: LONG, date: '2026-02-10T10:00:00', meta: { ita_last_reviewed: '2026-02-28' } });
+}
+const scrollTo = (page: Page, y: number) => page.evaluate((top) => { window.scrollTo({ top, behavior: 'instant' }); }, y);
+const barWidth = async (page: Page) => (await page.getByTestId('post-progress').locator('.post-progress__bar').boundingBox())?.width ?? 0;
+
+test.describe('Single post', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+  test.beforeEach(() => { test.setTimeout(120_000); }); // each test builds a fixture of six posts through the REST API
+
+  test('hero, meta row, contents with unique ids, and "Read next" with three other published posts', async ({ page }) => {
+    const id = await longPostFixture(api);
+    await page.goto(`/?p=${id}`);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Long guide');
+    await expect(page.getByTestId('post-meta')).toContainText('5 min read');
+    await expect(page.getByTestId('post-meta')).toContainText('Last reviewed February 28, 2026');
+    const toc = page.getByTestId('post-toc');
+    await expect(toc.getByRole('link')).toHaveText(['Getting started', 'Setup', 'Setup', 'Wrapping up']);
+    expect(await toc.getByRole('link').evaluateAll((as) => as.map((a) => a.getAttribute('href')))).toEqual(['#getting-started', '#setup', '#setup-2', '#wrapping-up']);
+    await expect(page.locator('.post-body h2')).toHaveCount(4);
+    await expect(page.locator('#setup-2')).toHaveText('Setup');
+    const next = page.getByTestId('post-read-next');
+    await expect(next.getByRole('heading', { level: 3 })).toHaveText(['Delta note', 'Gamma note', 'Beta note']);
+    expect(await next.innerText()).not.toMatch(/Long guide|Hidden draft|Alpha note/);
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeVisible();
+    await page.getByTestId('post-read-next').getByRole('link', { name: 'Delta note' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Delta note');
+    await expect(page.getByTestId('post-meta')).not.toContainText('Last reviewed');
+  });
+
+  test('contents links scroll to their heading, below the sticky header, and the contents stay in view', async ({ page }) => {
+    const id = await longPostFixture(api);
+    await page.goto(`/?p=${id}`);
+    const headerBottom = (await page.locator('.site-header').boundingBox())!.height;
+    const toc = page.getByTestId('post-toc');
+    for (const [name, target] of [['Setup', '#setup'], ['Wrapping up', '#wrapping-up']] as const) {
+      await toc.getByRole('link', { name, exact: true }).first().click();
+      await expect(page).toHaveURL(new RegExp(`${target}$`));
+      // Smooth scrolling: wait until the heading rests just under the sticky header (not hidden behind it).
+      await expect.poll(async () => { const y = (await page.locator(target).boundingBox())!.y; return y >= headerBottom && y < 200; }, { message: `${target} settles under the header` }).toBe(true);
+      const t = (await toc.boundingBox())!;
+      expect(t.y, 'sticky contents sit below the header').toBeGreaterThanOrEqual(headerBottom);
+      await expect(toc).toBeInViewport();
+      await expect(toc.locator('a[aria-current="location"]')).toHaveText(name);
+    }
+    await expect(page.getByTestId('post-toc').locator('summary')).toBeHidden();
+  });
+
+  test('the progress bar is decorative, starts empty, grows while scrolling and fills at the end of the text', async ({ page }) => {
+    const id = await longPostFixture(api);
+    await page.goto(`/?p=${id}`);
+    const progress = page.getByTestId('post-progress');
+    await expect(progress).toHaveAttribute('aria-hidden', 'true');
+    await expect(progress).toBeVisible();
+    expect(await barWidth(page)).toBe(0);
+    const seen: number[] = [];
+    const bodyTop = await page.locator('.post-body').evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+    for (const dy of [300, 900, 1800]) {
+      await scrollTo(page, bodyTop + dy);
+      await expect.poll(() => barWidth(page)).toBeGreaterThan(seen.at(-1) ?? 0);
+      seen.push(await barWidth(page));
+    }
+    await scrollTo(page, 100000);
+    await expect.poll(() => barWidth(page)).toBeGreaterThanOrEqual(1270);
+  });
+
+  test('with reduced motion the progress bar is hidden', async ({ browser }) => {
+    const id = await longPostFixture(api);
+    const ctx = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1280, height: 800 } });
+    const page = await ctx.newPage();
+    await page.goto(`/?p=${id}`);
+    await expect(page.getByTestId('post-progress')).toBeHidden();
+    await ctx.close();
+  });
+
+  test('without JavaScript: contents are plain anchors in an open list, text and "Read next" show, no progress bar', async ({ browser }) => {
+    const id = await longPostFixture(api);
+    const ctx = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 360, height: 740 } });
+    const page = await ctx.newPage();
+    await page.goto(`/?p=${id}`);
+    await expect(page.getByTestId('post-toc').getByRole('link', { name: 'Wrapping up' })).toBeVisible();
+    await expect(page.getByTestId('post-progress')).toBeHidden();
+    await expect(page.getByTestId('post-read-next').getByRole('heading', { level: 3 })).toHaveCount(3);
+    await page.getByTestId('post-toc').getByRole('link', { name: 'Wrapping up' }).click();
+    await expect(page).toHaveURL(/#wrapping-up$/);
+    await expect(page.locator('#wrapping-up')).toBeInViewport();
+    await ctx.close();
+  });
+
+  test('on a phone the contents are a collapsed, toggleable list that still navigates', async ({ browser }) => {
+    const id = await longPostFixture(api);
+    const ctx = await browser.newContext({ viewport: { width: 360, height: 740 } });
+    const page = await ctx.newPage();
+    await page.goto(`/?p=${id}`);
+    const toc = page.getByTestId('post-toc');
+    await expect(toc.locator('details')).not.toHaveJSProperty('open', true);
+    await expect(toc.getByRole('link', { name: 'Wrapping up' })).toBeHidden();
+    await toc.locator('summary').click();
+    await toc.getByRole('link', { name: 'Wrapping up' }).click();
+    await expect(page).toHaveURL(/#wrapping-up$/);
+    await expect(page.locator('#wrapping-up')).toBeInViewport();
+    await ctx.close();
+  });
+
+  test('a post with fewer than three headings has no contents', async ({ page }) => {
+    const id = await createPost(api, 'Short one', { content: `<h2>One</h2><p>Text.</p><h2>Two</h2><p>More.</p>` });
+    await page.goto(`/?p=${id}`);
+    await expect(page.getByTestId('post')).toBeVisible();
+    await expect(page.getByTestId('post-toc')).toHaveCount(0);
+    await expect(page.getByTestId('post-read-next')).toHaveCount(0);
+  });
+
+  for (const [label, width] of [['360px', 360], ['768px', 768], ['1440px', 1440]] as const) {
+    test(`no horizontal overflow at ${label}, with and without the contents open`, async ({ page }) => {
+      const id = await longPostFixture(api);
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto(`/?p=${id}`);
+      await page.evaluate(() => document.fonts.ready);
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+      if (width < 1024) await page.getByTestId('post-toc').locator('summary').click();
+      else await expect(page.getByTestId('post-toc').getByRole('link', { name: 'Wrapping up' })).toBeVisible();
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+    });
+  }
+
+  for (const scheme of ['dark', 'light'] as const) {
+    test(`axe is clean in ${scheme} (with contents, meta row and Read next)`, async ({ browser }) => {
+      const id = await longPostFixture(api);
+      for (const width of [360, 1280]) {
+        const ctx = await browser.newContext({ colorScheme: scheme, viewport: { width, height: 800 } });
+        const page = await ctx.newPage();
+        await page.goto(`/?p=${id}`);
+        await page.evaluate(() => document.fonts.ready);
+        await page.waitForTimeout(300);
+        await scrollTo(page, 0); // the sticky header wordmark is a known site-wide "incomplete" while scrolled
+        expect(await axeProblems(page), `${scheme} ${width}px`).toEqual([]);
+        await ctx.close();
+      }
+    });
+  }
+});
+
 test.describe('About and FAQ', () => {
   test('About states only the tagline and that ClipForge is the first app; links ClipForge only when it is listed', async ({ page }) => {
     await page.goto('/about/');

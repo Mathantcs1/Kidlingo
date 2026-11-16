@@ -151,8 +151,8 @@ export async function createVideo(api: Api, title: string, opts: { status?: 'pub
   return body.id;
 }
 
-export async function createPost(api: Api, title: string, opts: { status?: 'publish' | 'draft'; content?: string; date?: string } = {}): Promise<number> {
-  const body = await send(api, 'POST', '/wp/v2/posts', { title, status: opts.status ?? 'publish', content: opts.content ?? '', excerpt: `About ${title}.`, ...(opts.date ? { date: opts.date } : {}) });
+export async function createPost(api: Api, title: string, opts: { status?: 'publish' | 'draft'; content?: string; date?: string; meta?: Record<string, string> } = {}): Promise<number> {
+  const body = await send(api, 'POST', '/wp/v2/posts', { title, status: opts.status ?? 'publish', content: opts.content ?? '', excerpt: `About ${title}.`, ...(opts.date ? { date: opts.date } : {}), ...(opts.meta ? { meta: opts.meta } : {}) });
   api.made.push({ route: '/wp/v2/posts', id: body.id });
   return body.id;
 }
