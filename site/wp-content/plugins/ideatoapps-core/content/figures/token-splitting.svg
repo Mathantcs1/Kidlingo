@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 214">
 <title>Text split into tokens</title>
-<desc>The sentence Learning AI is fun. is shown as one line, then as six separate chips: Learn, ing, AI, is, fun and a full stop. A note says real tools split text differently.</desc>
+<desc>The sentence Learning AI is fun. is shown as one line, then as six separate chips: Learn, ing, AI, is, fun and a period. A note says real tools split text differently.</desc>
 <g stroke-width="2">
 <rect x="30" y="10" width="300" height="44" rx="12" fill="var(--ita-fig-5)" stroke="var(--ita-fig-5-s)"/>
 <path d="M180 56L180 86" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
