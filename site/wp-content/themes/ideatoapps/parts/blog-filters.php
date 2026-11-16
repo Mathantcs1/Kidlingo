@@ -33,9 +33,9 @@ $ideatoapps_base  = ideatoapps_blog_base_url();
 	<?php if ( $ideatoapps_cats ) : ?>
 		<nav class="blog-chips" aria-label="<?php esc_attr_e( 'Categories', 'ideatoapps' ); ?>" data-testid="blog-chips">
 			<ul>
-				<li><a class="blog-chip" href="<?php echo esc_url( ideatoapps_blog_url( array( 'cat' => '', 'q' => $ideatoapps_req['q'] ) ) ); ?>"<?php echo '' === $ideatoapps_req['cat'] ? ' aria-current="true"' : ''; ?>><?php esc_html_e( 'All', 'ideatoapps' ); ?></a></li>
+				<li><a class="blog-chip" href="<?php echo esc_url( ideatoapps_blog_url( array( 'cat' => '', 'q' => $ideatoapps_req['q'] ) ) ); ?>"<?php echo '' === $ideatoapps_req['cat'] ? ' aria-current="page"' : ''; ?>><?php esc_html_e( 'All', 'ideatoapps' ); ?></a></li>
 				<?php foreach ( $ideatoapps_cats as $ideatoapps_row ) : ?>
-					<li><a class="blog-chip" href="<?php echo esc_url( ideatoapps_blog_url( array( 'cat' => $ideatoapps_row['slug'], 'q' => $ideatoapps_req['q'] ) ) ); ?>"<?php echo $ideatoapps_req['cat'] === $ideatoapps_row['slug'] ? ' aria-current="true"' : ''; ?>><?php echo esc_html( $ideatoapps_row['name'] ); ?> <span class="blog-chip__count"><?php echo (int) $ideatoapps_row['count']; ?></span></a></li>
+					<li><a class="blog-chip" href="<?php echo esc_url( ideatoapps_blog_url( array( 'cat' => $ideatoapps_row['slug'], 'q' => $ideatoapps_req['q'] ) ) ); ?>"<?php echo $ideatoapps_req['cat'] === $ideatoapps_row['slug'] ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $ideatoapps_row['name'] ); ?><?php if ( '' === $ideatoapps_req['q'] ) : // totals only: with a search the counts would not match the results. ?> <span class="blog-chip__count" aria-hidden="true"><?php echo (int) $ideatoapps_row['count']; ?></span><span class="screen-reader-text"> <?php echo esc_html( _n( 'article', 'articles', (int) $ideatoapps_row['count'], 'ideatoapps' ) ); ?></span><?php endif; ?></a></li>
 				<?php endforeach; ?>
 			</ul>
 		</nav>

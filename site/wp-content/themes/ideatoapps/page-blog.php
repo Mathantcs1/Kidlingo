@@ -36,7 +36,7 @@ get_header();
 		} else {
 			ideatoapps_part( 'blog-filters', array( 'req' => $ideatoapps_req, 'categories' => ideatoapps_blog_categories(), 'found' => (int) $ideatoapps_query->found_posts ) );
 			if ( empty( $ideatoapps_query->posts ) ) {
-				ideatoapps_part( 'blog-no-results' );
+				ideatoapps_part( 'blog-no-results', array( 'hint' => '' !== $ideatoapps_req['q'] && ! ideatoapps_blog_search_usable( $ideatoapps_req['q'] ) ) );
 			} else {
 				ideatoapps_part( 'post-list', array( 'posts' => $ideatoapps_posts, 'featured' => $ideatoapps_featured ) );
 			}

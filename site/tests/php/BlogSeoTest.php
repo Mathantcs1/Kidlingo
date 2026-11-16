@@ -63,4 +63,59 @@ final class BlogSeoTest extends SeoTestCase {
 		$this->assertStringNotContainsString( 'noindex', $this->robots( $head ) );
 		$this->assertSame( array( 'https://ideatoapps.net/blog/' ), $this->canonicals( $head ) );
 	}
+
+	public function test_canonical_uses_the_same_page_number_the_page_renders(): void {
+		$this->blog_with_posts();
+		foreach ( array( '2abc', '%202', '2.5', '9999999999', '-3', '0', 'x', '' ) as $pg ) {
+			$this->go_to( home_url( '/blog/?pg=' . $pg ) );
+			$head = $this->head();
+			$this->assertSame( array( 'https://ideatoapps.net/blog/' ), $this->canonicals( $head ), "pg=$pg renders page 1, so that is the canonical" );
+			$this->assertStringNotContainsString( 'Page ', $this->title(), "pg=$pg" );
+			$this->assertDoesNotMatchRegularExpression( '/Page \d/', (string) $this->meta( $head, 'name', 'description' ), "pg=$pg" );
+		}
+		$this->go_to( home_url( '/blog/?pg[]=2' ) );
+		$this->assertSame( array( 'https://ideatoapps.net/blog/' ), $this->canonicals( $this->head() ) );
+	}
+
+	public function test_real_pages_keep_pg_with_and_without_a_category(): void {
+		$this->blog_with_posts();
+		$cat = get_term_by( 'slug', 'prompting', 'category' )->term_id;
+		for ( $i = 0; $i < 13; $i++ ) {
+			wp_insert_post( array( 'post_title' => "P$i", 'post_status' => 'publish', 'post_category' => array( $cat ) ) );
+		}
+		$this->go_to( home_url( '/blog/?cat=prompting&pg=2&utm=1' ) );
+		$head = $this->head();
+		$this->assertSame( array( 'https://ideatoapps.net/blog/?cat=prompting&pg=2' ), array_map( 'html_entity_decode', $this->canonicals( $head ) ) );
+		$this->assertStringContainsString( 'Page 2', $this->title() );
+		$this->go_to( home_url( '/blog/?pg=2' ) );
+		$this->assertSame( array( 'https://ideatoapps.net/blog/?pg=2' ), $this->canonicals( $this->head() ) );
+	}
+
+	public function test_a_page_past_the_end_canonicalises_to_the_page_the_redirect_lands_on(): void {
+		$this->blog_with_posts(); // two posts: one page. pg=99 is redirected to page 1 before any head is printed; if a head were printed it names page 1.
+		$page = ideatoapps_blog_request( array( 'pg' => '99' ) )['pg'];
+		$this->assertSame( 99, $page );
+		$this->assertSame( 1, ideatoapps_overflow_target_page( 99, ideatoapps_list_page_count( ideatoapps_blog_query_args( array( 'pg' => '99' ) ) ) ) );
+	}
+
+	public function test_each_category_view_has_its_own_title_and_description_and_search_views_keep_the_default(): void {
+		$this->blog_with_posts();
+		$cat2 = (int) wp_insert_term( 'AI basics', 'category', array( 'slug' => 'ai-basics', 'description' => 'What AI is, in plain words.' ) )['term_id'];
+		wp_insert_post( array( 'post_title' => 'Another', 'post_status' => 'publish', 'post_category' => array( $cat2 ) ) );
+		$this->go_to( home_url( '/blog/?cat=prompting' ) );
+		$head = $this->head();
+		$this->assertSame( 'Prompting articles – ' . get_bloginfo( 'name' ), $this->title() );
+		$this->assertSame( 'Articles about Prompting from IdeaToApps.', $this->meta( $head, 'name', 'description' ) );
+		$this->assertSame( 'Prompting articles – ' . get_bloginfo( 'name' ), $this->meta( $head, 'property', 'og:title' ) );
+		$this->assertSame( 'Articles about Prompting from IdeaToApps.', $this->meta( $head, 'property', 'og:description' ) );
+		$this->go_to( home_url( '/blog/?cat=ai-basics' ) );
+		$head = $this->head();
+		$this->assertSame( 'AI basics articles – ' . get_bloginfo( 'name' ), $this->title() );
+		$this->assertSame( 'What AI is, in plain words.', $this->meta( $head, 'name', 'description' ) );
+		$this->go_to( home_url( '/blog/' ) );
+		$this->assertSame( 'Blog – ' . get_bloginfo( 'name' ), $this->title() );
+		$this->assertSame( 'Notes and news from IdeaToApps.', $this->meta( $this->head(), 'name', 'description' ) );
+		$this->go_to( home_url( '/blog/?cat=nope' ) );
+		$this->assertSame( 'Blog – ' . get_bloginfo( 'name' ), $this->title() );
+	}
 }

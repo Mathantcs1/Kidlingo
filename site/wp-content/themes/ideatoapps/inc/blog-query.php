@@ -14,6 +14,15 @@ const IDEATOAPPS_BLOG_SEARCH_MAX   = 80;
 const IDEATOAPPS_BLOG_FEATURED_MIN = 4;
 
 /**
+ * The six topic slugs in their fixed order.
+ *
+ * @return string[]
+ */
+function ideatoapps_blog_topics(): array {
+	return array( 'ai-basics', 'prompting', 'llms', 'agents', 'work-and-learning', 'safety-and-judgment' );
+}
+
+/**
  * Categories that have at least one published post, with counts. The six topics come first in a fixed order, then the rest A to Z.
  * The default "Uncategorized" category is never listed.
  *
@@ -30,7 +39,7 @@ function ideatoapps_blog_categories(): array {
 	if ( ! is_array( $terms ) ) {
 		return array();
 	}
-	$order = array( 'ai-basics', 'prompting', 'llms', 'agents', 'work-and-learning', 'safety-and-judgment' );
+	$order = ideatoapps_blog_topics();
 	$rows  = array();
 	foreach ( $terms as $term ) {
 		if ( $term instanceof WP_Term && (int) $term->count > 0 ) {
@@ -56,6 +65,32 @@ function ideatoapps_blog_clean_search( string $raw ): string {
 	$text = sanitize_text_field( $text ); // strips tags, bad UTF-8, line breaks and extra spaces.
 	$text = trim( (string) preg_replace( '/\s+/u', ' ', $text ) );
 	return trim( mb_substr( $text, 0, IDEATOAPPS_BLOG_SEARCH_MAX, 'UTF-8' ) );
+}
+
+/**
+ * Whether WordPress would search for at least one real word in this text. Stopwords ("what", "the") and single letters are dropped
+ * by WP_Query; when nothing is left it falls back to matching the whole text as a phrase, which for "a" is nearly every post.
+ * Such a search finds nothing here instead. Uses WP_Query's own term parser, so the rules stay the same as core's.
+ */
+function ideatoapps_blog_search_usable( string $q ): bool {
+	if ( ! preg_match_all( '/".*?("|$)|((?<=[\t ",+])|^)[^\t ",+]+/', $q, $found ) ) {
+		return false;
+	}
+	$parser = new class() extends WP_Query {
+		/**
+		 * @param string[] $terms Raw terms.
+		 * @return string[]
+		 */
+		public function useful( array $terms ): array {
+			return $this->parse_search_terms( $terms );
+		}
+	};
+	foreach ( $parser->useful( $found[0] ) as $term ) {
+		if ( 1 === preg_match( '/[\p{L}\p{N}]/u', (string) $term ) ) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
@@ -93,6 +128,9 @@ function ideatoapps_blog_query_args( array $get ): array {
 	);
 	if ( '' !== $req['q'] ) {
 		$args['s'] = $req['q'];
+		if ( ! ideatoapps_blog_search_usable( $req['q'] ) ) {
+			$args['post__in'] = array( 0 ); // nothing to search for: no results, not "everything".
+		}
 	}
 	if ( '' !== $req['cat'] ) {
 		$args['category_name'] = $req['cat'];
@@ -155,10 +193,17 @@ function ideatoapps_blog_url( array $req, int $page = 1, string $base = '' ): st
  */
 function ideatoapps_blog_card_args( WP_Post $post, int $words = 28 ): array {
 	$label = '';
-	foreach ( get_the_category( $post->ID ) as $term ) {
-		if ( (int) $term->term_id !== (int) get_option( 'default_category' ) ) {
+	$rank  = 99;
+	$topics = ideatoapps_blog_topics();
+	foreach ( get_the_category( $post->ID ) as $term ) { // the best-ranked topic category, else the first other one.
+		if ( (int) $term->term_id === (int) get_option( 'default_category' ) ) {
+			continue;
+		}
+		$at   = array_search( $term->slug, $topics, true );
+		$here = false === $at ? 98 : (int) $at;
+		if ( $here < $rank ) {
+			$rank  = $here;
 			$label = $term->name;
-			break;
 		}
 	}
 	return array(

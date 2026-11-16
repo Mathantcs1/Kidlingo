@@ -62,7 +62,8 @@ function ideatoapps_seo_description(): string {
 			$text = sprintf( __( '%s on IdeaToApps.', 'ideatoapps-core' ), get_the_title( $post ) );
 		}
 	}
-	$page = max( (int) get_query_var( 'paged' ), isset( $_GET['pg'] ) ? absint( wp_unslash( $_GET['pg'] ) ) : 1 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only page number.
+	$text = ideatoapps_seo_blog_category_description( $text );
+	$page = max( (int) get_query_var( 'paged' ), ideatoapps_seo_page_number() );
 	if ( '' !== $text && $page > 1 ) {
 		/* translators: 1: description, 2: page number. */
 		$text = sprintf( __( '%1$s Page %2$d.', 'ideatoapps-core' ), $text, $page );
@@ -80,11 +81,12 @@ add_filter(
 		if ( is_post_type_archive( 'video' ) ) {
 			$parts['title'] = __( 'Learn', 'ideatoapps-core' );
 		}
+		$parts['title'] = ideatoapps_seo_blog_category_title( (string) ( $parts['title'] ?? '' ) );
 		if ( is_front_page() ) {
 			$tagline         = trim( (string) get_bloginfo( 'description', 'display' ) );
 			$parts['tagline'] = '' !== $tagline && 'Just another WordPress site' !== $tagline ? $tagline : __( 'Useful apps, brilliant ideas', 'ideatoapps-core' );
 		}
-		$pg = isset( $_GET['pg'] ) ? absint( wp_unslash( $_GET['pg'] ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only page number.
+		$pg = ideatoapps_seo_page_number();
 		if ( $pg > 1 && is_page() ) {
 			/* translators: %d: page number. */
 			$parts['page'] = sprintf( __( 'Page %d', 'ideatoapps-core' ), $pg );

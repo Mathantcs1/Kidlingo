@@ -47,6 +47,7 @@ require_once IDEATOAPPS_CORE_DIR . 'includes/seed-clipforge.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-site-schema.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-noindex.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/seo-blog.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-text.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-head.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-robots.php';

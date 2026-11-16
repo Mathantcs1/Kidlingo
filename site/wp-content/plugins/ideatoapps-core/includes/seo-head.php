@@ -21,7 +21,7 @@ function ideatoapps_seo_canonical(): string {
 		return ideatoapps_canonical_url( '/' );
 	}
 	$path = is_singular() ? (string) get_permalink( get_queried_object_id() ) : home_url( user_trailingslashit( (string) $wp->request ) );
-	$pg   = isset( $_GET['pg'] ) ? absint( wp_unslash( $_GET['pg'] ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only page number.
+	$pg   = ideatoapps_seo_page_number();
 	$url  = ideatoapps_canonical_url( (string) wp_parse_url( $path, PHP_URL_PATH ) );
 	$cat  = ideatoapps_seo_blog_filters()['cat']; // a category view of the blog has its own canonical.
 	if ( '' !== $cat ) {

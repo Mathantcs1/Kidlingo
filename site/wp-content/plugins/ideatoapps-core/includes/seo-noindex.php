@@ -34,17 +34,28 @@ function ideatoapps_seo_module_is_empty(): bool {
 }
 
 /**
- * The blog filters of the current request (`q` search text, `cat` category slug), cleaned by the theme. Empty without the theme.
+ * The blog filters of the current request (`q` search text, `cat` category slug, `pg` page), parsed by the theme so the head says
+ * exactly what the page renders. Without the theme (or off the blog page) nothing is filtered.
  *
- * @return array{cat:string, q:string}
+ * @return array{cat:string, q:string, pg:int}
  */
 function ideatoapps_seo_blog_filters(): array {
-	$none = array( 'cat' => '', 'q' => '' );
+	$none = array( 'cat' => '', 'q' => '', 'pg' => 1 );
 	if ( ! is_page( 'blog' ) || ! function_exists( 'ideatoapps_blog_request' ) ) {
 		return $none;
 	}
-	$req = ideatoapps_blog_request( wp_unslash( $_GET ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filters.
-	return array( 'cat' => $req['cat'], 'q' => $req['q'] );
+	return ideatoapps_blog_request( wp_unslash( $_GET ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filters.
+}
+
+/**
+ * The page number of the current request: the blog uses the theme's parser (junk means page 1), other pages `?pg=` as a number.
+ */
+function ideatoapps_seo_page_number(): int {
+	if ( is_page( 'blog' ) && function_exists( 'ideatoapps_blog_request' ) ) {
+		return ideatoapps_seo_blog_filters()['pg'];
+	}
+	$pg = isset( $_GET['pg'] ) && is_string( $_GET['pg'] ) ? absint( wp_unslash( $_GET['pg'] ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only page number.
+	return max( 1, $pg );
 }
 
 /**

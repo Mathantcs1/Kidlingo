@@ -176,4 +176,41 @@ final class BlogQueryTest extends WPTestCase {
 		$this->assertSame( 2, ideatoapps_list_page_count( ideatoapps_blog_query_args( array() ) ) );
 		$this->assertSame( 0, ideatoapps_list_page_count( ideatoapps_blog_query_args( array( 'q' => 'zzzznothing' ) ) ) );
 	}
+
+	public function test_searches_with_no_usable_word_return_nothing_instead_of_matching_everything(): void {
+		$this->post( 'Alpha about cats' );
+		$this->post( 'Beta what a day' );
+		$this->post( 'Gamma' );
+		foreach ( array( 'what', 'a', 'the what', 'A', '-', '!!!', '...', 'to be or', 'what a' ) as $q ) {
+			$this->assertFalse( ideatoapps_blog_search_usable( $q ), $q );
+			$query = new WP_Query( ideatoapps_blog_query_args( array( 'q' => $q ) ) );
+			$this->assertSame( 0, $query->found_posts, "$q returns nothing" );
+			$this->assertSame( $q, ideatoapps_blog_request( array( 'q' => $q ) )['q'], 'the text is still shown back' );
+		}
+		foreach ( array( 'what alpha', 'a alpha', 'cats', 'gamma', '日', 'ab', '"what a day"' ) as $q ) {
+			$this->assertTrue( ideatoapps_blog_search_usable( $q ), $q );
+		}
+		$this->assertSame( array( 'Alpha about cats' ), $this->titles( ideatoapps_blog_query_args( array( 'q' => 'what alpha' ) ) ), 'a real word still searches' );
+		$this->assertSame( array( 'Gamma' ), $this->titles( ideatoapps_blog_query_args( array( 'q' => 'a gamma' ) ) ) );
+	}
+
+	public function test_page_number_helper_is_shared(): void {
+		$this->assertSame( 1, ideatoapps_blog_request( array( 'pg' => '2abc' ) )['pg'] );
+		$this->assertSame( 1, ideatoapps_blog_request( array( 'pg' => '2.5' ) )['pg'] );
+		$this->assertSame( 1, ideatoapps_blog_request( array( 'pg' => ' 2' ) )['pg'] );
+	}
+
+	public function test_card_label_is_the_first_topic_category_then_the_first_other(): void {
+		$zeta   = $this->term( 'Zeta', 'zeta' );
+		$alpha  = $this->term( 'Alpha', 'alpha' );
+		$llms   = $this->term( 'LLMs', 'llms' );
+		$prompt = $this->term( 'Prompting', 'prompting' );
+		$both   = $this->post( 'Both', array( $alpha, $llms, $prompt ) ); // alphabetical order would give Alpha, then LLMs.
+		$this->assertSame( 'Prompting', ideatoapps_blog_card_args( get_post( $both ) )['label'] );
+		$one = $this->post( 'One topic', array( $zeta, $alpha, $llms ) );
+		$this->assertSame( 'LLMs', ideatoapps_blog_card_args( get_post( $one ) )['label'] );
+		$none = $this->post( 'Others', array( $zeta, $alpha ) );
+		$this->assertSame( 'Alpha', ideatoapps_blog_card_args( get_post( $none ) )['label'] );
+		$this->assertSame( '', ideatoapps_blog_card_args( get_post( $this->post( 'Plain' ) ) )['label'] );
+	}
 }

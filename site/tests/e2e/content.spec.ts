@@ -194,15 +194,15 @@ test.describe('Blog', () => {
     test('chips: All first and current, counts, in topic order; a chip filters, no featured card, current moves', async ({ page }) => {
       await page.goto('/blog/');
       const chips = page.getByTestId('blog-chips').getByRole('link');
-      await expect(chips).toHaveText(['All', 'AI basics 13', 'Prompting 2', 'LLMs 1']);
-      await expect(chips.first()).toHaveAttribute('aria-current', 'true');
+      await expect(chips).toHaveText(['All', 'AI basics 13 articles', 'Prompting 2 articles', 'LLMs 1 article']);
+      await expect(chips.first()).toHaveAttribute('aria-current', 'page');
       await chips.filter({ hasText: 'Prompting' }).click();
       await expect(page).toHaveURL(/\/blog\/\?cat=prompting$/);
       expect(await titles(page)).toEqual(['Prompt two', 'Prompt one']);
       await expect(page.getByTestId('blog-featured')).toHaveCount(0);
       await expect(page.getByTestId('blog-summary')).toHaveText('2 articles');
-      await expect(chips.filter({ hasText: 'Prompting' })).toHaveAttribute('aria-current', 'true');
-      await expect(chips.first()).not.toHaveAttribute('aria-current', 'true');
+      await expect(chips.filter({ hasText: 'Prompting' })).toHaveAttribute('aria-current', 'page');
+      await expect(chips.first()).not.toHaveAttribute('aria-current', 'page');
       await chips.first().click();
       await expect(page).toHaveURL(/\/blog\/$/);
       await expect(page.getByTestId('blog-featured')).toHaveCount(1);
@@ -255,6 +255,32 @@ test.describe('Blog', () => {
       expect(dialogs).toBe(0);
     });
 
+    test('searches with no real word (stopword, one letter, punctuation) find nothing and say why; a real word next to a stopword still searches', async ({ page }) => {
+      for (const q of ['what', 'a', 'the what', '!!!']) {
+        await page.goto('/blog/?q=' + encodeURIComponent(q));
+        await expect(page.getByTestId('blog-no-results'), q).toBeVisible();
+        await expect(page.getByTestId('blog-search-hint'), q).toContainText('longer or more specific');
+        await expect(page.getByTestId('blog-summary'), q).toHaveText(`0 articles for "${q}"`);
+        await expect(page.getByTestId('blog-list'), q).toHaveCount(0);
+      }
+      await page.goto('/blog/?q=what+tokens');
+      await expect(page.getByTestId('blog-summary')).toHaveText('1 article for "what tokens"');
+      await expect(page.getByTestId('blog-search-hint')).toHaveCount(0);
+    });
+
+    test('a category view has its own title and description; counts are hidden while searching', async ({ page }) => {
+      await page.goto('/blog/?cat=prompting');
+      await expect(page).toHaveTitle(/^Prompting articles/);
+      await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', 'Articles about Prompting from IdeaToApps.');
+      await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /^Prompting articles/);
+      await page.goto('/blog/?cat=llms');
+      await expect(page).toHaveTitle(/^LLMs articles/);
+      await page.goto('/blog/?q=prompt');
+      await expect(page.getByTestId('blog-chips').getByRole('link')).toHaveText(['All', 'AI basics', 'Prompting', 'LLMs']);
+      await page.goto('/blog/?pg=2abc');
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/blog\/$/);
+    });
+
     test('pagination keeps the filters; page 2 has no featured card; past the end goes to the last page of that filter', async ({ page }) => {
       await page.goto('/blog/');
       await expect(page.getByRole('navigation', { name: 'Blog pages' })).toBeVisible();
@@ -275,7 +301,6 @@ test.describe('Blog', () => {
       await expect(page).toHaveURL(/\/blog\/\?cat=ai-basics$/);
       await page.goto('/blog/?q=Basics&cat=ai-basics');
       expect(await page.getByRole('link', { name: 'Older posts' }).getAttribute('href')).toMatch(/cat=ai-basics&q=Basics&pg=2$/);
-      await page.goto('/blog/?q=a%26b%20c&pg=1');
       await page.goto('/blog/?pg=99');
       await expect(page).toHaveURL(/pg=2/);
       await page.goto('/blog/?cat=ai-basics&pg=99');

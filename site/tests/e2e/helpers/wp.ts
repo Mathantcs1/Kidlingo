@@ -264,9 +264,15 @@ export async function resetContent(api: Api): Promise<void> {
     const items: Array<{ id: number }> = await listed.json();
     for (const it of items) await send(api, 'DELETE', `${route}/${it.id}`, undefined, 'force=true');
   }
-  // Blog categories made by tests (the default "Uncategorized" cannot be deleted).
-  const cats = await api.ctx.fetch(rest('/wp/v2/categories', 'per_page=100'), { headers: { 'X-WP-Nonce': api.nonce } });
-  if (cats.ok()) for (const c of (await cats.json()) as Array<{ id: number; slug: string }>) if (c.slug !== 'uncategorized') await send(api, 'DELETE', `/wp/v2/categories/${c.id}`, undefined, 'force=true');
+  // Blog categories made by tests; the default category (the `default_category` setting) cannot be deleted.
+  const defaultCat = Number((await send(api, 'GET', '/wp/v2/settings')).default_category);
+  for (let page = 1; page <= 20; page++) {
+    const cats = await api.ctx.fetch(rest('/wp/v2/categories', `per_page=100&page=${page}`), { headers: { 'X-WP-Nonce': api.nonce } });
+    if (!cats.ok()) break; // 404 past the last page, or the route is missing
+    const rows = (await cats.json()) as Array<{ id: number }>;
+    for (const c of rows) if (c.id !== defaultCat) await send(api, 'DELETE', `/wp/v2/categories/${c.id}`, undefined, 'force=true').catch((e) => { if (!/ 404 /.test(String(e))) throw e; });
+    if (rows.length < 100) break;
+  }
   await saveSettings(api, {});
 }
 

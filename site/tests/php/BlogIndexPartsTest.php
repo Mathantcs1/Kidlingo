@@ -31,10 +31,10 @@ final class BlogIndexPartsTest extends WPTestCase {
 		$this->assertStringContainsString( 'Search articles', $html );
 		$this->assertMatchesRegularExpression( '/<input class="field" type="search" id="blog-search-q" name="q" value="a &amp; b" maxlength="80"/', $html );
 		$this->assertStringContainsString( '<input type="hidden" name="cat" value="prompting">', $html );
-		preg_match_all( '#<a class="blog-chip" href="([^"]+)"( aria-current="true")?>#', $html, $m, PREG_SET_ORDER );
+		preg_match_all( '#<a class="blog-chip" href="([^"]+)"( aria-current="page")?>#', $html, $m, PREG_SET_ORDER );
 		$this->assertCount( 3, $m );
 		$this->assertStringContainsString( 'q=a%20%26%20b', $m[1][1], 'chips keep the search' );
-		$this->assertSame( array( '', '', ' aria-current="true"' ), array_map( static fn( $x ) => $x[2] ?? '', $m ) );
+		$this->assertSame( array( '', '', ' aria-current="page"' ), array_map( static fn( $x ) => $x[2] ?? '', $m ) );
 		$this->assertMatchesRegularExpression( '#<a class="blog-chip"[^>]*>All</a>#', $html );
 		$this->assertLessThan( strpos( $html, 'AI basics' ), strpos( $html, '>All<' ) );
 	}
@@ -75,5 +75,22 @@ final class BlogIndexPartsTest extends WPTestCase {
 		$html = $this->render( 'post-chip', array( 'post_id' => $post->ID ) );
 		$this->assertMatchesRegularExpression( '#data-testid="post-category"><a href="[^"]*cat=ai-basics">AI basics</a></p>#', $html );
 		$this->assertSame( '', trim( $this->render( 'post-chip', array( 'post_id' => $this->post( 'Plain' )->ID ) ) ), 'Uncategorized has no chip' );
+	}
+
+	public function test_chip_names_say_articles_and_counts_are_hidden_while_a_search_is_active(): void {
+		$this->post( 'A', array( $this->cat( 'AI basics', 'ai-basics' ) ) );
+		$cats = ideatoapps_blog_categories();
+		$html = $this->render( 'blog-filters', array( 'req' => array( 'cat' => '', 'q' => '', 'pg' => 1 ), 'categories' => $cats, 'found' => 1 ) );
+		$this->assertStringContainsString( '<span class="blog-chip__count" aria-hidden="true">1</span><span class="screen-reader-text"> article</span>', $html );
+		$many = $this->render( 'blog-filters', array( 'req' => array( 'cat' => '', 'q' => '', 'pg' => 1 ), 'categories' => array( array( 'slug' => 'x', 'name' => 'X', 'count' => 5 ) ), 'found' => 5 ) );
+		$this->assertStringContainsString( '<span class="screen-reader-text"> articles</span>', $many );
+		$q = $this->render( 'blog-filters', array( 'req' => array( 'cat' => '', 'q' => 'tokens', 'pg' => 1 ), 'categories' => $cats, 'found' => 1 ) );
+		$this->assertStringNotContainsString( 'blog-chip__count', $q );
+		$this->assertStringContainsString( 'AI basics</a>', $q );
+	}
+
+	public function test_no_results_hint_only_for_unusable_searches(): void {
+		$this->assertStringContainsString( 'Try a longer or more specific word', $this->render( 'blog-no-results', array( 'hint' => true ) ) );
+		$this->assertStringNotContainsString( 'Try a longer', $this->render( 'blog-no-results' ) );
 	}
 }
