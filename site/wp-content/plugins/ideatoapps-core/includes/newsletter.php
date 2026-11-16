@@ -1,8 +1,10 @@
 <?php
 /**
- * Newsletter sign-up: POST /wp-json/ideatoapps/v1/newsletter {email, consent}. No mail service is connected, so
- * subscribers are stored locally (private `ita_subscriber` posts; the type name must stay within 20 characters) and the owner exports them as CSV
- * (Tools > Newsletter list, see newsletter-export.php). Nothing here sends email.
+ * Newsletter sign-up: POST /wp-json/ideatoapps/v1/newsletter {email, consent}. Double opt-in: a sign-up is stored as `pending`
+ * (private `ita_subscriber` posts; the type name must stay within 20 characters) and the only email ever sent is the confirmation
+ * (newsletter-mail.php). The subscriber confirms or unsubscribes on a front-end page (newsletter-page.php); the owner exports
+ * the confirmed rows as CSV (newsletter-export.php). Disabled (503) until option `ideatoapps_newsletter_enabled` is turned on
+ * (Settings > IdeaToApps). This plugin sends no marketing email and has no composer.
  *
  * @package ideatoapps-core
  */
@@ -44,8 +46,8 @@ function ideatoapps_newsletter_route_exists( $available ) {
 add_filter( 'ideatoapps_newsletter_available', 'ideatoapps_newsletter_route_exists' );
 
 /**
- * Register the route. Nonce is checked in the permission callback; validation and the rate limit in the handler so
- * that every request which passes the nonce is counted, valid or not.
+ * Register the route. While the switch is off: 503 (checked first). Then the nonce; validation and the rate limit are in the
+ * handler so that every request which passes the nonce is counted, valid or not.
  */
 function ideatoapps_register_newsletter_route() {
 	register_rest_route(
@@ -54,35 +56,29 @@ function ideatoapps_register_newsletter_route() {
 		array(
 			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'ideatoapps_newsletter_subscribe',
-			'permission_callback' => 'ideatoapps_rest_check_nonce',
+			'permission_callback' => 'ideatoapps_newsletter_permission',
 		)
 	);
 }
 add_action( 'rest_api_init', 'ideatoapps_register_newsletter_route' );
 
 /**
- * Find a stored subscriber by (lower-case) email.
+ * Permission callback: 503 while disabled, then the REST nonce.
  *
- * @param string $email Email.
- * @return int Post ID or 0.
+ * @param WP_REST_Request $request Request.
+ * @return true|WP_Error
  */
-function ideatoapps_find_subscriber( $email ) {
-	$found = get_posts(
-		array(
-			'post_type'      => 'ita_subscriber',
-			'post_status'    => 'any',
-			'posts_per_page' => 1,
-			'fields'         => 'ids',
-			'no_found_rows'  => true,
-			'meta_key'       => 'email', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- one lookup per sign-up.
-			'meta_value'     => $email, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-		)
-	);
-	return $found ? (int) $found[0] : 0;
+function ideatoapps_newsletter_permission( $request ) {
+	if ( ! ideatoapps_newsletter_enabled() ) {
+		return new WP_Error( 'ideatoapps_newsletter_disabled', __( 'The newsletter sign-up is not yet available.', 'ideatoapps-core' ), array( 'status' => 503 ) );
+	}
+	return ideatoapps_rest_check_nonce( $request );
 }
 
 /**
- * Handle a sign-up.
+ * Handle a sign-up. The answer is the same for a new, a pending and a confirmed address, so the form cannot be used to probe
+ * the list. A new or unsubscribed address becomes pending; a pending one is re-sent a confirmation at most once per 10 minutes;
+ * a confirmed one gets nothing.
  *
  * @param WP_REST_Request $request Request.
  * @return WP_REST_Response|WP_Error
@@ -101,7 +97,9 @@ function ideatoapps_newsletter_subscribe( $request ) {
 	if ( ! $consent ) {
 		return new WP_Error( 'ideatoapps_no_consent', __( 'Please tick the box to agree before joining the list.', 'ideatoapps-core' ), array( 'status' => 400 ) );
 	}
-	if ( 0 === ideatoapps_find_subscriber( $email ) ) {
+	$id     = ideatoapps_find_subscriber( $email );
+	$status = $id ? ideatoapps_subscriber_status( $id ) : '';
+	if ( ! $id ) {
 		$id = wp_insert_post(
 			array(
 				'post_type'   => 'ita_subscriber',
@@ -110,6 +108,7 @@ function ideatoapps_newsletter_subscribe( $request ) {
 				'meta_input'  => array(
 					'email'      => $email,
 					'consent_at' => gmdate( 'c' ),
+					'status'     => 'pending',
 				),
 			),
 			true
@@ -117,7 +116,18 @@ function ideatoapps_newsletter_subscribe( $request ) {
 		if ( is_wp_error( $id ) ) {
 			return new WP_Error( 'ideatoapps_store_failed', __( 'Something went wrong. Please try again later.', 'ideatoapps-core' ), array( 'status' => 500 ) );
 		}
+		$send = true;
+	} elseif ( 'unsubscribed' === $status ) {
+		update_post_meta( $id, 'status', 'pending' );
+		update_post_meta( $id, 'consent_at', gmdate( 'c' ) );
+		delete_post_meta( $id, 'unsubscribed_at' );
+		delete_post_meta( $id, 'confirmation_sent_at' );
+		$send = true;
+	} else {
+		$send = 'pending' === $status && ideatoapps_newsletter_may_resend( $id );
 	}
-	// Same answer for a new and an already-listed address, so the form cannot be used to probe the list.
-	return new WP_REST_Response( array( 'ok' => true, 'message' => __( 'Thanks, you are on the list.', 'ideatoapps-core' ) ), 200 );
+	if ( $send && ! ideatoapps_newsletter_send_confirmation( (int) $id ) ) {
+		return new WP_Error( 'ideatoapps_mail_failed', __( 'We could not send the confirmation email. Please try again later.', 'ideatoapps-core' ), array( 'status' => 500 ) );
+	}
+	return new WP_REST_Response( array( 'ok' => true, 'message' => __( 'Thanks. If this address needs confirming, we have emailed it a link. Your sign-up only counts once you click it.', 'ideatoapps-core' ) ), 200 );
 }

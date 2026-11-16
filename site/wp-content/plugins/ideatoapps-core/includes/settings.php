@@ -76,6 +76,7 @@ function ideatoapps_featured_all_hidden() {
 function ideatoapps_register_settings() {
 	register_setting( 'ideatoapps', 'ideatoapps_featured_app_ids', array( 'type' => 'array', 'sanitize_callback' => 'ideatoapps_sanitize_featured_ids', 'default' => array(), 'show_in_rest' => false ) );
 	register_setting( 'ideatoapps', 'ideatoapps_contact_enabled', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false, 'show_in_rest' => false ) );
+	register_setting( 'ideatoapps', 'ideatoapps_newsletter_enabled', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false, 'show_in_rest' => false ) );
 	register_setting( 'ideatoapps', 'ideatoapps_youtube_channel_url', array( 'type' => 'string', 'sanitize_callback' => 'ideatoapps_sanitize_channel_url', 'default' => '', 'show_in_rest' => false ) );
 }
 add_action( 'init', 'ideatoapps_register_settings' );
@@ -99,6 +100,8 @@ function ideatoapps_process_settings( array $post ) {
 	update_option( 'ideatoapps_featured_app_ids', ideatoapps_sanitize_featured_ids( $post['featured_app_ids'] ?? array() ), false );
 
 	update_option( 'ideatoapps_contact_enabled', ! empty( $post['contact_enabled'] ), false );
+
+	update_option( 'ideatoapps_newsletter_enabled', ! empty( $post['newsletter_enabled'] ), false );
 
 	$raw = isset( $post['youtube_channel_url'] ) && is_string( $post['youtube_channel_url'] ) ? trim( $post['youtube_channel_url'] ) : '';
 	if ( '' === $raw ) {
@@ -188,6 +191,13 @@ function ideatoapps_render_settings_page() {
 					<td>
 						<label for="ita-contact-enabled"><input type="checkbox" id="ita-contact-enabled" name="contact_enabled" value="1" <?php checked( ideatoapps_contact_enabled() ); ?>> <?php esc_html_e( 'Turn the contact form on', 'ideatoapps-core' ); ?></label>
 						<p class="description"><?php esc_html_e( 'Leave this off until you have confirmed that the site can send mail to a mailbox you read. Messages go to the Administration Email Address in Settings > General. While it is off, the Contact page says the form is not yet available.', 'ideatoapps-core' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Newsletter sign-up', 'ideatoapps-core' ); ?></th>
+					<td>
+						<label for="ita-newsletter-enabled"><input type="checkbox" id="ita-newsletter-enabled" name="newsletter_enabled" value="1" <?php checked( ideatoapps_newsletter_enabled() ); ?>> <?php esc_html_e( 'Turn the newsletter sign-up on', 'ideatoapps-core' ); ?></label>
+						<p class="description"><?php esc_html_e( 'Leave this off until the site can really send email (a sender mailbox with SPF, DKIM and DMARC). Each sign-up gets one confirmation email and is only counted once the visitor clicks its link. While it is off, the form says sign-up is not open yet. This site sends no newsletter.', 'ideatoapps-core' ); ?></p>
 					</td>
 				</tr>
 			</table>
