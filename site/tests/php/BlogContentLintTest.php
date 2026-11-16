@@ -2,6 +2,7 @@
 use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/helpers/blog-lint.php';
+require_once __DIR__ . '/helpers/blog-lint-layout.php';
 
 /**
  * Content lint for the starter articles (content/articles/*.html) against site/docs/BLOG_STYLE_GUIDE.md, plus a self-test proving
@@ -51,10 +52,10 @@ final class BlogContentLintTest extends TestCase {
 		$words = str_repeat( 'Plain words that a reader can follow without trouble today. ', 80 );
 		return '<p>' . $words . '</p><h2>One</h2><p>Text.</p>'
 			. '[ita_figure name="agent-loop" alt="A loop of steps." caption="The loop."]'
-			. '<h2>Two</h2>[ita_prompt title="Try this"]Write a list.[/ita_prompt]'
-			. '[ita_why title="Why?"]<p>Because [ita_term define="A small piece of text."]tokens[/ita_term] add up.</p>[/ita_why]'
+			. '<h2>Two</h2>[ita_prompt title="Try this"]Write a list.[/ita_prompt]' . "\n\n"
+			. '[ita_why title="Why?"]<p>Because [ita_term define="A small piece of text."]tokens[/ita_term] add up.</p>[/ita_why]' . "\n\n"
 			. '[ita_quiz][ita_q q="A?" answers="x|yy" correct="1" why="Because."][ita_q q="B?" answers="x|y|z" correct="3" why="Because."]'
-			. '[ita_q q="C?" answers="x|y" correct="2" why="Because."][/ita_quiz]<h2>Try it</h2><p>Do this.</p>';
+			. '[ita_q q="C?" answers="x|y" correct="2" why="Because."][/ita_quiz]' . "\n\n" . '<h2>Try it</h2><p>Do this.</p>';
 	}
 
 	public function test_lint_accepts_a_clean_body(): void {
@@ -163,5 +164,50 @@ final class BlogContentLintTest extends TestCase {
 		$ok = 'You can ask a chatbot for a percent, a recipe or a plan. When you write a prompt, add context. Phase 2 of a project. '
 			. 'A model named Claude or Gemini is a product, and a sonnet is a poem. I want a short list. Check the answer for errors.';
 		$this->assertSame( array(), ita_lint_text_rules( $ok ) );
+	}
+
+	public function test_block_spacing_rule_can_fail(): void {
+		$ok = "<p>A</p>\n[ita_prompt title=\"T\"]x[/ita_prompt]\n\n<p>B</p>\n[ita_checklist id=\"c\"][ita_item]y[/ita_item][/ita_checklist]\n\n[ita_quiz][/ita_quiz]";
+		$this->assertSame( array(), ita_lint_block_spacing( $ok ) );
+		$this->assertSame( array(), ita_lint_block_spacing( "x[/ita_prompt]\n" ), 'end of body' );
+		foreach ( array(
+			'next line touches' => "[ita_prompt]x[/ita_prompt]\n<p>Find the quoted sentence.</p>",
+			'same line'         => "[ita_prompt]x[/ita_prompt]<p>More.</p>\n\n<p>Next</p>",
+			'shortcode next'    => "[ita_quiz][/ita_quiz]\n[ita_why title=\"W\"]w[/ita_why]\n\n<p>x</p>",
+			'checklist'         => "[ita_checklist id=\"c\"][/ita_checklist]\n<h2>Try it</h2>",
+			'why box'           => "[ita_why title=\"W\"]w[/ita_why]\n<p>Then.</p>",
+		) as $name => $bad ) {
+			$this->assertNotEmpty( ita_lint_block_spacing( $bad ), $name );
+		}
+		$this->assertStringContainsString( 'Line 2', implode( ' ', ita_lint_block_spacing( "<p>a</p>\n[ita_prompt]x[/ita_prompt]\n<p>b</p>" ) ) );
+	}
+
+	public function test_table_rule_can_fail(): void {
+		$ok = '<table><caption>Formats</caption><thead><tr><th scope="col">A</th><th scope="col">B</th></tr></thead><tbody><tr><th scope="row">R</th><td>1</td></tr></tbody></table>';
+		$this->assertSame( array(), ita_lint_tables( $ok ) );
+		$this->assertSame( array(), ita_lint_tables( '<p>No table.</p>' ) );
+		$this->assertNotEmpty( ita_lint_tables( str_replace( '<caption>Formats</caption>', '', $ok ) ), 'no caption' );
+		$this->assertNotEmpty( ita_lint_tables( str_replace( '<caption>Formats</caption>', '<caption> </caption>', $ok ) ), 'empty caption' );
+		$this->assertNotEmpty( ita_lint_tables( str_replace( '<th scope="row">', '<th>', $ok ) ), 'row header without scope' );
+		$this->assertNotEmpty( ita_lint_tables( str_replace( '<th scope="col">B', '<th class="x">B', $ok ) ), 'column header without scope' );
+		$this->assertNotEmpty( ita_lint_tables( str_replace( 'scope="col">A', 'scope="wide">A', $ok ) ), 'unknown scope' );
+		$this->assertNotEmpty( ita_lint_tables( $ok . '<table><tr><td>x</td></tr></table>' ), 'second table without caption' );
+	}
+
+	public function test_commentary_after_a_prompt_box_can_fail(): void {
+		$box = '[ita_prompt title="T"]Write a list.[/ita_prompt]' . "\n\n";
+		$this->assertSame( array(), ita_lint_after_prompt( $box . '<p>Paste it into the app. The last step is yours.</p>' ), 'only the first sentence counts' );
+		$this->assertSame( array(), ita_lint_after_prompt( $box . '[ita_why title="W"]<p>Notice this.</p>[/ita_why]' ), 'a why box is not a sentence about the prompt' );
+		foreach ( array( 'The last line sets the format.', 'Notice how the context comes first.', 'That line about length matters.', 'The format request matters more than it looks.', 'Those two words do a lot of work.', 'The example does a lot of work here.', 'notice the order.' ) as $bad ) {
+			$this->assertNotEmpty( ita_lint_after_prompt( $box . "<p>{$bad} More text.</p>" ), $bad );
+		}
+	}
+
+	public function test_layout_lints_are_part_of_the_article_lint(): void {
+		$a = array( 'slug' => '01-what-ai-is-and-isnt', 'level' => 'beginner', 'excerpt' => 'Short.', 'check' => array( 'a', 'b', 'c' ), 'body' => '' );
+		$a['body'] = str_replace( "[/ita_prompt]\n\n", "[/ita_prompt]\n<p>Notice the list.</p>\n\n", self::good_body() );
+		$problems  = implode( ' ', ita_lint_article( $a, $a['body'], self::content_dir() ) );
+		$this->assertStringContainsString( 'must end its line', $problems );
+		$this->assertStringContainsString( 'comments on the box', $problems );
 	}
 }
