@@ -9,7 +9,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Canonical URL of the current page on the constant origin: query strings are dropped except blog paging (`pg`).
+ * Canonical URL of the current page on the constant origin: query strings are dropped except blog paging (`pg`) and the blog category (`cat`).
  * Empty for pages that are noindex (they declare no canonical, to avoid mixed signals).
  */
 function ideatoapps_seo_canonical(): string {
@@ -23,6 +23,10 @@ function ideatoapps_seo_canonical(): string {
 	$path = is_singular() ? (string) get_permalink( get_queried_object_id() ) : home_url( user_trailingslashit( (string) $wp->request ) );
 	$pg   = isset( $_GET['pg'] ) ? absint( wp_unslash( $_GET['pg'] ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only page number.
 	$url  = ideatoapps_canonical_url( (string) wp_parse_url( $path, PHP_URL_PATH ) );
+	$cat  = ideatoapps_seo_blog_filters()['cat']; // a category view of the blog has its own canonical.
+	if ( '' !== $cat ) {
+		$url = add_query_arg( 'cat', rawurlencode( $cat ), $url );
+	}
 	return $pg > 1 && is_page() ? add_query_arg( 'pg', $pg, $url ) : $url;
 }
 

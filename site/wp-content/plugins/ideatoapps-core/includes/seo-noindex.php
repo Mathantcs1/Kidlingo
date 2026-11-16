@@ -34,6 +34,20 @@ function ideatoapps_seo_module_is_empty(): bool {
 }
 
 /**
+ * The blog filters of the current request (`q` search text, `cat` category slug), cleaned by the theme. Empty without the theme.
+ *
+ * @return array{cat:string, q:string}
+ */
+function ideatoapps_seo_blog_filters(): array {
+	$none = array( 'cat' => '', 'q' => '' );
+	if ( ! is_page( 'blog' ) || ! function_exists( 'ideatoapps_blog_request' ) ) {
+		return $none;
+	}
+	$req = ideatoapps_blog_request( wp_unslash( $_GET ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filters.
+	return array( 'cat' => $req['cat'], 'q' => $req['q'] );
+}
+
+/**
  * Whether the current page is one of WooCommerce's cart, checkout, account or shop pages. The page ids are checked directly
  * as well as through WooCommerce's conditionals, which only fire when the page content holds the cart/checkout block or shortcode.
  */
@@ -60,6 +74,7 @@ function ideatoapps_seo_is_noindex(): bool {
 	$no = is_404() || is_search() || is_attachment() || is_author() || is_date() || is_category() || is_tag() || is_tax() || is_feed()
 		|| is_singular( 'product' ) || is_post_type_archive( 'product' )
 		|| ideatoapps_seo_is_woo_page()
+		|| '' !== ideatoapps_seo_blog_filters()['q'] // a blog search is thin and endless; a category view is a real list and stays indexable.
 		|| ideatoapps_seo_module_is_empty();
 	return (bool) apply_filters( 'ideatoapps_seo_noindex', $no );
 }

@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const IDEATOAPPS_BLOG_PER_PAGE = 9;
+const IDEATOAPPS_BLOG_PER_PAGE = 12;
 
 /**
  * Slugs of the draft legal pages.
@@ -84,7 +84,7 @@ function ideatoapps_has_json_form(): bool {
  */
 function ideatoapps_blog_page_number(): int {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only page number.
-	return isset( $_GET['pg'] ) ? max( 1, absint( wp_unslash( $_GET['pg'] ) ) ) : 1;
+	return ideatoapps_blog_request( wp_unslash( $_GET ) )['pg'];
 }
 
 /**

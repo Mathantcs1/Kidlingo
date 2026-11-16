@@ -19,6 +19,7 @@ require_once get_template_directory() . '/inc/app-price.php';
 require_once get_template_directory() . '/inc/app-data.php';
 require_once get_template_directory() . '/inc/catalog.php';
 require_once get_template_directory() . '/inc/content.php';
+require_once get_template_directory() . '/inc/blog-query.php';
 require_once get_template_directory() . '/inc/post-extras.php';
 require_once get_template_directory() . '/inc/post-hero.php';
 require_once get_template_directory() . '/inc/commerce.php';
@@ -65,6 +66,9 @@ add_action(
 
 		if ( ideatoapps_is_content_view() ) {
 			wp_enqueue_style( 'ideatoapps-content', "$base/css/content.css", array( 'ideatoapps-components' ), $ver( 'css/content.css' ) );
+		}
+		if ( is_page( 'blog' ) ) {
+			wp_enqueue_style( 'ideatoapps-blog', "$base/css/blog.css", array( 'ideatoapps-content' ), $ver( 'css/blog.css' ) );
 		}
 		if ( is_singular( 'post' ) ) {
 			wp_enqueue_style( 'ideatoapps-post', "$base/css/post.css", array( 'ideatoapps-content' ), $ver( 'css/post.css' ) );
