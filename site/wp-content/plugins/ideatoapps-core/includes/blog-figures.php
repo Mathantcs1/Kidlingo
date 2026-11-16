@@ -32,13 +32,32 @@ function ideatoapps_blog_figure( $atts ): string {
 		return '';
 	}
 	$caption = ideatoapps_blog_clean( $atts['caption'], 240 );
-	return '<figure class="ita-figure" data-testid="ita-figure">' . $svg
+	$html = '<figure class="ita-figure" data-testid="ita-figure">' . $svg
 		. ( '' === $caption ? '' : '<figcaption>' . esc_html( $caption ) . '</figcaption>' ) . '</figure>';
+	ideatoapps_blog_figures_made( $html );
+	return $html;
+}
+
+/**
+ * Remember (for this request) the exact markup ideatoapps_blog_figure() produced, or ask whether a string is one of them.
+ * Only those strings may bypass wp_kses in [ita_why]; a <figure> someone typed into the editor is never one of them.
+ *
+ * @param string $html  Markup to remember or look up.
+ * @param bool   $check True to look up instead of remember.
+ * @return bool Whether it was produced by the shortcode (always true when remembering).
+ */
+function ideatoapps_blog_figures_made( string $html, bool $check = false ): bool {
+	static $made = array();
+	if ( $check ) {
+		return isset( $made[ md5( $html ) ] );
+	}
+	$made[ md5( $html ) ] = true;
+	return true;
 }
 add_shortcode( 'ita_figure', 'ideatoapps_blog_figure' );
 
 /**
- * Move rendered figures out of a string before it goes through wp_kses (which would strip the SVG) and put them back after.
+ * Move figures made by [ita_figure] in this request out of a string before it goes through wp_kses (which would strip the SVG) and put them back after.
  *
  * @param string $html Rendered HTML (by reference; figures are replaced by plain-text markers).
  * @return array<string,string> Marker => figure markup, for ideatoapps_blog_figures_restore().
@@ -48,6 +67,9 @@ function ideatoapps_blog_figures_hold( string &$html ): array {
 	$html = (string) preg_replace_callback(
 		'#<figure class="ita-figure" data-testid="ita-figure">.*?</figure>#s',
 		static function ( array $m ) use ( &$held ): string {
+			if ( ! ideatoapps_blog_figures_made( $m[0], true ) ) {
+				return $m[0]; // not produced by [ita_figure] in this request: leave it for wp_kses to filter.
+			}
 			$marker          = 'ITAFIG' . count( $held ) . 'X' . wp_generate_password( 8, false );
 			$held[ $marker ] = $m[0];
 			return $marker;

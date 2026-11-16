@@ -53,7 +53,7 @@ function ideatoapps_blog_svg_parse( string $svg ): ?DOMDocument {
  */
 function ideatoapps_blog_svg_attr_ok( DOMAttr $attr ): bool {
 	$name = strtolower( $attr->nodeName );
-	if ( 1 !== preg_match( '/\A[a-z][a-z0-9:_.-]*\z/', $name ) || 0 === strpos( $name, 'on' ) || 'src' === $name ) {
+	if ( 1 !== preg_match( '/\A[a-z][a-z0-9:_.-]*\z/', $name ) || 0 === strpos( $name, 'on' ) || 0 === strpos( strtolower( (string) $attr->localName ), 'on' ) || in_array( strtolower( (string) $attr->localName ), array( 'src', 'style' ), true ) ) {
 		return false;
 	}
 	$ns = (string) $attr->namespaceURI;
@@ -61,8 +61,11 @@ function ideatoapps_blog_svg_attr_ok( DOMAttr $attr ): bool {
 		return false;
 	}
 	$value = (string) $attr->value;
-	if ( in_array( $name, array( 'href', 'xlink:href' ), true ) && 1 !== preg_match( '/\A#[A-Za-z_][\w.-]*\z/', trim( $value ) ) ) {
-		return false;
+	if ( 'style' === $name || false !== strpos( $value, '\\' ) ) {
+		return false; // inline styles and CSS escapes (u\72l(...)) can hide a url(); shipped art uses presentation attributes only.
+	}
+	if ( 'href' === $attr->localName && 1 !== preg_match( '/\A#[A-Za-z_][\w.-]*\z/', trim( $value ) ) ) {
+		return false; // href, xlink:href and any prefix bound to either: fragment references only.
 	}
 	$flat = strtolower( (string) preg_replace( '/[\x00-\x20\x7f]+/', '', $value ) );
 	if ( 1 === preg_match( '/javascript:|vbscript:|@import|expression\(|\Adata:|[(,;"\'=]data:/', $flat ) ) {
