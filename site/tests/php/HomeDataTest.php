@@ -122,11 +122,14 @@ final class HomeDataTest extends WPTestCase {
 		$this->assertSame( '', trim( $this->render( 'newsletter' ) ) );
 		add_filter( 'ideatoapps_newsletter_available', '__return_true' );
 		$this->assertTrue( ideatoapps_newsletter_available() );
+		$this->assertStringContainsString( 'Sign-up is not open yet', $this->render( 'newsletter' ), 'the owner switch is off by default' );
+		update_option( 'ideatoapps_newsletter_enabled', true );
 		$html = $this->render( 'newsletter' );
 		$this->assertStringContainsString( 'type="email"', $html );
 		$this->assertStringContainsString( '<label', $html );
 		remove_filter( 'ideatoapps_newsletter_available', '__return_true' );
 		$this->assertSame( '', trim( $this->render( 'newsletter' ) ) );
+		delete_option( 'ideatoapps_newsletter_enabled' );
 		add_filter( 'ideatoapps_newsletter_available', 'ideatoapps_newsletter_route_exists' );
 	}
 
