@@ -1,30 +1,26 @@
 <?php
 /**
  * Layout lints for starter articles (used by BlogContentLintTest; not shipped in the plugin):
- * - block spacing: wpautop wraps a line that touches a closing block shortcode into the box's paragraph, so every closing
- *   [/ita_prompt], [/ita_checklist], [/ita_quiz], [/ita_why] (and [/ita_figure] if ever written) ends its line and is followed by a
- *   blank line (or the end of the body);
+ * - block spacing: a closing [/ita_prompt], [/ita_why], [/ita_checklist] or [/ita_quiz] immediately followed on the next line
+ *   (no blank line) by another opening shortcode ([ita_...]) makes wpautop wrap the second block in a <p> (the 05 and 20 bug).
+ *   A closing tag followed by a paragraph or heading renders fine and is allowed; the render lint (blog-lint-render.php)
+ *   checks the HTML itself;
  * - tables: every <table> has a <caption> and every <th> a scope attribute (row, col, rowgroup or colgroup);
  * - no commentary on a prompt box: the first sentence after [/ita_prompt] must not start with "The last", "Notice" or "That line",
  *   nor contain "matters more than it looks" or "do(es) a lot of work" (machine-sounding asides about the box just shown).
  */
 
-/** Closing tags that must be followed by a blank line. */
-const ITA_LINT_BLOCK_CLOSERS = array( 'ita_prompt', 'ita_checklist', 'ita_quiz', 'ita_why', 'ita_figure' );
+/** Closing tags that must not be followed on the very next line by another opening shortcode. */
+const ITA_LINT_BLOCK_CLOSERS = array( 'ita_prompt', 'ita_why', 'ita_checklist', 'ita_quiz' );
 
-/** A closing block shortcode with more text on its line, or a non-blank next line. */
+/** A closing block shortcode whose next line starts with an opening shortcode, without a blank line between. */
 function ita_lint_block_spacing( string $body ): array {
 	$out = array();
-	$re  = '/\[\/(' . implode( '|', ITA_LINT_BLOCK_CLOSERS ) . ')\]([^\n]*)(?:\n([^\n]*))?/';
+	$re  = '/\[\/(' . implode( '|', ITA_LINT_BLOCK_CLOSERS ) . ')\][^\S\n]*\n[^\S\n]*\[ita_/';
 	if ( preg_match_all( $re, $body, $m, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) {
 		foreach ( $m as $hit ) {
-			$line = 1 + substr_count( substr( $body, 0, $hit[0][1] ), "\n" );
-			$rest = trim( $hit[2][0] );
-			$next = isset( $hit[3] ) && -1 !== $hit[3][1] ? trim( $hit[3][0] ) : '';
-			$end  = '' === trim( substr( $body, $hit[0][1] + strlen( $hit[0][0] ) ) );
-			if ( '' !== $rest || ( '' !== $next ) || ( ! isset( $hit[3] ) && ! $end ) ) {
-				$out[] = "Line {$line}: [/{$hit[1][0]}] must end its line and be followed by a blank line.";
-			}
+			$line  = 1 + substr_count( substr( $body, 0, $hit[0][1] ), "\n" );
+			$out[] = "Line {$line}: [/{$hit[1][0]}] is followed on the next line by another shortcode; add a blank line between them.";
 		}
 	}
 	return $out;

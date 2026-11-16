@@ -167,19 +167,18 @@ final class BlogContentLintTest extends TestCase {
 	}
 
 	public function test_block_spacing_rule_can_fail(): void {
-		$ok = "<p>A</p>\n[ita_prompt title=\"T\"]x[/ita_prompt]\n\n<p>B</p>\n[ita_checklist id=\"c\"][ita_item]y[/ita_item][/ita_checklist]\n\n[ita_quiz][/ita_quiz]";
-		$this->assertSame( array(), ita_lint_block_spacing( $ok ) );
-		$this->assertSame( array(), ita_lint_block_spacing( "x[/ita_prompt]\n" ), 'end of body' );
+		$ok = "<p>A</p>\n[ita_prompt title=\"T\"]x[/ita_prompt]\n<p>B</p>\n[ita_checklist id=\"c\"][ita_item]y[/ita_item][/ita_checklist]\n\n[ita_quiz][/ita_quiz]\n<h2>Try it</h2>";
+		$this->assertSame( array(), ita_lint_block_spacing( $ok ), 'a paragraph or heading right after a box is fine' );
+		$this->assertSame( array(), ita_lint_block_spacing( "[ita_why title=\"W\"]w[/ita_why]\n\n[ita_prompt title=\"T\"]x[/ita_prompt]" ), 'blank line' );
 		foreach ( array(
-			'next line touches' => "[ita_prompt]x[/ita_prompt]\n<p>Find the quoted sentence.</p>",
-			'same line'         => "[ita_prompt]x[/ita_prompt]<p>More.</p>\n\n<p>Next</p>",
-			'shortcode next'    => "[ita_quiz][/ita_quiz]\n[ita_why title=\"W\"]w[/ita_why]\n\n<p>x</p>",
-			'checklist'         => "[ita_checklist id=\"c\"][/ita_checklist]\n<h2>Try it</h2>",
-			'why box'           => "[ita_why title=\"W\"]w[/ita_why]\n<p>Then.</p>",
+			'05 (why then prompt)'   => "<p>Some terms are argued about.</p>\n[/ita_why]\n[ita_prompt title=\"Explain a new AI word\"]\nExplain the term.\n[/ita_prompt]",
+			'20 (prompt then why)'   => "Summarize this.\n[/ita_prompt]\n[ita_why title=\"What does a summary lose?\"]<p>x</p>[/ita_why]",
+			'checklist then quiz'    => "[ita_checklist id=\"c\"][ita_item]a[/ita_item][/ita_checklist]\n[ita_quiz][/ita_quiz]",
+			'quiz then figure'       => "[ita_quiz][/ita_quiz]  \n  [ita_figure name=\"agent-loop\" alt=\"x\"]",
 		) as $name => $bad ) {
 			$this->assertNotEmpty( ita_lint_block_spacing( $bad ), $name );
 		}
-		$this->assertStringContainsString( 'Line 2', implode( ' ', ita_lint_block_spacing( "<p>a</p>\n[ita_prompt]x[/ita_prompt]\n<p>b</p>" ) ) );
+		$this->assertStringContainsString( 'Line 2', implode( ' ', ita_lint_block_spacing( "<p>a</p>\n[ita_prompt]x[/ita_prompt]\n[ita_why title=\"W\"]w[/ita_why]" ) ) );
 	}
 
 	public function test_table_rule_can_fail(): void {
@@ -207,7 +206,9 @@ final class BlogContentLintTest extends TestCase {
 		$a = array( 'slug' => '01-what-ai-is-and-isnt', 'level' => 'beginner', 'excerpt' => 'Short.', 'check' => array( 'a', 'b', 'c' ), 'body' => '' );
 		$a['body'] = str_replace( "[/ita_prompt]\n\n", "[/ita_prompt]\n<p>Notice the list.</p>\n\n", self::good_body() );
 		$problems  = implode( ' ', ita_lint_article( $a, $a['body'], self::content_dir() ) );
-		$this->assertStringContainsString( 'must end its line', $problems );
 		$this->assertStringContainsString( 'comments on the box', $problems );
+		$a['body'] = str_replace( "[/ita_prompt]\n\n", "[/ita_prompt]\n", self::good_body() );
+		$problems  = implode( ' ', ita_lint_article( $a, $a['body'], self::content_dir() ) );
+		$this->assertStringContainsString( 'followed on the next line by another shortcode', $problems );
 	}
 }
