@@ -51,9 +51,9 @@ final class BlogContentLintTest extends TestCase {
 		$words = str_repeat( 'Plain words that a reader can follow without trouble today. ', 80 );
 		return '<p>' . $words . '</p><h2>One</h2><p>Text.</p>'
 			. '[ita_figure name="agent-loop" alt="A loop of steps." caption="The loop."]'
-			. '<h2>Two</h2>[ita_prompt title="A prompt"]Write a list.[/ita_prompt]'
+			. '<h2>Two</h2>[ita_prompt title="Try this"]Write a list.[/ita_prompt]'
 			. '[ita_why title="Why?"]<p>Because [ita_term define="A small piece of text."]tokens[/ita_term] add up.</p>[/ita_why]'
-			. '[ita_quiz][ita_q q="A?" answers="x|y" correct="1" why="Because."][ita_q q="B?" answers="x|y|z" correct="3" why="Because."]'
+			. '[ita_quiz][ita_q q="A?" answers="x|yy" correct="1" why="Because."][ita_q q="B?" answers="x|y|z" correct="3" why="Because."]'
 			. '[ita_q q="C?" answers="x|y" correct="2" why="Because."][/ita_quiz]<h2>Try it</h2><p>Do this.</p>';
 	}
 

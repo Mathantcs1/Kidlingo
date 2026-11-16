@@ -4,6 +4,8 @@
  * Every rule takes a string and returns a list of problems (empty = fine), so each rule can be tested with bad input.
  */
 
+require_once __DIR__ . '/blog-lint-voice.php';
+
 /** Shortcode tags an article may use. */
 const ITA_LINT_TAGS = array( 'ita_prompt', 'ita_quiz', 'ita_q', 'ita_checklist', 'ita_item', 'ita_why', 'ita_term', 'ita_figure' );
 
@@ -209,6 +211,10 @@ function ita_lint_article( array $a, string $raw, string $content_dir ): array {
 		ita_lint_interactive( $a['body'] ),
 		ita_lint_headings( $a['body'] ),
 		ita_lint_figures( $a['body'], $content_dir . '/figures' ),
+		ita_lint_quiz_variety( $a['body'] ),
+		ita_lint_voice( $a['body'] ),
+		ita_lint_prompt_term( $a['body'] ),
+		ita_lint_spelling( $raw ),
 		ita_lint_text_rules( $raw )
 	);
 }
