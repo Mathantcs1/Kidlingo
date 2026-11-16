@@ -2,7 +2,7 @@
 /**
  * Starter article files: content/articles/NN-slug.html. The file starts with one HTML comment holding a JSON header, then the post body:
  *
- *   <!--ita {"slug":"01-what-ai-is-and-isnt","title":"...","category":"ai-basics","excerpt":"...","reviewed":"2026-11-16","gated":false,"check":["claim 1","claim 2","claim 3"]} -->
+ *   <!--ita {"slug":"01-what-ai-is-and-isnt","title":"...","category":"ai-basics","excerpt":"...","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["beginners"],"check":["claim 1"]} -->
  *
  * `reviewed` is the date the DRAFT was written. It is stored as ita_drafted_on and is never a human review date.
  *
@@ -13,8 +13,14 @@ defined( 'ABSPATH' ) || exit;
 
 const IDEATOAPPS_ARTICLE_SLUG_RE = '/\A\d\d-[a-z0-9]+(?:-[a-z0-9]+)*\z/';
 
+/** Reader levels (Task 5b), easiest first. */
+const IDEATOAPPS_BLOG_LEVELS = array( 'beginner', 'intermediate', 'advanced' );
+
+/** Reader audiences; builders are developers and technical readers. */
+const IDEATOAPPS_BLOG_AUDIENCES = array( 'beginners', 'students', 'teachers-and-tutors', 'parents-and-families', 'workers-and-business-owners', 'creators', 'builders' );
+
 /**
- * The 50 topics (content/topics.json): slug, title, category (slug) and categoryLabel.
+ * The 50 topics (content/topics.json): slug, title, category (slug), categoryLabel, level and audiences.
  *
  * @return array<int, array<string, string>>
  */
@@ -24,7 +30,8 @@ function ideatoapps_blog_topic_list(): array {
 		$data   = json_decode( (string) @file_get_contents( IDEATOAPPS_CORE_DIR . 'content/topics.json' ), true ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a missing file means no topics, not a notice.
 		$topics = array_values( array_filter( is_array( $data ) ? $data : array(), 'is_array' ) );
 	}
-	return $topics;
+	$list = apply_filters( 'ideatoapps_blog_topic_list', $topics ); // tests only: a topic list with a bad level must still be refused.
+	return is_array( $list ) ? array_values( array_filter( $list, 'is_array' ) ) : array();
 }
 
 /**
@@ -65,7 +72,7 @@ function ideatoapps_blog_valid_date( $value ): bool {
  * Parse one article file. Never throws and never emits a notice.
  *
  * @param string $path File path.
- * @return array{slug:string,title:string,category:string,excerpt:string,reviewed:string,gated:bool,check:string[],body:string}|WP_Error
+ * @return array{slug:string,title:string,category:string,excerpt:string,reviewed:string,gated:bool,level:string,audiences:string[],check:string[],body:string}|WP_Error
  */
 function ideatoapps_blog_parse_article( string $path ) {
 	$bad = static fn( string $why ): WP_Error => new WP_Error( 'ideatoapps_article', $why );
@@ -103,6 +110,17 @@ function ideatoapps_blog_parse_article( string $path ) {
 	if ( ! isset( $h['category'] ) || ! is_string( $h['category'] ) || ! in_array( $h['category'], $cats, true ) || $h['category'] !== ( $topic['category'] ?? '' ) ) {
 		return $bad( 'Category is not the topic category from topics.json.' );
 	}
+	$level = $h['level'] ?? null;
+	if ( ! in_array( $level, IDEATOAPPS_BLOG_LEVELS, true ) || $level !== ( $topic['level'] ?? null ) ) {
+		return $bad( '"level" must be beginner, intermediate or advanced and equal the topic level in topics.json.' );
+	}
+	$aud = $h['audiences'] ?? null;
+	$known = is_array( $aud ) && count( $aud ) >= 1 && count( $aud ) <= 3 && array_values( $aud ) === $aud
+		&& array() === array_filter( $aud, static fn( $a ): bool => ! in_array( $a, IDEATOAPPS_BLOG_AUDIENCES, true ) )
+		&& count( array_unique( $aud ) ) === count( $aud );
+	if ( ! $known || $aud !== ( $topic['audiences'] ?? null ) ) {
+		return $bad( '"audiences" must be 1-3 known audiences, exactly as listed for the topic in topics.json.' );
+	}
 	$excerpt = is_string( $h['excerpt'] ?? null ) ? trim( sanitize_text_field( $h['excerpt'] ) ) : '';
 	if ( '' === $excerpt || mb_strlen( $excerpt ) > 160 ) {
 		return $bad( 'Excerpt must be 1 to 160 characters.' );
@@ -129,13 +147,15 @@ function ideatoapps_blog_parse_article( string $path ) {
 		return $bad( 'The article body is empty.' );
 	}
 	return array(
-		'slug'     => $slug,
-		'title'    => $title,
-		'category' => $h['category'],
-		'excerpt'  => $excerpt,
-		'reviewed' => $h['reviewed'],
-		'gated'    => (bool) $gated,
-		'check'    => $check,
-		'body'     => $body,
+		'slug'      => $slug,
+		'title'     => $title,
+		'category'  => $h['category'],
+		'excerpt'   => $excerpt,
+		'reviewed'  => $h['reviewed'],
+		'gated'     => (bool) $gated,
+		'level'     => $level,
+		'audiences' => $aud,
+		'check'     => $check,
+		'body'      => $body,
 	);
 }

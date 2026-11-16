@@ -27,16 +27,21 @@ final class BlogInstallerTest extends WPTestCase {
 	}
 
 	public static function topic_title( string $slug ): string {
+		return (string) ( self::topic( $slug )['title'] ?? '' );
+	}
+
+	/** The topic row of a slug in topics.json (empty when unknown). */
+	public static function topic( string $slug ): array {
 		foreach ( json_decode( (string) file_get_contents( IDEATOAPPS_CORE_DIR . 'content/topics.json' ), true ) as $t ) {
 			if ( $t['slug'] === $slug ) {
-				return $t['title'];
+				return $t;
 			}
 		}
-		return '';
+		return array();
 	}
 
 	private function header( string $slug, string $cat, bool $gated, array $over = array() ): string {
-		return '<!--ita ' . wp_json_encode( $over + array( 'slug' => $slug, 'title' => self::topic_title( $slug ), 'category' => $cat, 'excerpt' => 'Short excerpt.', 'reviewed' => '2026-11-16', 'gated' => $gated, 'check' => array( 'claim "one" \\ x', 'claim two', 'claim three' ) ) ) . " -->\n<p>Body of {$slug} with a back\\slash.</p>\n";
+		return '<!--ita ' . wp_json_encode( $over + array( 'slug' => $slug, 'title' => self::topic_title( $slug ), 'category' => $cat, 'excerpt' => 'Short excerpt.', 'reviewed' => '2026-11-16', 'gated' => $gated, 'level' => self::topic( $slug )['level'] ?? '', 'audiences' => self::topic( $slug )['audiences'] ?? array(), 'check' => array( 'claim "one" \\ x', 'claim two', 'claim three' ) ) ) . " -->\n<p>Body of {$slug} with a back\\slash.</p>\n";
 	}
 
 	private function article( string $slug, string $cat, bool $gated, array $over = array() ): string {

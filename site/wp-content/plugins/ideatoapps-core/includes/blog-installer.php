@@ -130,6 +130,8 @@ function ideatoapps_blog_install_one( array $article ): string {
 		'ita_gated'         => $article['gated'] ? 1 : 0,
 		'ita_check'         => (string) wp_json_encode( $article['check'] ),
 		'ita_review_status' => 'ai_draft',
+		'ita_level'         => $article['level'],
+		'ita_audiences'     => implode( ',', $article['audiences'] ),
 	);
 	foreach ( $meta as $key => $value ) {
 		update_post_meta( $id, $key, is_string( $value ) ? wp_slash( $value ) : $value );

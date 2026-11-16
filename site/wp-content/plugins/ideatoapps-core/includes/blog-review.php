@@ -4,6 +4,7 @@
  *
  * Meta (all protected from REST, XML-RPC and the Custom Fields box): ita_review_status (ai_draft | needs_review | human_reviewed),
  * ita_reviewer (text, max 80), ita_reviewed_on (YYYY-MM-DD, site timezone), ita_reviewed_hash (hash of the content at sign-off).
+ * The installer's other meta (starter slug/hash, draft date, gate, check list, ita_level, ita_audiences) is protected the same way.
  * Posts with neither ita_review_status nor ita_starter_slug (the owner's own posts) are not touched by any of this.
  *
  * @package ideatoapps-core
@@ -11,7 +12,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const IDEATOAPPS_REVIEW_KEYS = array( 'ita_review_status', 'ita_reviewer', 'ita_reviewed_on', 'ita_reviewed_hash', 'ita_starter_hash', 'ita_drafted_on', 'ita_gated', 'ita_check', 'ita_starter_slug', 'ita_last_reviewed' );
+const IDEATOAPPS_REVIEW_KEYS = array( 'ita_review_status', 'ita_reviewer', 'ita_reviewed_on', 'ita_reviewed_hash', 'ita_starter_hash', 'ita_drafted_on', 'ita_gated', 'ita_check', 'ita_starter_slug', 'ita_last_reviewed', 'ita_level', 'ita_audiences' );
 
 add_filter(
 	'is_protected_meta',

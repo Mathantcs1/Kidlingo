@@ -6,9 +6,51 @@ How to write an article file for the IdeaToApps AI blog. The three reference art
 reviews everything else before a post is published. Every article is an AI-assisted draft until a person signs it off.
 
 ## Audience
-Curious adults and students who use, or are about to use, AI tools. No technical background assumed. Any technical word gets a
-plain definition the first time it appears, with `[ita_term]`. If a ten-word definition is not possible, the word probably does
-not belong in the article.
+Everyone who uses, or is about to use, AI tools: beginners, students, teachers and tutors, parents and families, workers and small
+business owners, creators and builders (developers and technical readers). Plain language and accessibility are rules for every
+article, not an audience. Any technical word gets a plain definition the first time it appears, with `[ita_term]`. If a ten-word
+definition is not possible, the word probably does not belong in the article.
+
+## Levels and audiences
+Every topic in `content/topics.json` has a `level` and 1-3 `audiences`; the article header repeats them exactly (the parser rejects
+a mismatch). The theme shows a level badge, audience chips and a "Who this is for" line made from them, so never type that line
+into the article.
+- `level`: `beginner` (no background assumed), `intermediate` (has used AI apps and wants to do more), `advanced` (comfortable
+  with technical ideas; code-style examples are fine inside prompt boxes, still no outside links).
+- `audiences`: `beginners`, `students`, `teachers-and-tutors`, `parents-and-families`, `workers-and-business-owners`, `creators`,
+  `builders`.
+- **Readability** (Flesch reading ease of the visible text, `tests/php/helpers/blog-lint-readability.php`): at least 60 for
+  beginner, 50 for intermediate, 40 for advanced. When an article falls short, shorten sentences and use plainer words; never lower
+  the threshold. Short paragraphs; no idioms that translate badly ("ballpark", "piece of cake").
+- Targets for the 50 topics (`tests/php/BlogCoverageLintTest.php` checks them on `topics.json`, so they hold before every article
+  exists): beginner >= 22, intermediate >= 14, advanced >= 6; audiences at least beginners 20, students 8, teachers-and-tutors 4,
+  parents-and-families 3, workers-and-business-owners 8, creators 4, builders 10; every category has at least one beginner and one
+  intermediate topic. Current matrix (the test fails if this copy is out of date):
+
+| Level | Topics | Minimum |
+| --- | --- | --- |
+| beginner | 22 | 22 |
+| intermediate | 21 | 14 |
+| advanced | 7 | 6 |
+
+| Audience | Topics | Minimum |
+| --- | --- | --- |
+| beginners | 21 | 20 |
+| students | 18 | 8 |
+| teachers-and-tutors | 7 | 4 |
+| parents-and-families | 4 | 3 |
+| workers-and-business-owners | 22 | 8 |
+| creators | 7 | 4 |
+| builders | 18 | 10 |
+
+| Category | Beginner | Intermediate | Advanced |
+| --- | --- | --- | --- |
+| ai-basics | 7 | 1 | 0 |
+| prompting | 4 | 5 | 1 |
+| llms | 2 | 4 | 2 |
+| agents | 2 | 4 | 4 |
+| work-and-learning | 4 | 4 | 0 |
+| safety-and-judgment | 3 | 3 | 0 |
 
 ## Voice
 - Plain, warm and direct. Talk to the reader as "you". Use contractions (it's, you'll, don't).
@@ -43,7 +85,7 @@ One file per article: `content/articles/NN-slug.html`, where `NN-slug` is the `s
 (an optional byte-order mark and whitespace are allowed before it) with one HTML comment holding a JSON header, then the body:
 
 ```html
-<!--ita {"slug":"01-what-ai-is-and-isnt","title":"What AI is and isn't","category":"ai-basics","excerpt":"...","reviewed":"2026-11-16","gated":false,"check":["claim 1","claim 2","claim 3"]} -->
+<!--ita {"slug":"01-what-ai-is-and-isnt","title":"What AI is and isn't","category":"ai-basics","excerpt":"...","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["beginners","students","parents-and-families"],"check":["claim 1","claim 2","claim 3"]} -->
 <p>First paragraph of the body...</p>
 ```
 
@@ -56,6 +98,7 @@ What the parser (`includes/blog-article-file.php`) requires:
 - `reviewed`: a real `YYYY-MM-DD` date. **It is the date the draft was written, not a human review date.** The installer stores it
   as `ita_drafted_on`; the human review date is recorded only when an editor signs the post off in the Editorial review box.
 - `gated`: `true` or `false` (0/1 also parse). Write `false`. Which posts are subscriber-only is decided later, by the owner.
+- `level` and `audiences`: exactly the topic's values in `topics.json` (same audiences, same order), from the lists above.
 - `check`: an array of 3-6 non-empty strings (see below).
 - The body after the comment must not be empty, and the whole file must stay under 400 KB.
 

@@ -34,7 +34,7 @@ final class BlogHeroesTest extends SeoTestCase {
 		foreach ( $topics as $i => $t ) {
 			$keys = array_keys( $t );
 			sort( $keys );
-			$this->assertSame( array( 'category', 'categoryLabel', 'slug', 'title' ), $keys );
+			$this->assertSame( array( 'audiences', 'category', 'categoryLabel', 'level', 'slug', 'title' ), $keys );
 			$this->assertMatchesRegularExpression( '/^' . sprintf( '%02d', $i + 1 ) . '-[a-z0-9]+(?:-[a-z0-9]+)*$/', $t['slug'] );
 			$this->assertNotSame( '', trim( $t['title'] ) );
 			$this->assertArrayHasKey( $t['category'], $labels );

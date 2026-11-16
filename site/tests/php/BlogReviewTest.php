@@ -9,7 +9,7 @@ final class BlogReviewTest extends WPTestCase {
 		mkdir( $this->dir );
 		add_filter( 'ideatoapps_blog_articles_dir', array( $this, 'dir' ) );
 		foreach ( array( '01-what-ai-is-and-isnt' => 'ai-basics', '02-ml-vs-deep-learning-vs-generative-ai' => 'ai-basics' ) as $slug => $cat ) {
-			file_put_contents( $this->dir . "/$slug.html", '<!--ita ' . wp_json_encode( array( 'slug' => $slug, 'title' => BlogInstallerTest::topic_title( $slug ), 'category' => $cat, 'excerpt' => 'Ex.', 'reviewed' => '2026-01-02', 'check' => array( 'Claim <b>A</b>', 'Claim B', 'Claim C' ) ) ) . " -->\n<p>Body $slug</p>" );
+			file_put_contents( $this->dir . "/$slug.html", '<!--ita ' . wp_json_encode( array( 'slug' => $slug, 'title' => BlogInstallerTest::topic_title( $slug ), 'category' => $cat, 'excerpt' => 'Ex.', 'reviewed' => '2026-01-02', 'level' => BlogInstallerTest::topic( $slug )['level'], 'audiences' => BlogInstallerTest::topic( $slug )['audiences'], 'check' => array( 'Claim <b>A</b>', 'Claim B', 'Claim C' ) ) ) . " -->\n<p>Body $slug</p>" );
 		}
 		$this->admin = self::make_user( 'administrator' );
 		wp_set_current_user( $this->admin );
