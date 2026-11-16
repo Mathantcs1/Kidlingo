@@ -98,7 +98,7 @@ test.describe('Learn', () => {
     await createVideo(api, 'Coming later', { excerpt: 'Soon.' });
     await page.goto('/learn/');
     await expect(page.getByTestId('video-card')).toHaveCount(1);
-    await expect(page.getByRole('button')).toHaveCount(2); // theme toggle + menu button only
+    await expect(page.getByTestId('video-card').getByRole('button')).toHaveCount(0); // no play button on the card
     await expect(page.locator('[data-youtube-id]')).toHaveCount(0);
   });
 
