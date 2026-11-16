@@ -7,3 +7,12 @@
 .transition-chip-handle-r { right: 0; }
 .transition-cut { position: absolute; top: 2px; z-index: 3; width: 16px; height: 16px; margin: 0 0 0 -8px; /* upper half only: the clips' trim handles at the cut stay reachable */ padding: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.7); background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 12px; line-height: 14px; cursor: pointer; opacity: 0; }
 .lane:hover .transition-cut, .transition-cut:focus-visible { opacity: 1; }
+.transition-browser { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 8px; }
+.transition-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border, #3a3f4b); background: var(--bg-inset, #14161c); color: inherit; cursor: grab; }
+.transition-tile:disabled { opacity: 0.5; cursor: not-allowed; }
+.transition-tile:focus-visible { outline: 2px solid var(--accent, #6aa9ff); }
+.transition-cut.is-drop { opacity: 1; background: var(--accent, #6aa9ff); transform: scale(1.4); }
+.transition-drop-ghost { position: absolute; top: 2px; bottom: 50%; z-index: 4; border: 1px dashed var(--accent, #6aa9ff); background: rgba(106, 169, 255, 0.25); border-radius: 4px; pointer-events: none; }
+.transition-inspector { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+.transition-inspector select { width: 100%; }
+.transition-note { font-size: 11px; color: var(--text-muted, #aab); margin: 4px 0 0; }

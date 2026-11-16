@@ -25,6 +25,14 @@ export default function AudioInspector({ clip, media, editable, locked }: Props)
   const disabled = !editable || locked || detached;
   const title = locked ? 'Track is locked' : detached ? 'Audio is detached from this clip' : undefined;
   const dur = clipDuration(clip);
+  // A transition on a cut replaces the clip's own fade on that edge (the crossfade is the fade; the stored value is kept).
+  const replaced = useEditor((s) => {
+    const track = s.history.present.tracks.find((t) => t.clips.some((c) => c.id === clip.id));
+    const trs = track?.transitions ?? [];
+    const fadeIn = trs.some((t) => t.toClipId === clip.id) && clip.audio.fadeIn > 0;
+    const fadeOut = trs.some((t) => t.fromClipId === clip.id) && clip.audio.fadeOut > 0;
+    return fadeIn && fadeOut ? 'both' : fadeIn ? 'in' : fadeOut ? 'out' : '';
+  });
   return (
     <div className="inspector-field audio-fields" data-testid="inspector-audio" tabIndex={-1}>
       <span className="visually-hidden" id="inspector-audio-label">
@@ -74,6 +82,11 @@ export default function AudioInspector({ clip, media, editable, locked }: Props)
           Pan {formatPan(clip.audio.pan)}
         </span>
       </div>
+      {replaced && (
+        <p className="transition-note" data-testid="transition-fade-replaced">
+          {replaced === 'both' ? 'Fade in and fade out are' : replaced === 'in' ? 'Fade in is' : 'Fade out is'} replaced by the transition on that cut.
+        </p>
+      )}
       <EffectList clip={clip} disabled={disabled} title={title} />
       {detached && (
         <div className="audio-actions">

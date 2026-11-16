@@ -1,12 +1,14 @@
 // Store-bound transition commands (Plan 5C Task 8): each is ONE `apply` (one undo step); refusals (locked track, no
 // handle, adjustment clip, ...) become toasts through `guard`. The last type/duration used is remembered for "+" and `T`.
-import { addTransition, removeTransition, setTransitionDuration } from '../core/transitionEdits';
+import { addTransition, removeTransition, setTransition, setTransitionDuration } from '../core/transitionEdits';
 import type { TransitionSpec } from '../core/transitionEdits';
 import { DEFAULT_TRANSITION_SECONDS } from '../core/transitionTypes';
+import type { TransitionType } from '../core/transitionTypes';
 import type { Id } from '../core/model';
 import { useEditor } from '../state/store';
 import { selectedTransitionId, setSelectedTransition } from './transitionSelection';
 import { nearestCut } from './transitionDrag';
+import { cutsOf } from '../core/transitions';
 import { guard, showError, showInfo } from './Toast';
 
 const editor = () => useEditor.getState();
@@ -62,14 +64,36 @@ export function setTransitionDurationCmd(id: Id, seconds: number): void {
   });
 }
 
-/** `T`: the last-used transition at the cut nearest the playhead on the selected clip's track (else the active track). */
-export function addTransitionAtPlayheadCmd(): void {
+/** A type / ease / direction / softness / amount / audio-law change from the inspector: ONE step; a new type is remembered for "+" and `T`. */
+export function setTransitionCmd(id: Id, patch: Partial<Omit<TransitionSpec, 'duration'>>): void {
+  guard(() => {
+    editor().apply((p) => setTransition(p, id, patch));
+    if (patch.type) setLastTransitionSpec({ ...lastSpec, type: patch.type });
+  });
+}
+
+/**
+ * `T` and a browser tile click: the last-used transition (or `type`) at the cut nearest the playhead on the selected clip's
+ * track (else the active track).
+ */
+export function addTransitionAtPlayheadCmd(type?: TransitionType): void {
   const s = editor();
   const p = s.history.present;
   const selected = s.selection.length === 1 ? p.tracks.find((t) => t.clips.some((c) => c.id === s.selection[0])) : undefined;
-  const trackId = selected?.id ?? s.activeTrackId ?? p.tracks.find((t) => t.kind === 'video')?.id;
+  const trackId = selected?.id ?? s.activeTrackId ?? p.tracks.find((t) => t.kind === (type === 'audio' ? 'audio' : 'video'))?.id;
   if (trackId && p.tracks.find((t) => t.id === trackId)?.locked) return showError('Track is locked');
   const cut = trackId ? nearestCut(p, trackId, s.playhead) : null;
   if (!cut) return showError('No cut without a transition near the playhead on this track');
-  addTransitionCmd(cut.trackId, cut.fromClipId, cut.toClipId);
+  const spec = type ? { ...lastSpec, type } : undefined;
+  if (spec) setLastTransitionSpec(spec);
+  addTransitionCmd(cut.trackId, cut.fromClipId, cut.toClipId, spec);
+}
+
+/** The clip menu's "Add transition at start / end": on the cut between this clip and its neighbour. */
+export function addTransitionAtEdgeCmd(clipId: Id, edge: 'start' | 'end'): void {
+  const p = editor().history.present;
+  const track = p.tracks.find((t) => t.clips.some((c) => c.id === clipId));
+  const cut = track ? cutsOf(track).find((c) => (edge === 'start' ? c.to.id : c.from.id) === clipId) : undefined;
+  if (!track || !cut) return showError(edge === 'start' ? 'No clip meets this one at its start' : 'No clip meets this one at its end');
+  addTransitionCmd(track.id, cut.from.id, cut.to.id);
 }

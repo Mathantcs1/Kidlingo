@@ -18,6 +18,9 @@ import InspectorSection from './InspectorSection';
 import OverlayInspector from './OverlayInspector';
 import SpeedFields from './SpeedFields';
 import TransformFields from './TransformFields';
+import TransitionBrowser from './TransitionBrowser';
+import TransitionInspector from './TransitionInspector';
+import { useTransitionSelection } from './transitionSelection';
 
 const NO_SOUND: Partial<Record<Clip['kind'], string>> = {
   image: 'Images have no sound.',
@@ -110,6 +113,9 @@ export default function Inspector({ editable }: { editable: boolean }) {
   const found = live.length === 1 ? findClip(project, live[0]) : null;
   const clip = found?.clip ?? null;
   const media = clip ? project.media[clip.mediaId] : undefined;
+  const trId = useTransitionSelection((s) => s.id);
+  const trTrack = trId === null ? undefined : project.tracks.find((t) => (t.transitions ?? []).some((x) => x.id === trId));
+  const tr = trTrack?.transitions?.find((x) => x.id === trId);
   const name = !clip ? null : clip.kind === 'overlay' ? overlayLabel(clip) : clip.kind === 'adjustment' ? ADJUSTMENT_LABEL : media?.name;
   return (
     <aside className="inspector" aria-label="Clip settings" data-testid="inspector">
@@ -125,7 +131,11 @@ export default function Inspector({ editable }: { editable: boolean }) {
         </div>
       )}
       <div className="inspector-body">
-        {clip ? (
+        {tr && trTrack ? (
+          <InspectorSection name="transition" title="Transition">
+            <TransitionInspector project={project} track={trTrack} tr={tr} editable={editable} />
+          </InspectorSection>
+        ) : clip ? (
           <ClipControls
             key={clip.id}
             clip={clip}
@@ -136,6 +146,9 @@ export default function Inspector({ editable }: { editable: boolean }) {
         ) : (
           <p className="inspector-hint inspector-pad">{live.length > 1 ? 'Select a single clip to change its settings.' : 'Select a clip'}</p>
         )}
+        <InspectorSection name="transitions" title="Transitions" defaultOpen={!clip}>
+          <TransitionBrowser disabled={!editable} />
+        </InspectorSection>
       </div>
     </aside>
   );

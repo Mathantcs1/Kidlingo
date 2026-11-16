@@ -88,6 +88,26 @@ export const CONTROL_TOPICS: HelpTopic[] = [
     ],
   },
   {
+    id: 'controls-transitions',
+    title: 'Transitions and crossfades',
+    group: 'Effect Controls',
+    keywords: 'transition crossfade dissolve dip fade black wipe slide push zoom glitch cut audio crossfade',
+    blocks: [
+      {
+        t: 'rows',
+        rows: [
+          ['Add', 'Press the + that appears on a cut between two clips, press T (the cut nearest the playhead), press a tile in the Transitions section, drag a tile onto a cut, or use "Add transition at start / end" in a clip\'s right-click menu.'],
+          ['Types', 'Dip to black, Dissolve (crossfade), Wipe, Slide, Push, Zoom and Glitch for pictures; Audio crossfade on an audio track.'],
+          ['Duration', 'Centred on the cut, a whole even number of frames, up to 5 seconds. Drag the chip\'s edges or type it. The footage beyond the cut limits it: a clip with no spare footage there cannot take a long transition (trim the clips to leave some).'],
+          ['Ease, Direction, Softness, Zoom, Strength', 'Ease shapes the progress (no overshoot); Wipe, Slide and Push take a direction; Wipe a softness; Zoom a zoom factor; Glitch a strength.'],
+          ['Audio', 'The sound of both clips crossfades over the same window: Equal power (default) keeps the loudness steady; Constant gain is exact for two halves of one shot. The clips\' own fades on that cut are replaced by the crossfade.'],
+          ['Remove', 'Select the chip and press Delete, or press Remove. Deleting a clip, moving it away or trimming the cut edge also removes its transition; undo brings it back.'],
+        ],
+      },
+      { t: 'p', text: 'Animation presets on a clip stay frozen at its edge during a transition: a clip with a Fade Out preset and a transition crossfades from a nearly invisible picture.' },
+    ],
+  },
+  {
     id: 'controls-animation',
     title: 'Animation and keyframes',
     group: 'Effect Controls',

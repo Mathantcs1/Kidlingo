@@ -24,7 +24,7 @@ describe('help content integrity', () => {
     expect(names.length).toBeGreaterThanOrEqual(5);
     const text = JSON.stringify(HELP_TOPICS.filter((t) => t.group === 'Effect Controls')).toLowerCase();
     for (const n of names) expect(text, `section ${n}`).toContain(n === 'effects' ? 'effects' : n);
-    for (const id of ['controls-transform', 'controls-animation', 'controls-effects', 'controls-audio', 'controls-overlay']) {
+    for (const id of ['controls-transform', 'controls-animation', 'controls-effects', 'controls-audio', 'controls-overlay', 'controls-transitions']) {
       expect(HELP_TOPICS.some((t) => t.id === id), id).toBe(true);
     }
   });

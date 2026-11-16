@@ -15,6 +15,8 @@ import type { MenuItem } from './contextMenuModel';
 import { resetCropCmd, setFlipCmd } from './cropCommands';
 import { toggleCropMode } from './cropModeStore';
 import { freezeFrameCmd, setReverseCmd, setSpeedCmd } from './speedCommands';
+import { addTransitionAtEdgeCmd, removeTransitionCmd } from './transitionCommands';
+import { cutsOf, pairAllowed } from '../core/transitions';
 import { liveSelection } from './edits';
 import { onClip } from './keyframeCommands';
 import { removeMediaItem } from './projectCommands';
@@ -65,6 +67,22 @@ export function clipMenuItems(clipId: Id): MenuItem[] {
     const onPlayhead = onClip(clip, editor().playhead);
     items.push({ id: 'crop-mode', label: 'Crop on canvas', disabled: !canEdit || !single || !onPlayhead, title: lockTitle ?? (onPlayhead ? undefined : 'Move the playhead onto the clip'), onSelect: () => toggleCropMode(clipId) });
     items.push({ id: 'reset-crop', label: 'Reset crop', disabled: !canEdit || !single || !clip.crop, title: lockTitle ?? (clip.crop ? undefined : 'This clip has no crop'), onSelect: () => resetCropCmd(clipId) });
+  }
+  {
+    // Transitions on the cuts at this clip's two edges (a clip with a neighbour that meets it exactly).
+    const cuts = cutsOf(found.track);
+    const startCut = cuts.find((c) => c.to.id === clipId);
+    const endCut = cuts.find((c) => c.from.id === clipId);
+    const trs = found.track.transitions ?? [];
+    const existing = (cut: typeof startCut): boolean => !!cut && trs.some((t) => t.fromClipId === cut.from.id && t.toClipId === cut.to.id);
+    const type = found.track.kind === 'audio' ? 'audio' : 'dissolve';
+    const why = (cut: typeof startCut, edge: string): string | undefined =>
+      locked ? lockTitle : !cut ? `No clip meets this one at its ${edge}` : existing(cut) ? 'This cut already has a transition' : !pairAllowed(found.track, { type }, cut.from, cut.to) ? 'This transition does not fit these clips' : undefined;
+    const removable = trs.find((t) => t.fromClipId === clipId || t.toClipId === clipId);
+    items.push('separator');
+    items.push({ id: 'transition-add-start', testId: 'transition-menu-add-start', label: 'Add transition at start', disabled: !edit || !single || why(startCut, 'start') !== undefined, title: why(startCut, 'start'), onSelect: () => addTransitionAtEdgeCmd(clipId, 'start') });
+    items.push({ id: 'transition-add-end', testId: 'transition-menu-add-end', label: 'Add transition at end', disabled: !edit || !single || why(endCut, 'end') !== undefined, title: why(endCut, 'end'), onSelect: () => addTransitionAtEdgeCmd(clipId, 'end') });
+    if (removable) items.push({ id: 'transition-remove', testId: 'transition-menu-remove', label: 'Remove transition', disabled: !canEdit, title: lockTitle, onSelect: () => removeTransitionCmd(removable.id) });
   }
   if ((clip.kind === 'video' || clip.kind === 'audio') && clip.freeze === undefined) {
     const ids = sel.filter((id) => { const f = findClip(p, id); return f && (f.clip.kind === 'video' || f.clip.kind === 'audio') && f.clip.freeze === undefined; });
