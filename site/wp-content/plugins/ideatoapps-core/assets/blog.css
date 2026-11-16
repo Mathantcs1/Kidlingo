@@ -1,0 +1,56 @@
+/* IdeaToApps blog components. Colours come from the theme tokens (dark and light); the fallbacks keep it readable if they are absent. */
+.ita-prompt, .ita-quiz, .ita-checklist, .ita-why {
+	--ita-bg: var(--bg-alt, #eef2fc);
+	--ita-line: var(--line, #dfe5f4);
+	--ita-ink: var(--ink, #17203a);
+	--ita-muted: var(--muted-on-alt, #536079);
+	margin: var(--s-3, 24px) 0;
+	padding: var(--s-2, 16px);
+	background: var(--ita-bg);
+	border: 1px solid var(--ita-line);
+	border-radius: var(--radius-card, 16px);
+	color: var(--ita-ink);
+	overflow-wrap: anywhere;
+}
+.ita-prompt { border-left: 6px solid var(--violet, #7357f5); }
+.ita-prompt__title, .ita-quiz__title { margin: 0 0 var(--s-1, 8px); font-weight: 700; }
+.ita-prompt__text { margin: 0; padding: 0; background: transparent; border: 0; color: inherit; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ita-prompt__bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1, 8px); margin-top: var(--s-2, 16px); }
+.ita-prompt__status { min-height: 1.5em; font-weight: 600; color: var(--ita-ink); }
+
+.ita-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 16px; background: var(--primary-hover, #6648ec); color: var(--on-primary, #fff); border: 1px solid transparent; border-radius: var(--radius-ctl, 12px); font: inherit; font-weight: 600; cursor: pointer; transition: background-color var(--dur-fast, 150ms) var(--ease, ease); }
+.ita-btn:hover { background: var(--primary-active, #5a3de0); }
+.ita-prompt .ita-btn:focus-visible, .ita-q__choice input:focus-visible, .ita-checklist__label input:focus-visible, .ita-term:focus-visible, .ita-why summary:focus-visible, .ita-q__reveal summary:focus-visible { outline: 3px solid var(--focus, #5636d8); outline-offset: 2px; }
+
+.ita-quiz__list { margin: 0; padding-left: 1.25em; display: grid; gap: var(--s-3, 24px); }
+.ita-q__text { margin: 0 0 var(--s-1, 8px); font-weight: 600; }
+.ita-q__options { margin: 0 0 var(--s-1, 8px); padding-left: 1.5em; list-style: upper-alpha; }
+.ita-q__set { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 4px; }
+.ita-q__choice { display: flex; align-items: flex-start; gap: var(--s-1, 8px); min-height: 44px; padding: 8px 12px; background: var(--card, #fff); border: 1px solid var(--ita-line); border-radius: var(--radius-ctl, 12px); cursor: pointer; }
+.ita-q__choice input { flex: none; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--primary, #7357f5); }
+.ita-q__result { margin: var(--s-1, 8px) 0 0; min-height: 1.5em; padding-left: 12px; border-left: 4px solid transparent; font-weight: 600; }
+.ita-q[data-result="correct"] .ita-q__result { border-left-color: var(--teal, #16b8b0); }
+.ita-q[data-result="wrong"] .ita-q__result { border-left-color: var(--warning, #d98a20); }
+.ita-quiz__score { margin: var(--s-2, 16px) 0 0; min-height: 1.5em; font-weight: 700; }
+.ita-q__reveal summary, .ita-why summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; cursor: pointer; }
+.ita-q__reveal p { margin: 0 0 var(--s-1, 8px); }
+
+.ita-checklist__list { margin: 0; padding-left: 1.25em; }
+.ita-checklist__item { margin-bottom: var(--s-1, 8px); }
+.ita-checklist__label { display: flex; align-items: flex-start; gap: var(--s-1, 8px); min-height: 44px; padding: 8px 0; cursor: pointer; }
+.ita-checklist__label input { flex: none; width: 22px; height: 22px; margin: 0; accent-color: var(--primary, #7357f5); }
+.ita-checklist__label:has(input:checked) span { text-decoration: line-through; text-decoration-thickness: 1px; }
+.ita-checklist:has(.ita-checklist__label) .ita-checklist__list { list-style: none; padding-left: 0; }
+.ita-checklist__status { margin: var(--s-1, 8px) 0 0; font-weight: 600; min-height: 1.5em; }
+
+.ita-why[open] summary { margin-bottom: var(--s-1, 8px); }
+.ita-why summary { margin: 0; }
+.ita-why__body > :last-child { margin-bottom: 0; }
+
+.ita-term { border-bottom: 2px dotted var(--link, #5636d8); text-decoration: none; cursor: help; }
+.ita-tip { position: absolute; z-index: 50; max-width: min(20rem, calc(100vw - 16px)); padding: 8px 12px; background: var(--card, #fff); color: var(--ink, #17203a); border: 1px solid var(--muted, #61708d); border-radius: var(--radius-ctl, 12px); box-shadow: var(--shadow-card, 0 8px 24px rgb(0 0 0 / 0.2)); font-size: 0.9375rem; line-height: 1.4; }
+.ita-tip[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+	.ita-btn { transition: none; }
+}
