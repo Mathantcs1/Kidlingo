@@ -53,7 +53,7 @@ function ideatoapps_last_reviewed( int $post_id ): ?string {
  */
 function ideatoapps_reading_minutes( int $post_id ): int {
 	$text = (string) get_post_field( 'post_content', $post_id );
-	$text = (string) preg_replace( '/\[\/?[A-Za-z_][\w-]*(?:\s[^\]]*)?\]/', ' ', $text );
+	$text = preg_replace( '/\[\/?[A-Za-z_][\w-]*(?:\s[^\]]*)?\]/', ' ', $text ) ?? $text;
 	$text = html_entity_decode( wp_strip_all_tags( $text ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 	$words = preg_match_all( '/[\p{L}\p{N}]+(?:[\'\x{2019}-][\p{L}\p{N}]+)*/u', $text );
 	return max( 1, (int) ceil( (int) $words / IDEATOAPPS_WORDS_PER_MINUTE ) );
@@ -95,8 +95,8 @@ function ideatoapps_post_toc( string $html ): array {
 	}
 	$items = array();
 
-	$out = (string) preg_replace_callback(
-		'/<h2(?=[\s>])((?:"[^"]*"|\'[^\']*\'|[^\'">])*)>(.*?)<\/h2>/is',
+	$out = preg_replace_callback(
+		'/<h2(?=[\s>])((?:[^\'">]++|"[^"]*+"|\'[^\']*+\')*+)>(.*?)<\/h2>/is',
 		static function ( array $m ) use ( &$used, &$items ): string {
 			$text = trim( (string) preg_replace( '/\s+/u', ' ', html_entity_decode( wp_strip_all_tags( $m[2] ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ) );
 			if ( '' === $text ) {
@@ -107,7 +107,7 @@ function ideatoapps_post_toc( string $html ): array {
 				$items[] = array( 'id' => $own[1] . ( $own[2] ?? '' ) . ( $own[3] ?? '' ), 'text' => $text );
 				return $m[0];
 			}
-			$attrs = (string) preg_replace( '/\sid\s*=\s*(?:""|\'\')/i', '', $attrs ); // an empty id attribute is replaced.
+			$attrs = preg_replace( '/\sid\s*=\s*(?:""|\'\')/i', '', $attrs ) ?? $attrs; // an empty id attribute is replaced.
 			$base  = sanitize_title_with_dashes( remove_accents( $text ), '', 'display' );
 			$base  = trim( (string) preg_replace( '/%[0-9a-f]{2}/i', '', $base ), '-' ); // non-Latin text is percent-encoded: keep ids plain ASCII.
 			$base  = '' === $base ? 'section-' . ( count( $items ) + 1 ) : $base;
@@ -121,6 +121,9 @@ function ideatoapps_post_toc( string $html ): array {
 		},
 		$html
 	);
+	if ( ! is_string( $out ) ) { // a PCRE error must never blank the article: show it unchanged, without contents.
+		return array( 'html' => $html, 'items' => array() );
+	}
 	return array( 'html' => $out, 'items' => $items );
 }
 

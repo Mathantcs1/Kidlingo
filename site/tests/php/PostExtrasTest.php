@@ -89,6 +89,23 @@ final class PostExtrasTest extends SeoTestCase {
 		$this->assertSame( '<h2 id="50%">Half</h2><h2 data-note="a > b" class="c" id="quoted">Quoted</h2>', $result['html'] );
 	}
 
+	public function test_toc_survives_huge_opening_tags_and_never_blanks_the_content(): void {
+		$cases = array(
+			'20k chars of attributes' => '<h2 data-x="' . str_repeat( 'a', 20000 ) . '">Big</h2>',
+			'100k attributes'         => '<h2' . str_repeat( ' data-n="1"', 100000 ) . '>Many</h2>',
+			'gt in a value'           => '<h2 data-n="a > b">Gt</h2>',
+		);
+		foreach ( $cases as $name => $h2 ) {
+			$html   = '<p>Before</p>' . $h2 . '<p>After</p>';
+			$result = ideatoapps_post_toc( $html );
+			$this->assertSame( PREG_NO_ERROR, preg_last_error(), $name );
+			$this->assertStringContainsString( '<p>Before</p>', $result['html'], $name );
+			$this->assertStringContainsString( '<p>After</p>', $result['html'], $name );
+			$this->assertCount( 1, $result['items'], $name );
+			$this->assertStringContainsString( ' id="', $result['html'], $name );
+		}
+	}
+
 	public function test_read_next_prefers_the_same_category_then_newest_and_excludes_current_and_unpublished(): void {
 		$cat_a = wp_insert_term( 'Alpha', 'category' )['term_id'];
 		$cat_b = wp_insert_term( 'Beta', 'category' )['term_id'];
