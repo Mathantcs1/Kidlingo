@@ -1,0 +1,60 @@
+<!--ita {"slug":"30-memory-in-agents","title":"Memory in agents","category":"agents","excerpt":"How an agent remembers: the current context window plus saved notes your code stores and adds back. What to save, what to skip, and what fails.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["builders"],"check":["A language model keeps no information between separate requests; anything an agent remembers is text that the surrounding code saved and added to a later request.","An agent's short-term memory is what is in its current context window, while long-term memory is notes stored outside the model, such as in a file or database, and added back when needed.","Long-term memory is often retrieved by searching saved notes for the ones that match the current task, much like retrieval for documents.","Unless the code labels them, a model cannot tell a saved memory note from any other text in its context, and a wrong or outdated note can be repeated in every later session.","Instructions planted in saved notes or in content an agent stored can affect later sessions, so what gets written to memory should be checked."]} -->
+<p>A common mistake is to expect an agent to remember yesterday's work by itself. The model inside it keeps nothing between requests. Anything an agent "remembers" is text that your code saved and then added to a later request.</p>
+
+<h2>Two kinds of memory</h2>
+[ita_figure name="agent-memory" alt="An agent reads from and writes to short-term memory, the current chat, and long-term memory, saved notes it can find later." caption="Short-term memory is the current chat; long-term memory is saved notes, found when needed."]
+<p><strong>Short-term memory</strong> is what's in the context window right now: the instructions, the conversation, tool results and any notes added for this task. It's limited by the window's size, as "Context windows" explains.</p>
+<p><strong>Long-term memory</strong> is stored outside the model, in a file or a database. Your code finds the notes that matter and adds them to the window. Chat apps with a memory feature work the same way: saved notes are added to later chats.</p>
+<p>Builders often store three kinds of long-term notes:</p>
+<ul>
+<li><strong>Facts about the user</strong>, such as their courses or preferred language.</li>
+<li><strong>Records of past tasks</strong>: what was tried, what worked and what failed.</li>
+<li><strong>Working rules</strong> the user has stated, such as "always show times in 24-hour format".</li>
+</ul>
+<p>Short notes are usually added to every request. Larger collections are often searched, the same way RAG searches documents, and only the closest matches are added.</p>
+
+<h2>Deciding what to save</h2>
+<p>Say you're building a study helper agent for university students. It could save a lot: courses, exam dates, topics a student struggled with, and small remarks. Most of that shouldn't become permanent.</p>
+<p>A useful rule: the model suggests notes, and your code decides what is stored. Save only stable facts the user stated or confirmed, with a date and a source. Skip guesses about the user. Never save passwords or ID numbers. Store sensitive personal details only if the user clearly agreed. Give users a way to see and delete what's stored about them.</p>
+<p>You can ask the model to draft the notes at the end of a session with a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] like this:</p>
+[ita_prompt title="Memory-write rule"]
+Review this session and suggest notes to save for future sessions.
+Suggest a note only if the user stated or confirmed it, and it is likely to stay true for weeks.
+Write each note on one line, in this form:
+[date] | [fact] | source: user said / user confirmed
+Do not suggest guesses about the user, passwords, ID numbers, health details or anything the user asked you to forget.
+If nothing qualifies, reply: NO NEW NOTES
+Session:
+[session text]
+[/ita_prompt]
+
+<p>Before storing anything, check each line in code: the format, the source field, and a check for passwords, ID numbers and other blocked data.</p>
+
+<h2>Reading memory back</h2>
+<p>Old notes can cause new mistakes. Plan for these:</p>
+<ul>
+<li><strong>Stale notes.</strong> An exam moves, a course is dropped. Prefer the newest note, and let notes expire.</li>
+<li><strong>Wrong notes that repeat.</strong> A note saved by mistake is added to every later session until someone removes it.</li>
+<li><strong>Notes from the wrong person.</strong> Keep each user's memory separate, and filter by user before searching.</li>
+<li><strong>Planted instructions.</strong> Text an agent saved from a web page or email can contain instructions. Once stored, they can affect later sessions.</li>
+<li><strong>Too many notes.</strong> Every note takes space in the window. Cap how many are added per request.</li>
+</ul>
+[ita_why title="Memory is more text in the window"]
+<p>To the model, a memory note is just text. Unless your code labels it, the model can't tell a note from a message the user typed just now.</p>
+<p>Label notes clearly, with their date and source, so the model can judge their age. When a note and a new message disagree, the model needs a rule. Tell it in its instructions to prefer the newer message. Then ask the user before the note is updated.</p>
+[/ita_why]
+
+[ita_quiz]
+[ita_q q="An agent recalls a student's exam date from last week. Where did that come from?" answers="A saved note your code added to this request|The model's parameters, updated after the last chat|The context window, which keeps every past chat" correct="1" why="The model keeps nothing between requests; the date was stored outside it and added back."]
+[ita_q q="Which note is safest to save to long-term memory?" answers="The agent's guess that the student finds math hard|The student's confirmed course list, with the date|The student's password, so the agent can sign in for them" correct="2" why="A confirmed, dated fact is stable and checkable; guesses and passwords don't belong in memory."]
+[ita_q q="A saved note says the exam is on the 12th, but the student now says the 19th. What should the agent do?" answers="Keep the saved note, since stored memory is more reliable|Ask the model which date seems more likely|Use the newer date and update the note after the student confirms" correct="3" why="The newer statement from the user wins, and the stored note should be corrected so the error doesn't repeat."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>Use a sheet of paper for this one; no app is needed.</p>
+<ol>
+<li>Write the job of one agent you build or plan, in one line.</li>
+<li>List everything it might want to remember between sessions.</li>
+<li>Next to each item, write who confirms it, when it expires and who can see it.</li>
+<li>Draw a line through every item where you can't answer all three. Turn the rest into the fields of your memory note.</li>
+</ol>
