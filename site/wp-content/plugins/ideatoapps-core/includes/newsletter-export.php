@@ -1,6 +1,6 @@
 <?php
 /**
- * Owner export of the newsletter list: Tools > Newsletter list, one CSV download (manage_options + nonce).
+ * Owner export of the newsletter list: one CSV download of the CONFIRMED subscribers (manage_options + nonce). The Tools > Newsletter list page is in newsletter-admin.php.
  *
  * @package ideatoapps-core
  */
@@ -8,11 +8,12 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Stored subscribers, oldest first.
+ * Subscribers with a status, oldest first. Defaults to the confirmed ones: that is the only mailable list.
  *
- * @return array<int, array{email: string, consent_at: string}>
+ * @param string $status confirmed, pending, unsubscribed or all.
+ * @return array<int, array{id: int, email: string, consent_at: string, confirmed_at: string, status: string}>
  */
-function ita_subscribers() {
+function ita_subscribers( $status = 'confirmed' ) {
 	$ids  = get_posts(
 		array(
 			'post_type'      => 'ita_subscriber',
@@ -25,9 +26,16 @@ function ita_subscribers() {
 	);
 	$rows = array();
 	foreach ( $ids as $id ) {
+		$st = ideatoapps_subscriber_status( $id );
+		if ( 'all' !== $status && $st !== $status ) {
+			continue;
+		}
 		$rows[] = array(
-			'email'      => (string) get_post_meta( $id, 'email', true ),
-			'consent_at' => (string) get_post_meta( $id, 'consent_at', true ),
+			'id'           => (int) $id,
+			'email'        => (string) get_post_meta( $id, 'email', true ),
+			'consent_at'   => (string) get_post_meta( $id, 'consent_at', true ),
+			'confirmed_at' => (string) get_post_meta( $id, 'confirmed_at', true ),
+			'status'       => $st,
 		);
 	}
 	return $rows;
@@ -60,15 +68,15 @@ function ideatoapps_csv_line( $stream, array $cells ) {
 }
 
 /**
- * The list as CSV text (header email,consent_at).
+ * The confirmed list as CSV text (header email,consent_at,confirmed_at,status).
  *
  * @return string
  */
 function ita_subscribers_csv() {
 	$tmp = fopen( 'php://temp', 'w+' );
-	$csv = ideatoapps_csv_line( $tmp, array( 'email', 'consent_at' ) );
+	$csv = ideatoapps_csv_line( $tmp, array( 'email', 'consent_at', 'confirmed_at', 'status' ) );
 	foreach ( ita_subscribers() as $row ) {
-		$csv .= ideatoapps_csv_line( $tmp, array( ideatoapps_csv_safe( $row['email'] ), $row['consent_at'] ) );
+		$csv .= ideatoapps_csv_line( $tmp, array( ideatoapps_csv_safe( $row['email'] ), $row['consent_at'], $row['confirmed_at'], $row['status'] ) );
 	}
 	fclose( $tmp );
 	return $csv;
@@ -99,38 +107,3 @@ function ideatoapps_handle_export_subscribers() {
 	exit;
 }
 add_action( 'admin_post_ideatoapps_export_subscribers', 'ideatoapps_handle_export_subscribers' );
-
-/**
- * Tools > Newsletter list.
- */
-function ideatoapps_add_export_menu() {
-	add_management_page( __( 'Newsletter list', 'ideatoapps-core' ), __( 'Newsletter list', 'ideatoapps-core' ), 'manage_options', 'ideatoapps-newsletter', 'ideatoapps_render_export_page' );
-}
-add_action( 'admin_menu', 'ideatoapps_add_export_menu' );
-
-/**
- * Render the export page.
- */
-function ideatoapps_render_export_page() {
-	if ( ! current_user_can( 'manage_options' ) ) {
-		wp_die( esc_html__( 'You are not allowed to view this page.', 'ideatoapps-core' ), '', array( 'response' => 403 ) );
-	}
-	$count = count( ita_subscribers() );
-	?>
-	<div class="wrap">
-		<h1><?php esc_html_e( 'Newsletter list', 'ideatoapps-core' ); ?></h1>
-		<p>
-			<?php
-			/* translators: %d: number of stored addresses. */
-			echo esc_html( sprintf( _n( '%d address is stored on this site, each with the time the visitor gave consent.', '%d addresses are stored on this site, each with the time the visitor gave consent.', $count, 'ideatoapps-core' ), $count ) );
-			?>
-		</p>
-		<p><?php esc_html_e( 'No mail service is connected: nothing is sent from this site. Do not mail anyone from this list yet (launch gate G1): there is no unsubscribe link and no double opt-in, so sending marketing email would break anti-spam rules. Download the list only once both exist.', 'ideatoapps-core' ); ?></p>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<input type="hidden" name="action" value="ideatoapps_export_subscribers">
-			<?php wp_nonce_field( 'ideatoapps_export_subscribers' ); ?>
-			<?php submit_button( __( 'Download CSV', 'ideatoapps-core' ), 'primary', 'submit', false, $count ? array() : array( 'disabled' => 'disabled' ) ); ?>
-		</form>
-	</div>
-	<?php
-}

@@ -3,9 +3,18 @@ final class NewsletterTest extends WPTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$_SERVER['REMOTE_ADDR'] = '203.0.113.' . wp_rand( 1, 250 );
+		update_option( 'ideatoapps_newsletter_enabled', true );
+		add_filter( 'pre_wp_mail', '__return_true' ); // never send real mail.
+	}
+
+	/** A subscriber that already confirmed. */
+	private function confirmed( string $email ): int {
+		return (int) wp_insert_post( array( 'post_type' => 'ita_subscriber', 'post_status' => 'private', 'post_title' => $email, 'meta_input' => array( 'email' => $email, 'consent_at' => gmdate( 'c' ), 'status' => 'confirmed', 'confirmed_at' => gmdate( 'c' ) ) ) );
 	}
 
 	protected function tearDown(): void {
+		delete_option( 'ideatoapps_newsletter_enabled' );
+		remove_filter( 'pre_wp_mail', '__return_true' );
 		unset( $_SERVER['REMOTE_ADDR'] );
 		parent::tearDown();
 	}
@@ -33,14 +42,14 @@ final class NewsletterTest extends WPTestCase {
 	}
 
 	public function test_form_part_has_consent_nonce_and_promises_no_mail(): void {
+		update_option( 'ideatoapps_newsletter_enabled', true );
 		ob_start();
 		ideatoapps_part( 'newsletter' );
 		$html = (string) ob_get_clean();
 		$this->assertMatchesRegularExpression( '/<input[^>]+type="checkbox"[^>]+name="consent"[^>]+required/', $html );
 		$this->assertMatchesRegularExpression( '/data-nonce="[a-f0-9]{10}"/', $html );
 		$this->assertStringContainsString( 'type="email"', $html );
-		$this->assertStringNotContainsStringIgnoringCase( 'unsubscribe', $html );
-		$this->assertDoesNotMatchRegularExpression( '/\b(we will (send|email)|emails? (you|will)|newsletter is sent)\b/i', $html );
+		$this->assertDoesNotMatchRegularExpression( '/\b(weekly|daily|monthly|tips|newsletter is sent)\b/i', $html );
 		$this->assertDoesNotMatchRegularExpression( '/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/', $html );
 	}
 
@@ -109,10 +118,10 @@ final class NewsletterTest extends WPTestCase {
 	}
 
 	public function test_csv_export_has_header_rows_and_neutralises_formulas(): void {
-		$this->post( array( 'email' => 'one@example.com', 'consent' => true ) );
-		$this->post( array( 'email' => '+evil@example.com', 'consent' => true ) );
+		$this->confirmed( 'one@example.com' );
+		$this->confirmed( '+evil@example.com' );
 		$csv = ita_subscribers_csv();
-		$this->assertStringStartsWith( "email,consent_at\n", $csv );
+		$this->assertStringStartsWith( "email,consent_at,confirmed_at,status\n", $csv );
 		$this->assertStringContainsString( 'one@example.com,', $csv );
 		$this->assertStringNotContainsString( "\n+evil", $csv );
 		$this->assertStringContainsString( "'+evil@example.com", $csv );
@@ -122,7 +131,7 @@ final class NewsletterTest extends WPTestCase {
 		$src = (string) file_get_contents( IDEATOAPPS_CORE_DIR . 'includes/newsletter-export.php' );
 		// fputcsv() got its $eol argument in PHP 8.1; the plugin declares PHP 8.0.
 		$this->assertDoesNotMatchRegularExpression( '/fputcsv\s*\([^;]*"\\\\n"\s*\)/', $src );
-		$this->post( array( 'email' => 'a@example.com', 'consent' => true ) );
+		$this->confirmed( 'a@example.com' );
 		$csv = ita_subscribers_csv();
 		$this->assertStringNotContainsString( "\r", $csv );
 		$this->assertStringEndsWith( "\n", $csv );
@@ -145,8 +154,9 @@ final class NewsletterTest extends WPTestCase {
 		$html = (string) ob_get_clean();
 		$this->assertStringContainsString( 'Do not mail anyone from this list', $html );
 		$this->assertStringContainsString( 'G1', $html );
-		$this->assertStringContainsString( 'unsubscribe', $html );
 		$this->assertStringContainsString( 'double opt-in', $html );
+		$this->assertStringContainsString( 'unsubscribe link', $html );
+		$this->assertStringContainsString( 'no composer', $html );
 		$this->assertStringNotContainsString( 'to use it elsewhere', $html );
 	}
 }
