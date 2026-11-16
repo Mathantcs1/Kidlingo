@@ -1,25 +1,25 @@
-<!--ita {"slug":"11-prompting-with-examples","title":"Prompting with examples","category":"prompting","excerpt":"A few worked examples can show a chatbot the pattern you want. How to build input and output pairs, and why examples sometimes get copied too closely.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["workers-and-business-owners","creators"],"check":["Giving a model a few worked examples inside the prompt (often called few-shot prompting) usually helps it follow a format or pattern.","Models tend to copy surface features of the examples, such as length, word choice or a repeated ending, even when the prompt does not ask for them.","When examples and written instructions disagree, the examples can have more influence on the answer than the instruction.","Two or three varied examples are often enough to show a simple format; more varied examples help when the task has several kinds of cases.","Mistakes inside an example, such as a typo or a wrong detail, can be repeated in the output."]} -->
-<p>"Fixed leak under kitchen sink, new washer" becomes "Kitchen sink: repaired leak and replaced worn washer." Show a chatbot two or three pairs like that, and it will usually write the next one the same way.</p>
-<p>A worked example shows the pattern directly. A description of the pattern makes the chatbot guess what you meant by words like "short" or "professional".</p>
+<!--ita {"slug":"11-prompting-with-examples","title":"Prompting with examples","category":"prompting","excerpt":"A few worked examples can show a chatbot the pattern you want. How to build input and output pairs, and why examples sometimes get copied too closely.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["workers-and-business-owners","creators"],"check":["Giving a model a few worked examples inside the prompt (often called few-shot prompting) usually helps it follow a format or pattern.","Models tend to copy surface features of the examples, such as length, word choice or a repeated ending, even when the prompt does not ask for them, because the model cannot tell which features are intended.","When examples and written instructions disagree, the examples can have more influence on the answer than the instruction.","Two or three varied examples are often enough to show a simple format; more varied examples help when the task has several kinds of cases.","Mistakes inside an example, such as a typo or a wrong detail, can be repeated in the output."]} -->
+<p>"Fixed leak under kitchen sink, new washer" becomes "Kitchen sink: repaired leak and replaced washer." Show a chatbot two or three pairs like that, and it will usually write the next one the same way.</p>
 
 <h2>What an example shows that a description can't</h2>
-<p>An example in a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] carries a lot of information at once: the length, the word choice, the punctuation, and what gets left out. Writing all of that as rules would take a paragraph, and the chatbot could still read the rules differently from you.</p>
-<p>The earlier article on context showed that one line of your own writing helps a chatbot match your style. Examples go further. A pair of "before" and "after" shows a whole change, from rough input to finished output. The chatbot can then repeat that change on new input.</p>
-<p>Giving a few worked examples like this is often called [ita_term define="Putting a few worked examples of a task inside the prompt, so the model can follow the same pattern."]few-shot prompting[/ita_term]. You don't need the name to use it. You need examples you're happy with.</p>
+<p>An example in a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] carries a lot of information at once: the length, the word choice, the punctuation, and what gets left out. Writing all of that as rules would take a paragraph, and the chatbot could still read words like "short" or "professional" differently from you.</p>
+<p>"Give context, get better answers" shows how one line of your own writing helps a chatbot match your style. A pair of "before" and "after" shows more: a whole change, from rough input to finished output. The chatbot can then repeat that change on new input.</p>
+<p>Giving a few worked examples like this is often called [ita_term define="Putting a few worked examples of a task inside the prompt, so the model can follow the same pattern."]few-shot prompting[/ita_term]. Pick examples you were happy with when you sent them.</p>
 
 <h2>Build a set of input and output pairs</h2>
 <p>Here is a set a plumber might use to turn short job notes into lines on a customer's invoice:</p>
 [ita_prompt title="Job notes to invoice lines"]
-Turn each job note into one invoice line for the customer. Follow the pattern in the examples.
+Turn each job note into one invoice line for the customer. Follow the pattern in the examples. Use only facts that are in the note.
 
+(Example pairs: replace them with your own.)
 Note: fixed leak under kitchen sink, new washer
-Line: Kitchen sink: repaired leak and replaced worn washer.
+Line: Kitchen sink: repaired leak and replaced washer.
 
 Note: bathroom faucet dripping, replaced cartridge, tested
-Line: Bathroom faucet: replaced faulty cartridge and tested for leaks.
+Line: Bathroom faucet: replaced cartridge and tested for leaks.
 
 Note: outside drain slow, cleared roots
-Line: Outside drain: cleared blockage caused by tree roots.
+Line: Outside drain: cleared roots from the drain.
 
 Note: [paste your next job note here]
 Line:
@@ -27,24 +27,24 @@ Line:
 <p>A few habits make a set like this work:</p>
 <ul>
 <li><strong>Same labels every time.</strong> "Note" and "Line" appear in every pair, so the chatbot can see where input ends and output begins.</li>
-<li><strong>Real examples.</strong> Take them from past work you were happy with, and remove customer names and addresses first.</li>
-<li><strong>An empty output label at the end.</strong> The prompt finishes with the new note and a blank "Line:", so the next thing to write is obvious.</li>
+<li><strong>Real examples.</strong> Take them from past work, and remove customer names and addresses first.</li>
+<li><strong>An empty output label at the end.</strong> The prompt finishes with the new note and a blank "Line:", so the next thing to write is clear.</li>
 </ul>
 <h3>How many examples?</h3>
-<p>For a simple format, two or three are often enough. Add more when the task has several kinds of cases, such as repairs, installs and inspections. Each example should cover a different kind of case. Five nearly identical pairs teach less than three different ones.</p>
+<p>For a simple format, two or three are often enough. Add more when the task has several kinds of cases, such as repairs, installs and inspections. Each example should cover a different kind of case. Five nearly identical pairs usually teach less than three different ones.</p>
 
-<h2>When examples backfire</h2>
+<h2>When examples get copied too closely</h2>
 <p>A chatbot can't tell which parts of your examples are on purpose. It may copy all of them.</p>
-<p>Say you're a creator, and your three example captions all end with "What do you think?" New captions will probably end with that question too. If all three examples are about food, a caption about a hiking trip may still mention snacks. If one example has a typo, the typo can come back.</p>
+<p>Take a creator whose three example captions all end with "What do you think?" New captions will probably end with that question too. If all three examples are about food, a caption about a hiking trip may still mention snacks. If one example has a typo, the typo can come back.</p>
 <p>Three habits prevent most of it:</p>
 <ul>
 <li>Vary the examples in the ways you want the output to vary: topic, length, mood.</li>
 <li>Say in words which parts are fixed and which are free. For example: "Every caption names the place. The question at the end is optional."</li>
-<li>Check that your examples follow your own rules. If the instruction says "under 15 words" and an example has 25, the example often wins.</li>
+<li>Check that your examples follow your own rules. If the instruction says "under 15 words" and an example has 25, the example can win.</li>
 </ul>
-[ita_why title="Why does the chatbot copy details you didn't mean?"]
+[ita_why title="How examples pull the answer toward them"]
 <p>A language model writes by predicting likely text, based on everything in the conversation. Your examples are strong evidence of what "likely" means for this task.</p>
-<p>The model has no way to know that the repeated question was a coincidence or that every example being about food was an accident. From where it sits, those are part of the pattern. That's why a written note such as "the topic changes every time" helps: it tells the model which features to ignore.</p>
+<p>The model has no way to know that the repeated question was a coincidence, or that every example being about food was an accident. It treats both as part of the pattern. A written note such as "the topic changes every time" tells the model which features to ignore.</p>
 [/ita_why]
 
 [ita_quiz]
@@ -54,11 +54,10 @@ Line:
 [/ita_quiz]
 
 <h2>Try it</h2>
-<p>Build an example set from work you've already finished.</p>
+<p>Build an example set with a coworker or friend who writes the same kind of text.</p>
 <ol>
-<li>Find three finished pieces of one kind: captions you posted, replies to customers, or short product labels.</li>
-<li>For each one, write the rough input it came from, such as the quick notes or the idea before you polished it.</li>
-<li>Check that the three differ in the ways future ones will differ. Swap one out if two are too alike.</li>
-<li>Paste them as pairs in the pattern above, with your next rough input and an empty label at the end.</li>
-<li>Save the pairs in a note named after the task, so next time you only add the new input.</li>
+<li>Ask them for three finished pieces of one kind, such as replies to customers or captions. Remove names, and use work text only if your workplace allows it.</li>
+<li>Together, write the rough note each piece came from.</li>
+<li>Paste them as pairs in the pattern above, ending with a new rough note of theirs and an empty label.</li>
+<li>Show them the result and ask what they would change. Add their answer as a written rule above the pairs.</li>
 </ol>

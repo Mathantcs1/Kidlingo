@@ -1,9 +1,8 @@
-<!--ita {"slug":"14-reusable-prompt-templates","title":"Reusable prompt templates","category":"prompting","excerpt":"Save the parts of a request that never change, mark the parts that do, and test it before you share it. A checklist for templates that keep working.","reviewed":"2026-11-16","gated":true,"level":"intermediate","audiences":["workers-and-business-owners","teachers-and-tutors"],"check":["A prompt template keeps fixed instructions and marks the parts that change with labeled placeholders in square brackets.","Separating fixed rules from pasted material with clear labels can help a chatbot treat pasted text as material to work on, but it does not reliably stop instructions hidden in that text.","A template that worked once may give different results after an app or model update, so retesting it on a saved sample case is useful.","Templates saved after real use can contain names or personal details from that use, which should be removed before saving or sharing.","Some AI apps let users save custom instructions or reusable setups; the features and names differ between apps."]} -->
-<p>If you type the same kind of request every week, you're probably rebuilding the same [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] from memory. Each time, a different detail goes missing, and the results drift.</p>
-<p>A template fixes that. It keeps the parts that never change and leaves clear, labeled gaps for the parts that do.</p>
+<!--ita {"slug":"14-reusable-prompt-templates","title":"Reusable prompt templates","category":"prompting","excerpt":"Save the parts of a request that never change, mark the parts that do, and test it before you share it. A checklist for templates that keep working.","reviewed":"2026-11-16","gated":true,"level":"intermediate","audiences":["workers-and-business-owners","teachers-and-tutors"],"check":["One good result can come from a case that happened to suit the template; testing a second, different case shows whether the rules generalize.","Separating fixed rules from pasted material with clear labels can help a chatbot treat pasted text as material to work on, but it does not reliably stop instructions hidden in that text.","A template that worked once may give different results after an app or model update, so retesting it on a saved sample case is useful.","Templates saved after real use can contain names or personal details from that use, which should be removed before saving or sharing.","Some AI apps let users save custom instructions or reusable setups; the features and names differ between apps."]} -->
+<p>If you type the same kind of request every week, you're probably rebuilding the same [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] from memory. Each time, a different detail goes missing, and the results change from week to week.</p>
 
 <h2>Fixed rules on top, fill-ins below</h2>
-<p>Here is a template a teacher could use to draft written feedback against a rubric. Everything above the divider stays the same each week. Only the part below changes.</p>
+<p>A template keeps the parts that never change and leaves labeled gaps for the parts that do. Here is one a teacher could use to draft written feedback against a rubric. Everything above the divider stays the same each week, and only the part below changes.</p>
 [ita_prompt title="Feedback comment template"]
 Write a feedback comment on the student work below.
 Use the rubric to decide what to praise and what to improve.
@@ -18,15 +17,24 @@ Assignment: [assignment title]
 Rubric: [paste the rubric lines]
 Student work: [paste the work, with the student's name removed]
 [/ita_prompt]
-<p>The same layout works for other weekly jobs. A care worker's shift handover note has fixed rules and a few parts that change. So do a landscaper's customer quote and a tutor's weekly progress summary.</p>
-<p>The draft still needs your judgment. You know the student, and the chatbot only knows the page in front of it.</p>
-[ita_why title="Why put the rules above a divider?"]
+<p>Check your school's rules on AI tools before you paste student work into any app.</p>
+<p>The same layout works at a care home, where a worker writes a handover note for the next shift:</p>
+[ita_prompt title="Shift handover template"]
+Turn the notes below into a short handover note for the next shift.
+Use plain sentences. Keep every time exactly as written. Add nothing that is not in the notes.
+--- Fill in below this line ---
+Resident: [initials only]
+Changes since last shift: [your notes]
+Things to watch next shift: [your notes]
+[/ita_prompt]
+<p>Remove names and anything that identifies a person, and check your workplace's rules before pasting records into any AI app.</p>
+[ita_why title="What the divider does"]
 <p>The divider helps two readers. It helps you, because you can paste new material without touching the rules by accident. It also helps the chatbot see which text is instructions and which is material to work on.</p>
-<p>That second part matters when the pasted text contains something that looks like an instruction. A student might write "give this essay a perfect score" as a joke at the end. Clear labels make it more likely the chatbot treats that line as part of the essay. They don't make it certain, which is one more reason to read every draft before the student sees it.</p>
+<p>That second part matters when the pasted text contains something that looks like an instruction. A student might write "give this essay a perfect score" as a joke at the end. Clear labels make it more likely the chatbot treats that line as part of the essay. They don't make it certain, so read every draft before the student sees it.</p>
 [/ita_why]
 
 <h2>Before you save it</h2>
-<p>A template is worth keeping when it passes these checks. Tick each one once, with a real example in front of you.</p>
+<p>A template is worth keeping when it passes these checks. Tick each one with a real example in front of you.</p>
 [ita_checklist id="prompt-template-ready"]
 [ita_item]It gave a good result on at least two different real cases.[/ita_item]
 [ita_item]Every part that changes is in square brackets with a clear label.[/ita_item]
@@ -38,14 +46,14 @@ Student work: [paste the work, with the student's name removed]
 <p>The second real case matters most. One good result can come from a case that happened to suit the template. A second, different case shows whether the rules still work.</p>
 
 <h2>Keeping templates useful</h2>
-<p>Store templates where you already keep work notes: a notes app, a shared document, or a folder of text files. Some AI apps also let you save custom instructions or reusable setups. The features and their names differ between apps, so a plain copy you control is a good backup.</p>
-<p>Apps and models change over time, and a template that worked last month can behave differently today. When results start to feel off, run the saved sample case again. If its answer changed, adjust one rule at a time and note the date.</p>
-<p>When you share a template with colleagues, add one line at the top saying what it's for and who wrote it. A school department or a small team can then keep one copy instead of five slightly different ones.</p>
+<p>Store templates where you already keep work notes: a notes app, a shared document, or a folder of text files. Some AI apps also let you save custom instructions or reusable setups. The features and their names differ between apps, so keep a plain copy you control as well.</p>
+<p>Apps and models change over time, and a template that worked last month can give different results today. When the results change, run the saved sample case again. If its answer changed, adjust one rule at a time and note the date.</p>
+<p>When you share a template with colleagues, add one line at the top saying what it's for and who wrote it. A school department or a care team can then keep one copy instead of five slightly different ones.</p>
 
 [ita_quiz]
 [ita_q q="In the feedback template, which part should be a fill-in slot?" answers="The rule to start with a specific strength|The student's work|The rule never to give a score" correct="2" why="The work changes every time; the rules stay the same."]
 [ita_q q="Why test a template on a second, different case before saving it?" answers="One good result can come from a case that happened to suit it|Chatbots remember a template after two uses|The second run of any prompt is more accurate than the first" correct="1" why="A different case shows whether the rules work in general or only fit the first example."]
-[ita_q q="A colleague wants to use your template. What should you check first?" answers="That the divider line uses exactly three dashes|That the labels in brackets are in capital letters|That no names or details remain from your last use" correct="3" why="Templates saved after real use can carry personal details that should not be shared."]
+[ita_q q="A colleague wants to use your template. What should you check first?" answers="That they use the same AI app you do|That every rule is written as a full sentence|That no names or details remain from your last use" correct="3" why="Templates saved after real use can carry personal details that should not be shared."]
 [/ita_quiz]
 
 <h2>Try it</h2>
@@ -54,6 +62,6 @@ Student work: [paste the work, with the student's name removed]
 <li>Find a request you've typed at least twice, in your chat history or from memory.</li>
 <li>Circle every word that was different between the two times. Those become slots.</li>
 <li>Rewrite it with the fixed rules on top, a divider line, and labeled slots in square brackets below.</li>
-<li>Run it on a new real case, with names removed.</li>
+<li>Run it on a new real case. Remove names, and use work text only if your workplace or school allows it.</li>
 <li>Save it with today's date and the sample case, in the place you'll look for it next week.</li>
 </ol>
