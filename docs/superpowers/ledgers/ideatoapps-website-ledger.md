@@ -187,3 +187,11 @@ Rebased onto origin fix round 2 (c1da28e). Status per item (details and RED/GREE
 - Ruling: the HMAC input is prefixed `ideatoapps-newsletter|` (domain separation) and token regexes anchor with `\z`, so a trailing newline is not accepted.
 - Tests: handler-level refusals (editor, bad nonce => wp_die 403, nothing deleted) for bulk delete and export; the pre_wp_mail closure is removed in tearDown; the hostile-token assertion now checks the markup never contains it. Mutation checks (each failed the suite, reverted): send synchronously, can_export true, sign-up flips status, bulk-delete and export capability/nonce checks removed (run aborts), form action restored.
 - Deferred minors: M4 duplicate rows from two concurrent first sign-ups for one address (no unique key on the email meta; the CSV would list it twice, harmless to opt-out because unsubscribe/confirm act on the row id and erasure removes every row for the address).
+
+### Newsletter opt-in: second review round (local commits only)
+
+- Ruling: the handler tests must fail loudly. `die_throws()` also trips a `LogicException('handler proceeded')` on `wp_redirect` and `pre_get_posts` (the points after the checks in the bulk-delete and export handlers; `nocache_headers()` returns early in CLI so it cannot be the tripwire), and removes its hooks in tearDown. Removing the capability check or the nonce check in either handler now gives a PHPUnit error with all 13 tests still run, instead of a silent `exit`.
+- Ruling: each queued confirmation in the shutdown flush is wrapped in `try/catch Throwable`; a throwing mailer counts one failure (no address) and the remaining mails still go.
+- Ruling: unsubscribing deletes `resubscribe_requested_at`, so an opt-out withdraws any earlier comeback request and an old confirm link cannot re-confirm.
+- Ruling: the shutdown-hook test removes the hook in setUp so only the code under test can have registered it.
+- Deferred minors: (2) the identical-timing property only holds where `fastcgi_finish_request` / `litespeed_finish_request` exist; (6) the hostile-token test only proves the token is never echoed (the form no longer embeds it); (7) token format changed with the HMAC domain prefix and `\z` (harmless while the feature is off and no link has been mailed).

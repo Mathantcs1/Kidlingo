@@ -90,11 +90,31 @@ final class NewsletterPrivacyTest extends WPTestCase {
 		$this->assertStringContainsString( 'no composer', $html );
 	}
 
-	/** Make wp_die() throw so the handlers' refusals can be asserted. */
+	/** @var array<int, array{0: string, 1: callable, 2: string}> Hooks added by die_throws(), removed in tearDown. */
+	private array $tripwires = array();
+
+	protected function tearDown(): void {
+		foreach ( $this->tripwires as list( $hook, $fn ) ) {
+			remove_filter( $hook, $fn, 10 );
+		}
+		$this->tripwires = array();
+		parent::tearDown();
+	}
+
+	/** Make wp_die() throw so the handlers' refusals can be asserted, and trip loudly if a handler goes on past a missing check. */
 	private function die_throws(): void {
-		add_filter( 'wp_die_handler', static fn() => static function ( $message, $title = '', $args = array() ) {
+		$die       = static fn() => static function ( $message, $title = '', $args = array() ) {
 			throw new RuntimeException( 'wp_die ' . ( is_array( $args ) ? ( $args['response'] ?? '' ) : '' ) );
-		} );
+		};
+		// A missing check lets the handler redirect / read the list for the CSV and then exit (which would silently stop PHPUnit).
+		// (nocache_headers() returns early once output has started, so it is not a usable tripwire.)
+		$proceeded = static function () {
+			throw new LogicException( 'handler proceeded' );
+		};
+		foreach ( array( array( 'wp_die_handler', $die ), array( 'wp_redirect', $proceeded ), array( 'pre_get_posts', $proceeded ) ) as list( $hook, $fn ) ) {
+			add_filter( $hook, $fn );
+			$this->tripwires[] = array( $hook, $fn );
+		}
 	}
 
 	#[\PHPUnit\Framework\Attributes\DataProvider( 'handlerCases' )]

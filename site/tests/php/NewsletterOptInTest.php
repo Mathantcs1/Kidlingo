@@ -22,6 +22,7 @@ final class NewsletterOptInTest extends WPTestCase {
 		};
 		add_filter( 'pre_wp_mail', $this->capture, 10, 2 );
 		$GLOBALS['ideatoapps_newsletter_queue'] = array();
+		remove_action( 'shutdown', 'ideatoapps_newsletter_flush_queue' ); // so a registration seen below was made by the code under test.
 	}
 
 	protected function tearDown(): void {
@@ -193,6 +194,37 @@ final class NewsletterOptInTest extends WPTestCase {
 		$this->assertSame( '', (string) get_post_meta( $id, 'unsubscribed_at', true ) );
 		$this->assertSame( '', (string) get_post_meta( $id, 'resubscribe_requested_at', true ) );
 		$this->assertCount( 1, ita_subscribers() );
+	}
+
+	public function test_a_throwing_mailer_is_counted_without_the_address_and_the_other_queued_mails_still_go(): void {
+		$a = $this->make( 'pending', 'a@example.com' );
+		$b = $this->make( 'pending', 'b@example.com' );
+		$thrower = static function ( $short, $atts ) {
+			if ( in_array( 'a@example.com', (array) $atts['to'], true ) ) {
+				throw new RuntimeException( 'smtp exploded for a@example.com' );
+			}
+			return null;
+		};
+		add_filter( 'pre_wp_mail', $thrower, 5, 2 );
+		$GLOBALS['ideatoapps_newsletter_queue'] = array( $a, $b );
+		ideatoapps_newsletter_flush_queue();
+		remove_filter( 'pre_wp_mail', $thrower, 5 );
+		$this->assertCount( 1, $this->mails, 'the second mail was still sent' );
+		$this->assertSame( array( 'b@example.com' ), (array) $this->mails[0]['to'] );
+		$this->assertSame( '', (string) get_post_meta( $a, 'confirmation_sent_at', true ) );
+		$this->assertNotSame( '', (string) get_post_meta( $b, 'confirmation_sent_at', true ) );
+		$this->assertStringNotContainsString( 'a@example.com', ideatoapps_newsletter_mail_failure_notice() . wp_json_encode( get_option( 'ideatoapps_newsletter_mail_failed_at' ) ) );
+	}
+
+	public function test_an_old_confirm_link_cannot_re_confirm_after_an_unsubscribe_even_if_a_comeback_was_once_requested(): void {
+		$id = $this->make( 'confirmed', 'a@example.com' );
+		$cq = $this->query( $id, 'confirm' );
+		$uq = $this->query( $id, 'unsubscribe' );
+		update_post_meta( $id, 'resubscribe_requested_at', gmdate( 'c' ) ); // left over from an earlier request.
+		$this->page( 'POST', $uq, array( 'ita_do' => 'unsubscribe' ) );
+		$this->assertSame( '', (string) get_post_meta( $id, 'resubscribe_requested_at', true ), 'unsubscribing withdraws any comeback request' );
+		$this->assertSame( 400, $this->page( 'POST', $cq, array( 'ita_do' => 'confirm' ) )['status'] );
+		$this->assertSame( 'unsubscribed', get_post_meta( $id, 'status', true ) );
 	}
 
 	public function test_the_confirmation_is_sent_after_the_response_not_during_it(): void {

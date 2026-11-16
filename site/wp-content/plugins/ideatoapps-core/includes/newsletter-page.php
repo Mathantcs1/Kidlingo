@@ -68,6 +68,7 @@ function ideatoapps_newsletter_page_response( $method, array $query, array $post
 	if ( 'unsubscribed' !== $status ) {
 		update_post_meta( $id, 'status', 'unsubscribed' );
 		update_post_meta( $id, 'unsubscribed_at', gmdate( 'c' ) );
+		delete_post_meta( $id, 'resubscribe_requested_at' ); // an opt-out withdraws any earlier comeback request.
 	}
 	return $out( 200, 'unsubscribed' );
 }

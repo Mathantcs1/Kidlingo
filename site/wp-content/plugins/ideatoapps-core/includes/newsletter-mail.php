@@ -57,9 +57,16 @@ function ideatoapps_newsletter_send_confirmation( $id ) {
 		delete_option( 'ideatoapps_newsletter_mail_failures' );
 		return true;
 	}
+	ideatoapps_newsletter_record_failure();
+	return false;
+}
+
+/**
+ * Count one failed confirmation (never with the address).
+ */
+function ideatoapps_newsletter_record_failure() {
 	update_option( 'ideatoapps_newsletter_mail_failures', (int) get_option( 'ideatoapps_newsletter_mail_failures', 0 ) + 1, false );
 	update_option( 'ideatoapps_newsletter_mail_failed_at', gmdate( 'c' ), false );
-	return false;
 }
 
 /**
@@ -91,7 +98,11 @@ function ideatoapps_newsletter_flush_queue() {
 	}
 	ignore_user_abort( true );
 	foreach ( $ids as $id ) {
-		ideatoapps_newsletter_send_confirmation( $id );
+		try {
+			ideatoapps_newsletter_send_confirmation( $id );
+		} catch ( \Throwable $e ) { // a broken mailer must not stop the other queued mails; the message may hold an address, so only count it.
+			ideatoapps_newsletter_record_failure();
+		}
 	}
 }
 
