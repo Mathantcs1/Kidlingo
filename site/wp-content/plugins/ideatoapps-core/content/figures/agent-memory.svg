@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 256">
+<title>Short-term and long-term memory</title>
+<desc>An agent in the middle reads from and writes to two places: short-term memory, which is the current chat, and long-term memory, which is saved notes it can look up later.</desc>
+<g stroke-width="2">
+<rect x="130" y="10" width="220" height="52" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="20" y="140" width="205" height="100" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="255" y="140" width="205" height="100" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<path d="M190 62L122 138" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M122 138L124.5 125.5L134.2 134.1Z" fill="var(--ita-fig-line)"/>
+<path d="M190 62L187.5 74.5L177.8 65.9Z" fill="var(--ita-fig-line)"/>
+<path d="M290 62L358 138" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M358 138L345.8 134.1L355.5 125.5Z" fill="var(--ita-fig-line)"/>
+<path d="M290 62L302.2 65.9L292.5 74.5Z" fill="var(--ita-fig-line)"/>
+</g>
+<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="240" y="41">Agent</text>
+<text x="122.5" y="159" font-weight="600">Short-term</text>
+<text x="122.5" y="183">the current chat</text>
+<text x="122.5" y="207">limited by the</text>
+<text x="122.5" y="231">context window</text>
+<text x="357.5" y="159" font-weight="600">Long-term</text>
+<text x="357.5" y="183">saved notes</text>
+<text x="357.5" y="207">looked up when</text>
+<text x="357.5" y="231">needed</text>
+</g>
+</svg>

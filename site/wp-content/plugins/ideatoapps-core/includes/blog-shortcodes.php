@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 require_once __DIR__ . '/blog-quiz.php';
 require_once __DIR__ . '/blog-checklist.php';
+require_once __DIR__ . '/blog-figures.php';
 
 /**
  * Plain text from an attribute or shortcode body: no tags, decoded entities, collapsed whitespace, length-capped.
@@ -98,23 +99,18 @@ function ideatoapps_blog_prompt( $atts, $content = '' ): string {
  */
 function ideatoapps_blog_why( $atts, $content = '' ): string {
 	$atts = ideatoapps_blog_atts( $atts, array( 'title' => '' ), 'ita_why' );
+	$html = is_string( $content ) ? do_shortcode( $content ) : ''; // nested shortcodes first, then everything is filtered.
+	$held = ideatoapps_blog_figures_hold( $html ); // figures (inline SVG) would not survive wp_kses; they are already sanitised.
 	$body = wp_kses(
-		is_string( $content ) ? do_shortcode( $content ) : '', // nested shortcodes first, then everything is filtered.
+		$html,
 		array(
 			'abbr'   => array( 'class' => true, 'data-testid' => true, 'tabindex' => true, 'title' => true ),
 			'a'      => array( 'href' => true ),
-			'strong' => array(),
-			'em'     => array(),
-			'b'      => array(),
-			'i'      => array(),
-			'code'   => array(),
-			'br'     => array(),
-			'p'      => array(),
-			'ul'     => array(),
-			'ol'     => array(),
-			'li'     => array(),
+			'strong' => array(), 'em' => array(), 'b' => array(), 'i' => array(), 'code' => array(), 'br' => array(),
+			'p'      => array(), 'ul' => array(), 'ol' => array(), 'li' => array(),
 		)
 	);
+	$body = ideatoapps_blog_figures_restore( $body, $held );
 	if ( '' === trim( wp_strip_all_tags( $body ) ) ) {
 		return '';
 	}
@@ -173,7 +169,7 @@ function ideatoapps_blog_assets_needed(): bool {
 	if ( 'post' === $post->post_type ) {
 		return true;
 	}
-	foreach ( array( 'ita_prompt', 'ita_quiz', 'ita_q', 'ita_checklist', 'ita_item', 'ita_why', 'ita_term' ) as $tag ) {
+	foreach ( array( 'ita_prompt', 'ita_quiz', 'ita_q', 'ita_checklist', 'ita_item', 'ita_why', 'ita_term', 'ita_figure' ) as $tag ) {
 		if ( has_shortcode( $post->post_content, $tag ) ) {
 			return true;
 		}

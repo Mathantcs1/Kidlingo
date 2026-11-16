@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280">
+<title>The evaluation loop</title>
+<desc>Test questions are run through the agent, the results are scored, one thing is changed, and the tests run again to see whether the score improved.</desc>
+<g stroke-width="2">
+<rect x="10" y="20" width="136" height="52" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="172" y="20" width="136" height="52" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
+<rect x="334" y="20" width="136" height="52" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<path d="M146 46L170 46" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M170 46L159 52.5L159 39.5Z" fill="var(--ita-fig-line)"/>
+<path d="M308 46L332 46" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M332 46L321 52.5L321 39.5Z" fill="var(--ita-fig-line)"/>
+<rect x="172" y="150" width="136" height="52" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
+<path d="M402 72L402 176L310 176" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M310 176L321 169.5L321 182.5Z" fill="var(--ita-fig-line)"/>
+<path d="M240 150L240 74" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M240 74L246.5 85L233.5 85Z" fill="var(--ita-fig-line)"/>
+</g>
+<g font-size="20" text-anchor="middle" fill="var(--ita-fig-ink)">
+<text x="78" y="39" font-weight="600">Test set</text>
+<text x="78" y="63">questions</text>
+<text x="240" y="39" font-weight="600">Run agent</text>
+<text x="240" y="63">answers</text>
+<text x="402" y="39" font-weight="600">Score</text>
+<text x="402" y="63">grade them</text>
+<text x="240" y="169" font-weight="600">Change</text>
+<text x="240" y="193">one thing</text>
+<text x="250" y="118" text-anchor="start" font-size="18" fill="var(--ita-fig-muted)">run again</text>
+<text x="240" y="244" font-size="18" fill="var(--ita-fig-muted)">Change one thing at a time.</text>
+</g>
+</svg>

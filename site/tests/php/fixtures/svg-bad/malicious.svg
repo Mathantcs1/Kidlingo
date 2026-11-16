@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10" onload="alert(1)">
+<script>alert(1)</script>
+<foreignObject><div xmlns="http://www.w3.org/1999/xhtml">hi</div></foreignObject>
+<image href="data:image/png;base64,AAAA"/>
+<a xlink:href="https://evil.example/x"><rect width="5" height="5" onclick="x()"/></a>
+</svg>

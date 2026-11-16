@@ -1,0 +1,38 @@
+/* Colours for the blog's original SVG art (figures and heroes), dark by default and light under [data-theme="light"].
+   Text in figures uses --ita-fig-ink on --ita-fig-bg or on a soft fill --ita-fig-N (7.5:1 and 5.6:1 or better, both themes);
+   arrows and outlines use --ita-fig-line and the -s strokes (3:1 or better). */
+:root {
+	--ita-fig-bg: var(--bg-alt, #111c46);
+	--ita-fig-ink: #eef1fb;
+	--ita-fig-muted: #a9b4d0;
+	--ita-fig-line: #8fa0d0;
+	--ita-fig-1: #4a3aa8; --ita-fig-2: #1f4fa8; --ita-fig-3: #0f6a6e; --ita-fig-4: #7a5210; --ita-fig-5: #8a2f5c;
+	--ita-fig-1-s: #a898ff; --ita-fig-2-s: #78a9ff; --ita-fig-3-s: #3fd4cb; --ita-fig-4-s: #f0b040; --ita-fig-5-s: #f58ab5;
+	--ita-hero-bg: #14185a; --ita-hero-1: #7357f5; --ita-hero-2: #367cf5; --ita-hero-3: #b2a4ff;
+}
+:root[data-theme="light"] {
+	--ita-fig-bg: var(--bg-alt, #eef2fc);
+	--ita-fig-ink: #17203a;
+	--ita-fig-muted: #536079;
+	--ita-fig-line: #55658a;
+	--ita-fig-1: #ddd5ff; --ita-fig-2: #d3e4ff; --ita-fig-3: #c5f0ec; --ita-fig-4: #fbe5bf; --ita-fig-5: #fbd5e5;
+	--ita-fig-1-s: #5636d8; --ita-fig-2-s: #1f5fd1; --ita-fig-3-s: #0b7f79; --ita-fig-4-s: #9a5a00; --ita-fig-5-s: #b8326e;
+	--ita-hero-bg: #e9e5ff; --ita-hero-1: #7357f5; --ita-hero-2: #5b9bf8; --ita-hero-3: #b8aaff;
+}
+
+.ita-hero--prompting { --ita-hero-bg: #0d2a4a; --ita-hero-1: #16b8b0; --ita-hero-2: #7357f5; --ita-hero-3: #8ee3dc; }
+.ita-hero--llms { --ita-hero-bg: #121f5c; --ita-hero-1: #367cf5; --ita-hero-2: #7ea6ff; --ita-hero-3: #a898ff; }
+.ita-hero--agents { --ita-hero-bg: #2a1f4a; --ita-hero-1: #d98a20; --ita-hero-2: #16b8b0; --ita-hero-3: #f0b040; }
+.ita-hero--work-and-learning { --ita-hero-bg: #0e2d3a; --ita-hero-1: #16b8b0; --ita-hero-2: #4cc38a; --ita-hero-3: #f0b040; }
+.ita-hero--safety-and-judgment { --ita-hero-bg: #331a3f; --ita-hero-1: #f58ab5; --ita-hero-2: #7357f5; --ita-hero-3: #ffc2da; }
+:root[data-theme="light"] .ita-hero--prompting { --ita-hero-bg: #dcf5f2; --ita-hero-1: #16b8b0; --ita-hero-2: #7357f5; --ita-hero-3: #7fded6; }
+:root[data-theme="light"] .ita-hero--llms { --ita-hero-bg: #dde9ff; --ita-hero-1: #367cf5; --ita-hero-2: #6f9bff; --ita-hero-3: #9a8cff; }
+:root[data-theme="light"] .ita-hero--agents { --ita-hero-bg: #fdecd0; --ita-hero-1: #d98a20; --ita-hero-2: #16b8b0; --ita-hero-3: #f0b040; }
+:root[data-theme="light"] .ita-hero--work-and-learning { --ita-hero-bg: #dbf3ea; --ita-hero-1: #16b8b0; --ita-hero-2: #4cc38a; --ita-hero-3: #f0b040; }
+:root[data-theme="light"] .ita-hero--safety-and-judgment { --ita-hero-bg: #fbe0ec; --ita-hero-1: #f06a9e; --ita-hero-2: #7357f5; --ita-hero-3: #ffb3d1; }
+
+.ita-hero { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+
+.ita-figure { margin: var(--s-3, 24px) 0; padding: var(--s-2, 16px); background: var(--ita-fig-bg); border: 1px solid var(--line, #dfe5f4); border-radius: var(--radius-card, 16px); color: var(--ita-fig-ink); }
+.ita-figure svg { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto; font-family: inherit; }
+.ita-figure figcaption { margin: var(--s-1, 8px) auto 0; max-width: 560px; color: var(--ita-fig-muted); font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
