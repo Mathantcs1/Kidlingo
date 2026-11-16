@@ -1,0 +1,50 @@
+/* Single blog post: hero, reading progress, table of contents, "Read next". Solid colours from the theme tokens (dark and light). */
+.post { --post-offset: 96px; /* sticky header (72px + border) plus breathing room */ position: relative; }
+.post .breadcrumb, .post-hero { max-width: 780px; }
+.post-hero { margin-bottom: var(--s-4); }
+.post-hero h1 { margin-bottom: var(--s-2); font-size: clamp(2rem, 1.5rem + 2vw, 3rem); }
+.post-chip { display: inline-block; margin: 0 0 var(--s-2); padding: 4px 12px; background: var(--bg-alt); color: var(--link); border: 1px solid var(--line); border-radius: 999px; font-size: 0.875rem; font-weight: 700; letter-spacing: 0.02em; }
+.post-byline { margin: 0 0 var(--s-2); color: var(--muted); font-size: 0.9375rem; overflow-wrap: anywhere; }
+.post-byline p { margin: 0; }
+.post-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 var(--s-3); }
+.post-meta > span + span::before { content: "\00b7"; content: "\00b7" / ""; margin-right: 12px; }
+.post-hero__media { margin-top: var(--s-3); }
+.post-hero__media img, .post-hero__media svg { display: block; width: 100%; height: auto; border-radius: var(--radius-card); }
+
+/* Layout: one column on phones (contents first, then text), text plus sticky contents on desktop. */
+.post-layout { display: grid; gap: var(--s-3); grid-template-columns: minmax(0, 1fr); }
+.post-body { min-width: 0; }
+.post-body h2 { scroll-margin-top: var(--post-offset); }
+.post-body :target { scroll-margin-top: var(--post-offset); }
+
+.post-toc { min-width: 0; padding: 0 var(--s-2); background: var(--bg-alt); border: 1px solid var(--line); border-radius: var(--radius-card); }
+.post-toc__title { display: none; }
+.post-toc summary { display: flex; align-items: center; min-height: 48px; font-weight: 700; cursor: pointer; }
+.post-toc summary:focus-visible { outline-offset: 2px; }
+.post-toc__list { margin: 0; padding: 0 0 var(--s-2) 1.25em; }
+.post-toc__list li { margin: 0; padding-left: 4px; }
+.post-toc__list a { display: flex; align-items: center; min-height: 44px; color: var(--link); overflow-wrap: anywhere; }
+.post-toc__list a[aria-current="location"] { color: var(--ink); font-weight: 700; }
+
+@media (min-width: 1024px) {
+	.post-layout { grid-template-columns: minmax(0, 1fr) 260px; gap: var(--s-6); align-items: start; }
+	.post-layout--no-toc { grid-template-columns: minmax(0, 1fr); }
+	.post-body { grid-column: 1; grid-row: 1; max-width: 70ch; }
+	.post-toc { grid-column: 2; grid-row: 1; position: sticky; top: var(--post-offset); max-height: calc(100vh - var(--post-offset) - var(--s-3)); overflow-y: auto; padding: var(--s-2); }
+	.post-toc__title { display: block; margin: 0 0 var(--s-1); font-weight: 700; }
+	.post-toc summary { display: none; }
+	.post-toc__list { padding-bottom: 0; }
+	.post-toc__list a { min-height: 32px; }
+}
+
+/* Reading progress: decorative, drawn only when JavaScript runs and the visitor has not asked for less motion. */
+.post-progress { display: none; position: fixed; inset: 0 0 auto 0; z-index: 60; height: 4px; pointer-events: none; }
+html.js .post-progress { display: block; }
+.post-progress__bar { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, var(--violet), var(--blue)); transform: scaleX(0); transform-origin: 0 50%; }
+@media (prefers-reduced-motion: reduce) {
+	html.js .post-progress { display: none; }
+}
+
+/* Read next */
+.post-next { margin-top: var(--s-8); padding-top: var(--s-5); border-top: 1px solid var(--line); }
+.post-next h2 { margin-bottom: var(--s-3); font-size: clamp(1.5rem, 1.3rem + 0.8vw, 2rem); }

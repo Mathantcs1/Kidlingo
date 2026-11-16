@@ -19,6 +19,7 @@ require_once get_template_directory() . '/inc/app-price.php';
 require_once get_template_directory() . '/inc/app-data.php';
 require_once get_template_directory() . '/inc/catalog.php';
 require_once get_template_directory() . '/inc/content.php';
+require_once get_template_directory() . '/inc/post-extras.php';
 require_once get_template_directory() . '/inc/commerce.php';
 require_once get_template_directory() . '/inc/library.php';
 
@@ -63,6 +64,10 @@ add_action(
 
 		if ( ideatoapps_is_content_view() ) {
 			wp_enqueue_style( 'ideatoapps-content', "$base/css/content.css", array( 'ideatoapps-components' ), $ver( 'css/content.css' ) );
+		}
+		if ( is_singular( 'post' ) ) {
+			wp_enqueue_style( 'ideatoapps-post', "$base/css/post.css", array( 'ideatoapps-content' ), $ver( 'css/post.css' ) );
+			wp_enqueue_script( 'ideatoapps-post', "$base/js/post.js", array(), $ver( 'js/post.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
 		}
 		if ( is_singular( 'video' ) || is_post_type_archive( 'video' ) ) {
 			wp_enqueue_script( 'ideatoapps-video', "$base/js/video-player.js", array(), $ver( 'js/video-player.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
