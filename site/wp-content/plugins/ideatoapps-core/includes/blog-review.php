@@ -82,7 +82,8 @@ function ideatoapps_review_busy( ?bool $set = null ): bool {
  * Whether a post id is one the installer created (recorded in ideatoapps_blog_installed_slugs). It stays gated even if its meta is deleted.
  */
 function ideatoapps_review_is_recorded( int $post_id ): bool {
-	return $post_id > 0 && function_exists( 'ideatoapps_blog_installed_slugs' ) && in_array( $post_id, array_map( 'intval', array_values( ideatoapps_blog_installed_slugs() ) ), true );
+	// The id must be recorded AND the post must still carry the installer's own mark, so a reused id of an unrelated post never matches.
+	return $post_id > 0 && function_exists( 'ideatoapps_blog_installed_slugs' ) && in_array( $post_id, array_map( 'intval', array_values( ideatoapps_blog_installed_slugs() ) ), true ) && '' !== (string) get_post_meta( $post_id, 'ita_starter_hash', true );
 }
 
 /**

@@ -437,4 +437,45 @@ final class BlogReviewTest extends WPTestCase {
 		unset( $_GET['ita_review'] );
 		list( $pagenow, $wp_the_query ) = $old;
 	}
+
+	/* Round 3 */
+
+	public function test_permanently_deleting_a_signed_off_published_post_leaves_no_orphan_and_no_notice(): void {
+		$id = $this->starter();
+		$this->sign( $id );
+		wp_update_post( array( 'ID' => $id, 'post_status' => 'publish' ) );
+		wp_update_post( array( 'ID' => $id, 'post_content' => '<p>again</p>' ) ); // makes a revision.
+		delete_transient( 'ita_review_refused_' . $this->admin );
+		$this->sign( $id );
+		wp_update_post( array( 'ID' => $id, 'post_status' => 'publish' ) );
+		delete_transient( 'ita_review_refused_' . $this->admin );
+		$saves = did_action( 'save_post' );
+		wp_delete_post( $id, true );
+		$this->assertSame( $saves, did_action( 'save_post' ), 'nothing is saved while a post is deleted' );
+		global $wpdb;
+		$this->assertSame( 0, (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_parent = %d", $id ) ), 'no orphan revision' );
+		$this->assertFalse( get_transient( 'ita_review_refused_' . $this->admin ), 'no refusal notice' );
+		$this->assertNull( get_post( $id ) );
+	}
+
+	public function test_the_insert_filter_alone_stops_a_type_change_publish(): void {
+		$id = $this->starter();
+		$seen = array();
+		$on_t = static function ( $new, $old, $post ) use ( &$seen ) {
+			$seen[] = "$old>$new/{$post->post_type}";
+		};
+		$on_s = static function ( $post_id, $post ) use ( &$seen ) {
+			$seen[] = 'save/' . $post->post_type . '/' . $post->post_status;
+		};
+		add_action( 'transition_post_status', $on_t, 1, 3 );
+		add_action( 'save_post', $on_s, 1, 2 );
+		wp_update_post( array( 'ID' => $id, 'post_type' => 'page', 'post_status' => 'publish' ) );
+		remove_action( 'transition_post_status', $on_t, 1 );
+		remove_action( 'save_post', $on_s, 1 );
+		foreach ( $seen as $event ) {
+			$this->assertStringNotContainsString( '>publish', $event, 'no publish transition ever happened: ' . $event );
+			$this->assertStringNotContainsString( '/page', $event, 'nothing was saved as a page: ' . $event );
+		}
+		$this->assertSame( 'draft/post', $this->stt( $id ) );
+	}
 }

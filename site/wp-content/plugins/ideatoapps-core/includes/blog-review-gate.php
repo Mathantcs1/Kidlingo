@@ -54,11 +54,30 @@ function ideatoapps_review_filter_insert( $data, $postarr ) {
 }
 add_filter( 'wp_insert_post_data', 'ideatoapps_review_filter_insert', 99, 2 );
 
+/** Ids of posts being deleted for good right now (their meta goes first and must not trigger the guard). */
+function ideatoapps_review_deleting( int $id, ?bool $set = null ): bool {
+	static $ids = array();
+	if ( null !== $set ) {
+		if ( $set ) {
+			$ids[ $id ] = true;
+		} else {
+			unset( $ids[ $id ] );
+		}
+	}
+	return isset( $ids[ $id ] );
+}
+
+add_action( 'before_delete_post', static fn( $id ) => ideatoapps_review_deleting( (int) $id, true ) );
+add_action( 'deleted_post', static fn( $id ) => ideatoapps_review_deleting( (int) $id, false ), 20 );
+
 /**
  * Back to draft when something published a gated post without going through wp_insert_post_data.
  * Known limit: for wp_publish_post() the publish_post and transition actions of the first publish have already run when this pulls the post back.
  */
 function ideatoapps_review_force_draft( int $post_id ): void {
+	if ( ideatoapps_review_deleting( $post_id ) ) {
+		return;
+	}
 	$post = get_post( $post_id );
 	if ( ! $post || '' === ideatoapps_review_status( $post_id ) || ideatoapps_review_is_cleared( $post_id, ideatoapps_review_fields( $post ) ) ) {
 		return;

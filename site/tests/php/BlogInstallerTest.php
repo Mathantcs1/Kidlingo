@@ -288,4 +288,36 @@ final class BlogInstallerTest extends WPTestCase {
 		$this->assertSame( array( 2, 1, 1 ), array( $p['installed'], $p['missing'], $p['trashed'] ) );
 		$this->assertSame( 0, $p['reviewed'] );
 	}
+
+	/* Round 3 */
+
+	public function test_a_reused_post_id_never_becomes_a_gated_starter_post(): void {
+		ideatoapps_blog_install();
+		$old = $this->starter( '01-what-ai-is-and-isnt' );
+		wp_delete_post( $old, true );
+		$this->assertSame( 0, ideatoapps_blog_installed_slugs()['01-what-ai-is-and-isnt'], 'the slug stays recorded, the dead id does not' );
+		$this->assertSame( 0, ideatoapps_blog_install()['created'], 'the slug is still not silently recreated' );
+		foreach ( array( 'product', 'page', 'post' ) as $type ) {
+			$id = wp_insert_post( array( 'import_id' => $old, 'post_type' => $type, 'post_status' => 'publish', 'post_title' => "Import $type", 'post_content' => 'x' ) );
+			$this->assertSame( $old, (int) $id, $type );
+			clean_post_cache( $old );
+			$this->assertSame( 'publish', get_post_status( $old ), "reused id as $type stays published" );
+			$this->assertSame( $type, get_post_type( $old ) );
+			$this->assertSame( '', ideatoapps_review_status( $old ) );
+			wp_delete_post( $old, true );
+		}
+		$this->assertSame( array( '01-what-ai-is-and-isnt' ), ideatoapps_blog_missing_slugs() );
+		$this->assertSame( 1, ideatoapps_blog_reinstall( '01-what-ai-is-and-isnt' )['created'] );
+		$this->assertSame( 'draft', get_post_status( $this->starter( '01-what-ai-is-and-isnt' ) ) );
+	}
+
+	public function test_a_stale_record_does_not_match_a_post_without_the_installer_marks(): void {
+		ideatoapps_blog_install();
+		$other = (int) wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Mine', 'post_content' => 'x' ) );
+		update_option( 'ideatoapps_blog_installed_slugs', array( '01-what-ai-is-and-isnt' => $other ), false ); // as if the option were stale.
+		$this->assertSame( '', ideatoapps_review_status( $other ) );
+		wp_delete_post( $this->starter( '01-what-ai-is-and-isnt' ), true );
+		update_option( 'ideatoapps_blog_installed_slugs', array( '01-what-ai-is-and-isnt' => $other ), false );
+		$this->assertSame( 0, ideatoapps_blog_post_for_slug( '01-what-ai-is-and-isnt' ), 'a stale id of an unrelated post is not the starter post' );
+	}
 }

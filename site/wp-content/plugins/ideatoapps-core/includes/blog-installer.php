@@ -25,7 +25,7 @@ function ideatoapps_blog_post_for_slug( string $slug ): int {
 		return $id;
 	}
 	$rec = (int) ( ideatoapps_blog_installed_slugs()[ $slug ] ?? 0 );
-	return $rec > 0 && get_post( $rec ) instanceof WP_Post ? $rec : 0;
+	return $rec > 0 && get_post( $rec ) instanceof WP_Post && '' !== (string) get_post_meta( $rec, 'ita_starter_hash', true ) ? $rec : 0;
 }
 
 /**
@@ -217,3 +217,22 @@ function ideatoapps_blog_install_status(): array {
 	}
 	return array( 'total' => count( $files ), 'installed' => $have );
 }
+
+// A permanently deleted starter post: keep the slug (so it is not recreated silently) but forget the id, which the database may hand to
+// an unrelated post later (import, merge).
+add_action(
+	'deleted_post',
+	static function ( $post_id ): void {
+		$all  = ideatoapps_blog_installed_slugs();
+		$hit  = false;
+		foreach ( $all as $slug => $id ) {
+			if ( (int) $id === (int) $post_id ) {
+				$all[ $slug ] = 0;
+				$hit          = true;
+			}
+		}
+		if ( $hit ) {
+			update_option( 'ideatoapps_blog_installed_slugs', $all, false );
+		}
+	}
+);
