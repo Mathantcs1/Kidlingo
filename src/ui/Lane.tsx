@@ -4,6 +4,9 @@ import type { Id, Project, Track } from '../core/model';
 import { useEditor } from '../state/store';
 import ClipView from './ClipView';
 import KeyframeRow from './KeyframeRow';
+import TransitionChip from './TransitionChip';
+import { addTransitionCmd } from './transitionCommands';
+import { cutsOf, pairAllowed } from '../core/transitions';
 import { laneMenuItems } from './contextMenuItems';
 import { openContextMenu } from './contextMenuOpen';
 import { dropStart, laneRejects } from './drag';
@@ -100,6 +103,31 @@ export default function Lane({ project, track, label, pps, selected, preview, on
         />
       ))}
       {track.clips.map((c) => selected.has(c.id) && <KeyframeRow key={`kf-${c.id}`} clip={c} pps={pps} locked={track.locked} />)}
+      {(track.transitions ?? []).map((tr) => (
+        <TransitionChip key={tr.id} project={project} track={track} tr={tr} pps={pps} />
+      ))}
+      {!track.locked &&
+        cutsOf(track)
+          .filter((c) => !(track.transitions ?? []).some((t) => t.fromClipId === c.from.id && t.toClipId === c.to.id) && pairAllowed(track, { type: track.kind === 'audio' ? 'audio' : 'dissolve' }, c.from, c.to))
+          .map((c) => (
+            <button
+              key={`cut-${c.from.id}-${c.to.id}`}
+              type="button"
+              className="transition-cut"
+              data-testid="transition-cut"
+              data-cut-time={c.time.toFixed(4)}
+              aria-label="Add a transition on this cut"
+              title="Add a transition"
+              style={{ left: timeToPx(c.time, pps) }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                addTransitionCmd(track.id, c.from.id, c.to.id);
+              }}
+            >
+              +
+            </button>
+          ))}
       {preview?.trackId === track.id && preview.zone === null && (
         <div
           className={`clip-ghost${preview.kind === 'move' ? '' : ' is-trim'}${preview.rejected ? ' is-reject' : ''}`}

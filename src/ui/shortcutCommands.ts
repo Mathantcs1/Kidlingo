@@ -6,6 +6,8 @@ import { canCopyAnim, copyAnimCmd, copyKeysCmd, pasteAnimCmd, pasteCopiedCmd } f
 import { copySource } from './copySource';
 import { keyRouted } from './keys';
 import type { Shortcut } from './keys';
+import { addTransitionAtPlayheadCmd, deleteSelectedTransition } from './transitionCommands';
+import { hasSelectedTransition } from './transitionSelection';
 import { deleteSelectedKeysCmd, hasSelectedKeys, jumpKeyCmd } from './keySelectionCommands';
 
 export const COMMANDS: Record<Shortcut, () => void> = {
@@ -24,6 +26,8 @@ export const COMMANDS: Record<Shortcut, () => void> = {
   copyKeys: copyKeysCmd,
   copyAnim: copyAnimCmd,
   pasteAnim: () => pasteAnimCmd(),
+  addTransition: addTransitionAtPlayheadCmd,
+  deleteTransition: deleteSelectedTransition,
 };
 
 /**
@@ -46,4 +50,4 @@ export function claims(s: Shortcut, hasTextSelected: boolean): boolean {
 }
 
 /** O15: while timeline keys are selected, Delete/Backspace (with or without Shift) mean "delete keys", not clips; Ctrl/Cmd+C copies the keys. */
-export const routeShortcut = (found: Shortcut): Shortcut => keyRouted(found, hasSelectedKeys());
+export const routeShortcut = (found: Shortcut): Shortcut => keyRouted(found, hasSelectedKeys(), hasSelectedTransition());

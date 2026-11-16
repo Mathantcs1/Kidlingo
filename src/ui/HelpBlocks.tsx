@@ -21,6 +21,7 @@ function ShortcutTable() {
               <td>
                 {d.what}
                 {d.whenKeysSelected && <span className="help-note"> (while timeline keyframes are selected)</span>}
+                {d.whenTransitionSelected && <span className="help-note"> (while a transition is selected)</span>}
               </td>
               <td><kbd>{win(d.keys)}</kbd></td>
               <td><kbd>{mac(d.keys)}</kbd></td>

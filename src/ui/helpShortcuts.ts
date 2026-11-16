@@ -10,6 +10,8 @@ export interface ShortcutDoc {
   sample: Partial<KeyLike>;
   /** Only while timeline keyframes are selected (keyRouted). */
   whenKeysSelected?: boolean;
+  /** Only while a transition is selected (keyRouted). */
+  whenTransitionSelected?: boolean;
 }
 
 export const SHORTCUT_DOCS: Record<Shortcut, ShortcutDoc> = {
@@ -27,6 +29,8 @@ export const SHORTCUT_DOCS: Record<Shortcut, ShortcutDoc> = {
   duplicate: { keys: 'Mod+D', what: 'Duplicate the selected clips right after them', sample: { key: 'd', code: 'KeyD', ctrlKey: true } },
   copyKeys: { keys: 'Mod+C', what: 'Copy the selected timeline keyframes', sample: { key: 'c', code: 'KeyC', ctrlKey: true }, whenKeysSelected: true },
   copyAnim: { keys: 'Mod+Alt+C', what: "Copy the selected clip's whole animation", sample: { key: 'c', code: 'KeyC', ctrlKey: true, altKey: true } },
+  addTransition: { keys: 'T', what: 'Add the last-used transition at the cut nearest the playhead', sample: { key: 't', code: 'KeyT' } },
+  deleteTransition: { keys: 'Delete or Backspace', what: 'Delete the selected transition instead of the clips', sample: { key: 'Delete', code: 'Delete' }, whenTransitionSelected: true },
   pasteAnim: { keys: 'Mod+Alt+V', what: "Replace the selected clips' animation with the copied one", sample: { key: 'v', code: 'KeyV', ctrlKey: true, altKey: true } },
 };
 

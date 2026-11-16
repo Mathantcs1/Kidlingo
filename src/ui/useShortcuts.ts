@@ -4,6 +4,7 @@ import { TRANSFORMING_CLASS } from './useTransformDrag';
 import { isTextEntry, nativeSpaceTarget } from './keys';
 import { shortcutBlockedByRange, shortcutFor } from './keys';
 import { dropKeySelectionOnEscape } from './keySelectionCommands';
+import { dropTransitionSelectionOnEscape } from './transitionSelection';
 import { COMMANDS, claims, routeShortcut } from './shortcutCommands';
 
 function isTyping(target: EventTarget | null): boolean {
@@ -42,7 +43,7 @@ export function useShortcuts(enabled: boolean): void {
       }
       // Escape drops a timeline key selection (a diamond drag handles its own Escape first, in the capture phase).
       // Only an Escape that cleared something is marked used (the record button and drags read defaultPrevented).
-      if (e.key === 'Escape' && dropKeySelectionOnEscape()) e.preventDefault();
+      if (e.key === 'Escape' && (dropKeySelectionOnEscape() || dropTransitionSelectionOnEscape())) e.preventDefault();
       const parts = keyParts(e);
       const found = shortcutFor({ ...parts, repeat: false });
       if (!found) return;

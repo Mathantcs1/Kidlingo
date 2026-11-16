@@ -1,6 +1,6 @@
 // DOM-free keyboard helpers for the editor shortcuts.
 
-export type Shortcut = 'play' | 'split' | 'delete' | 'rippleDelete' | 'undo' | 'redo' | 'prevKey' | 'nextKey' | 'deleteKeys' | 'copy' | 'paste' | 'duplicate' | 'copyKeys' | 'copyAnim' | 'pasteAnim';
+export type Shortcut = 'play' | 'split' | 'delete' | 'rippleDelete' | 'undo' | 'redo' | 'prevKey' | 'nextKey' | 'deleteKeys' | 'copy' | 'paste' | 'duplicate' | 'copyKeys' | 'copyAnim' | 'pasteAnim' | 'addTransition' | 'deleteTransition';
 
 /** The parts of a KeyboardEvent the shortcut map reads. */
 export interface KeyLike {
@@ -87,15 +87,16 @@ export function shortcutFor(e: KeyLike): Shortcut | null {
   if (e.altKey || e.ctrlKey || e.metaKey || e.repeat) return null;
   if (e.code === 'Space' || e.key === ' ') return 'play';
   if (key === 's' && !e.shiftKey) return 'split';
+  if (key === 't' && !e.shiftKey) return 'addTransition';
   if (e.key === 'Delete' || e.key === 'Backspace') return e.shiftKey ? 'rippleDelete' : 'delete';
   if (e.key === '[') return 'prevKey';
   if (e.key === ']') return 'nextKey';
   return null;
 }
 
-/** O15: while timeline keyframes are selected, Delete/Backspace (with or without Shift) removes them, not the clips. */
-export function keyRouted(s: Shortcut, keysSelected: boolean): Shortcut {
-  if (!keysSelected) return s;
+/** O15: while timeline keyframes are selected, Delete/Backspace (with or without Shift) removes them, not the clips; else a selected transition (Plan 5C D13), then the clips. */
+export function keyRouted(s: Shortcut, keysSelected: boolean, transitionSelected = false): Shortcut {
+  if (!keysSelected) return transitionSelected && (s === 'delete' || s === 'rippleDelete') ? 'deleteTransition' : s;
   if (s === 'delete' || s === 'rippleDelete') return 'deleteKeys';
   return s === 'copy' ? 'copyKeys' : s;
 }

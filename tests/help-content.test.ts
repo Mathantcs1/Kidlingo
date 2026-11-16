@@ -58,7 +58,7 @@ describe('help shortcut table', () => {
       const doc = SHORTCUT_DOCS[id];
       const found = shortcutFor({ ...base, ...doc.sample });
       expect(found, id).not.toBeNull();
-      expect(doc.whenKeysSelected ? keyRouted(found!, true) : found, id).toBe(id);
+      expect(doc.whenKeysSelected ? keyRouted(found!, true) : doc.whenTransitionSelected ? keyRouted(found!, false, true) : found, id).toBe(id);
     }
   });
 });

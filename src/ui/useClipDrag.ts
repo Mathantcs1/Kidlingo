@@ -7,7 +7,7 @@ import { MAX_TRACKS_PER_KIND, isLocked } from '../core/tracks';
 import { useEditor } from '../state/store';
 import { moveTarget, pastThreshold, trimTarget } from './drag';
 import { dropTargetAt } from './dragTargets';
-import { guard } from './Toast';
+import { guard, showInfo } from './Toast';
 import { moveToNewLayer } from './trackCommands';
 
 export type DragKind = 'move' | 'start' | 'end';
@@ -143,11 +143,14 @@ export function useClipDrag(pps: number) {
         moveToNewLayer(pv.clipId, pv.zone, pv.value);
         return;
       }
-      guard(() =>
+      guard(() => {
+        const count = (q: Project): number => q.tracks.reduce((n, t) => n + (t.transitions?.length ?? 0), 0);
+        const before = count(editor().history.present);
         editor().apply((p) =>
           pv.kind === 'move' ? moveClip(p, pv.clipId, pv.value, pv.trackId) : trimClip(p, pv.clipId, pv.kind, pv.value),
-        ),
-      );
+        );
+        if (count(editor().history.present) < before) showInfo('Transition removed: the clips no longer meet');
+      });
     };
     const onCancel = (ev: PointerEvent): void => {
       if (mine(ev)) end();

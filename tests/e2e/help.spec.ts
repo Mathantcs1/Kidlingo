@@ -29,7 +29,7 @@ test('menu items open the panel at the right topic; search filters; Esc closes a
   const panel = page.getByTestId('help-panel');
   await expect(panel).toHaveAttribute('aria-modal', 'true');
   await expect(page.getByTestId('help-content')).toHaveAttribute('data-topic', 'shortcuts');
-  await expect(page.getByTestId('help-shortcuts').locator('tr[data-shortcut]')).toHaveCount(15);
+  await expect(page.getByTestId('help-shortcuts').locator('tr[data-shortcut]')).toHaveCount(17);
   await expect(page.getByTestId('help-search')).toBeFocused();
 
   const all = await page.locator('[data-testid^="help-topic-"]').count();
