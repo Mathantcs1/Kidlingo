@@ -11,7 +11,7 @@
 **Spec:** `docs/superpowers/specs/2026-11-16-ideatoapps-ai-blog-design.md`
 
 ## Global Constraints
-- Byline "IdeaToApps"; no invented anecdotes, credentials, testimonials, quotes, studies, statistics; no stale facts (prices, versions, benchmarks); no email addresses; no legal/medical/financial advice.
+- Byline states AI assistance and the human reviewer (Task 4c); no invented anecdotes, credentials, testimonials, quotes, studies, statistics; no stale facts (prices, versions, benchmarks); no email addresses; no legal/medical/financial advice.
 - Installer: idempotent, drafts only, never overwrites an edited post, never deletes.
 - Keep all existing `data-testid`s; existing e2e stays green. Files <= ~200 lines. Escape output, sanitise input, PHP 8.0.
 - Commit trailers: `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01AdHhRpWBrbnaseTnY78bTT`. Never push without the owner's explicit "push". No real mail, no live payments.
@@ -85,6 +85,19 @@ Content lint additions: each article has a hero file; every `ita_figure` name ex
 **Files:** Create `includes/reader-gate.php`, `includes/reader-cookie.php`, `includes/reader-link.php`, `themes/ideatoapps/parts/gate-card.php`; Modify `includes/newsletter-page.php` (confirm sets cookie), `includes/meta-boxes.php` or new `includes/post-gate-box.php`, `single.php`, `includes/blog-installer.php`; Tests `site/tests/php/ReaderGateTest.php`, `site/tests/e2e/reader-gate.spec.ts`.
 - [ ] Failing tests: non-subscriber sees only the teaser and the HTML contains none of the gated text (grep the response); pending/unsubscribed/erased subscriber is locked; tampered/expired cookie rejected (hash_equals); confirm sets the cookie only on the POST that confirms; reading-link request answers identically for known and unknown addresses; gating off while the newsletter switch is off; gated page sends `Cache-Control: private`; JSON-LD paywall markup present.
 - [ ] Mutation-check cookie verification, status re-check and "no gated text in HTML". Commit.
+
+### Task 4c: Human review gate and honest labelling (plugin + theme)
+**Owner request:** the posts must be monitored, changed and curated by a person.
+**Rulings:**
+- Ruling: the articles are AI-drafted and the site says so. Byline on every post: "Drafted with AI assistance. Edited and reviewed by <reviewer name> on <date>." Never "written by a person" unless true; no fake author. (Honest labelling is the owner-safe choice and is what search engines and readers' trust reward.)
+- Ruling: installer creates posts as drafts with `ita_review_status = ai_draft`. A post cannot stay published unless `ita_review_status = human_reviewed` with `ita_reviewer` (name, required) and `ita_reviewed_on` (date); otherwise a publish/schedule attempt (editor, bulk action, REST, XML-RPC) is forced back to draft with an admin notice. Capability: `publish_posts` holders only; the reviewer name is entered by the human, never prefilled.
+- Ruling: editor box "Editorial review" shows the sign-off checklist (all boxes required to mark reviewed): facts and claims checked against sources; examples tried or reworked; intro and examples rewritten or edited in the reviewer's own words; prompts tested in a real assistant; quiz answers correct; links and images checked; no invented stories/statistics. It also lists the article's `check` items (each writer must list the factual claims that most need verifying).
+- Ruling: editing the content of a reviewed post after sign-off resets it to `needs_review` (hash check) so changes are never published unreviewed; typo-sized edits can be re-signed in one click.
+- Ruling: admin list gets a "Review" column and filter (AI draft / needs review / reviewed) and a count in the dashboard so the owner can see progress through the 50.
+**Files:** Create `includes/blog-review.php`, `includes/blog-review-box.php`, `includes/blog-review-gate.php`; Modify `single.php`/`post-extras.php` (byline), `blog-installer.php` (status + hash), article header (`check` list); Tests `site/tests/php/BlogReviewTest.php`, `site/tests/e2e/blog-review.spec.ts`.
+- [ ] Failing tests: unreviewed post forced back to draft via every path; reviewed requires name + date + all checklist boxes; edit after sign-off resets status; byline text accurate for each status; `check` items shown in the box; reviewer text escaped.
+- [ ] Mutation-check the publish guard on each path. Commit.
+Content lint addition: every article header has 3-6 `check` items naming concrete claims to verify.
 
 ### Task 5: Style guide, content lint, three sample articles
 **Files:** Create `site/docs/BLOG_STYLE_GUIDE.md`, `site/wp-content/plugins/ideatoapps-core/content/articles/{01,09,27}-*.html`; Test `site/tests/php/BlogContentLintTest.php`.
