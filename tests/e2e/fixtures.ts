@@ -93,6 +93,9 @@ export function ensureFixtures(): string {
     '-f', 'lavfi', '-i', "color=black:s=128x72:r=30:d=4,format=yuv420p,geq=lum='if(lt(X\\,W/2)\\,16+6*mod(N\\,32)\\,16+6*floor(N/32))':cb=128:cr=128",
     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast', '-crf', '12', '-g', '30', '-an',
   ]);
+  // Transition pictures (64x36): A red left / green right, B blue top / yellow bottom (opaque, distinguishable under any shift).
+  encode(at('tr-a.png'), ['-f', 'lavfi', '-i', "color=black:s=64x36,format=rgb24,geq=r='255*lt(X\\,W/2)':g='255*gte(X\\,W/2)':b='0'", '-frames:v', '1']);
+  encode(at('tr-b.png'), ['-f', 'lavfi', '-i', "color=black:s=64x36,format=rgb24,geq=r='255*gte(Y\\,H/2)':g='255*gte(Y\\,H/2)':b='255*lt(Y\\,H/2)'", '-frames:v', '1']);
   // A/V sync marker: every second a 0.1 s white flash (frames 30k..30k+2) together with a 0.1 s 1 kHz burst, 4 s, AAC.
   encode(at('av-sync.mp4'), [
     '-f', 'lavfi', '-i', "color=black:s=64x36:r=30:d=4,format=yuv420p,geq=lum='255*lt(mod(T\\,1)\\,0.1)':cb=128:cr=128",

@@ -1,14 +1,15 @@
 // The WebGL2 compositor: Phase 1 uploads every picture of the frame, Phase 2 draws them in track order.
-import type { Id, Project, VideoEffectType } from '../core/model';
+import type { Clip, Id, Project, VideoEffectType } from '../core/model';
 import type { VideoSource } from '../media/decode';
 import { BlurBackground } from './blur';
 import { CompositeBuffer } from './compositeBuffer';
 import type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
 import { needsComposite } from './adjustment';
 import { collectDraws } from './drawCollect';
-import { expandTransitions } from './transitionFallback';
-import { drawSteps } from './drawSteps';
-import type { DrawContext } from './drawCollect';
+import { TransitionProgram } from './transitionPass';
+import { isTransitionDraw } from './drawCollect';
+import { drawSteps, transitionMode } from './drawSteps';
+import type { DrawContext, FrameDraw } from './drawCollect';
 import { LutTextures } from './effects/luts';
 import { EffectPipeline } from './effects/pipeline';
 import { unavailableTypes } from './effects/programs';
@@ -22,6 +23,16 @@ import { OverlayTextures } from './overlays/textures';
 export type { Compositor, CompositorOptions, CompositorStats } from './compositorTypes';
 
 const LOST = 'WebGL context lost';
+
+/** Every clip a frame step draws (a transition has two): for the LUT preload. */
+const drawClips = (d: FrameDraw): Clip[] => (isTransitionDraw(d) ? [d.a, d.b].flatMap((x) => (x ? [x.clip] : [])) : [d.clip]);
+
+/** Composite targets a frame needs: 3, 4 with a transition (two layers), 5 with one composited in a non-Normal mode (its scratch). */
+function targetsNeeded(draws: FrameDraw[]): number {
+  const transitions = draws.filter(isTransitionDraw);
+  if (transitions.length === 0) return 3;
+  return transitions.some((d) => transitionMode(d) !== 'normal') ? 5 : 4;
+}
 
 class GlCompositor implements Compositor {
   readonly canvas: HTMLCanvasElement | OffscreenCanvas;
@@ -49,6 +60,9 @@ class GlCompositor implements Compositor {
   /** The LUTs loaded for the frame being drawn (Phase 1), read synchronously by EffectContext.lut in Phase 2. */
   private frameLuts = new Map<Id, LoadedLut>();
   private lutNames = new Map<Id, string>();
+  /** The transition program: compiled on first use; `failed` turns transitions into hard cuts (Plan 5C Task 5). */
+  private transitionPass: TransitionProgram | null = null;
+  private transitionFailed = false;
 
   /** Throws GlUnavailableError (with the getContext outcomes) after releasing whatever it had created. */
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, opts: CompositorOptions) {
@@ -99,6 +113,7 @@ class GlCompositor implements Compositor {
     this.luts.dispose();
     this.effects.dispose();
     this.composite.dispose();
+    this.transitionPass?.dispose();
     this.blur.dispose();
     this.quad.dispose();
   }
@@ -122,6 +137,18 @@ class GlCompositor implements Compositor {
     return unavailableTypes();
   }
 
+  private transitionProgramOrNull(): TransitionProgram | null {
+    if (this.transitionPass || this.transitionFailed) return this.transitionPass;
+    try {
+      this.transitionPass = new TransitionProgram(this.gl);
+    } catch (e) {
+      if (this.gl.isContextLost()) throw new Error(LOST);
+      this.transitionFailed = true;
+      console.warn('Transitions are unavailable (a cut at the midpoint):', e);
+    }
+    return this.transitionPass;
+  }
+
   private assertUsable(): void {
     if (this.disposed) throw new Error('Compositor is disposed');
     if (this.lost || this.gl.isContextLost()) {
@@ -133,10 +160,10 @@ class GlCompositor implements Compositor {
   private async render(p: Project, t: number, sources: Map<Id, VideoSource>): Promise<void> {
     this.assertUsable();
     // Phase 1 (async): every frame/bitmap is uploaded before anything is drawn.
-    const draws = expandTransitions(await collectDraws(this.drawContext, p, t, sources));
+    const draws = await collectDraws(this.drawContext, p, t, sources);
     // LUT textures too, so the export never encodes an ungraded frame while a LUT file is still loading.
     for (const [id, m] of Object.entries(p.media)) if (m.kind === 'lut') this.lutNames.set(id, m.name);
-    this.frameLuts = await this.luts.forFrame(p, draws.map((d) => d.clip));
+    this.frameLuts = await this.luts.forFrame(p, draws.flatMap(drawClips));
 
     // Phase 2 (sync): composite.
     this.assertUsable();
@@ -151,10 +178,10 @@ class GlCompositor implements Compositor {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     // Only a frame with a visible non-normal clip or an active adjustment layer pays for the intermediate composite.
-    const composite = draws.some(needsComposite) && this.composite.begin(viewport);
+    const composite = draws.some(needsComposite) && this.composite.begin(viewport, targetsNeeded(draws));
     if (!composite) this.composite.idle();
     drawSteps(
-      { gl, quad: this.quad, blur: this.blur, composite: this.composite, effects: this.effects, luts: this.frameLuts, onUnavailable: this.onEffectUnavailable },
+      { gl, quad: this.quad, blur: this.blur, composite: this.composite, effects: this.effects, luts: this.frameLuts, onUnavailable: this.onEffectUnavailable, transitionProgram: () => this.transitionProgramOrNull() },
       draws, p, t, format, viewport, composite,
     );
     if (composite) this.composite.present(viewport);

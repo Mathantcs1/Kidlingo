@@ -28,6 +28,9 @@ export class CompositeBuffer {
   size: Size = { width: 0, height: 0 };
   private targets: [RenderTarget, RenderTarget] | null = null;
   private layer: RenderTarget | null = null;
+  /** The transition's second layer and its scratch picture (Plan 5C), created on first use. */
+  private layerB: RenderTarget | null = null;
+  private scratch: RenderTarget | null = null;
   private cur = 0;
   private program: BlendProgram | null = null;
   private failed = false;
@@ -44,14 +47,15 @@ export class CompositeBuffer {
    * Starts a composite for `viewport`: binds the current target (viewport = the whole target) cleared to TRANSPARENT
    * (Ruling P9: the W3C isolated-group model, so a blend mode with nothing below it behaves like Normal), and returns
    * true. Returns false, drawing nothing, when the blend program cannot be used on this device (the
-   * caller then draws every clip as 'normal'). Throws Error('WebGL context lost') on a lost context.
+   * caller then draws every clip as 'normal'). `targets` is how many targets the frame needs (3; 4 with a transition, 5 with a
+   * non-Normal one) so they all fit the byte budget. Throws Error('WebGL context lost') on a lost context.
    */
-  begin(viewport: Size): boolean {
+  begin(viewport: Size, targets = 3): boolean {
     assertNotLost(this.gl);
     if (!this.ensureProgram()) return false;
     this.idleFrames = 0;
     const max = Number(this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE)) || 4096;
-    this.size = compositeSize(viewport, max, 3, COMPOSITE_BYTE_BUDGET);
+    this.size = compositeSize(viewport, max, targets, COMPOSITE_BYTE_BUDGET);
     this.targets ??= this.createPair();
     this.bindCurrent();
     this.gl.clearColor(0, 0, 0, 0);
@@ -79,6 +83,46 @@ export class CompositeBuffer {
 
   bindLayer(): void {
     this.layer?.bind(this.size.width, this.size.height);
+  }
+
+  /** Binds the transition's second layer target cleared to transparent (the first is beginLayer's). */
+  beginLayerB(): void {
+    this.layerB ??= this.create();
+    this.layerB.bind(this.size.width, this.size.height);
+    this.gl.clearColor(0, 0, 0, 0);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+  }
+
+  bindLayerB(): void {
+    this.layerB?.bind(this.size.width, this.size.height);
+  }
+
+  /** The two layers (outgoing, incoming) as textures. */
+  layerTextures(): { a: WebGLTexture; b: WebGLTexture } {
+    if (!this.layer || !this.layerB) throw new Error('CompositeBuffer.layerTextures before beginLayer/beginLayerB');
+    return { a: this.layer.slot.tex, b: this.layerB.slot.tex };
+  }
+
+  /**
+   * Runs `draw` into the OTHER ping-pong target, which becomes current and stays bound; `draw` receives the backdrop (the
+   * composite so far) to read. The fused Normal-mode transition pass: backdrop + transition in one draw.
+   */
+  into(draw: (backdrop: WebGLTexture) => void): void {
+    const backdrop = this.current().slot.tex;
+    this.cur = 1 - this.cur;
+    this.bindCurrent();
+    draw(backdrop);
+    this.passes++;
+  }
+
+  /** Binds the scratch target (cleared to transparent), runs `draw` into it, then blends it onto the composite with `mode`. */
+  viaScratch(mode: BlendMode, draw: () => void): void {
+    this.scratch ??= this.create();
+    this.scratch.bind(this.size.width, this.size.height);
+    this.gl.clearColor(0, 0, 0, 0);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    draw();
+    this.blend(mode, 1, { tex: this.scratch.slot.tex, uv: [1, 0, 0, 0, 1, 0, 0, 0, 1] });
   }
 
   /**
@@ -115,13 +159,13 @@ export class CompositeBuffer {
 
   /** A frame that did not use the buffer: after COMPOSITE_IDLE_FRAMES of them in a row the targets are freed. */
   idle(): void {
-    if (!this.targets && !this.layer) return;
+    if (!this.targets && !this.layer && !this.layerB) return;
     if (++this.idleFrames >= COMPOSITE_IDLE_FRAMES) this.release();
   }
 
   /** Allocated targets and their RGBA8 bytes. */
   stats(): { targets: number; bytes: number } {
-    const all = [...(this.targets ?? []), ...(this.layer ? [this.layer] : [])].filter((t) => t.slot.width > 0);
+    const all = [...(this.targets ?? []), ...(this.layer ? [this.layer] : []), ...(this.layerB ? [this.layerB] : []), ...(this.scratch ? [this.scratch] : [])].filter((t) => t.slot.width > 0);
     return { targets: all.length, bytes: all.reduce((n, t) => n + t.slot.width * t.slot.height * 4, 0) };
   }
 
@@ -139,8 +183,12 @@ export class CompositeBuffer {
   private release(): void {
     for (const t of this.targets ?? []) t.dispose();
     this.layer?.dispose();
+    this.layerB?.dispose();
+    this.scratch?.dispose();
     this.targets = null;
     this.layer = null;
+    this.layerB = null;
+    this.scratch = null;
     this.cur = 0;
     this.idleFrames = 0;
   }

@@ -34,7 +34,6 @@ const ALLOWED: Allowed[] = [
   // 5B: the resolved clip carries no `motion`; the lower third's built-in slide is decided from the RAW clip's in/out slots.
   ['src/render/drawCollectTransition.ts', 'const builtIn = { in: !raw.motion?.in, out: !raw.motion?.out }', 'reads stored value on purpose: the RAW clip\'s in/out preset slots switch the lower third\'s built-in slide off (D13); the picture itself comes from the resolved clip'],
   // 5E: crop, flip and anchor are static per clip (v8; anchor keys arrive in Task 5 and are resolved into the drawn clip).
-  ['src/render/transitionFallback.ts', 'opacity: d.clip.transform.opacity * k', 'reads the resolved draw clip (collectDraws): the temporary crossfade scales its opacity (replaced by the fused pass in Task 5)'],
   ['src/render/drawCollectPicture.ts', 'croppedUvMatrix(orientation, clip.crop, clip.flip', 'reads resolved clip (collectDraws passes the resolved clip): crop sub-rect and flip into the texture lookup'],
   ['src/render/drawPicture.ts', 'croppedSize(d.size, d.clip.crop), uv, opacity', 'reads resolved clip (Draw.clip): the blur backdrop covers the frame from the cropped size'],
   ['src/render/geometry.ts', 'const anchor = view?.anchor;', 'not a clip: the optional view argument of the pure clipMatrix'],

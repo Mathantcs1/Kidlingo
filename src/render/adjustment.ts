@@ -6,7 +6,7 @@ import type { Clip, Id, Project, VideoEffectType } from '../core/model';
 import { blendOf, clipEffectContext } from './clipEffects';
 import { COMPOSITE_UV } from './compositeBuffer';
 import type { CompositeBuffer } from './compositeBuffer';
-import { isAdjustmentDraw } from './drawCollect';
+import { isAdjustmentDraw, isTransitionDraw } from './drawCollect';
 import type { FrameDraw } from './drawCollect';
 import { EffectPipeline, workingSize } from './effects/pipeline';
 import type { LoadedLut } from './effects/types';
@@ -19,6 +19,7 @@ export function adjustmentApplies(clip: Clip): boolean {
 
 /** Whether a frame step needs the intermediate composite: a non-normal blend mode, or an adjustment that applies. */
 export function needsComposite(d: FrameDraw): boolean {
+  if (isTransitionDraw(d)) return true;
   return isAdjustmentDraw(d) ? adjustmentApplies(d.clip) : blendOf(d.clip) !== 'normal';
 }
 
