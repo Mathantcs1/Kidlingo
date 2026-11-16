@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/blog-lint-voice.php';
+require_once __DIR__ . '/blog-lint-readability.php';
 
 /** Shortcode tags an article may use. */
 const ITA_LINT_TAGS = array( 'ita_prompt', 'ita_quiz', 'ita_q', 'ita_checklist', 'ita_item', 'ita_why', 'ita_term', 'ita_figure' );
@@ -215,6 +216,7 @@ function ita_lint_article( array $a, string $raw, string $content_dir ): array {
 		ita_lint_voice( $a['body'] ),
 		ita_lint_prompt_term( $a['body'] ),
 		ita_lint_spelling( $raw ),
+		ita_lint_readability( $a['body'], (string) ( $a['level'] ?? '' ) ),
 		ita_lint_text_rules( $raw )
 	);
 }

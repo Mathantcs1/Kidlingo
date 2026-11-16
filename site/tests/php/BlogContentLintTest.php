@@ -58,7 +58,7 @@ final class BlogContentLintTest extends TestCase {
 	}
 
 	public function test_lint_accepts_a_clean_body(): void {
-		$a = array( 'slug' => '01-what-ai-is-and-isnt', 'excerpt' => 'Short.', 'check' => array( 'a', 'b', 'c' ), 'body' => self::good_body() );
+		$a = array( 'slug' => '01-what-ai-is-and-isnt', 'level' => 'beginner', 'excerpt' => 'Short.', 'check' => array( 'a', 'b', 'c' ), 'body' => self::good_body() );
 		$this->assertSame( array(), ita_lint_article( $a, self::good_body(), self::content_dir() ) );
 	}
 
