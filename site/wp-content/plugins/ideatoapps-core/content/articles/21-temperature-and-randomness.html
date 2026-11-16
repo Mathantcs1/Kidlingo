@@ -1,0 +1,55 @@
+<!--ita {"slug":"21-temperature-and-randomness","title":"Temperature and randomness","category":"llms","excerpt":"Why the same request gives different answers, what the temperature setting changes, and how to choose a setting for each kind of task.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["builders","creators"],"check":["At each step a language model gives every possible next token a likelihood, and the app samples one; temperature changes how spread out that choice is.","Before sampling, the model's raw score for each token is divided by the temperature: values below 1 make the top tokens even more likely, values above 1 make the choices more even.","At a temperature of zero, systems usually take the single most likely token, yet outputs can still differ slightly between runs.","A lower temperature makes answers more consistent but not more accurate: a wrong most-likely answer is repeated.","Top-p sampling picks only from the smallest group of most likely tokens whose likelihoods add up to the chosen value.","Some models and APIs fix the temperature or ignore changes to it, and scales and defaults differ between providers."]} -->
+<p>Ask a chatbot for a title for a video about fixing a bike chain. If your app has a button that writes the answer again, press it. You'll usually get a different title, because each word is picked with some randomness, and a setting called [ita_term define="A setting that controls how much randomness goes into picking each next piece of text."]temperature[/ita_term] controls how much.</p>
+
+<h2>What the setting changes</h2>
+<p>As "What AI is and isn't" explains, a model writes one piece of text (a token) at a time. At each step it gives every possible next token a likelihood, and the app picks one. Temperature changes how that pick is made.</p>
+<ul>
+<li><strong>Low temperature:</strong> the most likely tokens get an even bigger share, so the pick is nearly always the top choice. Answers vary less between runs.</li>
+<li><strong>High temperature:</strong> the likelihoods are evened out, so less likely tokens are picked more often. Answers vary more, and word choices get more unusual.</li>
+</ul>
+<p>Some APIs offer a second control called [ita_term define="A setting that limits the pick to the most likely tokens whose likelihoods add up to a chosen share."]top-p[/ita_term]. With it, the app picks only from the smallest group of top tokens whose likelihoods add up to the number you set. A lower top-p removes the unlikely tokens from the choice.</p>
+<p>Scales, defaults and names differ between providers, so check the documentation for the one you use.</p>
+
+<h2>Lower is steadier, not more correct</h2>
+<p>Many people believe that a temperature of zero makes a model accurate. It makes the model more consistent. If the most likely answer is wrong, a low setting gives you the same wrong answer every time.</p>
+<p>Even at the lowest setting, two runs can differ slightly, because of how the computing is split up on the servers. Some APIs accept a [ita_term define="A number that fixes the random choices, so the same request is more likely to give the same result."]seed[/ita_term] for more repeatable results. Don't build anything that needs identical text on every run.</p>
+<p>High settings have a cost too. At very high values, text can lose the topic or stop making sense.</p>
+
+<h2>Choosing a setting for each task</h2>
+<p>For builders, the right setting depends on what a good answer looks like. These are starting points to test:</p>
+<ul>
+<li><strong>Pulling fields out of text</strong>, such as dates and order numbers from delivery notes: low. You want the same answer every time.</li>
+<li><strong>Answers about a document you send:</strong> low to middle. The wording can vary; the facts shouldn't.</li>
+<li><strong>Drafts</strong> of emails, scripts or product text: the provider's default is a fair start.</li>
+<li><strong>Brainstorming</strong> names, titles or angles: higher. Variety is the goal, so read the results for nonsense.</li>
+</ul>
+<p>Test each task by sending the same input several times and reading the spread of answers. One run tells you little about a random process. Some models and APIs fix the temperature or ignore changes to it, so check that the setting has an effect before you tune it.</p>
+[ita_why title="What the temperature number changes"]
+<p>For each possible next token, the model produces a raw score. Before the pick, the app divides every score by the temperature. Then it turns the results into likelihoods that add up to one.</p>
+<p>Dividing by a number below one stretches the gaps between scores, so the top token wins even more often. Dividing by a number above one shrinks the gaps, so the choices become more even. At zero, systems usually skip the division and take the top token.</p>
+[/ita_why]
+
+<h2>When your app has no temperature control</h2>
+<p>Most chat apps choose the temperature for you and don't show it. Creators can still get more varied answers through the [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] itself.</p>
+<p>Ask for several options in one reply, and name how they should differ. The model sees its earlier options while it writes the next one, which usually moves it away from repeats.</p>
+[ita_prompt title="Different on purpose"]
+Write [number] titles for [your content, for example: a short video about fixing a bike chain] (example values: replace them).
+Make each title differ from the others in one way: [first way, for example: tone], [second way, for example: length], [third way, for example: whether it asks a question].
+Number the titles. After each one, add a two-word label for what makes it different.
+[/ita_prompt]
+
+<p>For a steady result across many posts, reuse the same request word for word and change only the facts each time.</p>
+
+[ita_quiz]
+[ita_q q="A builder sets the temperature to its lowest value for a fact question. What does that change?" answers="The answers become more likely to be true|The answers vary less from run to run|The model checks its facts before it replies" correct="2" why="A low setting makes the pick more predictable; it doesn't make the most likely answer correct."]
+[ita_q q="You want ten caption ideas that really differ, but your app has no temperature setting. What helps most?" answers="Ask for one caption and press the button to write it again|Tell it to be as random as it can be|Ask for ten options that each differ in a named way" correct="3" why="Naming how the options should differ steers the variety directly."]
+[ita_q q="Your app pulls order numbers out of emails, and two runs on the same email give different numbers. What is a sensible first step?" answers="Lower the temperature and test that email several times|Raise the temperature so it tries more options|Switch to a model with a bigger context window" correct="1" why="Extraction should give the same answer every time, so a low setting and repeated tests come first."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<ol>
+<li>Pick one task you repeat, such as writing video titles or pulling dates out of messages. If you use real messages, remove names, and paste them only if your workplace allows it.</li>
+<li>Send the same request three times, using the button that writes the answer again or three new chats. Put the three answers side by side.</li>
+<li>Mark what changed in each: only the wording, the structure, or a fact or number.</li>
+<li>If a fact or number changed, lower the temperature in your code or add that fact to the request. Then run it three more times.</li>
+</ol>
