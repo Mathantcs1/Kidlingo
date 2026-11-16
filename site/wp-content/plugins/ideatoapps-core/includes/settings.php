@@ -206,6 +206,7 @@ function ideatoapps_render_settings_page() {
 			</table>
 			<?php submit_button(); ?>
 		</form>
+		<?php do_action( 'ideatoapps_settings_page_end' ); ?>
 	</div>
 	<?php
 }
