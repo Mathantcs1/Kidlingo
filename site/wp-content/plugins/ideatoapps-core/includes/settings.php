@@ -156,6 +156,9 @@ function ideatoapps_render_settings_page() {
 		<?php elseif ( 'invalid_url' === $status ) : ?>
 			<div class="notice notice-error"><p><?php esc_html_e( 'The YouTube channel URL was not saved: it must start with http:// or https://. Everything else was saved.', 'ideatoapps-core' ); ?></p></div>
 		<?php endif; ?>
+		<?php if ( '' !== ideatoapps_newsletter_mail_failure_notice() ) : ?>
+			<div class="notice notice-warning"><p><?php echo esc_html( ideatoapps_newsletter_mail_failure_notice() ); ?></p></div>
+		<?php endif; ?>
 		<?php if ( ideatoapps_featured_all_hidden() ) : ?>
 			<div class="notice notice-warning"><p><?php esc_html_e( 'None of your featured apps are published, so the latest apps are shown instead.', 'ideatoapps-core' ); ?></p></div>
 		<?php endif; ?>

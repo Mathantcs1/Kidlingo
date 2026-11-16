@@ -27,7 +27,7 @@ function ideatoapps_register_subscriber_post_type() {
 			'show_in_menu'        => false,
 			'rewrite'             => false,
 			'query_var'           => false,
-			'can_export'          => true,
+			'can_export'          => false, // the confirmed-only CSV (newsletter-export.php) is the only export; WXR would dump every address.
 			'supports'            => array( 'title' ),
 		)
 	);
@@ -77,8 +77,9 @@ function ideatoapps_newsletter_permission( $request ) {
 
 /**
  * Handle a sign-up. The answer is the same for a new, a pending and a confirmed address, so the form cannot be used to probe
- * the list. A new or unsubscribed address becomes pending; a pending one is re-sent a confirmation at most once per 10 minutes;
- * a confirmed one gets nothing.
+ * the list. A new address is stored pending; an unsubscribed one stays unsubscribed (a re-subscribe request is recorded) until its
+ * owner confirms; a pending one is re-sent a confirmation at most once per 10 minutes; a confirmed one gets nothing. The
+ * confirmation is mailed after the response is sent, so timing and status cannot reveal which case it was.
  *
  * @param WP_REST_Request $request Request.
  * @return WP_REST_Response|WP_Error
@@ -118,16 +119,14 @@ function ideatoapps_newsletter_subscribe( $request ) {
 		}
 		$send = true;
 	} elseif ( 'unsubscribed' === $status ) {
-		update_post_meta( $id, 'status', 'pending' );
-		update_post_meta( $id, 'consent_at', gmdate( 'c' ) );
-		delete_post_meta( $id, 'unsubscribed_at' );
-		delete_post_meta( $id, 'confirmation_sent_at' );
-		$send = true;
+		// A stranger must not be able to re-list an opted-out address: it stays unsubscribed until its owner confirms.
+		update_post_meta( $id, 'resubscribe_requested_at', gmdate( 'c' ) );
+		$send = ideatoapps_newsletter_may_resend( $id );
 	} else {
 		$send = 'pending' === $status && ideatoapps_newsletter_may_resend( $id );
 	}
-	if ( $send && ! ideatoapps_newsletter_send_confirmation( (int) $id ) ) {
-		return new WP_Error( 'ideatoapps_mail_failed', __( 'We could not send the confirmation email. Please try again later.', 'ideatoapps-core' ), array( 'status' => 500 ) );
+	if ( $send ) {
+		ideatoapps_newsletter_queue_confirmation( (int) $id ); // sent after the response, so every case answers alike.
 	}
 	return new WP_REST_Response( array( 'ok' => true, 'message' => __( 'Thanks. If this address needs confirming, we have emailed it a link. Your sign-up only counts once you click it.', 'ideatoapps-core' ) ), 200 );
 }

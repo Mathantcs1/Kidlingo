@@ -38,8 +38,8 @@ function ideatoapps_newsletter_page_response( $method, array $query, array $post
 	$status = ideatoapps_subscriber_status( $id );
 	$do     = $post_ && isset( $post['ita_do'] ) && is_string( $post['ita_do'] ) ? $post['ita_do'] : '';
 	if ( 'confirm' === $action ) {
-		if ( 'unsubscribed' === $status ) {
-			return $out( 400, 'invalid' );
+		if ( 'unsubscribed' === $status && '' === (string) get_post_meta( $id, 'resubscribe_requested_at', true ) ) {
+			return $out( 400, 'invalid' ); // opted out, and nobody asked to come back.
 		}
 		if ( $post_ && 'confirm' !== $do ) {
 			return $out( 400, 'invalid' );
@@ -50,6 +50,8 @@ function ideatoapps_newsletter_page_response( $method, array $query, array $post
 		if ( 'confirmed' !== $status ) {
 			update_post_meta( $id, 'status', 'confirmed' );
 			update_post_meta( $id, 'confirmed_at', gmdate( 'c' ) );
+			delete_post_meta( $id, 'unsubscribed_at' );
+			delete_post_meta( $id, 'resubscribe_requested_at' );
 		}
 		return $out( 200, 'confirmed' );
 	}
@@ -88,10 +90,10 @@ function ideatoapps_newsletter_page_headers() {
  * Page body (inside the theme's header and footer).
  *
  * @param array $res   Result of ideatoapps_newsletter_page_response().
- * @param array $query Query of the request (to rebuild the form action).
+ * @param array $query Query of the request (unused: the form has no action, so it posts to the URL the browser is on).
  * @return string
  */
-function ideatoapps_newsletter_page_html( array $res, array $query ) {
+function ideatoapps_newsletter_page_html( array $res, array $query = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
 	$view  = $res['view'];
 	$texts = array(
 		'confirm_form'     => array( __( 'Confirm your sign-up', 'ideatoapps-core' ), __( 'Press the button to confirm that you want to join the IdeaToApps newsletter list. Nothing changes until you do.', 'ideatoapps-core' ) ),
@@ -105,14 +107,6 @@ function ideatoapps_newsletter_page_html( array $res, array $query ) {
 	);
 	$title = $texts[ $view ][0] ?? __( 'This link is not valid', 'ideatoapps-core' );
 	$text  = $texts[ $view ][1] ?? __( 'The link may be incomplete or out of date. Sign up again from the home page if you want to join the list.', 'ideatoapps-core' );
-	$url   = add_query_arg(
-		array(
-			'ita_newsletter' => $res['action'],
-			'sid'            => (int) $res['id'],
-			't'              => isset( $query['t'] ) && is_string( $query['t'] ) ? $query['t'] : '',
-		),
-		home_url( '/' )
-	);
 	$btn   = static fn( $do, $label, $cls ) => '<button class="btn btn--' . $cls . '" type="submit" name="ita_do" value="' . esc_attr( $do ) . '" data-testid="newsletter-' . esc_attr( $do ) . '-button">' . esc_html( $label ) . '</button>';
 	$buttons = '';
 	if ( 'confirm_form' === $view ) {
@@ -123,7 +117,7 @@ function ideatoapps_newsletter_page_html( array $res, array $query ) {
 	$html  = '<article class="section page" data-testid="newsletter-page" data-view="' . esc_attr( $view ) . '"><div class="container container--narrow">';
 	$html .= '<h1 class="section-heading__title">' . esc_html( $title ) . '</h1><div class="prose" data-testid="newsletter-result"><p>' . esc_html( $text ) . '</p>';
 	if ( '' !== $buttons ) {
-		$html .= '<form method="post" action="' . esc_url( $url ) . '">' . $buttons . '</form>';
+		$html .= '<form method="post">' . $buttons . '</form>';
 	}
 	return $html . '<p><a href="' . esc_url( home_url( '/' ) ) . '">' . esc_html__( 'Back to the home page', 'ideatoapps-core' ) . '</a></p></div></div></article>';
 }

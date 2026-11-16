@@ -43,7 +43,8 @@ function ideatoapps_newsletter_confirmation_body( $id ) {
 }
 
 /**
- * Send the confirmation and, only when it was accepted for delivery, start the 10-minute throttle.
+ * Send the confirmation now. Success starts the 10-minute throttle and clears the failure notice; failure leaves the row
+ * pending, starts no throttle and is counted (never with the address).
  *
  * @param int $id Post ID.
  * @return bool
@@ -53,6 +54,57 @@ function ideatoapps_newsletter_send_confirmation( $id ) {
 	$sent  = is_email( $email ) && wp_mail( $email, __( 'Confirm your IdeaToApps newsletter sign-up', 'ideatoapps-core' ), ideatoapps_newsletter_confirmation_body( $id ), array( 'Content-Type: text/plain; charset=UTF-8' ) );
 	if ( $sent ) {
 		update_post_meta( $id, 'confirmation_sent_at', time() );
+		delete_option( 'ideatoapps_newsletter_mail_failures' );
+		return true;
 	}
-	return (bool) $sent;
+	update_option( 'ideatoapps_newsletter_mail_failures', (int) get_option( 'ideatoapps_newsletter_mail_failures', 0 ) + 1, false );
+	update_option( 'ideatoapps_newsletter_mail_failed_at', gmdate( 'c' ), false );
+	return false;
+}
+
+/**
+ * Queue a confirmation to go out after the response has been sent, so the sign-up answer is identical (and equally fast)
+ * whatever the list state or the mail result.
+ *
+ * @param int $id Post ID.
+ */
+function ideatoapps_newsletter_queue_confirmation( $id ) {
+	$GLOBALS['ideatoapps_newsletter_queue'][] = (int) $id;
+	if ( false === has_action( 'shutdown', 'ideatoapps_newsletter_flush_queue' ) ) {
+		add_action( 'shutdown', 'ideatoapps_newsletter_flush_queue' );
+	}
+}
+
+/**
+ * Shutdown hook: finish the HTTP response if the server lets us (PHP-FPM, LiteSpeed), then send the queued mails.
+ */
+function ideatoapps_newsletter_flush_queue() {
+	$ids = array_unique( (array) ( $GLOBALS['ideatoapps_newsletter_queue'] ?? array() ) );
+	$GLOBALS['ideatoapps_newsletter_queue'] = array();
+	if ( ! $ids ) {
+		return;
+	}
+	if ( function_exists( 'fastcgi_finish_request' ) ) {
+		fastcgi_finish_request();
+	} elseif ( function_exists( 'litespeed_finish_request' ) ) {
+		litespeed_finish_request();
+	}
+	ignore_user_abort( true );
+	foreach ( $ids as $id ) {
+		ideatoapps_newsletter_send_confirmation( $id );
+	}
+}
+
+/**
+ * Admin notice text when confirmation emails have failed since the last successful one ('' when none). No address in it.
+ *
+ * @return string
+ */
+function ideatoapps_newsletter_mail_failure_notice() {
+	$n = (int) get_option( 'ideatoapps_newsletter_mail_failures', 0 );
+	if ( $n < 1 ) {
+		return '';
+	}
+	/* translators: 1: number of failed confirmation emails, 2: time of the last failure. */
+	return sprintf( __( '%1$d newsletter confirmation email(s) could not be sent since the last one that worked (last failure: %2$s). Those people stay "pending" and can sign up again. Check that the site can send mail (a sender mailbox, SPF/DKIM/DMARC).', 'ideatoapps-core' ), $n, (string) get_option( 'ideatoapps_newsletter_mail_failed_at', '' ) );
 }

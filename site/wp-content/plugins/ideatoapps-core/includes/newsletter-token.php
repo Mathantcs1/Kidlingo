@@ -2,7 +2,7 @@
 /**
  * Signed, stateless links for the newsletter confirm and unsubscribe pages.
  *
- * Token = HMAC-SHA256 over "id|action|issued" keyed with wp_salt( 'auth' ). A confirm token is "issued.mac" and expires after
+ * Token = HMAC-SHA256 over "ideatoapps-newsletter|id|action|issued" keyed with wp_salt( 'auth' ). A confirm token is "issued.mac" and expires after
  * 7 days (the issue time is inside the MAC, so it cannot be edited). An unsubscribe token is the bare MAC and never expires.
  *
  * @package ideatoapps-core
@@ -21,7 +21,7 @@ const IDEATOAPPS_NEWSLETTER_CONFIRM_TTL = 7 * DAY_IN_SECONDS;
  * @return string 64 hex characters.
  */
 function ideatoapps_newsletter_mac( $id, $action, $issued ) {
-	return hash_hmac( 'sha256', (int) $id . '|' . $action . '|' . $issued, wp_salt( 'auth' ) );
+	return hash_hmac( 'sha256', 'ideatoapps-newsletter|' . (int) $id . '|' . $action . '|' . $issued, wp_salt( 'auth' ) );
 }
 
 /**
@@ -55,7 +55,7 @@ function ideatoapps_newsletter_token_check( $id, $action, $token, $now = null ) 
 	}
 	$now = null === $now ? time() : (int) $now;
 	if ( 'confirm' === $action ) {
-		if ( 1 !== preg_match( '/^(\d{1,12})\.([a-f0-9]{64})$/', $token, $m ) ) {
+		if ( 1 !== preg_match( '/^(\d{1,12})\.([a-f0-9]{64})\z/', $token, $m ) ) {
 			return 'invalid';
 		}
 		if ( ! hash_equals( ideatoapps_newsletter_mac( $id, 'confirm', $m[1] ), $m[2] ) ) {
@@ -67,7 +67,7 @@ function ideatoapps_newsletter_token_check( $id, $action, $token, $now = null ) 
 		}
 		return $now - $issued > IDEATOAPPS_NEWSLETTER_CONFIRM_TTL ? 'expired' : 'ok';
 	}
-	if ( 1 !== preg_match( '/^[a-f0-9]{64}$/', $token ) ) {
+	if ( 1 !== preg_match( '/^[a-f0-9]{64}\z/', $token ) ) {
 		return 'invalid';
 	}
 	return hash_equals( ideatoapps_newsletter_mac( $id, 'unsubscribe', '' ), $token ) ? 'ok' : 'invalid';

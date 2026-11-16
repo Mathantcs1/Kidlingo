@@ -7,6 +7,8 @@ final class NewsletterOptInTest extends WPTestCase {
 	/** @var array<int, array<string, mixed>> */
 	private array $mails = array();
 	private bool $mail_ok = true;
+	/** @var callable */
+	private $capture;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -14,31 +16,35 @@ final class NewsletterOptInTest extends WPTestCase {
 		$this->mails            = array();
 		$this->mail_ok          = true;
 		update_option( 'ideatoapps_newsletter_enabled', true );
-		add_filter(
-			'pre_wp_mail',
-			function ( $short, $atts ) {
-				$this->mails[] = $atts;
-				return $this->mail_ok;
-			},
-			10,
-			2
-		);
+		$this->capture = function ( $short, $atts ) {
+			$this->mails[] = $atts;
+			return $this->mail_ok;
+		};
+		add_filter( 'pre_wp_mail', $this->capture, 10, 2 );
+		$GLOBALS['ideatoapps_newsletter_queue'] = array();
 	}
 
 	protected function tearDown(): void {
+		remove_filter( 'pre_wp_mail', $this->capture, 10 );
 		delete_option( 'ideatoapps_newsletter_enabled' );
-		unset( $_SERVER['REMOTE_ADDR'] );
+		delete_option( 'ideatoapps_newsletter_mail_failures' );
+		unset( $_SERVER['REMOTE_ADDR'], $GLOBALS['ideatoapps_newsletter_queue'] );
+		$_POST = array();
 		parent::tearDown();
 	}
 
-	private function signup( string $email = 'ann@example.com', bool $nonce = true ): WP_REST_Response {
+	private function signup( string $email = 'ann@example.com', bool $nonce = true, bool $flush = true ): WP_REST_Response {
 		$req = new WP_REST_Request( 'POST', '/ideatoapps/v1/newsletter' );
 		$req->set_header( 'Content-Type', 'application/json' );
 		if ( $nonce ) {
 			$req->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		}
 		$req->set_body( wp_json_encode( array( 'email' => $email, 'consent' => true ) ) );
-		return rest_do_request( $req );
+		$res = rest_do_request( $req );
+		if ( $flush ) {
+			ideatoapps_newsletter_flush_queue(); // what the shutdown hook does after the response has been sent.
+		}
+		return $res;
 	}
 
 	private function id_of( string $email ): int {
@@ -162,23 +168,84 @@ final class NewsletterOptInTest extends WPTestCase {
 		$this->assertCount( 1, get_posts( array( 'post_type' => 'ita_subscriber', 'post_status' => 'any', 'numberposts' => -1 ) ) );
 	}
 
-	public function test_an_unsubscribed_address_that_signs_up_again_becomes_pending_and_must_confirm_again(): void {
+	public function test_a_stranger_signing_up_an_unsubscribed_address_does_not_make_it_mailable(): void {
 		$id = $this->make( 'unsubscribed', 'gone@example.com' );
-		update_post_meta( $id, 'unsubscribed_at', gmdate( 'c' ) );
+		update_post_meta( $id, 'unsubscribed_at', '2026-01-01T00:00:00+00:00' );
 		$this->signup( 'gone@example.com' );
-		$this->assertSame( 'pending', get_post_meta( $id, 'status', true ) );
-		$this->assertCount( 1, $this->mails );
+		$this->assertSame( 'unsubscribed', get_post_meta( $id, 'status', true ), 'only a confirm POST changes the status' );
+		$this->assertSame( '2026-01-01T00:00:00+00:00', get_post_meta( $id, 'unsubscribed_at', true ), 'the opt-out time is kept' );
+		$this->assertNotSame( '', (string) get_post_meta( $id, 'resubscribe_requested_at', true ) );
+		$this->assertCount( 1, $this->mails, 'a confirmation is mailed' );
+		$this->assertSame( array(), ita_subscribers() );
+		$this->assertStringNotContainsString( 'gone@example.com', ita_subscribers_csv() );
 	}
 
-	public function test_a_failed_send_keeps_the_pending_row_reports_an_error_and_does_not_start_the_throttle(): void {
+	public function test_the_owner_can_re_subscribe_by_confirming_after_such_a_request_and_only_then(): void {
+		$id = $this->make( 'unsubscribed', 'gone@example.com' );
+		update_post_meta( $id, 'unsubscribed_at', '2026-01-01T00:00:00+00:00' );
+		$q = $this->query( $id, 'confirm' );
+		$this->assertSame( 400, $this->page( 'POST', $q, array( 'ita_do' => 'confirm' ) )['status'], 'no request, no re-confirmation with an old link' );
+		$this->signup( 'gone@example.com' );
+		$this->assertSame( 'confirm_form', $this->page( 'GET', $q )['view'] );
+		$this->assertSame( 'unsubscribed', get_post_meta( $id, 'status', true ), 'GET changes nothing' );
+		$this->assertSame( 200, $this->page( 'POST', $q, array( 'ita_do' => 'confirm' ) )['status'] );
+		$this->assertSame( 'confirmed', get_post_meta( $id, 'status', true ) );
+		$this->assertSame( '', (string) get_post_meta( $id, 'unsubscribed_at', true ) );
+		$this->assertSame( '', (string) get_post_meta( $id, 'resubscribe_requested_at', true ) );
+		$this->assertCount( 1, ita_subscribers() );
+	}
+
+	public function test_the_confirmation_is_sent_after_the_response_not_during_it(): void {
+		$res = $this->signup( 'async@example.com', true, false );
+		$this->assertSame( 200, $res->get_status() );
+		$this->assertSame( array(), $this->mails, 'no mail while the request is being answered' );
+		$this->assertNotFalse( has_action( 'shutdown', 'ideatoapps_newsletter_flush_queue' ), 'sent from the shutdown hook' );
+		$this->assertSame( array( $this->id_of( 'async@example.com' ) ), $GLOBALS['ideatoapps_newsletter_queue'] );
+		ideatoapps_newsletter_flush_queue();
+		$this->assertCount( 1, $this->mails );
+		$this->assertSame( array(), $GLOBALS['ideatoapps_newsletter_queue'] );
+	}
+
+	public function test_confirmed_throttled_new_and_failing_addresses_all_get_the_identical_answer(): void {
+		$this->make( 'confirmed', 'conf@example.com' );
+		$this->signup( 'throttled@example.com' );
+		$answers = array();
+		foreach ( array( 'conf@example.com', 'throttled@example.com', 'fresh@example.com' ) as $e ) {
+			$res       = $this->signup( $e );
+			$answers[] = array( $res->get_status(), $res->get_data() );
+		}
 		$this->mail_ok = false;
-		$res           = $this->signup( 'f@example.com' );
-		$this->assertSame( 500, $res->get_status() );
+		$res           = $this->signup( 'broken@example.com' );
+		$answers[]     = array( $res->get_status(), $res->get_data() );
+		$this->assertSame( 200, $answers[0][0] );
+		$this->assertCount( 1, array_unique( array_map( 'serialize', $answers ) ), 'same status and body whatever the list state or mail result' );
+	}
+
+	public function test_a_failed_send_keeps_the_row_pending_records_the_failure_without_the_address_and_does_not_start_the_throttle(): void {
+		$this->mail_ok = false;
+		$this->signup( 'f@example.com' );
 		$id = $this->id_of( 'f@example.com' );
 		$this->assertSame( 'pending', get_post_meta( $id, 'status', true ) );
+		$this->assertSame( '', (string) get_post_meta( $id, 'confirmation_sent_at', true ) );
+		$this->assertSame( 1, (int) get_option( 'ideatoapps_newsletter_mail_failures' ) );
+		$notice = ideatoapps_newsletter_mail_failure_notice();
+		$this->assertStringContainsString( '1', $notice );
+		$this->assertStringNotContainsString( 'f@example.com', $notice );
+		$this->assertStringNotContainsString( 'f@example.com', wp_json_encode( get_option( 'ideatoapps_newsletter_mail_failures' ) ) );
 		$this->mail_ok = true;
-		$this->assertSame( 200, $this->signup( 'f@example.com' )->get_status() );
+		$this->signup( 'f@example.com' );
 		$this->assertCount( 2, $this->mails, 'the retry was not throttled' );
+		$this->assertSame( '', ideatoapps_newsletter_mail_failure_notice(), 'a successful send clears the notice' );
+	}
+
+	public function test_the_failure_notice_shows_on_the_settings_and_list_pages(): void {
+		update_option( 'ideatoapps_newsletter_mail_failures', 3 );
+		wp_set_current_user( self::make_user( 'administrator' ) );
+		foreach ( array( 'ideatoapps_render_settings_page', 'ideatoapps_render_export_page' ) as $fn ) {
+			ob_start();
+			$fn();
+			$this->assertStringContainsString( 'could not be sent', (string) ob_get_clean(), $fn );
+		}
 	}
 
 	public function test_signup_still_needs_the_nonce_and_the_rate_limit(): void {
@@ -220,16 +287,17 @@ final class NewsletterOptInTest extends WPTestCase {
 		}
 		$this->assertSame( 'invalid', ideatoapps_newsletter_token_check( $b, 'unsubscribe', $u ), 'an unsubscribe token of another subscriber' );
 		$this->assertSame( 'invalid', ideatoapps_newsletter_token_check( $a, 'unsubscribe', str_repeat( 'a', 64 ) ), 'right shape, wrong MAC' );
+		$this->assertSame( 'invalid', ideatoapps_newsletter_token_check( $a, 'unsubscribe', $u . "\n" ), 'a trailing newline is not part of the token' );
 		$this->assertSame( 'invalid', ideatoapps_newsletter_token_check( $a, 'delete', $u ), 'only confirm and unsubscribe exist' );
 	}
 
 	public function test_the_token_is_an_hmac_sha256_keyed_with_the_auth_salt(): void {
 		$u = ideatoapps_newsletter_token( 7, 'unsubscribe' );
-		$this->assertSame( hash_hmac( 'sha256', '7|unsubscribe|', wp_salt( 'auth' ) ), $u );
+		$this->assertSame( hash_hmac( 'sha256', 'ideatoapps-newsletter|7|unsubscribe|', wp_salt( 'auth' ) ), $u );
 		$c  = ideatoapps_newsletter_token( 7, 'confirm', 1000 );
 		list( $ts, $mac ) = explode( '.', $c );
 		$this->assertSame( '1000', $ts );
-		$this->assertSame( hash_hmac( 'sha256', '7|confirm|1000', wp_salt( 'auth' ) ), $mac );
+		$this->assertSame( hash_hmac( 'sha256', 'ideatoapps-newsletter|7|confirm|1000', wp_salt( 'auth' ) ), $mac );
 	}
 
 	public function test_confirm_tokens_expire_after_seven_days_and_unsubscribe_tokens_never_do(): void {
@@ -391,8 +459,23 @@ final class NewsletterOptInTest extends WPTestCase {
 			$this->assertDoesNotMatchRegularExpression( '/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/', $html, $view );
 		}
 		$evil = array( 'ita_newsletter' => 'confirm', 'sid' => $p, 't' => '"><script>alert(1)</script>' );
-		$html = ideatoapps_newsletter_page_html( $this->page( 'GET', $evil ), $evil );
-		$this->assertStringNotContainsString( '<script>alert', $html );
+		foreach ( array( 'confirm_form', 'invalid' ) as $view ) {
+			$html = ideatoapps_newsletter_page_html( array( 'status' => 200, 'view' => $view, 'action' => 'confirm', 'id' => $p ), $evil );
+			$this->assertStringNotContainsString( 'alert(1)', $html, 'the token never reaches the markup' );
+		}
+	}
+
+	public function test_the_form_posts_to_the_browsers_own_url_so_a_cache_cannot_swap_the_token(): void {
+		$p    = $this->make( 'pending' );
+		$q    = $this->query( $p, 'confirm' );
+		$html = ideatoapps_newsletter_page_html( $this->page( 'GET', $q ), $q );
+		$this->assertMatchesRegularExpression( '/<form method="post">/', $html );
+		$this->assertStringNotContainsString( 'action=', $html );
+		$this->assertStringNotContainsString( $q['t'], $html );
+	}
+
+	public function test_subscriber_rows_are_not_in_the_core_xml_export(): void {
+		$this->assertFalse( get_post_type_object( 'ita_subscriber' )->can_export, 'Tools > Export would dump every address' );
 	}
 
 	public function test_unsubscribe_still_works_while_the_signup_switch_is_off(): void {

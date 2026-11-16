@@ -89,4 +89,52 @@ final class NewsletterPrivacyTest extends WPTestCase {
 		$this->assertStringContainsString( 'SPF', $html );
 		$this->assertStringContainsString( 'no composer', $html );
 	}
+
+	/** Make wp_die() throw so the handlers' refusals can be asserted. */
+	private function die_throws(): void {
+		add_filter( 'wp_die_handler', static fn() => static function ( $message, $title = '', $args = array() ) {
+			throw new RuntimeException( 'wp_die ' . ( is_array( $args ) ? ( $args['response'] ?? '' ) : '' ) );
+		} );
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'handlerCases' )]
+	public function test_bulk_delete_handler_refuses_editors_and_bad_nonces_and_deletes_nothing( string $role, bool $good_nonce ): void {
+		$id = $this->make( 'confirmed', 'keep@example.com' );
+		wp_set_current_user( self::make_user( $role ) );
+		$_POST = array( '_wpnonce' => $good_nonce ? wp_create_nonce( 'ideatoapps_delete_subscribers' ) : 'bad', 'bulk_action' => 'delete', 'subscriber_ids' => array( (string) $id ) );
+		$this->die_throws();
+		try {
+			ideatoapps_handle_delete_subscribers();
+			$this->fail( 'the handler must refuse' );
+		} catch ( RuntimeException $e ) {
+			$this->assertSame( 'wp_die 403', $e->getMessage() );
+		} finally {
+			$_POST = array();
+		}
+		$this->assertNotNull( get_post( $id ) );
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'handlerCases' )]
+	public function test_export_handler_refuses_editors_and_bad_nonces( string $role, bool $good_nonce ): void {
+		$this->make( 'confirmed', 'keep@example.com' );
+		wp_set_current_user( self::make_user( $role ) );
+		$_POST = array( '_wpnonce' => $good_nonce ? wp_create_nonce( 'ideatoapps_export_subscribers' ) : 'bad' );
+		$this->die_throws();
+		try {
+			ideatoapps_handle_export_subscribers();
+			$this->fail( 'the handler must refuse' );
+		} catch ( RuntimeException $e ) {
+			$this->assertSame( 'wp_die 403', $e->getMessage() );
+		} finally {
+			$_POST = array();
+		}
+	}
+
+	public static function handlerCases(): array {
+		return array(
+			'editor with a valid nonce'        => array( 'editor', true ),
+			'administrator with a bad nonce'   => array( 'administrator', false ),
+			'subscriber with a bad nonce'      => array( 'subscriber', false ),
+		);
+	}
 }

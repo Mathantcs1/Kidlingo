@@ -67,6 +67,9 @@ function ideatoapps_render_export_page() {
 				?>
 			</p></div>
 		<?php endif; ?>
+		<?php if ( '' !== ideatoapps_newsletter_mail_failure_notice() ) : ?>
+			<div class="notice notice-warning"><p><?php echo esc_html( ideatoapps_newsletter_mail_failure_notice() ); ?></p></div>
+		<?php endif; ?>
 		<p data-testid="newsletter-counts">
 			<?php
 			/* translators: 1: confirmed count, 2: pending count, 3: unsubscribed count. */

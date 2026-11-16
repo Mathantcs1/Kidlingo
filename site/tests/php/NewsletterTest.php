@@ -15,6 +15,7 @@ final class NewsletterTest extends WPTestCase {
 	protected function tearDown(): void {
 		delete_option( 'ideatoapps_newsletter_enabled' );
 		remove_filter( 'pre_wp_mail', '__return_true' );
+		$GLOBALS['ideatoapps_newsletter_queue'] = array();
 		unset( $_SERVER['REMOTE_ADDR'] );
 		parent::tearDown();
 	}

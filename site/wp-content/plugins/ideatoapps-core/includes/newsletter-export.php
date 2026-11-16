@@ -24,6 +24,7 @@ function ita_subscribers( $status = 'confirmed' ) {
 			'no_found_rows'  => true,
 		)
 	);
+	update_meta_cache( 'post', $ids );
 	$rows = array();
 	foreach ( $ids as $id ) {
 		$st = ideatoapps_subscriber_status( $id );
