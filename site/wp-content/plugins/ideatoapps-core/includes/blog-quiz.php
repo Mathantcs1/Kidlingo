@@ -2,7 +2,9 @@
 /**
  * [ita_quiz] with nested [ita_q q="" answers="a|b|c" correct="2" why=""]. Static markup: the question, its answers as a list,
  * and the correct answer inside <details>. blog.js turns valid questions (those with data-correct) into radio buttons.
- * `correct` is the 1-based position of the right answer; a question without a valid one is shown but not scored.
+ * `correct` is the 1-based position of the right answer, counted over the answers as written. An empty segment ("a||c", "a|b|")
+ * makes the question unscored (positions would be ambiguous): the non-empty answers are listed, nothing is revealed or scored.
+ * A question without a valid `correct` is shown but not scored.
  *
  * @package ideatoapps-core
  */
@@ -19,9 +21,12 @@ function ideatoapps_blog_question( $atts ): string {
 	$atts    = ideatoapps_blog_atts( $atts, array( 'q' => '', 'answers' => '', 'correct' => '', 'why' => '' ), 'ita_q' );
 	$text    = ideatoapps_blog_clean( $atts['q'], 300 );
 	$answers = array();
-	foreach ( explode( '|', is_scalar( $atts['answers'] ) ? (string) $atts['answers'] : '' ) as $answer ) {
+	$gap     = false;
+	foreach ( '' === trim( (string) ( is_scalar( $atts['answers'] ) ? $atts['answers'] : '' ) ) ? array() : explode( '|', (string) $atts['answers'] ) as $answer ) {
 		$answer = ideatoapps_blog_clean( $answer, 200 );
-		if ( '' !== $answer ) {
+		if ( '' === $answer ) {
+			$gap = true;
+		} else {
 			$answers[] = $answer;
 		}
 	}
@@ -30,7 +35,7 @@ function ideatoapps_blog_question( $atts ): string {
 		return '';
 	}
 	$correct = is_scalar( $atts['correct'] ) && preg_match( '/^\d{1,2}$/', trim( (string) $atts['correct'] ) ) ? (int) $atts['correct'] : 0;
-	$valid   = count( $answers ) >= 2 && $correct >= 1 && $correct <= count( $answers );
+	$valid   = ! $gap && count( $answers ) >= 2 && $correct >= 1 && $correct <= count( $answers );
 	$html    = '<li class="ita-q"' . ( $valid ? ' data-correct="' . (int) $correct . '"' : '' ) . '>'
 		. '<p class="ita-q__text">' . esc_html( $text ) . '</p>';
 	if ( $answers ) {

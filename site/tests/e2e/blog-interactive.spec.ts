@@ -65,11 +65,29 @@ test.describe('with JavaScript', () => {
     expect(await page.evaluate(() => (window as unknown as { __copied?: boolean }).__copied)).toBe(true);
   });
 
+  test('copy fallback returns focus to the Copy button, also when clipboard.writeText rejects', async ({ page }) => {
+    for (const reject of [false, true]) {
+      await page.addInitScript((r) => {
+        if (r) Object.defineProperty(navigator, 'clipboard', { value: { writeText: () => Promise.reject(new Error('denied')) }, configurable: true });
+        else Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+      }, reject);
+      await page.goto(url);
+      await page.evaluate(() => { document.execCommand = () => true; });
+      const button = box(page, 'ita-prompt').getByRole('button', { name: 'Copy prompt' });
+      await button.click();
+      await expect(box(page, 'ita-prompt').getByRole('status')).toHaveText('Copied');
+      await expect(button).toBeFocused();
+      expect(await page.locator('textarea').count(), 'temporary textarea removed').toBe(0);
+    }
+  });
+
   test('quiz gives feedback per question and a final score', async ({ page }) => {
     await page.goto(url);
     const quiz = box(page, 'ita-quiz');
     await expect(quiz.locator('details')).toHaveCount(0); // answers are not shown up front
     await expect(quiz.getByRole('radio')).toHaveCount(8);
+    await expect(quiz.locator('fieldset > legend')).toHaveCount(3);
+    await expect(quiz.getByRole('group', { name: 'What is 2 + 2?' })).toBeVisible();
     await quiz.getByRole('radio', { name: /^A\. 3/ }).check();
     await expect(quiz.locator('.ita-q__result').first()).toContainText('Not quite. The answer is B. 4');
     await expect(quiz.locator('.ita-q__result').first()).toContainText('Basic sums.');
@@ -92,6 +110,12 @@ test.describe('with JavaScript', () => {
     expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.includes('week-one')).length)).toBe(1);
     await page.reload();
     await expect(box(page, 'ita-checklist').getByRole('checkbox', { name: 'Ask one question' })).toBeChecked();
+    // Ticks saved for a different item list (edited or reordered) are dropped, not applied to the wrong items.
+    await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.includes('week-one')) localStorage.setItem(k, JSON.stringify({ h: 'stale000', c: [0, 1] })); });
+    await page.reload();
+    await expect(box(page, 'ita-checklist').locator('.ita-checklist__status')).toHaveText('0 of 3 done');
+    await box(page, 'ita-checklist').getByRole('checkbox', { name: 'Ask one question' }).check();
+    await page.reload();
     await expect(box(page, 'ita-checklist').getByRole('checkbox', { name: 'Open a chat' })).not.toBeChecked();
   });
 
@@ -109,11 +133,21 @@ test.describe('with JavaScript', () => {
     await page.goto(url);
     const term = box(page, 'ita-term');
     const tip = page.getByRole('tooltip');
-    await expect(term).not.toHaveAttribute('title', /.+/); // native title is replaced
+    await expect(term).toHaveAccessibleDescription('A chunk of text a model reads'); // what a screen reader announces
     await term.hover();
     await expect(tip).toHaveText('A chunk of text a model reads');
     await page.mouse.move(0, 400);
     await expect(tip).toBeHidden();
+    // WCAG 1.4.13: the bubble stays open while the pointer moves from the term onto it.
+    await term.hover();
+    await expect(tip).toBeVisible();
+    const box2 = (await tip.boundingBox())!;
+    await page.mouse.move(box2.x + box2.width / 2, box2.y + box2.height / 2, { steps: 4 });
+    await page.waitForTimeout(500);
+    await expect(tip).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(tip).toBeHidden();
+    await page.mouse.move(0, 400);
     await term.focus();
     await expect(tip).toBeVisible();
     await expect(term).toHaveAttribute('aria-describedby', /.+/);

@@ -46,7 +46,9 @@ function ideatoapps_blog_checklist( $atts, $content = '' ): string {
 	if ( '' === $id ) {
 		$id = 'list-' . substr( md5( implode( "\n", $items ) ), 0, 8 ); // stable while the items stay the same.
 	}
-	$html = '<div class="ita-checklist" data-testid="ita-checklist" data-ita-checklist="' . esc_attr( $id ) . '"><ul class="ita-checklist__list">';
+	// The hash lets blog.js drop saved ticks when the items were edited or reordered (they would tick the wrong things).
+	$hash = substr( md5( implode( "\n", $items ) ), 0, 8 );
+	$html = '<div class="ita-checklist" data-testid="ita-checklist" data-ita-checklist="' . esc_attr( $id ) . '" data-ita-hash="' . esc_attr( $hash ) . '"><ul class="ita-checklist__list">';
 	foreach ( $items as $item ) {
 		$html .= '<li class="ita-checklist__item">' . esc_html( $item ) . '</li>';
 	}

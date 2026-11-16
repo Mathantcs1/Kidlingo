@@ -14,6 +14,8 @@ require_once __DIR__ . '/blog-checklist.php';
 
 /**
  * Plain text from an attribute or shortcode body: no tags, decoded entities, collapsed whitespace, length-capped.
+ * Note: anything that looks like a tag is stripped, so a literal "<" followed by text (e.g. "a <b and c") loses that text;
+ * write "less than" in attributes.
  *
  * @param mixed $value Raw value (anything non-scalar becomes an empty string).
  * @param int   $max   Maximum characters.
@@ -76,7 +78,7 @@ function ideatoapps_blog_multiline( $content ): string {
  */
 function ideatoapps_blog_prompt( $atts, $content = '' ): string {
 	$atts = ideatoapps_blog_atts( $atts, array( 'title' => '' ), 'ita_prompt' );
-	$text = ideatoapps_blog_multiline( $content );
+	$text = ideatoapps_blog_multiline( is_string( $content ) ? do_shortcode( $content ) : '' ); // nested [ita_term] becomes its word.
 	if ( '' === $text ) {
 		return '';
 	}
@@ -97,8 +99,9 @@ function ideatoapps_blog_prompt( $atts, $content = '' ): string {
 function ideatoapps_blog_why( $atts, $content = '' ): string {
 	$atts = ideatoapps_blog_atts( $atts, array( 'title' => '' ), 'ita_why' );
 	$body = wp_kses(
-		is_string( $content ) ? $content : '',
+		is_string( $content ) ? do_shortcode( $content ) : '', // nested shortcodes first, then everything is filtered.
 		array(
+			'abbr'   => array( 'class' => true, 'data-testid' => true, 'tabindex' => true, 'title' => true ),
 			'a'      => array( 'href' => true ),
 			'strong' => array(),
 			'em'     => array(),
@@ -178,7 +181,7 @@ function ideatoapps_blog_assets_needed(): bool {
 	return false;
 }
 
-/** Enqueue blog.css and blog.js (deferred, in the footer). */
+/** Enqueue blog.css, blog.js and blog-learn.js (deferred, in the footer). */
 function ideatoapps_blog_enqueue(): void {
 	if ( ! ideatoapps_blog_assets_needed() ) {
 		return;
@@ -188,6 +191,8 @@ function ideatoapps_blog_enqueue(): void {
 		return file_exists( $dir . $file ) ? (string) filemtime( $dir . $file ) : IDEATOAPPS_CORE_VERSION;
 	};
 	wp_enqueue_style( 'ita-blog', plugins_url( 'assets/blog.css', IDEATOAPPS_CORE_FILE ), array(), $ver( 'blog.css' ) );
-	wp_enqueue_script( 'ita-blog', plugins_url( 'assets/blog.js', IDEATOAPPS_CORE_FILE ), array(), $ver( 'blog.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
+	$args = array( 'in_footer' => true, 'strategy' => 'defer' );
+	wp_enqueue_script( 'ita-blog', plugins_url( 'assets/blog.js', IDEATOAPPS_CORE_FILE ), array(), $ver( 'blog.js' ), $args ); // helpers, prompt, checklist.
+	wp_enqueue_script( 'ita-blog-learn', plugins_url( 'assets/blog-learn.js', IDEATOAPPS_CORE_FILE ), array( 'ita-blog' ), $ver( 'blog-learn.js' ), $args ); // quiz, glossary.
 }
 add_action( 'wp_enqueue_scripts', 'ideatoapps_blog_enqueue' );

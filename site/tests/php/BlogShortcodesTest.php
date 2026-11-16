@@ -229,6 +229,46 @@ final class BlogShortcodesTest extends SeoTestCase {
 		}
 	}
 
+	/* Review fixes */
+
+	public function test_why_and_prompt_run_nested_shortcodes(): void {
+		$xp = $this->dom( $this->render( '[ita_why title="T"]A [ita_term define="def"]word[/ita_term] inside.[/ita_why]' ) );
+		$this->assertSame( 1, $xp->query( '//*[contains(@class,"ita-why__body")]//abbr[@title="def"]' )->length );
+		$html = $this->render( '[ita_prompt]Explain [ita_term define="d"]tokens[/ita_term] simply[/ita_prompt]' );
+		$this->assertStringContainsString( 'Explain tokens simply', $html );
+		$this->assertStringNotContainsString( '[ita_term', $html );
+	}
+
+	public function test_malformed_nesting_degrades_safely(): void {
+		$html = $this->render( '[ita_why]A [ita_term define="<script>x</script>"]x[/ita_why] and [ita_term define="d"]<script>y()</script>[/ita_term]' );
+		$this->assertStringNotContainsString( '<script', $html );
+		$this->assertStringContainsString( 'A ', $html );
+		$html = $this->render( '[ita_why][ita_quiz][ita_q q="Q" answers="a|b" correct="1"][/ita_quiz] tail[/ita_why]' );
+		$this->assertStringContainsString( 'tail', $html );
+		$this->assertStringNotContainsString( '<details class="ita-q__reveal"', $html, 'block markup from nested components is filtered out' );
+	}
+
+	public function test_empty_answer_segments_leave_the_question_unscored(): void {
+		foreach ( array( 'a||c', 'a|b|', '|a|b' ) as $answers ) {
+			$xp = $this->dom( $this->render( '[ita_quiz][ita_q q="Q?" answers="' . $answers . '" correct="2"][/ita_quiz]' ) );
+			$this->assertSame( 0, $xp->query( '//*[@data-correct]' )->length, $answers );
+			$this->assertSame( 0, $xp->query( '//details' )->length, $answers );
+			$this->assertGreaterThanOrEqual( 2, $xp->query( '//*[contains(@class,"ita-q__options")]/li' )->length, $answers );
+		}
+	}
+
+	public function test_checklist_carries_a_hash_of_its_items(): void {
+		$hash = function ( string $items ): string {
+			preg_match( '/data-ita-hash="([^"]+)"/', $this->render( '[ita_checklist id="x"]' . $items . '[/ita_checklist]' ), $m );
+			return $m[1] ?? '';
+		};
+		$a = $hash( '[ita_item]One[/ita_item][ita_item]Two[/ita_item]' );
+		$this->assertNotSame( '', $a );
+		$this->assertSame( $a, $hash( '[ita_item]One[/ita_item][ita_item]Two[/ita_item]' ) );
+		$this->assertNotSame( $a, $hash( '[ita_item]Two[/ita_item][ita_item]One[/ita_item]' ), 'reordered' );
+		$this->assertNotSame( $a, $hash( '[ita_item]One[/ita_item][ita_item]Too[/ita_item]' ), 'edited' );
+	}
+
 	/* Assets */
 
 	public function test_assets_load_on_a_single_post_but_not_on_the_home_page_or_archives(): void {
