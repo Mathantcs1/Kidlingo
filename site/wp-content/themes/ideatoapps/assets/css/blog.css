@@ -9,7 +9,7 @@
 .blog-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; background: var(--bg-alt); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
 .blog-chip:hover { border-color: var(--muted); }
 .blog-chip[aria-current="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-.blog-chip__count { font-size: 0.8125rem; font-weight: 700; opacity: 0.85; }
+.blog-chip__count { font-size: 0.8125rem; font-weight: 700; }
 
 .blog-summary { margin: 0; color: var(--muted-on-alt); font-size: 0.9375rem; overflow-wrap: anywhere; }
 

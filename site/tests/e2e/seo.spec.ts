@@ -80,10 +80,10 @@ test('the app page uses its own featured image for og:image; other pages use the
 
 test('blog paging is the one query string a canonical keeps', async ({ page }) => {
   test.setTimeout(180_000);
-  // Page 2 must really exist (a page past the end redirects to the last page), so the blog needs more than nine posts.
+  // Page 2 must really exist (a page past the end redirects to the last page), so the blog needs more than twelve posts (one is the shared post).
   const extra: number[] = [];
   try {
-    for (let i = 1; i <= 9; i++) extra.push(await createPost(api, `Paging post ${i}`, { date: `2026-04-0${i}T10:00:00` }));
+    for (let i = 1; i <= 12; i++) extra.push(await createPost(api, `Paging post ${i}`, { date: `2026-04-${String(i).padStart(2, '0')}T10:00:00` }));
     await page.goto('/blog/?pg=2&utm_medium=x');
     expect((await head(page)).canonicals).toEqual([`${ORIGIN}/blog/?pg=2`]);
   } finally {

@@ -151,8 +151,8 @@ export async function createVideo(api: Api, title: string, opts: { status?: 'pub
   return body.id;
 }
 
-export async function createPost(api: Api, title: string, opts: { status?: 'publish' | 'draft'; content?: string; date?: string; meta?: Record<string, string> } = {}): Promise<number> {
-  const body = await send(api, 'POST', '/wp/v2/posts', { title, status: opts.status ?? 'publish', content: opts.content ?? '', excerpt: `About ${title}.`, ...(opts.date ? { date: opts.date } : {}), ...(opts.meta ? { meta: opts.meta } : {}) });
+export async function createPost(api: Api, title: string, opts: { status?: 'publish' | 'draft'; content?: string; date?: string; meta?: Record<string, string>; categories?: number[] } = {}): Promise<number> {
+  const body = await send(api, 'POST', '/wp/v2/posts', { title, ...(opts.categories ? { categories: opts.categories } : {}), status: opts.status ?? 'publish', content: opts.content ?? '', excerpt: `About ${title}.`, ...(opts.date ? { date: opts.date } : {}), ...(opts.meta ? { meta: opts.meta } : {}) });
   api.made.push({ route: '/wp/v2/posts', id: body.id });
   return body.id;
 }
@@ -160,6 +160,13 @@ export async function createPost(api: Api, title: string, opts: { status?: 'publ
 export async function createCategory(api: Api, name: string): Promise<number> {
   const id = (await send(api, 'POST', '/wp/v2/app_category', { name })).id;
   api.made.push({ route: '/wp/v2/app_category', id });
+  return id;
+}
+
+/** A blog post category (taxonomy `category`); returns its id. */
+export async function createPostCategory(api: Api, name: string, slug?: string): Promise<number> {
+  const id = (await send(api, 'POST', '/wp/v2/categories', { name, ...(slug ? { slug } : {}) })).id;
+  api.made.push({ route: '/wp/v2/categories', id });
   return id;
 }
 
@@ -257,6 +264,9 @@ export async function resetContent(api: Api): Promise<void> {
     const items: Array<{ id: number }> = await listed.json();
     for (const it of items) await send(api, 'DELETE', `${route}/${it.id}`, undefined, 'force=true');
   }
+  // Blog categories made by tests (the default "Uncategorized" cannot be deleted).
+  const cats = await api.ctx.fetch(rest('/wp/v2/categories', 'per_page=100'), { headers: { 'X-WP-Nonce': api.nonce } });
+  if (cats.ok()) for (const c of (await cats.json()) as Array<{ id: number; slug: string }>) if (c.slug !== 'uncategorized') await send(api, 'DELETE', `/wp/v2/categories/${c.id}`, undefined, 'force=true');
   await saveSettings(api, {});
 }
 

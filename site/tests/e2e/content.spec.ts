@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { axeProblems } from './helpers/a11y';
 import { horizontalOverflow } from './helpers/layout';
-import { adminApi, cleanup, createApp, createPost, createVideo, resetContent, saveSettings, trash, type Api } from './helpers/wp';
+import { adminApi, cleanup, createApp, createPost, createPostCategory, createVideo, resetContent, saveSettings, trash, type Api } from './helpers/wp';
 
 // These tests change site content; the server is shared, so run them one at a time and leave the site blank.
 test.describe.configure({ mode: 'serial' });
@@ -142,33 +142,235 @@ test.describe('Blog', () => {
     await expect(page.getByTestId('blog-empty')).toHaveCount(0);
     await expect(page.getByTestId('blog-list').locator('article h2')).toHaveText(['Newer note', 'Older note']);
     expect(await text(page)).not.toContain('Secret draft');
+    await expect(page.getByTestId('blog-featured')).toHaveCount(0); // fewer than four posts: no featured card
+    await expect(page.getByTestId('blog-summary')).toHaveText('2 articles');
     await page.getByRole('link', { name: 'Newer note' }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Newer note');
     await expect(page.getByTestId('post')).toContainText('Body text here.');
     await expect(page.getByRole('link', { name: 'Blog' }).first()).toBeVisible();
   });
 
-  test('more than nine posts paginate with plain links', async ({ page }) => {
-    test.setTimeout(120_000);
-    for (let i = 1; i <= 10; i++) await createPost(api, `Post ${String(i).padStart(2, '0')}`, { date: `2026-03-${String(i).padStart(2, '0')}T10:00:00` });
-    await page.goto('/blog/');
-    await expect(page.getByTestId('blog-list').locator('article')).toHaveCount(9);
-    await page.getByRole('link', { name: 'Older posts' }).click();
-    await expect(page).toHaveURL(/pg=2/);
-    await expect(page.getByTestId('blog-list').locator('article h2')).toHaveText(['Post 01']);
-    await page.getByRole('link', { name: 'Newer posts' }).click();
-    await expect(page.getByTestId('blog-list').locator('article')).toHaveCount(9);
-    // Past the end: the last page, not an empty state saying there are no posts.
-    await page.goto('/blog/?pg=99');
-    await expect(page).toHaveURL(/pg=2/);
-    await expect(page.getByTestId('blog-empty')).toHaveCount(0);
-    await expect(page.getByTestId('blog-list').locator('article h2')).toHaveText(['Post 01']);
-  });
-
   test('?pg=99 on a blog with no posts keeps the (true) empty state and does not redirect', async ({ page }) => {
     await page.goto('/blog/?pg=99');
     await expect(page).toHaveURL(/pg=99/);
     await expect(page.getByTestId('blog-empty')).toContainText('No posts yet');
+  });
+  // One shared fixture (17 published posts + 1 draft; built through the REST API, slow). Newest first: Tokens note (llms), Prompt two,
+  // Prompt one (prompting), Basics 13..01 (ai-basics, 13 posts), Plain note (Uncategorized, oldest). 12 per page, so page 2 holds 5.
+  test.describe('index with many posts', () => {
+    test.use({ viewport: { width: 1280, height: 900 } });
+    const titles = (page: Page) => page.getByTestId('blog-list').locator('article h2').allInnerTexts();
+    test.beforeAll(async () => {
+      test.setTimeout(240_000);
+      const [ai, pr, ll] = [await createPostCategory(api, 'AI basics', 'ai-basics'), await createPostCategory(api, 'Prompting', 'prompting'), await createPostCategory(api, 'LLMs', 'llms')];
+      await createPost(api, 'Plain note', { date: '2026-03-01T10:00:00' });
+      for (let i = 1; i <= 13; i++) await createPost(api, `Basics ${String(i).padStart(2, '0')}`, { date: `2026-03-${String(i + 1).padStart(2, '0')}T10:00:00`, categories: [ai] });
+      await createPost(api, 'Prompt one', { date: '2026-03-15T10:00:00', categories: [pr] });
+      await createPost(api, 'Prompt two', { date: '2026-03-16T10:00:00', categories: [pr] });
+      await createPost(api, 'Tokens note', { date: '2026-03-17T10:00:00', categories: [ll] });
+      await createPost(api, 'Secret draft', { status: 'draft', date: '2026-03-18T10:00:00', categories: [ai] });
+      api.made.splice(0);
+    });
+    test.afterAll(async () => { test.setTimeout(240_000); await resetContent(api); });
+
+    test('page 1: the newest post is one featured card (title, excerpt, reading time, category), not repeated in the grid; 11 in the grid', async ({ page }) => {
+      await page.goto('/blog/');
+      const featured = page.getByTestId('blog-featured');
+      await expect(featured).toHaveCount(1);
+      await expect(featured.getByRole('heading', { level: 2 })).toHaveText('Tokens note');
+      await expect(featured).toContainText('About Tokens note.');
+      await expect(featured).toContainText('1 min read');
+      await expect(featured.getByTestId('card-label')).toHaveText('LLMs');
+      const grid = await titles(page);
+      expect(grid).toHaveLength(11);
+      expect(grid).not.toContain('Tokens note');
+      expect(grid.slice(0, 3)).toEqual(['Prompt two', 'Prompt one', 'Basics 13']);
+      expect(await text(page)).not.toContain('Secret draft');
+      await expect(page.getByTestId('blog-summary')).toHaveText('17 articles');
+      await expect(page.getByTestId('blog-list').getByTestId('card-meta').first()).toHaveText('1 min read');
+      expect((await featured.boundingBox())!.width, 'featured is wider than a grid card').toBeGreaterThan((await page.getByTestId('blog-list').locator('article').first().boundingBox())!.width * 1.5);
+    });
+
+    test('chips: All first and current, counts, in topic order; a chip filters, no featured card, current moves', async ({ page }) => {
+      await page.goto('/blog/');
+      const chips = page.getByTestId('blog-chips').getByRole('link');
+      await expect(chips).toHaveText(['All', 'AI basics 13', 'Prompting 2', 'LLMs 1']);
+      await expect(chips.first()).toHaveAttribute('aria-current', 'true');
+      await chips.filter({ hasText: 'Prompting' }).click();
+      await expect(page).toHaveURL(/\/blog\/\?cat=prompting$/);
+      expect(await titles(page)).toEqual(['Prompt two', 'Prompt one']);
+      await expect(page.getByTestId('blog-featured')).toHaveCount(0);
+      await expect(page.getByTestId('blog-summary')).toHaveText('2 articles');
+      await expect(chips.filter({ hasText: 'Prompting' })).toHaveAttribute('aria-current', 'true');
+      await expect(chips.first()).not.toHaveAttribute('aria-current', 'true');
+      await chips.first().click();
+      await expect(page).toHaveURL(/\/blog\/$/);
+      await expect(page.getByTestId('blog-featured')).toHaveCount(1);
+    });
+
+    test('search works and combines with a category chip; the query is escaped and shown in the summary', async ({ page }) => {
+      await page.goto('/blog/');
+      await page.getByRole('search').getByLabel('Search articles').fill('  prompt   ');
+      await page.getByRole('search').getByRole('button', { name: 'Search' }).click();
+      await expect(page).toHaveURL(/\/blog\/\?q=\++prompt\++$/); // the browser sends the spaces; the server trims and collapses them
+      expect(await titles(page)).toEqual(['Prompt two', 'Prompt one']);
+      await expect(page.getByTestId('blog-summary')).toHaveText('2 articles for "prompt"');
+      await expect(page.getByTestId('blog-featured')).toHaveCount(0);
+      await page.getByTestId('blog-chips').getByRole('link', { name: /AI basics/ }).click(); // keeps q
+      await expect(page).toHaveURL(/cat=ai-basics/);
+      await expect(page).toHaveURL(/q=prompt/);
+      await expect(page.getByTestId('blog-no-results')).toBeVisible();
+      await page.goto('/blog/?cat=prompting');
+      await page.getByRole('search').getByLabel('Search articles').fill('two');
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL(/cat=prompting/);
+      expect(await titles(page)).toEqual(['Prompt two']);
+      await expect(page.getByTestId('blog-summary')).toHaveText('1 article for "two"');
+      await expect(page.getByRole('search').getByLabel('Search articles')).toHaveValue('two');
+    });
+
+    test('odd input never errors: markup is stripped and escaped, long text is capped, arrays and unknown categories are ignored', async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      let dialogs = 0;
+      page.on('dialog', async (d) => { dialogs++; await d.dismiss(); });
+      const input = page.getByRole('search').getByLabel('Search articles');
+      const res = await page.goto('/blog/?q=' + encodeURIComponent('<img src=x onerror=alert(1)>Tokens'));
+      expect(res!.status()).toBe(200);
+      await expect(input).toHaveValue('Tokens');
+      await expect(page.getByTestId('blog-summary')).toHaveText('1 article for "Tokens"');
+      expect(await page.locator('main img[onerror]').count()).toBe(0);
+      expect((await page.goto('/blog/?q=' + 'a'.repeat(500)))!.status()).toBe(200);
+      expect(((await input.inputValue()).length)).toBe(80);
+      await expect(page.getByTestId('blog-no-results')).toBeVisible();
+      await page.goto('/blog/?q=%26lt%3Bscript%26gt%3B%20%22quoted%22');
+      await expect(page.getByTestId('blog-summary')).toHaveText('0 articles for "&lt;script&gt; "quoted""');
+      for (const url of ['/blog/?q[]=x&cat[]=y', '/blog/?cat=no-such-category', '/blog/?cat=../../etc/passwd', '/blog/?pg[]=2', '/blog/?pg=-3', '/blog/?q=%3Cscript%3E']) {
+        const r = await page.goto(url);
+        expect(r!.status(), url).toBe(200);
+        await expect(page.getByTestId('blog-featured'), url).toHaveCount(1); // all ignored: the plain first page
+        await expect(page.getByTestId('blog-summary'), url).toHaveText('17 articles');
+      }
+      expect(errors).toEqual([]);
+      expect(dialogs).toBe(0);
+    });
+
+    test('pagination keeps the filters; page 2 has no featured card; past the end goes to the last page of that filter', async ({ page }) => {
+      await page.goto('/blog/');
+      await expect(page.getByRole('navigation', { name: 'Blog pages' })).toBeVisible();
+      await page.getByRole('link', { name: 'Older posts' }).click();
+      await expect(page).toHaveURL(/pg=2/);
+      expect(await titles(page)).toEqual(['Basics 04', 'Basics 03', 'Basics 02', 'Basics 01', 'Plain note']);
+      await expect(page.getByTestId('blog-featured')).toHaveCount(0);
+      await page.getByRole('link', { name: 'Newer posts' }).click();
+      await expect(page).toHaveURL(/\/blog\/$/);
+      await expect(page.getByTestId('blog-featured')).toHaveCount(1);
+      // A filter with 13 posts has two pages and the links keep cat (and q).
+      await page.goto('/blog/?cat=ai-basics');
+      expect((await titles(page)).length).toBe(12);
+      await page.getByRole('link', { name: 'Older posts' }).click();
+      await expect(page).toHaveURL(/cat=ai-basics&pg=2$/);
+      expect(await titles(page)).toEqual(['Basics 01']);
+      await page.getByRole('link', { name: 'Newer posts' }).click();
+      await expect(page).toHaveURL(/\/blog\/\?cat=ai-basics$/);
+      await page.goto('/blog/?q=Basics&cat=ai-basics');
+      expect(await page.getByRole('link', { name: 'Older posts' }).getAttribute('href')).toMatch(/cat=ai-basics&q=Basics&pg=2$/);
+      await page.goto('/blog/?q=a%26b%20c&pg=1');
+      await page.goto('/blog/?pg=99');
+      await expect(page).toHaveURL(/pg=2/);
+      await page.goto('/blog/?cat=ai-basics&pg=99');
+      await expect(page).toHaveURL(/cat=ai-basics&pg=2$/);
+      expect(await titles(page)).toEqual(['Basics 01']);
+    });
+
+    test('empty results: a "Clear filters" link, not the "No posts yet" state', async ({ page }) => {
+      await page.goto('/blog/?cat=llms&q=Basics');
+      await expect(page.getByTestId('blog-no-results')).toContainText('No articles found');
+      await expect(page.getByTestId('blog-empty')).toHaveCount(0);
+      await expect(page.getByTestId('blog-list')).toHaveCount(0);
+      await expect(page.getByTestId('blog-summary')).toHaveText('0 articles for "Basics"');
+      await expect(page.getByRole('search')).toBeVisible(); // can try again
+      await page.getByTestId('blog-no-results').getByRole('link', { name: 'Clear filters' }).click();
+      await expect(page).toHaveURL(/\/blog\/$/);
+      await expect(page.getByTestId('blog-featured')).toHaveCount(1);
+    });
+
+    test('search views are noindex,follow; a category view and the plain blog are indexable', async ({ page }) => {
+      const robots = async (url: string) => { await page.goto(url); return { robots: await page.locator('meta[name="robots"]').getAttribute('content'), canonicals: await page.locator('link[rel="canonical"]').count() }; };
+      const search = await robots('/blog/?q=prompt');
+      expect(search.robots).toMatch(/noindex/);
+      expect(search.robots).toMatch(/follow/);
+      expect(search.canonicals).toBe(0);
+      expect((await robots('/blog/?cat=prompting')).robots ?? '').not.toMatch(/noindex/);
+      expect(await page.locator('link[rel="canonical"]').getAttribute('href')).toMatch(/\/blog\/\?cat=prompting$/);
+      expect((await robots('/blog/')).robots ?? '').not.toMatch(/noindex/);
+    });
+
+    test('the post page category chip links to that category in the blog', async ({ page }) => {
+      await page.goto('/blog/?q=Prompt+one');
+      await page.getByRole('link', { name: 'Prompt one' }).click();
+      const chip = page.getByTestId('post-category').getByRole('link', { name: 'Prompting' });
+      await expect(chip).toHaveAttribute('href', /\/blog\/\?cat=prompting$/);
+      await chip.click();
+      expect(await titles(page)).toEqual(['Prompt two', 'Prompt one']);
+    });
+
+    test('without JavaScript: chips, search and pagination are plain links and a GET form', async ({ browser }) => {
+      const ctx = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 360, height: 740 } });
+      const page = await ctx.newPage();
+      await page.goto('/blog/');
+      await page.getByTestId('blog-chips').getByRole('link', { name: /LLMs/ }).click();
+      expect(await titles(page)).toEqual(['Tokens note']); // filtered: the newest post is a normal grid card, not featured
+      await page.getByRole('search').getByLabel('Search articles').fill('Tokens');
+      await page.getByRole('search').getByRole('button', { name: 'Search' }).click();
+      await expect(page).toHaveURL(/cat=llms/);
+      await expect(page).toHaveURL(/q=Tokens/);
+      await expect(page.getByTestId('blog-summary')).toHaveText('1 article for "Tokens"');
+      await ctx.close();
+    });
+
+    for (const width of [360, 768, 1440]) {
+      test(`no horizontal overflow at ${width}px (plain, filtered, long search, no results); chips wrap and are 44px tall`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        for (const url of ['/blog/', '/blog/?cat=ai-basics', '/blog/?q=' + 'W'.repeat(80), '/blog/?cat=llms&q=zzzz']) {
+          await page.goto(url);
+          await page.evaluate(() => document.fonts.ready);
+          expect(await horizontalOverflow(page), `${url} at ${width}px`).toBeLessThanOrEqual(0);
+        }
+        await page.goto('/blog/');
+        for (const h of await page.locator('.blog-chip').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) expect(h).toBeGreaterThanOrEqual(44);
+        for (const r of await page.locator('.blog-chip').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().right))) expect(r).toBeLessThanOrEqual(width);
+        if (width === 360) expect(await page.locator('.blog-chip').evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().top))).size)).toBeGreaterThan(1); // wrapped onto several lines
+      });
+    }
+
+    for (const scheme of ['dark', 'light'] as const) {
+      test(`axe is clean in ${scheme} (featured card, chips, search; filtered; no results)`, async ({ browser }) => {
+        for (const width of [360, 1280]) {
+          const ctx = await browser.newContext({ colorScheme: scheme, viewport: { width, height: 900 } });
+          const page = await ctx.newPage();
+          for (const url of ['/blog/', '/blog/?cat=prompting', '/blog/?cat=llms&q=zzzz']) {
+            await page.goto(url);
+            await page.evaluate(() => document.fonts.ready);
+            await page.waitForTimeout(300);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            expect(await axeProblems(page), `${scheme} ${width}px ${url}`).toEqual([]);
+          }
+          await ctx.close();
+        }
+      });
+    }
+
+    test('keyboard: chips and search have visible focus rings', async ({ page }) => {
+      await page.goto('/blog/');
+      for (const loc of [page.getByRole('search').getByLabel('Search articles'), page.getByTestId('blog-chips').getByRole('link').nth(1)]) {
+        await loc.focus();
+        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press('Tab');
+        const outline = await loc.evaluate((el) => { const c = getComputedStyle(el); return `${c.outlineStyle}:${c.outlineWidth}`; });
+        expect(outline).not.toMatch(/^none|:0px/);
+      }
+    });
   });
 });
 
