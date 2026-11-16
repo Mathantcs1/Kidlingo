@@ -5,7 +5,8 @@
  * Args: title (string, required), text (string), eyebrow (string), href (string), heading (2-4, default 3),
  *       class (extra classes), content (HTML, filtered with wp_kses_post),
  *       image_id (attachment ID shown above the title, lazy-loaded with width/height; decorative so alt is empty),
- *       placeholder ('play': decorative play tile when there is no image).
+ *       placeholder ('play': decorative play tile when there is no image),
+ *       hero_html (trusted inline SVG from ideatoapps_card_hero(), shown in a 16:9 box when there is no image).
  *
  * @package IdeaToApps
  */
@@ -19,10 +20,13 @@ $href    = (string) ( $args['href'] ?? '' );
 $level   = max( 2, min( 4, (int) ( $args['heading'] ?? 3 ) ) );
 $classes = trim( 'card ' . (string) ( $args['class'] ?? '' ) );
 $image   = (int) ( $args['image_id'] ?? 0 ) > 0 ? wp_get_attachment_image( (int) $args['image_id'], 'medium_large', false, array( 'loading' => 'lazy', 'decoding' => 'async', 'alt' => '' ) ) : '';
+$hero    = (string) ( $args['hero_html'] ?? '' );
 ?>
 <article class="<?php echo esc_attr( $classes ); ?>">
 	<?php if ( '' !== $image ) : ?>
 		<div class="card__media"><?php echo $image; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- core attachment markup. ?></div>
+	<?php elseif ( '' !== $hero ) : ?>
+		<div class="card__media card__media--hero" data-testid="card-hero"><?php echo $hero; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitised inline SVG. ?></div>
 	<?php elseif ( 'play' === ( $args['placeholder'] ?? '' ) ) : ?>
 		<div class="card__media card__media--play" aria-hidden="true">
 			<svg viewBox="0 0 24 24" focusable="false"><path d="M8 5.5v13l11-6.5z"/></svg>

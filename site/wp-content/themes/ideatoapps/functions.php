@@ -20,6 +20,7 @@ require_once get_template_directory() . '/inc/app-data.php';
 require_once get_template_directory() . '/inc/catalog.php';
 require_once get_template_directory() . '/inc/content.php';
 require_once get_template_directory() . '/inc/post-extras.php';
+require_once get_template_directory() . '/inc/post-hero.php';
 require_once get_template_directory() . '/inc/commerce.php';
 require_once get_template_directory() . '/inc/library.php';
 

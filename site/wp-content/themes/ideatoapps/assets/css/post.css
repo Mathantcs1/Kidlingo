@@ -8,7 +8,7 @@
 .post-byline p { margin: 0; }
 .post-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 var(--s-3); }
 .post-meta > span + span::before { content: "\00b7"; content: "\00b7" / ""; margin-right: 12px; }
-.post-hero__media { margin-top: var(--s-3); }
+.post-hero__media { margin-top: var(--s-3); aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--radius-card); }
 .post-hero__media img, .post-hero__media svg { display: block; width: 100%; height: auto; border-radius: var(--radius-card); }
 
 /* Layout: one column on phones (contents first, then text), text plus sticky contents on desktop. */

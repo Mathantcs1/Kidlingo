@@ -30,6 +30,7 @@ if ( ! $ideatoapps_next ) {
 					'eyebrow'  => sprintf( __( '%1$s · %2$d min read', 'ideatoapps' ), get_the_date( '', $ideatoapps_other ), ideatoapps_reading_minutes( $ideatoapps_other->ID ) ),
 					'text'     => wp_trim_words( wp_strip_all_tags( get_the_excerpt( $ideatoapps_other ) ), 24 ),
 					'image_id' => (int) get_post_thumbnail_id( $ideatoapps_other ),
+					'hero_html' => ideatoapps_card_hero( $ideatoapps_other ),
 					'heading'  => 3,
 				)
 			);

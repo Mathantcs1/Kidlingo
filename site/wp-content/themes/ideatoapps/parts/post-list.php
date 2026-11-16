@@ -33,6 +33,7 @@ if ( ! $ideatoapps_posts ) {
 				'eyebrow'  => get_the_date( '', $ideatoapps_post ),
 				'text'     => wp_trim_words( wp_strip_all_tags( get_the_excerpt( $ideatoapps_post ) ), 28 ),
 				'image_id' => (int) get_post_thumbnail_id( $ideatoapps_post ),
+				'hero_html' => ideatoapps_card_hero( $ideatoapps_post ),
 				'heading'  => 2,
 			)
 		);
