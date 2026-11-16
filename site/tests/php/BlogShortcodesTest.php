@@ -8,6 +8,7 @@ require_once __DIR__ . '/SeoTestCase.php';
 final class BlogShortcodesTest extends SeoTestCase {
 	protected function tearDown(): void {
 		wp_dequeue_style( 'ita-blog' );
+		wp_dequeue_script( 'ita-blog-learn' );
 		wp_dequeue_script( 'ita-blog' );
 		parent::tearDown();
 	}
@@ -277,7 +278,9 @@ final class BlogShortcodesTest extends SeoTestCase {
 		do_action( 'wp_enqueue_scripts' );
 		$this->assertTrue( wp_style_is( 'ita-blog', 'enqueued' ) );
 		$this->assertTrue( wp_script_is( 'ita-blog', 'enqueued' ) );
+		$this->assertTrue( wp_script_is( 'ita-blog-learn', 'enqueued' ) );
 		wp_dequeue_style( 'ita-blog' );
+		wp_dequeue_script( 'ita-blog-learn' );
 		wp_dequeue_script( 'ita-blog' );
 		$this->go_to( home_url( '/' ) );
 		do_action( 'wp_enqueue_scripts' );
