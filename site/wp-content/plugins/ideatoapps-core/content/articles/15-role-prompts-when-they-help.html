@@ -1,0 +1,52 @@
+<!--ita {"slug":"15-role-prompts-when-they-help","title":"Role prompts: when they help","category":"prompting","excerpt":"Telling a chatbot to act as someone changes its tone and focus. It does not add knowledge. Where a role helps, and where it only sounds more confident.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["students","creators"],"check":["Giving a chatbot a role mainly changes the tone, vocabulary, level of detail and focus of its answer.","A role such as 'expert historian' does not give the model knowledge it lacks, and it can still state wrong facts confidently.","Research on whether expert roles improve the accuracy of answers is mixed, and results vary by model and task.","A role works by making text written in that voice more likely, based on patterns the model learned from training text.","A role describing the reader or audience can produce useful feedback on where a text loses that reader."]} -->
+<p>Does starting with "You are an expert..." make a chatbot's answer better? In a limited way, sometimes. A role changes how the answer sounds: the words, the level of detail, what it pays attention to. It doesn't give the model knowledge it lacks, and it doesn't make the facts more reliable.</p>
+<p>So the useful question is narrower: what do you want to change about the answer?</p>
+
+<h2>What a role changes</h2>
+<p>A role is a line in a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] that tells the chatbot whose voice or viewpoint to use. "Explain photosynthesis as an elementary school teacher would" gets shorter sentences and everyday comparisons. "Explain photosynthesis as a plant biologist would" gets more terms and more detail.</p>
+<p>Notice what did the work in those two examples. The role told the chatbot who was listening as much as who was speaking. Often you can get the same effect by naming the audience directly: "Explain photosynthesis for a ten-year-old."</p>
+<p>A role can shift four things:</p>
+<ul>
+<li><strong>Tone</strong>: friendly, formal, blunt, playful.</li>
+<li><strong>Vocabulary</strong>: everyday words or the terms of a field.</li>
+<li><strong>Detail</strong>: a short overview or every step.</li>
+<li><strong>Focus</strong>: what gets noticed first, such as structure, evidence or mood.</li>
+</ul>
+
+<h2>Roles that are worth adding</h2>
+<p><strong>The reader you're writing for.</strong> This role often helps most. Ask the chatbot to read your work as your audience would and say where it would lose interest. Students can use it on an essay introduction. Creators can use it on the first lines of a video script.</p>
+[ita_prompt title="Read it as your audience"]
+Read the text below as [describe the reader, for example: a new viewer deciding whether to keep watching].
+Do not rewrite it.
+Mark the first sentence where this reader would lose interest, and say why in one line.
+Then list up to three questions this reader would still have at the end.
+Text:
+[paste your script, introduction or paragraph]
+[/ita_prompt]
+<p><strong>A practice partner.</strong> A debate opponent who argues the other side, or a podcast host who asks a guest hard questions. The role gives the chatbot a job in the conversation, which keeps its replies short and focused.</p>
+<p><strong>A specific kind of critic.</strong> "An editor who cares only about clarity" is more useful than "an expert". It tells the chatbot what to look for and what to ignore.</p>
+
+<h2>Where a role doesn't help</h2>
+<p><strong>Facts.</strong> An "expert historian" can still give you a wrong date, and it may sound more certain while doing it. The earlier article on how chatbots "know" things covers why a confident tone is not evidence. Check dates, names and numbers in a source you trust.</p>
+<p><strong>Professional judgment.</strong> "Act as my doctor" or "act as my lawyer" doesn't produce a doctor's or a lawyer's judgment. It produces text in their style. For health, legal or money decisions, ask a qualified person.</p>
+<p><strong>Long backstories.</strong> A paragraph about the expert's career, awards and personality is mostly padding. One line that names the voice and the audience usually does the job.</p>
+[ita_why title="Why would a role change the answer at all?"]
+<p>A language model writes by predicting likely text. During training it read text written by many kinds of people: teachers, scientists, reviewers, fans. A role line makes text in that voice more likely, so the answer moves toward that style.</p>
+<p>Whether expert roles also make answers more accurate is a debated question. Some studies report small gains on some tasks, and others find little or no effect. Results vary between models and change as models are updated, so treat any accuracy gain as unproven for your task.</p>
+[/ita_why]
+
+[ita_quiz]
+[ita_q q="What does a role in a prompt change most reliably?" answers="How accurate the facts in the answer are|How recent the model's knowledge is|The tone, vocabulary and level of detail" correct="3" why="A role mainly changes how the answer sounds, not what the model knows."]
+[ita_q q="You ask an 'expert historian' role for a date, and it sounds very sure. What should you do?" answers="Accept it, because the expert role makes facts more reliable|Ask again with a more senior expert role|Check the date in a source you trust" correct="3" why="A role can make an answer sound more certain without making it more correct."]
+[ita_q q="Which role is most likely to improve feedback on a video script's opening?" answers="A famous film director with many awards|A first-time viewer deciding whether to keep watching|A general helpful assistant" correct="2" why="A role based on the real audience points the feedback at what that audience will notice."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>Write three reader cards for one piece you're working on.</p>
+<ol>
+<li>Pick a short piece: an essay introduction, a caption, or the first lines of a script.</li>
+<li>On paper, write three one-line reader roles: someone new to the topic, someone in a hurry, and someone who disagrees with you.</li>
+<li>Run the "Read it as your audience" prompt with the reader you're most worried about.</li>
+<li>Fix only the sentence it marked.</li>
+<li>Run the next card on your fixed version, and keep the three cards with your draft for the next piece.</li>
+</ol>
