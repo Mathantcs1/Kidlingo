@@ -23,6 +23,9 @@ export const INCOMPLETE_CONTRAST_ALLOW: Array<{ selector: RegExp; why: string }>
   { selector: /^a\[rel="home"\] > span$/, why: `header wordmark "To" gradient-clipped text: stops and background ${PIXEL}` },
   { selector: /^:root > span$/, why: `same header wordmark "To" span, reported by axe with a root-relative selector: ${PIXEL}` },
   { selector: /^\.site-footer__inner > div > \.wordmark > span$/, why: `footer wordmark "To" gradient-clipped text: ${PIXEL}` },
+  // Article tables scroll inside themselves on a phone, so axe sees the clipped cells (and the caption once scrolled) as "partially
+  // obscured". The table test in content.spec.ts computes every caption/th/td colour against its painted background (>= 4.5:1).
+  { selector: /^(?:tr:nth-child\(\d+\) > )?(?:td|th)(?::nth-child\(\d+\)|\[scope="(?:row|col)"\])?$|^caption$/, why: 'cells of a scrolling article table: ratio computed in content.spec.ts' },
 ];
 
 export async function axeProblems(page: Page): Promise<string[]> {

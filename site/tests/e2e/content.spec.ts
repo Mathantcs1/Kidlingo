@@ -510,6 +510,43 @@ test.describe('Single post', () => {
     await expect(page.getByTestId('post-audience')).toHaveCount(0);
   });
 
+  test('a wide table scrolls inside itself at 360px (no page overflow), is keyboard-scrollable, and is axe clean in both themes', async ({ browser }) => {
+    const cols = ['Format', 'Best for', 'What to ask for', 'Watch out for', 'Example request'];
+    const row = (h: string) => `<tr><th scope="row">${h}</th>${cols.slice(1).map((c) => `<td>${c} for ${h.toLowerCase()} with several plain words in each cell</td>`).join('')}</tr>`;
+    const table = `<table><caption>Which format to ask for</caption><thead><tr>${cols.map((c) => `<th scope="col">${c}</th>`).join('')}</tr></thead><tbody>${['Table', 'Checklist', 'JSON'].map(row).join('')}</tbody></table>`;
+    const id = await createPost(api, 'Table guide', { content: `<p>Intro text before the table.</p>${table}<p>Text after the table.</p>` });
+    for (const scheme of ['dark', 'light'] as const) {
+      const ctx = await browser.newContext({ colorScheme: scheme, viewport: { width: 360, height: 740 } });
+      const page = await ctx.newPage();
+      await page.goto(`/?p=${id}`);
+      await page.evaluate(() => document.fonts.ready);
+      const t = page.locator('.post-body table');
+      await expect(t.locator('caption')).toHaveText('Which format to ask for');
+      expect(await horizontalOverflow(page), `${scheme} page overflow`).toBeLessThanOrEqual(0);
+      const box = await t.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth, right: el.getBoundingClientRect().right }));
+      expect(box.scroll, 'the table is wider than its box').toBeGreaterThan(box.client);
+      expect(box.right).toBeLessThanOrEqual(360);
+      await page.locator('.post-body p').first().click();
+      for (let i = 0; i < 20 && !(await t.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab');
+      await expect(t, 'Tab reaches the table').toBeFocused();
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowRight');
+      await expect.poll(() => t.evaluate((el) => el.scrollLeft), { message: 'arrow keys scroll the table' }).toBeGreaterThan(0);
+      await t.evaluate((el) => { el.scrollLeft = 0; });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      expect(await axeProblems(page), `${scheme} axe`).toEqual([]);
+      // axe cannot measure cells clipped by the scrolling table (allow-listed in helpers/a11y.ts), so check every one here.
+      const worst = await t.evaluate((el) => {
+        const rgb = (c: string) => (c.match(/[\d.]+/g) ?? []).map(Number);
+        const lum = (c: number[]) => { const f = (v: number) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+        const bg = (n: Element | null): number[] => { for (; n; n = n.parentElement) { const c = rgb(getComputedStyle(n).backgroundColor); if (c.length >= 3 && (c.length < 4 || c[3] === 1)) return c; } return [255, 255, 255]; };
+        return Math.min(...[...el.querySelectorAll('caption, th, td')].map((cell) => { const a = lum(rgb(getComputedStyle(cell).color)), b = lum(bg(cell)); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); }));
+      });
+      expect(worst, `${scheme} worst cell contrast`).toBeGreaterThanOrEqual(4.5);
+      await ctx.close();
+    }
+  });
+
   test('contents links scroll to their heading, below the sticky header, and the contents stay in view', async ({ page }) => {
     const id = fixtureId;
     await page.goto(`/?p=${id}`);

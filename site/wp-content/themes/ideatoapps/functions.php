@@ -23,6 +23,7 @@ require_once get_template_directory() . '/inc/blog-level.php';
 require_once get_template_directory() . '/inc/blog-query.php';
 require_once get_template_directory() . '/inc/blog-card.php';
 require_once get_template_directory() . '/inc/post-extras.php';
+require_once get_template_directory() . '/inc/post-tables.php';
 require_once get_template_directory() . '/inc/post-hero.php';
 require_once get_template_directory() . '/inc/commerce.php';
 require_once get_template_directory() . '/inc/library.php';

@@ -57,3 +57,12 @@ html.js .post-progress { display: block; }
 .post-audience__for { margin: 0; color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
 .post-audience__list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .post-audience__chip { padding: 4px 12px; color: var(--ink); background: var(--bg-alt); border: 1px solid var(--line); border-radius: 999px; font-size: 0.875rem; overflow-wrap: anywhere; }
+
+/* Tables in an article: plain HTML tables (caption, column and row headers). On a narrow screen the table scrolls inside itself
+   (display: block) instead of widening the page; it can be focused and scrolled with the keyboard. */
+.post-body table { display: block; max-width: 100%; overflow-x: auto; margin: 0 0 var(--s-3); border-collapse: collapse; font-size: 0.9375rem; }
+.post-body table:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
+.post-body caption { padding: 0 0 var(--s-1); color: var(--ink); font-weight: 700; text-align: left; caption-side: top; }
+.post-body th, .post-body td { padding: 8px 12px; color: var(--ink); border: 1px solid var(--line); text-align: left; vertical-align: top; }
+.post-body thead th { background: var(--bg-alt); font-weight: 700; }
+.post-body tbody th { font-weight: 600; }
