@@ -44,6 +44,12 @@ async function signUp(page: Page, email: string) {
   await expect(section.getByTestId('form-status')).toContainText('Your sign-up only counts once you click it', { timeout: 20_000 });
 }
 
+/** The confirmation is mailed after the response, so wait for it to be captured. */
+const mailsFor = async (email: string, n = 1) => {
+  await expect.poll(async () => (await capturedMails(api)).filter((m) => m.to.includes(email)).length, { timeout: 15_000 }).toBeGreaterThanOrEqual(n);
+  return (await capturedMails(api)).filter((m) => m.to.includes(email));
+};
+
 const link = (body: string, kind: 'confirm' | 'unsubscribe') => new RegExp(`https?://\\S+ita_newsletter=${kind}\\S*`).exec(body)![0];
 
 test('while the switch is off the home page says sign-up is not open yet and the endpoint answers 503', async ({ page }) => {
@@ -60,7 +66,7 @@ test('sign-up, scanner fetch changes nothing, confirm button confirms, only then
   await capturedMails(api, true);
   const email = mine('a');
   await signUp(page, email);
-  const mails = (await capturedMails(api)).filter((m) => m.to.includes(email));
+  const mails = await mailsFor(email);
   expect(mails).toHaveLength(1);
   expect(mails[0].subject).toBe('Confirm your IdeaToApps newsletter sign-up');
   const confirmUrl = link(mails[0].message, 'confirm');
@@ -121,7 +127,7 @@ test('unsubscribe keeps only the opt-out; a confirmed address cannot be re-confi
 test('Unsubscribe and delete my data removes the row completely', async ({ page }) => {
   const email = mine('b');
   await signUp(page, email);
-  const mail = (await capturedMails(api)).filter((m) => m.to.includes(email))[0];
+  const mail = (await mailsFor(email))[0];
   expect(rowStatus(await adminList(), email)).toBe('pending');
   await page.goto(link(mail.message, 'unsubscribe'));
   await page.getByTestId('newsletter-delete-button').click();
