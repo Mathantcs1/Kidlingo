@@ -112,6 +112,17 @@ It is a static site built with React, TypeScript and Vite.
     file); applying one copies it into the clip in one undo step, relative to the clip's own position. Rename, delete
     (asks first; clips keep their animation) and favourites are in the browser. A library written by a newer version is
     shown read-only and never overwritten.
+- **Transitions** (Plan 5, Part 5C; saved data version 10): hover a cut between two clips on a video track and press its
+  **+** (or press **T**, or click / drag a tile of the transitions browser onto the cut) to add a transition centred on the
+  cut: dip to black, dissolve, wipe (four directions, soft edge), slide, push (four directions), zoom or glitch. The
+  chip on the cut selects it (the Inspector shows type, duration, ease, direction, softness / zoom / strength and the audio
+  crossfade law, equal power or constant gain); drag a chip edge to change its duration (one undo step); Delete removes the
+  selected transition. The clips keep their start, in and out: the transition draws each clip a little past its edge from
+  its own footage (the "handle"), so a clip needs unused footage beyond the cut and the duration is clamped to it. The
+  clips' embedded sound crossfades over the same window (it replaces their fades on that edge), and an audio-only
+  crossfade works on audio-track cuts. Splitting, joining, copying, pasting, speed changes and deleting keep the
+  transitions consistent, and **Merge with crossfade** joins clips with one at every new cut. Preview and export use one
+  renderer and one audio chain.
 - **Speed, reverse, ramps and freeze frame** (Plan 5, Part 5D; saved data version 9): the Inspector's "Speed" section sets a
   constant **Speed** (25 % to 400 %; the clip keeps its start and its length changes, rounded to whole frames) or a
   **Duration** (which sets the speed), **Reverse**, **Preserve pitch** (on by default: the sound is time-stretched, pitch
@@ -186,7 +197,6 @@ The multi-layer timeline (Plan 2), audio editing (Plan 3), visual effects (Plan 
 real GPU/Mac/Safari/QuickTime. The rest of Plan 5 is outlined in
 [docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md](docs/superpowers/plans/2026-11-12-clipforge-plan-5-animation.md):
 
-- **5C transitions** (crossfade, wipe, slide, zoom on a cut).
 - Later: text stagger/typewriter presets, effect-parameter presets, motion blur, loop-in, "convert preset to keyframes",
   library export/import, and a professional UI pass (a visual and usability polish of the whole editor; no data change).
 
@@ -335,7 +345,7 @@ Layers and the preview:
 - **Animation limits** (Plan 5, Part 5A):
   - At most **500 keys per property** (a further key is refused; a hand-edited project is trimmed to the earliest 500).
     A key costs about 55 to 60 bytes of saved project.
-  - No transitions yet (Part 5C). (Presets, springs, loops and draggable paths
+  - Transitions arrived in Part 5C, below. (Presets, springs, loops and draggable paths
     arrived in Part 5B, below.)
   - A split or trim that is not a whole number of frames from the clip's start can move the animation's frame grid by
     less than one frame. A static edit of an animated property is refused ("This setting is animated: change it at the
@@ -346,6 +356,18 @@ Layers and the preview:
   - Overlay text uses the device's system font; the animation measurements (preview frame time, memory, parity with
     the export) were made with the software renderer (SwiftShader) in headless Chromium on Linux, not on a real GPU,
     in Safari or in QuickTime (see `docs/superpowers/ledgers/plan-5a-manual-qa-checklist.md`).
+- **Transition limits** (Plan 5, Part 5C; saved data version 10 is one-way, a v9 build cannot open a v10 project):
+  - A transition needs footage beyond both clips' edges (stills and overlays need none); with less, the duration is shortened
+    to whole frames (an even count, 2 frames at least, 5 s at most) and with none it is refused. Trimming the cut edge of a
+    transitioned clip removes the transition (a toast says so; undo restores it).
+  - During the handle a clip's animation (keys, presets) is held at its edge frame while the footage keeps playing. A clip with a
+    Fade Out preset and a transition crossfades from a nearly invisible picture.
+  - Only between two clips of the same video (or audio) track, never with adjustment layers; one transition per cut. Transition
+    parameters cannot be keyframed and there are no user transition presets or colours.
+  - Normal-mode transitions use four composite targets; a non-Normal blend mode uses five, so a 4K frame with one is scaled
+    down. When the two clips have different blend modes the outgoing clip's mode is used before the midpoint and the
+    incoming one's after. The GPU matches its CPU mirror to a mean of about 1.5/255 at 25 fps and 3.6/255 at 30 fps (a
+    bilinear row at sharp colour edges); measured on a software renderer, not a real GPU.
 - **Speed limits** (Plan 5, Part 5D; saved data version 9 is one-way, a v8 build cannot open a v9 project):
   - Speed stays between 25 % and 400 %; a ramp has at most 64 points and its speeds are clamped to that range. Speed applies to
     video and audio clips; images, overlays and adjustment layers refuse it, and a freeze frame has no speed or sound.
@@ -393,7 +415,7 @@ Layers and the preview:
     normalised (no visible difference).
   - Like 5A: measurements (frame time, memory, parity) are from headless Chromium with a software renderer, not a real GPU,
     Safari or QuickTime (see `docs/superpowers/ledgers/plan-5b-manual-qa-checklist.md`).
-- No transitions, speed change, crop or text clips yet (see the roadmap).
+- No text clips yet (see the roadmap).
 
 ## Development
 

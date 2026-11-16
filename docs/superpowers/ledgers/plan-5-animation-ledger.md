@@ -145,3 +145,14 @@ FLAKE ROOT CAUSE FOUND AND FIXED (src/media/storage.ts, found during 5D Task 1):
 5D Task 12: guards (decode counts at 4x, 60 s drift, autosave size per ramp key), journey spec, docs; review fixes: hot-path allocation, unused export, spec that could not fail.
 5D final review (opus, read-only): 2 Important, 5 Minor. Fixed in one wave: I1 a ramp clip's trim/handle maps now follow the ramp's own keys (start trim keeps the end; test added; the 5C handle extrapolation therefore also follows the ramp rather than holding the edge speed), I2 the first reverse window is sized from the track's coded size (was a 1080p guess), M1 waveform redraws on reverse/speed, M2 freeze of a reversed clip holds the frame shown (and the last frame at the tail), M3 paste onto a reversed clip filters by keyVisible and anchors mirrored, M4 closed source after a reverse fill returns null. M5 (migration may push footage past the file end on a clamped slow speed) accepted: duration kept, no frames past the end are drawn.
 5D PART GATE (2026-11-15, head 251f7e1): npm test 2063 passed, typecheck, build, `grep -rl __clipforge dist` empty, fresh full e2e 633 passed (38 min), e2e:preview 1/1. NOT pushed or deployed (needs the user's explicit go-ahead).
+5C Task 1 (07bfd12): file splits (compositor -> drawSteps, drawCollect -> drawCollectPicture, store -> autosave); full e2e 633/633.
+5C Task 2 (b6dddf7): pure model, validity, reconcileTransitions hooked into every structural edit; property test (2000 random edit sequences); 4 mutations caught.
+5C Task 3 (3cd58da): data v10 + migrateTransitions; `{version: 11}` unsupported; 3 mutations caught.
+5C Task 4 (2beefb7): frameStepsAt, handle draws, decoder selection (activeVisualClipsAt keeps UI hit-testing); scrub-decoder-limit spec deferred to Task 7's decoder guard.
+5C Task 5 (952a333): fused transition pass + CPU mirror; GPU vs CPU mean 1.42/255 (25 fps) and 3.55/255 (30 fps), <= 2.8 % of samples > 3/255; different blend modes: outgoing mode before the midpoint, incoming after.
+5C Task 6 (5eba5d8): audio crossfade in the shared chain (null test 8.9e-8, equal power 1.407x at centre, seams identical); fixed a live-mixer node end float error (0.079 double-count at a window cut inside a crossfade).
+5C Task 7 (2e9e718): speed/handle/robustness/perf (1.41x one Screen layer, 4K 126.6 MiB, 6 decoders); full e2e 661/661.
+5C Task 8 (697d055): chips, "+", duration drag, selection slice, Delete tier, T; full e2e 669/669 (second run; first run: help-table count, trim-handle overlap, the known loops-ui flake).
+5C Task 9 (a6dfb41): browser, inspector, menus, Help. Deferred: clip-menu "Remove transition" removes the first transition only.
+5C Task 10 (22da1df): Join with a transition (+ report/toast), "Merge with crossfade", clipboard carry when both clips are in the payload.
+5C Task 11: journey spec (export: duration 4 s, picture at the cut, audio through the crossfade within 4 dB), docs, QA checklist.
