@@ -11,7 +11,7 @@
 <li><strong>Your code returns the result.</strong> The result is labeled as the answer to that call, usually with an ID that links the two.</li>
 <li><strong>The model continues.</strong> It writes the final answer or asks for another tool.</li>
 </ol>
-<p>Some APIs let the model ask for several calls in one turn. Some let your code force a tool call, or force one particular tool. Field names and formats differ between providers and change over time, so check the current documentation for yours.</p>
+<p>Field names and formats differ between providers and change over time, so check the current documentation for yours. Some APIs let the model ask for several calls in one turn. Some let your code force a tool call, or force one particular tool.</p>
 
 <h2>Writing a tool definition</h2>
 <p>The model chooses tools from their names and descriptions. Write the description as you would write a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term]: say when to use the tool, and when not to. Here is a definition for a hypothetical family calendar app:</p>
@@ -38,7 +38,7 @@
 <li><strong>Use fixed lists of values</strong> wherever you can, like the <code>who</code> field above.</li>
 <li><strong>Offer few tools, with clear differences.</strong> Several tools with similar names and descriptions make wrong choices more likely.</li>
 <li><strong>Return short results.</strong> Return only the fields the model needs.</li>
-<li><strong>Return errors the model can act on.</strong> "Start time is in the past; ask the user for a new time" lets it recover. A stack trace doesn't.</li>
+<li><strong>Return errors the model can act on.</strong> "Start time is in the past; ask the user for a new time" lets it recover, while a stack trace gives it nothing to use.</li>
 </ul>
 [ita_why title="What the model actually sees of a tool"]
 <p>The model doesn't receive your function. Your tool definitions are turned into text and added to the request, usually near the system instructions. The model learned in training to read that text and to write calls in the expected format.</p>
