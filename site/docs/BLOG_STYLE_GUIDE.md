@@ -16,6 +16,17 @@ not belong in the article.
 - Concrete, everyday examples: an email to a landlord, a study plan, a recipe, a calendar. Not abstract "use cases".
 - Describe how things generally work. Never claim what a specific product can or cannot do.
 - No hype and no fear. If something is uncertain or still debated, say so plainly.
+- **American spelling** for the whole series: summarize, color, behavior, judgment, neighbor, apartment (not flat), studying
+  (not revising), grocery shopping. The lint fails on a list of British spellings.
+- **Words with fixed meanings**: "prompt" is defined with `[ita_term]` at its first use in every article that uses it. "Tool" always
+  means a capability the model calls (search, read a file, add a calendar entry); the chat product people open is an "app".
+
+### Habits that make text sound machine-written (avoid)
+- The same skeleton every time. Vary openers, section shapes (lists, h3s, short paragraphs, bold-lead paragraphs) and endings.
+  Not every article needs a definitional hook, a one-line punch and a neat closing aphorism.
+- More than 2 sentences starting with "That's" per article (the lint counts them).
+- "X, not Y" contrasts ("a goal, not a list"): at most 1 per article; the lint fails at 3 or more.
+- Rule-of-three lists as the default rhythm, and clipped two-sentence pairs ("Usually they match. Sometimes they don't.").
 
 ## Structure
 1. **Hook**: 2-3 sentences that give the real answer early. No warm-up paragraph.
@@ -58,7 +69,8 @@ Pick the claims a careful reader is most likely to question: definitions, how so
 ## Shortcodes
 Attribute values go in double quotes and must not contain `"`, `[`, `]` or `<`. Write "less than" instead of `<`.
 
-**Prompt box**: the text is copied exactly as written, so write it the way a reader would paste it.
+**Prompt box**: the text is copied exactly as written, so write it the way a reader would paste it. Lint rules apply to prompt
+text too, so a prompt in the reader's voice still avoids phrases such as "when I" or "I asked".
 ```
 [ita_prompt title="A better version"]
 Write a short email to my landlord asking for the heater to be repaired.
@@ -66,10 +78,14 @@ Write a short email to my landlord asking for the heater to be repaired.
 ```
 
 **Quiz**: exactly 3 `[ita_q]`. `answers` are separated by `|` (no empty answers, no `|` inside one). `correct` is the 1-based
-position of the right answer. `why` is required: one sentence explaining the answer.
+position of the right answer. `why` is required: one sentence explaining the answer. Make the quiz a real check:
+- Vary the position of the right answer: never the same position for all 3 questions, and across all articles no position may be
+  right in more than half of the questions (the lint checks both).
+- Distractors must be plausible, ideally half-true statements a reader could believe. No joke answers.
+- The right answer must not be the longest option in every question.
 ```
 [ita_quiz]
-[ita_q q="What does a chatbot do to produce its answer?" answers="Looks it up|Predicts the next piece, again and again|Copies a website" correct="2" why="It builds the answer one predicted piece at a time."]
+[ita_q q="What does a chatbot do to produce its answer?" answers="Retrieves the closest answer it stored in training|Searches the web and summarizes the top page|Predicts the next piece, again and again" correct="3" why="It builds the answer one predicted piece at a time."]
 [/ita_quiz]
 ```
 
@@ -87,7 +103,7 @@ position of the right answer. `why` is required: one sentence explaining the ans
 
 **Glossary term**: the definition shows on hover, focus or tap. Use it in body text or inside a Why box, never inside an attribute.
 ```
-[ita_term define="A small piece of text, often part of a word, that a model reads and writes."]token[/ita_term]
+[ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term]
 ```
 
 **Figure**: `name` is a file in `content/figures/` (without `.svg`). `alt` is required, plain text, at most 140 characters, and
