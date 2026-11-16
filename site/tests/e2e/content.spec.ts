@@ -186,10 +186,14 @@ const barWidth = async (page: Page) => (await page.getByTestId('post-progress').
 
 test.describe('Single post', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
-  test.beforeEach(() => { test.setTimeout(120_000); }); // each test builds a fixture of six posts through the REST API
+  // One shared fixture of six posts (built through the REST API, slow). The file-wide afterEach cleanup would delete it, so it is
+  // taken off the cleanup list and removed with resetContent after this block, which leaves the site blank for later blocks.
+  let fixtureId = 0;
+  test.beforeAll(async () => { test.setTimeout(180_000); fixtureId = await longPostFixture(api); api.made.splice(0); });
+  test.afterAll(async () => { await resetContent(api); });
 
   test('hero, meta row, contents with unique ids, and "Read next" with three other published posts', async ({ page }) => {
-    const id = await longPostFixture(api);
+    const id = fixtureId;
     await page.goto(`/?p=${id}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Long guide');
     await expect(page.getByTestId('post-meta')).toContainText('5 min read');
@@ -209,7 +213,7 @@ test.describe('Single post', () => {
   });
 
   test('contents links scroll to their heading, below the sticky header, and the contents stay in view', async ({ page }) => {
-    const id = await longPostFixture(api);
+    const id = fixtureId;
     await page.goto(`/?p=${id}`);
     const headerBottom = (await page.locator('.site-header').boundingBox())!.height;
     const toc = page.getByTestId('post-toc');
@@ -227,7 +231,7 @@ test.describe('Single post', () => {
   });
 
   test('the progress bar is decorative, starts empty, grows while scrolling and fills at the end of the text', async ({ page }) => {
-    const id = await longPostFixture(api);
+    const id = fixtureId;
     await page.goto(`/?p=${id}`);
     const progress = page.getByTestId('post-progress');
     await expect(progress).toHaveAttribute('aria-hidden', 'true');
@@ -245,7 +249,7 @@ test.describe('Single post', () => {
   });
 
   test('with reduced motion the progress bar is hidden', async ({ browser }) => {
-    const id = await longPostFixture(api);
+    const id = fixtureId;
     const ctx = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1280, height: 800 } });
     const page = await ctx.newPage();
     await page.goto(`/?p=${id}`);
@@ -254,7 +258,7 @@ test.describe('Single post', () => {
   });
 
   test('without JavaScript: contents are plain anchors in an open list, text and "Read next" show, no progress bar', async ({ browser }) => {
-    const id = await longPostFixture(api);
+    const id = fixtureId;
     const ctx = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 360, height: 740 } });
     const page = await ctx.newPage();
     await page.goto(`/?p=${id}`);
@@ -268,7 +272,7 @@ test.describe('Single post', () => {
   });
 
   test('on a phone the contents are a collapsed, toggleable list that still navigates', async ({ browser }) => {
-    const id = await longPostFixture(api);
+    const id = fixtureId;
     const ctx = await browser.newContext({ viewport: { width: 360, height: 740 } });
     const page = await ctx.newPage();
     await page.goto(`/?p=${id}`);
@@ -287,12 +291,29 @@ test.describe('Single post', () => {
     await page.goto(`/?p=${id}`);
     await expect(page.getByTestId('post')).toBeVisible();
     await expect(page.getByTestId('post-toc')).toHaveCount(0);
-    await expect(page.getByTestId('post-read-next')).toHaveCount(0);
+    await expect(page.getByTestId('post-read-next').getByRole('heading', { level: 3 })).toHaveCount(3); // the shared fixture posts
+  });
+
+  test('non-Latin, percent and reserved headings get plain ids, link correctly and never throw', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    const id = await createPost(api, 'Odd headings', { content: `<h2>Main</h2>${para(8)}<h2>你好世界</h2>${para(8)}<h2 id="50%">Half</h2>${para(8)}<h2>100% sure</h2>${para(8)}` });
+    await page.goto(`/?p=${id}`);
+    const toc = page.getByTestId('post-toc');
+    expect(await toc.getByRole('link').evaluateAll((as) => as.map((a) => a.getAttribute('href')))).toEqual(['#main-2', '#section-2', '#50%', '#100-sure']);
+    await expect(page.locator('main#main')).toHaveCount(1);
+    for (const [name, sel] of [['你好世界', '#section-2'], ['Half', '[id="50%"]'], ['100% sure', '[id="100-sure"]']] as const) {
+      await toc.getByRole('link', { name }).click();
+      await expect.poll(async () => { const y = (await page.locator(sel).boundingBox())!.y; return y >= 73 && y < 200; }).toBe(true);
+      await expect(toc.locator('a[aria-current="location"]')).toHaveText(name);
+    }
+    expect(await barWidth(page)).toBeGreaterThan(0);
+    expect(errors).toEqual([]);
   });
 
   for (const [label, width] of [['360px', 360], ['768px', 768], ['1440px', 1440]] as const) {
     test(`no horizontal overflow at ${label}, with and without the contents open`, async ({ page }) => {
-      const id = await longPostFixture(api);
+      const id = fixtureId;
       await page.setViewportSize({ width, height: 800 });
       await page.goto(`/?p=${id}`);
       await page.evaluate(() => document.fonts.ready);
@@ -305,7 +326,7 @@ test.describe('Single post', () => {
 
   for (const scheme of ['dark', 'light'] as const) {
     test(`axe is clean in ${scheme} (with contents, meta row and Read next)`, async ({ browser }) => {
-      const id = await longPostFixture(api);
+      const id = fixtureId;
       for (const width of [360, 1280]) {
         const ctx = await browser.newContext({ colorScheme: scheme, viewport: { width, height: 800 } });
         const page = await ctx.newPage();

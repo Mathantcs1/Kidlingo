@@ -12,6 +12,16 @@
   var offset = 110; /* a heading counts as "current" once it is under the sticky header */
   var queued = false;
 
+  /* The heading a contents link points to. Ids are plain ASCII, but an author-set id may hold odd characters: try the raw
+   * text first, then the decoded one, and never throw. */
+  function target(link) {
+    var raw = (link.getAttribute('href') || '').slice(1);
+    if (!raw) return null;
+    var found = doc.getElementById(raw);
+    if (found) return found;
+    try { return doc.getElementById(decodeURIComponent(raw)); } catch (e) { return null; }
+  }
+
   function clamp(n) { return Math.max(0, Math.min(1, n)); }
 
   function update() {
@@ -23,8 +33,7 @@
     }
     var current = null;
     links.forEach(function (link) {
-      var id = decodeURIComponent((link.getAttribute('href') || '').slice(1));
-      var heading = id ? doc.getElementById(id) : null;
+      var heading = target(link);
       if (heading && heading.getBoundingClientRect().top <= offset) current = link;
     });
     links.forEach(function (link) {

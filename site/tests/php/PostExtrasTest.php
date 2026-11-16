@@ -58,6 +58,37 @@ final class PostExtrasTest extends SeoTestCase {
 		$this->assertSame( array( 'html' => '', 'items' => array() ), ideatoapps_post_toc( '' ) );
 	}
 
+	public function test_toc_never_uses_an_id_the_page_already_has_elsewhere(): void {
+		$result = ideatoapps_post_toc( '<h2>Main</h2><h2>Newsletter</h2><h2>Nav drawer</h2><h2>Newsletter email</h2><h2>Read next title</h2><h2>Post next title</h2>' );
+		$ids    = array_column( $result['items'], 'id' );
+		foreach ( array( 'main', 'newsletter', 'newsletter-email', 'nav-drawer', 'post-next-title' ) as $reserved ) {
+			$this->assertNotContains( $reserved, $ids );
+		}
+		$this->assertSame( 'main-2', $ids[0] );
+		$this->assertStringContainsString( '<h2 id="main-2">Main</h2>', $result['html'] );
+		$this->assertSame( 'newsletter-2', $ids[1] );
+		$this->assertSame( 'newsletter-email-2', $ids[3] );
+		$this->assertSame( count( $ids ), count( array_unique( $ids ) ) );
+	}
+
+	public function test_toc_ids_are_ascii_for_any_heading(): void {
+		$result = ideatoapps_post_toc( '<h2>你好世界</h2><h2>🙂🙂</h2><h2>100% sure</h2><h2>Café Über</h2><h2>你好</h2>' );
+		$ids    = array_column( $result['items'], 'id' );
+		$this->assertCount( 5, $ids );
+		foreach ( $ids as $id ) {
+			$this->assertMatchesRegularExpression( '/\A[a-z0-9-]+\z/', $id );
+			$this->assertStringContainsString( ' id="' . $id . '"', $result['html'] );
+		}
+		$this->assertSame( array( 'section-1', 'section-2', '100-sure', 'cafe-uber', 'section-5' ), $ids );
+		$this->assertSame( '你好世界', $result['items'][0]['text'], 'the visible text keeps its characters' );
+	}
+
+	public function test_toc_keeps_an_author_id_with_a_percent_sign_and_handles_a_gt_inside_an_attribute(): void {
+		$result = ideatoapps_post_toc( '<h2 id="50%">Half</h2><h2 data-note="a > b" class="c">Quoted</h2>' );
+		$this->assertSame( '50%', $result['items'][0]['id'] );
+		$this->assertSame( '<h2 id="50%">Half</h2><h2 data-note="a > b" class="c" id="quoted">Quoted</h2>', $result['html'] );
+	}
+
 	public function test_read_next_prefers_the_same_category_then_newest_and_excludes_current_and_unpublished(): void {
 		$cat_a = wp_insert_term( 'Alpha', 'category' )['term_id'];
 		$cat_b = wp_insert_term( 'Beta', 'category' )['term_id'];

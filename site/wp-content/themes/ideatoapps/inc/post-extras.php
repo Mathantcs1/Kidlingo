@@ -60,14 +60,34 @@ function ideatoapps_reading_minutes( int $post_id ): int {
 }
 
 /**
- * Give every `h2` that has text a unique, stable `id` and list them for a table of contents. Existing attributes and ids are kept
- * and never reused; empty headings are left alone. Duplicate headings get -2, -3 and so on.
+ * Ids the theme and plugin print on every page (header, footer, forms, section headings). A generated heading id never equals one.
+ *
+ * @return string[]
+ */
+function ideatoapps_reserved_ids(): array {
+	return (array) apply_filters(
+		'ideatoapps_reserved_ids',
+		array(
+			'main', 'content', 'primary', 'header', 'footer', 'nav-drawer', 'menu-button', 'form-status', 'wpadminbar', 'newsletter', 'newsletter-title',
+			'newsletter-email', 'newsletter-consent', 'contact-name', 'contact-email', 'contact-message', 'contact-website', 'catalog-category',
+			'catalog-search', 'catalog-sort', 'post-next-title', 'related-apps-title', 'categories-title', 'featured-apps-title',
+			'how-it-works-title', 'watch-learn-title', 'app-faq-title', 'app-features-title', 'app-requirements-title', 'app-whats-new-title',
+		)
+	);
+}
+
+/**
+ * Give every `h2` that has text a unique, stable, ASCII `id` and list them for a table of contents. Existing attributes and ids are
+ * kept and never reused; empty headings are left alone; ids the page prints elsewhere are never used. Duplicates get -2, -3 and so on;
+ * a heading with no ASCII letters or digits becomes section-N (N = its position in the contents).
+ *
+ * The opening tag is matched with quoted attribute values, so a `>` inside a value is fine.
  *
  * @param string $html Rendered post content.
  * @return array{html:string, items:array<int, array{id:string, text:string}>}
  */
 function ideatoapps_post_toc( string $html ): array {
-	$used = array();
+	$used = array_fill_keys( ideatoapps_reserved_ids(), true );
 	if ( preg_match_all( '/\sid\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>"\']+))/i', $html, $found, PREG_SET_ORDER ) ) {
 		foreach ( $found as $m ) {
 			$used[ $m[1] . ( $m[2] ?? '' ) . ( $m[3] ?? '' ) ] = true;
@@ -76,20 +96,21 @@ function ideatoapps_post_toc( string $html ): array {
 	$items = array();
 
 	$out = (string) preg_replace_callback(
-		'/<h2(\s[^>]*)?>(.*?)<\/h2>/is',
+		'/<h2(?=[\s>])((?:"[^"]*"|\'[^\']*\'|[^\'">])*)>(.*?)<\/h2>/is',
 		static function ( array $m ) use ( &$used, &$items ): string {
 			$text = trim( (string) preg_replace( '/\s+/u', ' ', html_entity_decode( wp_strip_all_tags( $m[2] ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ) );
 			if ( '' === $text ) {
 				return $m[0];
 			}
-			$attrs = $m[1] ?? '';
+			$attrs = $m[1];
 			if ( 1 === preg_match( '/\sid\s*=\s*(?:"([^"]+)"|\'([^\']+)\'|([^\s>"\']+))/i', $attrs, $own ) ) {
 				$items[] = array( 'id' => $own[1] . ( $own[2] ?? '' ) . ( $own[3] ?? '' ), 'text' => $text );
 				return $m[0];
 			}
 			$attrs = (string) preg_replace( '/\sid\s*=\s*(?:""|\'\')/i', '', $attrs ); // an empty id attribute is replaced.
 			$base  = sanitize_title_with_dashes( remove_accents( $text ), '', 'display' );
-			$base  = '' === $base ? 'section' : $base;
+			$base  = trim( (string) preg_replace( '/%[0-9a-f]{2}/i', '', $base ), '-' ); // non-Latin text is percent-encoded: keep ids plain ASCII.
+			$base  = '' === $base ? 'section-' . ( count( $items ) + 1 ) : $base;
 			$id    = $base;
 			for ( $n = 2; isset( $used[ $id ] ); $n++ ) {
 				$id = "$base-$n";
