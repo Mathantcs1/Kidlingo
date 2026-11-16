@@ -51,6 +51,7 @@ require_once IDEATOAPPS_CORE_DIR . 'includes/seo-text.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-head.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-robots.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-headers.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/blog-shortcodes.php';
 
 register_activation_hook( __FILE__, 'ideatoapps_core_activate' );
 register_deactivation_hook( __FILE__, 'ideatoapps_core_deactivate' );
