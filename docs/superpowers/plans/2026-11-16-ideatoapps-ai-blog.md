@@ -72,6 +72,20 @@ Content lint additions: each article has a hero file; every `ita_figure` name ex
 - [ ] Implement capability + nonce checked admin-post action, result notice in Settings > IdeaToApps.
 - [ ] Mutation-check hash guard and nonce. Commit.
 
+### Task 4b: Subscriber-only posts with a teaser (plugin + theme)
+**Owner request:** show a glimpse of a few posts; reading the rest requires subscribing (the confirmed newsletter list).
+**Rulings:**
+- Ruling: gate = per-post checkbox "Subscribers only" (post meta `ita_gated`) in the editor; the installer flags 6 starter articles (the longest practical guides: 8, 14, 32, 36, 42, 44). The owner can change any post. Everything else stays open.
+- Ruling: a reader is "a subscriber" only after clicking the confirm link in the double opt-in email; the confirm page then sets a signed, HttpOnly, SameSite=Lax cookie `ita_reader` (HMAC over subscriber id + expiry, `wp_salt('auth')`, 180 days). Server checks the cookie AND that the subscriber is still `confirmed` (unsubscribe/erasure locks access at once).
+- Ruling: new device or cleared cookies: "Already subscribed? Email me a reading link" form sends a one-time signed link (POST-to-activate like confirm/unsubscribe; neutral identical response whether or not the address is on the list; rate limited; no enumeration).
+- Ruling: while `ideatoapps_newsletter_enabled` is off, gating is OFF (articles show in full) so nobody is locked out with no way in.
+- Ruling: teaser = first ~120 words (up to the first heading after them) fading out, then the subscribe card (email + consent tick + the existing sign-up endpoint). Copy is honest: free, we send a confirmation email first, nothing is sent until you confirm, unsubscribe any time. No dark patterns, no countdowns, no fake scarcity.
+- Ruling: SEO-safe: teaser is real server-rendered text; Article JSON-LD gets `isAccessibleForFree: false` + `hasPart` with `cssSelector` for the gated section; the full body is never in the HTML sent to non-subscribers (no CSS-only hiding); gated pages are cacheable-safe (`Cache-Control: private` for gated responses).
+- Owner decision (flagged, not buildable by me): tying free reading to a marketing-newsletter sign-up is a consent question under GDPR and similar laws (consent must be freely given). The legal pages are DRAFT and need legal review before launch; if counsel objects, the fallback is to gate on "confirmed email" without marketing consent (a one-line copy and checkbox change).
+**Files:** Create `includes/reader-gate.php`, `includes/reader-cookie.php`, `includes/reader-link.php`, `themes/ideatoapps/parts/gate-card.php`; Modify `includes/newsletter-page.php` (confirm sets cookie), `includes/meta-boxes.php` or new `includes/post-gate-box.php`, `single.php`, `includes/blog-installer.php`; Tests `site/tests/php/ReaderGateTest.php`, `site/tests/e2e/reader-gate.spec.ts`.
+- [ ] Failing tests: non-subscriber sees only the teaser and the HTML contains none of the gated text (grep the response); pending/unsubscribed/erased subscriber is locked; tampered/expired cookie rejected (hash_equals); confirm sets the cookie only on the POST that confirms; reading-link request answers identically for known and unknown addresses; gating off while the newsletter switch is off; gated page sends `Cache-Control: private`; JSON-LD paywall markup present.
+- [ ] Mutation-check cookie verification, status re-check and "no gated text in HTML". Commit.
+
 ### Task 5: Style guide, content lint, three sample articles
 **Files:** Create `site/docs/BLOG_STYLE_GUIDE.md`, `site/wp-content/plugins/ideatoapps-core/content/articles/{01,09,27}-*.html`; Test `site/tests/php/BlogContentLintTest.php`.
 - [ ] Failing lint test over every article file: valid header; word count 700-1,300; excerpt <= 160 chars; exactly one quiz with 3 questions; >= 1 `ita_prompt` or `ita_checklist`; ends with a "Try it" heading; `reviewed` date valid; no email address; no first-person experience claims ("in my experience", "I tested", "we tested", "our users"); no currency amounts or "best model" style superlatives; all shortcodes parse.
