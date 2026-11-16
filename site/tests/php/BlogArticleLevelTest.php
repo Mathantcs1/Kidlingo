@@ -118,4 +118,38 @@ final class BlogArticleLevelTest extends WPTestCase {
 		$this->assertTrue( is_protected_meta( 'ita_level', 'post' ) );
 		$this->assertTrue( is_protected_meta( 'ita_audiences', 'post' ) );
 	}
+
+	/** Posts installed before levels existed get ita_level/ita_audiences on the next run; nothing else changes. */
+	public function test_a_rerun_backfills_missing_level_meta_without_touching_the_post(): void {
+		$this->write( '09-the-four-part-prompt-recipe' );
+		ideatoapps_blog_install();
+		$id = ideatoapps_blog_find_starter( '09-the-four-part-prompt-recipe' );
+		wp_update_post( array( 'ID' => $id, 'post_content' => 'Owner edit.' ) );
+		delete_post_meta( $id, 'ita_level' );
+		delete_post_meta( $id, 'ita_audiences' );
+		$before = get_post( $id );
+		$this->assertSame( array( 'created' => 0, 'skipped' => 1, 'errors' => 0, 'locked' => false ), ideatoapps_blog_install() );
+		$this->assertSame( array( 'beginner' ), get_post_meta( $id, 'ita_level' ) );
+		$this->assertSame( array( implode( ',', self::topic( '09-the-four-part-prompt-recipe' )['audiences'] ) ), get_post_meta( $id, 'ita_audiences' ) );
+		$after = get_post( $id );
+		$this->assertSame( array( $before->post_content, $before->post_status, $before->post_modified ), array( $after->post_content, $after->post_status, $after->post_modified ) );
+		ideatoapps_blog_install();
+		$this->assertCount( 1, get_post_meta( $id, 'ita_level' ), 'never added twice' );
+	}
+
+	public function test_backfill_keeps_existing_values_and_skips_posts_without_the_starter_slug(): void {
+		$this->write( '01-what-ai-is-and-isnt' );
+		$this->write( '27-what-is-an-ai-agent' );
+		ideatoapps_blog_install();
+		$kept = ideatoapps_blog_find_starter( '01-what-ai-is-and-isnt' );
+		update_post_meta( $kept, 'ita_level', 'advanced' );
+		delete_post_meta( $kept, 'ita_audiences' );
+		$gone = ideatoapps_blog_find_starter( '27-what-is-an-ai-agent' );
+		delete_post_meta( $gone, 'ita_starter_slug' );
+		delete_post_meta( $gone, 'ita_level' );
+		ideatoapps_blog_install();
+		$this->assertSame( array( 'advanced' ), get_post_meta( $kept, 'ita_level' ), 'an existing value is not overwritten' );
+		$this->assertCount( 1, get_post_meta( $kept, 'ita_audiences' ), 'the missing one is added' );
+		$this->assertSame( array(), get_post_meta( $gone, 'ita_level' ), 'a post that lost its starter slug is left alone' );
+	}
 }

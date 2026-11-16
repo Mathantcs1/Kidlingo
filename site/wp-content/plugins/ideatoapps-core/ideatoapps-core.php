@@ -58,6 +58,8 @@ require_once IDEATOAPPS_CORE_DIR . 'includes/blog-review.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-review-gate.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-review-box.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-review-list.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/blog-installer-meta.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/blog-installer-state.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-installer.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-installer-admin.php';
 
