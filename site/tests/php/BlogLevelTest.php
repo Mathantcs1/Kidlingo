@@ -143,4 +143,27 @@ final class BlogLevelTest extends WPTestCase {
 		$this->assertSame( 1, substr_count( $html, 'data-testid="card-level"' ) );
 		$this->assertStringContainsString( '<p class="card__level" data-testid="card-level"><span class="screen-reader-text">Level: </span>Beginner</p>', $html );
 	}
+
+	public function test_level_counts_are_cached_and_refreshed_when_posts_or_levels_change(): void {
+		$this->post( 'B1', 'beginner' );
+		$this->assertSame( array( 'beginner' => 1 ), ideatoapps_blog_level_counts() );
+		$this->assertSame( array( 'beginner' => 1 ), wp_cache_get( 'level_counts', 'ideatoapps_blog' ), 'kept in the object cache' );
+		global $wpdb;
+		$before = $wpdb->num_queries;
+		ideatoapps_blog_level_counts();
+		$this->assertSame( $before, $wpdb->num_queries, 'a second call does not query' );
+		$draft = (int) wp_insert_post( array( 'post_status' => 'draft', 'post_title' => 'Later' ) );
+		update_post_meta( $draft, 'ita_level', 'advanced' );
+		$this->assertSame( array( 'beginner' => 1 ), ideatoapps_blog_level_counts(), 'a draft does not count' );
+		wp_publish_post( $draft );
+		$this->assertSame( array( 'beginner' => 1, 'advanced' => 1 ), ideatoapps_blog_level_counts(), 'publishing refreshes the counts' );
+		update_post_meta( $draft, 'ita_level', 'beginner' );
+		$this->assertSame( array( 'beginner' => 2 ), ideatoapps_blog_level_counts(), 'a level change refreshes the counts' );
+		wp_trash_post( $draft );
+		$this->assertSame( array( 'beginner' => 1 ), ideatoapps_blog_level_counts(), 'trashing refreshes the counts' );
+		$id = $this->post( 'B2', 'beginner' );
+		$this->assertSame( array( 'beginner' => 2 ), ideatoapps_blog_level_counts() );
+		wp_delete_post( $id, true );
+		$this->assertSame( array( 'beginner' => 1 ), ideatoapps_blog_level_counts(), 'deleting refreshes the counts' );
+	}
 }

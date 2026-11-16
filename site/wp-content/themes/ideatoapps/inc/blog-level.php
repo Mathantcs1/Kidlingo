@@ -72,13 +72,18 @@ function ideatoapps_post_audiences( int $post_id ): array {
 }
 
 /**
- * Published posts per known level (levels with no post are left out), in level order.
+ * Published posts per known level (levels with no post are left out), in level order. Kept in the object cache (group
+ * `ideatoapps_blog`) until a post is saved, deleted or changes status, or an `ita_level` meta value changes.
  *
  * @return array<string, int>
  */
 function ideatoapps_blog_level_counts(): array {
+	$cached = wp_cache_get( 'level_counts', 'ideatoapps_blog' );
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
 	global $wpdb;
-	$rows = $wpdb->get_results( "SELECT m.meta_value AS level, COUNT(DISTINCT p.ID) AS n FROM {$wpdb->posts} p INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID WHERE p.post_type = 'post' AND p.post_status = 'publish' AND m.meta_key = 'ita_level' GROUP BY m.meta_value", ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- one small grouped count.
+	$rows = $wpdb->get_results( "SELECT m.meta_value AS level, COUNT(DISTINCT p.ID) AS n FROM {$wpdb->posts} p INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID WHERE p.post_type = 'post' AND p.post_status = 'publish' AND m.meta_key = 'ita_level' GROUP BY m.meta_value", ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- one small grouped count, cached below.
 	$have = array();
 	foreach ( is_array( $rows ) ? $rows : array() as $row ) {
 		$have[ (string) $row['level'] ] = (int) $row['n'];
@@ -89,5 +94,27 @@ function ideatoapps_blog_level_counts(): array {
 			$out[ $level ] = $have[ $level ];
 		}
 	}
+	wp_cache_set( 'level_counts', $out, 'ideatoapps_blog', HOUR_IN_SECONDS );
 	return $out;
+}
+
+/** Forget the cached level counts. */
+function ideatoapps_blog_flush_level_counts(): void {
+	wp_cache_delete( 'level_counts', 'ideatoapps_blog' );
+}
+
+// Any post saved, deleted or moved between statuses (clean_post_cache fires for all of these), or a level meta change.
+add_action( 'clean_post_cache', 'ideatoapps_blog_flush_level_counts' );
+add_action( 'transition_post_status', 'ideatoapps_blog_flush_level_counts' );
+foreach ( array( 'added_post_meta', 'updated_post_meta', 'deleted_post_meta' ) as $ideatoapps_hook ) {
+	add_action(
+		$ideatoapps_hook,
+		static function ( $meta_ids, $object_id, $meta_key ): void {
+			if ( 'ita_level' === $meta_key ) {
+				ideatoapps_blog_flush_level_counts();
+			}
+		},
+		10,
+		3
+	);
 }
