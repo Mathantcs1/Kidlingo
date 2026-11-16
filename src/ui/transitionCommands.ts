@@ -22,6 +22,9 @@ export const setLastTransitionSpec = (spec: TransitionSpec): void => {
   lastSpec = { ...spec };
 };
 
+/** The last spec as a PICTURE transition (an audio crossfade type never goes onto a video cut). */
+const pictureSpec = (): TransitionSpec => (lastSpec.type === 'audio' ? { ...lastSpec, type: 'dissolve' } : lastSpec);
+
 const allIds = (p: ReturnType<typeof editor>['history']['present']): Set<Id> => new Set(p.tracks.flatMap((t) => (t.transitions ?? []).map((x) => x.id)));
 
 /** Selects a transition chip (and leaves the clip selection: they are exclusive). */
@@ -35,13 +38,14 @@ export function addTransitionCmd(trackId: Id, fromClipId: Id, toClipId: Id, spec
   guard(() => {
     const before = editor().history.present;
     const track = before.tracks.find((t) => t.id === trackId);
-    const chosen: TransitionSpec = spec ?? (track?.kind === 'audio' ? { type: 'audio', duration: lastSpec.duration } : lastSpec);
+    const chosen: TransitionSpec = spec ?? (track?.kind === 'audio' ? { type: 'audio', duration: lastSpec.duration } : pictureSpec());
     editor().apply((p) => addTransition(p, trackId, fromClipId, toClipId, chosen));
     const now = editor().history.present;
     const old = allIds(before);
     const added = now.tracks.flatMap((t) => t.transitions ?? []).find((x) => !old.has(x.id));
     if (!added) return;
     if (chosen.duration !== undefined && added.duration < chosen.duration - 1e-6) showInfo('Transition shortened to the footage available beyond the cut');
+    if (added.type !== 'audio') setLastTransitionSpec({ ...lastSpec, type: added.type }); // remembered only after the add succeeded
     selectTransitionCmd(added.id);
   });
 }
@@ -70,7 +74,7 @@ export function setTransitionDurationCmd(id: Id, seconds: number): void {
 export function setTransitionCmd(id: Id, patch: Partial<Omit<TransitionSpec, 'duration'>>): void {
   guard(() => {
     editor().apply((p) => setTransition(p, id, patch));
-    if (patch.type) setLastTransitionSpec({ ...lastSpec, type: patch.type });
+    if (patch.type && patch.type !== 'audio') setLastTransitionSpec({ ...lastSpec, type: patch.type });
   });
 }
 
@@ -86,8 +90,7 @@ export function addTransitionAtPlayheadCmd(type?: TransitionType): void {
   if (trackId && p.tracks.find((t) => t.id === trackId)?.locked) return showError('Track is locked');
   const cut = trackId ? nearestCut(p, trackId, s.playhead) : null;
   if (!cut) return showError('No cut without a transition near the playhead on this track');
-  const spec = type ? { ...lastSpec, type } : undefined;
-  if (spec) setLastTransitionSpec(spec);
+  const spec = type ? { ...pictureSpec(), type } : undefined;
   addTransitionCmd(cut.trackId, cut.fromClipId, cut.toClipId, spec);
 }
 
@@ -115,7 +118,8 @@ export function mergeReportMessage(r: { added: number; shortened: number; skippe
 export function mergeSelectedWithTransitionCmd(): void {
   guard(() => {
     const p = editor().history.present;
-    const ids = liveSelection(p, editor().selection);
+    const start = (id: Id): number => p.tracks.flatMap((t) => t.clips).find((c) => c.id === id)?.start ?? 0;
+    const ids = [...liveSelection(p, editor().selection)].sort((x, y) => start(x) - start(y)); // as mergeClips orders them
     const onAudio = p.tracks.find((t) => t.clips.some((c) => c.id === ids[0]))?.kind === 'audio';
     const spec: TransitionSpec = onAudio ? { type: 'audio', duration: lastSpec.duration } : lastSpec.type === 'audio' ? { ...lastSpec, type: 'dissolve' } : lastSpec;
     const report = joinTransitionReport(p, ids, spec);

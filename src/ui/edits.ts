@@ -156,7 +156,7 @@ export function replaceWithMedia(p: Project, m: MediaRef): Project {
   const target = p.tracks.find((t) => t.kind === 'video') as Track;
   const tracks = p.tracks.map((t) =>
     t === target ? { ...t, locked: false, hidden: false, muted: false, solo: false, volume: 1, duck: null, clips: [] } : { ...t, solo: false, clips: [] },
-  );
+  ).map(({ transitions: _transitions, ...t }) => t as Track); // the clips are gone, so are the transitions between them
   return addClip({ ...addMedia(p, m), tracks }, target.id, clipFromMedia(m, target.id, 0, p.format));
 }
 

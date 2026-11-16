@@ -70,12 +70,14 @@ export function addClip(p: Project, trackId: Id, clip: Clip): Project {
   }
   assertFree(track, clip);
   const adopted = adoptFirstClipFps(p, clip);
-  return {
+  const next = {
     ...adopted,
     tracks: adopted.tracks.map((t) =>
       t.id === trackId ? { ...t, clips: [...t.clips, clip].sort(byStart) } : t,
     ),
   };
+  // A new frame rate changes which durations are whole even frames: re-fit the transitions to it.
+  return adopted === p ? next : reconcileTransitions(next);
 }
 
 export function moveClip(p: Project, clipId: Id, newStart: number, trackId?: Id): Project {

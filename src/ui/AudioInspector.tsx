@@ -3,6 +3,7 @@ import { clipDuration } from '../core/model';
 import { findDetachedTwin, formatPan } from '../core/audioQueries';
 import { useEditor } from '../state/store';
 import './audio.css';
+import { fadeReplaced } from './fadeReplaced';
 import { attachSelectedAudio, setSelectedClipAudio } from './audioCommands';
 import EffectList from './EffectList';
 import NumberField from './NumberField';
@@ -26,13 +27,7 @@ export default function AudioInspector({ clip, media, editable, locked }: Props)
   const title = locked ? 'Track is locked' : detached ? 'Audio is detached from this clip' : undefined;
   const dur = clipDuration(clip);
   // A transition on a cut replaces the clip's own fade on that edge (the crossfade is the fade; the stored value is kept).
-  const replaced = useEditor((s) => {
-    const track = s.history.present.tracks.find((t) => t.clips.some((c) => c.id === clip.id));
-    const trs = track?.transitions ?? [];
-    const fadeIn = trs.some((t) => t.toClipId === clip.id) && clip.audio.fadeIn > 0;
-    const fadeOut = trs.some((t) => t.fromClipId === clip.id) && clip.audio.fadeOut > 0;
-    return fadeIn && fadeOut ? 'both' : fadeIn ? 'in' : fadeOut ? 'out' : '';
-  });
+  const replaced = useEditor((s) => fadeReplaced(s.history.present, clip));
   return (
     <div className="inspector-field audio-fields" data-testid="inspector-audio" tabIndex={-1}>
       <span className="visually-hidden" id="inspector-audio-label">

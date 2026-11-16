@@ -39,6 +39,9 @@ describe('v9 -> v10', () => {
     for (let v = 1; v <= CURRENT_VERSION; v++) expect(migrateProject(saved(v, [])).ok).toBe(true);
     expect(migrateProject(saved(CURRENT_VERSION + 1, []))).toEqual({ ok: false, reason: 'newer' });
     expect(classifySaved(saved(CURRENT_VERSION + 1, [])).status).toBe('unsupported');
+    // The plan's number, pinned: data v10 is the current version and 11 is the first unsupported one.
+    expect(CURRENT_VERSION).toBe(10);
+    expect(migrateProject(saved(11, []))).toEqual({ ok: false, reason: 'newer' });
   });
 });
 

@@ -41,6 +41,11 @@ export function edgeTime(clip: Clip, t: number, fps: number): number {
   return Math.min(Math.max(t, clip.start), Math.max(clip.start, clipEnd(clip) - 1 / fps));
 }
 
+/** The times the two clips of a transition step are resolved at (D10): each clamped to its own frames, so a handle shows the edge frame's animation. */
+export function transitionResolveTimes(from: Clip, to: Clip, t: number, fps: number): { from: number; to: number } {
+  return { from: edgeTime(from, t, fps), to: edgeTime(to, t, fps) };
+}
+
 /**
  * One clip's draw at timeline time `t`, resolved (keys, presets) at `te`; null when there is nothing to draw (unknown media,
  * no frame). Adjustment clips come back as an AdjustmentDraw.
@@ -77,8 +82,9 @@ export async function transitionDraw(
   sources: Map<Id, VideoSource>, state: CollectState,
 ): Promise<TransitionDraw | null> {
   const fps = p.format.fps;
-  const a = plain(await clipDraw(ctx, p, step.from, t, edgeTime(step.from, t, fps), sources, state));
-  const b = plain(await clipDraw(ctx, p, step.to, t, edgeTime(step.to, t, fps), sources, state));
+  const at = transitionResolveTimes(step.from, step.to, t, fps);
+  const a = plain(await clipDraw(ctx, p, step.from, t, at.from, sources, state));
+  const b = plain(await clipDraw(ctx, p, step.to, t, at.to, sources, state));
   if (!a && !b) return null;
   return { transition: step.transition, a, b, u: step.u, e: easeAt(step.transition.ease, step.u), frame: frameIndex(t, fps), clip: (b ?? a)!.clip };
 }

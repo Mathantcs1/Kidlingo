@@ -16,6 +16,11 @@ export const COMPOSITE_IDLE_FRAMES = 30;
 /** Reads a composite texture (stored bottom row first, like any framebuffer texture) upright. */
 export const COMPOSITE_UV: Mat3 = uvMatrix(0, true);
 
+/** Which optional targets a frame of `targets` composite targets leaves unused: layer B below 4 (no transition), scratch below 5 (no non-Normal transition). */
+export function extrasToFree(targets: number): { layerB: boolean; scratch: boolean } {
+  return { layerB: targets < 4, scratch: targets < 5 };
+}
+
 /**
  * A ping-pong pair (the composite so far and the next one) plus a layer target, all `size` (the viewport, see
  * compositeSize). A frame: begin → draw (normal clips straight into the bound current target) → for a blended
@@ -56,6 +61,16 @@ export class CompositeBuffer {
     this.idleFrames = 0;
     const max = Number(this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE)) || 4096;
     this.size = compositeSize(viewport, max, targets, COMPOSITE_BYTE_BUDGET);
+    // Layers this frame does not need (sized for an earlier, larger frame) are freed so the held bytes stay inside the budget.
+    const free = extrasToFree(targets);
+    if (free.layerB) {
+      this.layerB?.dispose();
+      this.layerB = null;
+    }
+    if (free.scratch) {
+      this.scratch?.dispose();
+      this.scratch = null;
+    }
     this.targets ??= this.createPair();
     this.bindCurrent();
     this.gl.clearColor(0, 0, 0, 0);

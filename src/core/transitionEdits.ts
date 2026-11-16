@@ -28,12 +28,15 @@ const finiteOr = (v: number | undefined, d: number): number => (typeof v === 'nu
 
 /** The type-specific fields, filled with defaults for the type and clamped; fields the type does not use are dropped. */
 function typed(base: Transition, spec: Partial<TransitionSpec>): Transition {
-  const { direction: _d, softness: _s, amount: _a, ...core } = base;
-  const t = core as Transition;
+  // Edited in place so an unchanged transition keeps its key order (a no-op must compare equal and return the same project).
+  const t = { ...base } as Transition;
   if (t.type === 'wipe' || t.type === 'slide' || t.type === 'push') t.direction = spec.direction ?? base.direction ?? 'left';
+  else delete t.direction;
   if (t.type === 'wipe') t.softness = clamp(finiteOr(spec.softness ?? base.softness, 0.05), 0, 0.5);
+  else delete t.softness;
   if (t.type === 'zoom') t.amount = clamp(finiteOr(spec.amount ?? base.amount, 2), 1.2, 4);
-  if (t.type === 'glitch') t.amount = clamp(finiteOr(spec.amount ?? base.amount, 0.5), 0, 1);
+  else if (t.type === 'glitch') t.amount = clamp(finiteOr(spec.amount ?? base.amount, 0.5), 0, 1);
+  else delete t.amount;
   const law = spec.audio ?? base.audio;
   if (law === 'power' || law === 'gain') t.audio = law;
   else delete t.audio;
