@@ -48,6 +48,16 @@ Safety and judgment (45-50): What not to paste into an AI tool; Bias in AI; Fact
 - [ ] Implement hero (category, title, reading time, "Last reviewed"), sticky TOC (collapsible on mobile), reading-progress bar (`prefers-reduced-motion` safe), "Read next" cards, byline "IdeaToApps". Keep existing `data-testid="post"`.
 - [ ] e2e: TOC links scroll, progress bar present, no horizontal overflow at 360/768/1440, axe clean light+dark. Commit.
 
+### Task 2b: Images and diagrams (plugin + theme)
+**Decision (owner asked "add images wherever needed"):** all images are original inline SVG made in this repo: free, no licences, no uploads, dark/light aware, tiny. No stock photos, no paid AI-image services, no real people, no logos of other companies.
+**Files:** Create `includes/blog-figures.php`, `content/figures/*.svg` (hand-made diagrams), `scripts/make-blog-heroes.mjs` (deterministic abstract hero per article from slug + category palette), `content/heroes/*.svg` (generated), Test `site/tests/php/BlogFiguresTest.php`, extend `blog-interactive.spec.ts`.
+**Interfaces - Produces:** shortcode `[ita_figure name="agent-loop" alt="..." caption="..."]` (inlines `content/figures/<name>.svg`, wraps in `<figure>`/`<figcaption>`, `role="img"` + `aria-label` from `alt`); `ideatoapps_post_hero_svg( int $post_id ): string` (inline hero from `content/heroes/<starter-slug>.svg`; none for non-starter posts); theme hero and blog cards use it when a post has no featured image.
+- [ ] Failing tests: figure with unknown name or missing alt renders nothing (no notice); inlined SVG is sanitised (reject `<script>`, `on*=` attributes, `javascript:`, external `href`/`src`, `<foreignObject>`); every figure and hero file passes the same check; alt text required and <= 140 chars.
+- [ ] Hand-make diagrams for the concept posts (at least: how a chatbot answers, token splitting, context window filling, training stages, agent loop, chatbot vs workflow vs agent, tool calling, memory types, guardrail/approval flow, evaluation loop, four-part prompt recipe, open vs closed models). Colours use CSS variables so light/dark both pass contrast.
+- [ ] Hero generator script produces one distinct, abstract, text-free SVG per article (50) in category colours; cards and post hero use it. Cards keep a fixed aspect ratio (no layout shift).
+- [ ] e2e: figure visible with caption, hero present on card and post, images have accessible names, axe clean, no horizontal overflow at 360px. Commit.
+Content lint additions: each article has a hero file; every `ita_figure` name exists; concept posts listed above include at least one figure; articles have <= 3 figures.
+
 ### Task 3: Blog index (theme)
 **Files:** Modify `page-blog.php`, `parts/post-list.php`, `parts/card.php` (reading time slot); Create `parts/blog-filters.php`, `assets/css/blog.css`; Test `site/tests/php/BlogQueryTest.php`, update `content.spec.ts` Blog block.
 **Interfaces — Produces:** `ideatoapps_blog_query_args( array $get ): array` (reads `cat` slug and `q`, sanitised, length-capped), featured = newest post on page 1 with no filters.
