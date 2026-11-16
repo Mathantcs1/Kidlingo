@@ -13,23 +13,23 @@ const V = 9;
 const vid = (extra: Record<string, unknown>) => one(base('c', 'video', { in: 0, out: 10, ...extra }), V);
 
 describe('v8 -> v9', () => {
-  it('the current version is 9', () => expect(CURRENT_VERSION).toBe(9));
+  it('the current version is at least 9', () => expect(CURRENT_VERSION).toBeGreaterThanOrEqual(9));
 
   it('a v8 save opens byte-for-byte the same apart from the version; input not mutated; idempotent', () => {
     const raw = saved(8, [base('v1', 'video', { crop: { left: 0.1, top: 0, right: 0, bottom: 0 } }), base('i1', 'image', { start: 3 })], [base('a1', 'audio')]);
     const snap = JSON.stringify(raw);
     const p = ok(raw);
     expect(JSON.stringify(raw)).toBe(snap);
-    expect(p.version).toBe(9);
+    expect(p.version).toBe(CURRENT_VERSION);
     expect(JSON.stringify({ ...p, version: 8 })).toBe(snap);
     for (const c of p.tracks.flatMap((t) => t.clips)) expect(['speed', 'reverse', 'speedKeys', 'preservePitch', 'freeze'].some((k) => k in c)).toBe(false);
     expect(JSON.stringify(ok(p))).toBe(JSON.stringify(p));
   });
 
-  it('accepts every integer version 1..9, refuses 10 as newer and never overwrites it', () => {
-    for (let v = 1; v <= 9; v++) expect(migrateProject(saved(v, [])).ok).toBe(true);
-    expect(migrateProject(saved(10, []))).toEqual({ ok: false, reason: 'newer' });
-    expect(classifySaved(saved(10, [])).status).toBe('unsupported');
+  it('accepts every integer version 1..current, refuses the next as newer and never overwrites it', () => {
+    for (let v = 1; v <= CURRENT_VERSION; v++) expect(migrateProject(saved(v, [])).ok).toBe(true);
+    expect(migrateProject(saved(CURRENT_VERSION + 1, []))).toEqual({ ok: false, reason: 'newer' });
+    expect(classifySaved(saved(CURRENT_VERSION + 1, [])).status).toBe('unsupported');
   });
 });
 

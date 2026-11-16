@@ -1,6 +1,7 @@
 import { fitFades } from './clipAudio';
 import { clipDuration } from './clipTime';
 import { repairSpeed } from './migrateSpeed';
+import { repairTransitions } from './migrateTransitions';
 
 import { withCropFlipAnchor } from './migrateCrop';
 import { toBlend, toClipEffects } from './migrateEffects';
@@ -132,7 +133,7 @@ function toTrack(raw: unknown): Track | null {
  * Pure and idempotent: never mutates `raw`. v1/v2 gain defaults; v3-v7 are repaired per field (v4 → v5 adds nothing:
  * overlay and adjustment clips are new in v5; v5 → v6 adds nothing: keyframes are new in v6 and only repaired when
  * present; v6 → v7 adds nothing: presets, loops, tangents, orient and springs are new in v7 and only repaired when
- * present; v7 → v8 adds nothing: crop, flip and anchor are new in v8 and only repaired when present, video/image only); newer versions are refused ('newer', so the save is never overwritten).
+ * present; v7 → v8 adds nothing: crop, flip and anchor are new in v8 and only repaired when present, video/image only; v8 -> v9 adds nothing: speed fields repaired per field; v9 -> v10 adds nothing: transitions (migrateTransitions.ts) repaired when present); newer versions are refused ('newer', so the save is never overwritten).
  */
 export function migrateProject(raw: unknown): MigrateResult {
   if (!isObject(raw)) return { ok: false, reason: 'malformed' };
@@ -149,5 +150,5 @@ export function migrateProject(raw: unknown): MigrateResult {
   // '' is the overlay clips' "no media" id, so a media entry under it is corrupt: dropped.
   const { '': _noMedia, ...media } = raw.media;
   const project = { ...raw, version: CURRENT, tracks, media } as unknown as Project;
-  return { ok: true, project };
+  return { ok: true, project: repairTransitions(project) };
 }

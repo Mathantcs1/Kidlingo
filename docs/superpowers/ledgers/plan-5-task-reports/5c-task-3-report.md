@@ -1,0 +1,5 @@
+# Plan 5C Task 3 (data v10 and migration)
+- `CURRENT_VERSION = 10`; new `migrateTransitions.ts` (`repairTransitions`, run last in `migrateProject`): per-entry field repair (ids, known type, finite duration clamped to [2 frames, 5 s], ease restricted to the D5 subset with bezier y in [0,1], direction/softness/amount/audio per type, unknown fields kept, duplicate ids re-issued), then the shared `reconcileTransitions` (adjacency, kinds, handles, clip lengths, one per cut, even whole frames, drop < 2 frames). Empty list removes the field; non-array dropped; same reference when no track has transitions.
+- Tests: `tests/transition-migrate.test.ts` (12), `tests/e2e/transition-migration.spec.ts` (3: clamped open, non-adjacent dropped, v11 newer notice and bytes unchanged). The 5D version-pinned test now tracks CURRENT_VERSION.
+- Mutations caught: accept version 11 (2 tests), repair skipped (8), handle/length clamp removed (2).
+- Note: a 9 s transition between two 2 s stills is legitimately clamped to 4 s (half the window must fit in each clip), not 2 s.
