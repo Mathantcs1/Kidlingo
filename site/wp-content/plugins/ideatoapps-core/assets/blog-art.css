@@ -38,6 +38,6 @@
 .ita-figure svg { display: block; width: 100%; max-width: 440px; height: auto; margin: 0 auto; font-family: inherit; }
 .ita-figure figcaption { margin: var(--s-1, 8px) auto 0; max-width: 440px; color: var(--ita-fig-muted); font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
 @media (max-width: 480px) {
-	.ita-figure { padding: 8px; }
-	.ita-why .ita-figure { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; } /* the Why box is already a panel in the same colour */ /* the diagrams are drawn 360 units wide: more width on a phone means bigger text */
+	.ita-figure { padding: 8px; } /* the diagrams are drawn 360 units wide: more width on a phone means bigger text */
+	.ita-why .ita-figure { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; } /* the Why box is already a panel in the same colour */
 }

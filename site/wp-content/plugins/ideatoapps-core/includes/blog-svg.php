@@ -52,20 +52,21 @@ function ideatoapps_blog_svg_parse( string $svg ): ?DOMDocument {
  * @return bool
  */
 function ideatoapps_blog_svg_attr_ok( DOMAttr $attr ): bool {
-	$name = strtolower( $attr->nodeName );
-	if ( 1 !== preg_match( '/\A[a-z][a-z0-9:_.-]*\z/', $name ) || 0 === strpos( $name, 'on' ) || 0 === strpos( strtolower( (string) $attr->localName ), 'on' ) || in_array( strtolower( (string) $attr->localName ), array( 'src', 'style' ), true ) ) {
+	$name  = strtolower( $attr->nodeName ); // HTML lowercases attribute names, so every comparison below is on lowercase.
+	$local = strtolower( (string) $attr->localName );
+	if ( 1 !== preg_match( '/\A[a-z][a-z0-9:_.-]*\z/', $name ) || 0 === strpos( $name, 'on' ) || 0 === strpos( $local, 'on' ) || in_array( $local, array( 'src', 'style' ), true ) ) {
 		return false;
 	}
 	$ns = (string) $attr->namespaceURI;
-	if ( '' !== $ns && ! ( 'http://www.w3.org/1999/xlink' === $ns && 'href' === $attr->localName ) && ! ( 'http://www.w3.org/XML/1998/namespace' === $ns && in_array( $attr->localName, array( 'space', 'lang' ), true ) ) ) {
+	if ( '' !== $ns && ! ( 'http://www.w3.org/1999/xlink' === $ns && 'href' === $local ) && ! ( 'http://www.w3.org/XML/1998/namespace' === $ns && in_array( $local, array( 'space', 'lang' ), true ) ) ) {
 		return false;
 	}
 	$value = (string) $attr->value;
-	if ( 'style' === $name || false !== strpos( $value, '\\' ) ) {
-		return false; // inline styles and CSS escapes (u\72l(...)) can hide a url(); shipped art uses presentation attributes only.
+	if ( false !== strpos( $value, '\\' ) ) {
+		return false; // CSS escapes (u\72l(...)) can hide a url(); shipped art has none.
 	}
-	if ( 'href' === $attr->localName && 1 !== preg_match( '/\A#[A-Za-z_][\w.-]*\z/', trim( $value ) ) ) {
-		return false; // href, xlink:href and any prefix bound to either: fragment references only.
+	if ( 1 === preg_match( '/(?:\A|:)href\z/', $name ) && 1 !== preg_match( '/\A#[A-Za-z_][\w.-]*\z/', trim( $value ) ) ) {
+		return false; // href, xlink:href, any prefix (bound or not) and any letter case: fragment references only.
 	}
 	$flat = strtolower( (string) preg_replace( '/[\x00-\x20\x7f]+/', '', $value ) );
 	if ( 1 === preg_match( '/javascript:|vbscript:|@import|expression\(|\Adata:|[(,;"\'=]data:/', $flat ) ) {
@@ -109,6 +110,21 @@ function ideatoapps_blog_svg_node_ok( DOMNode $node, int $depth = 0 ): bool {
 }
 
 /**
+ * Whether an element has a width or height attribute in any letter case (HTML lowercases attribute names).
+ *
+ * @param DOMElement $el Element.
+ * @return bool
+ */
+function ideatoapps_blog_svg_has_size( DOMElement $el ): bool {
+	foreach ( $el->attributes as $attr ) {
+		if ( in_array( strtolower( $attr->nodeName ), array( 'width', 'height' ), true ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * Whether the SVG text is safe to print inline: a real <svg> root with a viewBox and no fixed width or height, and only
  * allowed elements and attributes below it (see ideatoapps_blog_svg_node_ok()).
  *
@@ -118,7 +134,7 @@ function ideatoapps_blog_svg_node_ok( DOMNode $node, int $depth = 0 ): bool {
 function ideatoapps_blog_svg_is_safe( string $svg ): bool {
 	$doc  = ideatoapps_blog_svg_parse( $svg );
 	$root = $doc ? $doc->documentElement : null;
-	if ( ! $root instanceof DOMElement || 'svg' !== $root->localName || $root->hasAttribute( 'width' ) || $root->hasAttribute( 'height' ) ) {
+	if ( ! $root instanceof DOMElement || 'svg' !== $root->localName || ideatoapps_blog_svg_has_size( $root ) ) {
 		return false;
 	}
 	if ( 1 !== preg_match( '/\A\s*-?[\d.]+[\s,]+-?[\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*\z/', $root->getAttribute( 'viewBox' ), $box ) || (float) $box[1] <= 0 || (float) $box[2] <= 0 ) {
