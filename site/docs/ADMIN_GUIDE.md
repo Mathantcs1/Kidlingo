@@ -7,7 +7,7 @@ here (see `DEPLOYMENT_BLUEHOST.md`). Words in **bold** are the exact labels you 
 Safety rules that never change:
 
 - Payments stay in **Stripe test mode** until you decide otherwise. No real card is charged in test mode.
-- Do not email the newsletter list. The site only stores sign-ups; there is no unsubscribe yet.
+- Do not email the newsletter list (launch gate G1). The site sends only the one confirmation email per sign-up; it has no newsletter composer, and you still need a working sender mailbox with SPF/DKIM/DMARC before any mail goes out.
 - The **Contact form** stays off until a real mailbox exists.
 - Privacy, Terms and Refund pages are **drafts**, not legal advice.
 - Never type a Stripe key anywhere except WooCommerce > Settings > Payments > Stripe. Never paste one in an email, chat or page.
@@ -89,8 +89,11 @@ Left menu: **WooCommerce > Orders**.
 
 ## 7. Everyday settings and other tasks
 
-- **Settings > IdeaToApps**: **Featured apps** on the home page (leave empty to show the latest), **YouTube channel URL**, **Contact form** on/off (keep off until a mailbox exists).
-- **Newsletter sign-ups**: **Tools > Newsletter list** downloads a CSV. Do not mail it (see the safety rules).
+- **Settings > IdeaToApps**: **Featured apps** on the home page (leave empty to show the latest), **YouTube channel URL**, **Contact form** on/off (keep off until a mailbox exists) and **Newsletter sign-up** on/off (also keep off until the site can really send mail: each sign-up triggers a confirmation email). While it is off the home page says "Sign-up is not open yet".
+- **Newsletter sign-ups** (double opt-in): **Tools > Newsletter list**. A new sign-up is **pending**: it gets one confirmation email (at most one more every 10 minutes if the same address tries again) and becomes **confirmed** only when the person opens the link and presses **Confirm my sign-up** (the link works for 7 days). **Unsubscribed** means they pressed **Unsubscribe**: we keep only the address, the status and the time so the opt-out is honoured. **Unsubscribe and delete my data** removes the row completely. The page shows the counts and every stored address with its status.
+  - **Download CSV of confirmed subscribers** contains only confirmed addresses (columns email, consent_at, confirmed_at, status). Pending and unsubscribed addresses are never exported.
+  - To remove people: tick rows, choose **Delete permanently** under Bulk actions and press Apply (no trash, cannot be undone). Erasure requests also work from **Tools > Erase Personal Data** (enter the email).
+  - Do not mail the CSV anywhere yet (gate G1): this site does not send newsletters and there is no composer.
 - **Pages**: About, FAQ, Contact, Blog, Privacy, Terms and Refund policy are under **Pages**. The three legal pages always show a DRAFT notice; that notice is part of the theme and needs a developer to remove once the text is reviewed.
 - **Blog posts**: **Posts > Add New**.
 - **Updates**: before updating WordPress or plugins, take a backup first (`DEPLOYMENT_BLUEHOST.md` section 7). Do not update WooCommerce the same day as a launch.

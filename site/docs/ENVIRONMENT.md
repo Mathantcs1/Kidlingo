@@ -53,6 +53,13 @@ theme and the `ideatoapps-core` plugin loaded (`tests/php/bootstrap.php`, `env.p
 - Site state of the dev server is a sqlite DB under `.wp/wordpress/wp-content/database`; delete it to reset.
 - PHPUnit uses the SQLite engine, not MySQL: avoid MySQL-only SQL in plugin code.
 
+## Newsletter opt-in and mail
+
+- Option `ideatoapps_newsletter_enabled` (default off, Settings > IdeaToApps) gates the sign-up route (503 while off). Confirm and unsubscribe links keep working while it is off.
+- Links are `/?ita_newsletter=confirm|unsubscribe&sid=ID&t=TOKEN`. The token is an HMAC-SHA256 keyed with `wp_salt( 'auth' )`; changing the WordPress salts invalidates every link already emailed (confirm links are short-lived anyway; old unsubscribe links would stop working, so do not rotate salts casually after mailing). GET shows a button; only the POST changes state. The page is sent `noindex`, `no-store` and `Referrer-Policy: no-referrer`; exclude `ita_newsletter` from any page cache.
+- The only email is the plain-text confirmation via `wp_mail()`. From address is WordPress's default unless set in WordPress (an SMTP plugin or `wp_mail_from` filter). Sign-up, confirm and unsubscribe POSTs each use the 5 per minute per visitor rate limit (buckets `newsletter`, `newsletter_confirm`, `newsletter_unsub`).
+- The Playground dev/test site cannot send mail: `scripts/wp-start.mjs` mounts `tests/e2e/fixtures/ita-mail-capture.php` as a mu-plugin that captures `wp_mail()` (read by `capturedMails()` in the e2e helpers). Restart `npm run wp:start` after pulling this change. It is never packaged.
+
 ## Client IP and the rate limit
 
 The newsletter and contact REST routes allow 5 requests per minute per visitor (429 after that). The count is atomic:
