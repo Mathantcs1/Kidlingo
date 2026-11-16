@@ -156,3 +156,4 @@ FLAKE ROOT CAUSE FOUND AND FIXED (src/media/storage.ts, found during 5D Task 1):
 5C Task 9 (a6dfb41): browser, inspector, menus, Help. Deferred: clip-menu "Remove transition" removes the first transition only.
 5C Task 10 (22da1df): Join with a transition (+ report/toast), "Merge with crossfade", clipboard carry when both clips are in the payload.
 5C Task 11: journey spec (export: duration 4 s, picture at the cut, audio through the crossfade within 4 dB), docs, QA checklist.
+5C PART GATE (2026-11-16, head aa13cfb + this note): npm test 2196 passed, typecheck, build, `grep -rl __clipforge dist` empty, fresh full e2e 683 passed (38 min), e2e:preview 1/1, 1dba862 is an ancestor of HEAD. The final opus whole-part review has NOT run yet (the implementing fork may not spawn agents): the controller must launch it and fix its Important findings before any deploy request. NOT pushed or deployed.
