@@ -215,3 +215,14 @@ Builder rulings (Tasks 4 and 4c):
 - Ruling: sign-off is processed inside the same save (`wp_insert_post_data`), so one click can sign and publish; it needs `publish_posts`, a nonce per post, a typed reviewer name (max 80), and all seven ticks. All review meta is protected (not writable through REST, XML-RPC or Custom Fields).
 - Ruling: `human_reviewed` counts only while the stored content hash equals `ita_reviewed_hash`; meta set without a matching hash never clears a post.
 - Mutation checks (each made the suite fail, reverted): installer capability check removed, installer nonce check removed, sign-off capability check removed, sign-off nonce check removed, content-hash guard removed, publish guard removed in the insert filter.
+
+### AI blog: review fixes (local commits only)
+
+- Ruling: the installer records every slug it creates in option `ideatoapps_blog_installed_slugs` (slug => post id, not autoloaded) and skips a recorded slug even when the post was deleted for good or its meta was cleared; bringing it back is the explicit "Reinstall a deleted article" action (manage_options + nonce).
+- Ruling: one install at a time (atomic `add_option` lock, stale after 60 s); a second run returns `locked` and creates nothing.
+- Ruling: the sign-off hash covers title, excerpt and content. A sign-off outcome (and the typed name and ticks after a failure) is kept in a per-user transient and shown once in the box and as an editor notice; after a block-editor save the box says "Signed off. Press Publish again".
+- Ruling: `ita_starter_slug` is writable only by the installer (REST auth callback false); `ita_last_reviewed` is not writable through REST on posts under review. Meta added after publishing (importer pattern) to `ita_starter_slug` / `ita_review_status` pulls the post back to draft. The stored post type decides the gate, so a type change cannot escape it.
+- Ruling: parser cross-checks title and category against topics.json. The AI-assistance byline line always comes first and other filter output follows it. "Last reviewed" on a post under review is the human review date and is empty before sign-off.
+- Ruling: progress is "reviewed of installed starter articles" plus "N article files not installed yet"; the Review filter counts a starter post without stored status as an AI draft.
+- Known limit (not fixed, by decision): `wp_publish_post()` writes the status directly, so `publish_post` and the transition actions fire once before the guard pulls the post back to draft.
+- Mutation checks: as before, plus the installed-slug record removed and the title/excerpt part of the hash removed (each failed the suite, reverted).

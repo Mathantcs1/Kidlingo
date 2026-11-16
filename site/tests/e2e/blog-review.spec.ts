@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { adminApi, cleanup, createPost, resetContent, send, signOffAndPublish, type Api } from './helpers/wp';
+import { adminApi, cleanup, createPost, installStarter, resetContent, send, signOffAndPublish, type Api } from './helpers/wp';
 
 // The human review gate on a real site: starter posts cannot go live without a typed-name, seven-tick sign-off.
 test.describe.configure({ mode: 'serial' });
@@ -13,7 +13,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 test.beforeAll(async () => {
   api = await adminApi();
   await resetContent(api);
-  id = await createPost(api, 'Review fixture', { status: 'draft', content: '<p>Original body.</p>', meta: { ita_starter_slug: SLUG } });
+  id = await installStarter(api, SLUG);
 });
 test.afterAll(async () => { await cleanup(api); await resetContent(api); });
 
@@ -24,9 +24,10 @@ test('REST cannot publish an unreviewed starter post, and visitors get a 404', a
   expect(res?.status()).toBe(404);
 });
 
-test('a publish via REST with the starter meta in the same request is also pulled back', async () => {
-  const made = await createPost(api, 'Same request', { status: 'publish', content: '<p>x</p>', meta: { ita_starter_slug: '02-ml-vs-deep-learning-vs-generative-ai' } });
-  expect(await statusOf(made)).toBe('draft');
+test('REST cannot attach a post to the gate or detach a starter post from it', async () => {
+  const res = await api.ctx.fetch(`/?rest_route=${encodeURIComponent(`/wp/v2/posts/${id}`)}`, { method: 'POST', headers: { 'X-WP-Nonce': api.nonce }, data: { meta: { ita_starter_slug: '' } } });
+  expect(res.ok()).toBe(false);
+  expect((await send(api, 'GET', `/wp/v2/posts/${id}`, undefined, 'context=edit')).meta.ita_starter_slug).toBe(SLUG);
 });
 
 test('the Editorial review box lists the seven checks and never prefills the reviewer name', async () => {
@@ -67,6 +68,11 @@ test('editing the content after sign-off moves the post back to draft and needs 
   expect(await statusOf(id)).toBe('publish');
 });
 
+test('a title change after sign-off also needs a re-sign', async () => {
+  await send(api, 'POST', `/wp/v2/posts/${id}`, { title: 'A new title after sign-off' });
+  expect(await statusOf(id)).toBe('draft');
+});
+
 test('posts without a review status are unaffected', async () => {
   const own = await createPost(api, 'My own post', { content: '<p>Mine.</p>' });
   expect(await statusOf(own)).toBe('publish');
@@ -75,14 +81,45 @@ test('posts without a review status are unaffected', async () => {
 });
 
 test('the posts list has the Review column and filter; Settings shows the installer section', async () => {
-  const list = await (await api.ctx.get('/wp-admin/edit.php?ita_review=human_reviewed')).text();
+  const list = await (await api.ctx.get('/wp-admin/edit.php?ita_review=needs_review')).text();
   expect(list).toContain('name="ita_review"');
   expect(list).toContain('column-ita_review');
-  expect(list).toContain('Review fixture');
+  expect(list).toContain('A new title after sign-off');
   const none = await (await api.ctx.get('/wp-admin/edit.php?ita_review=ai_draft')).text();
-  expect(none).not.toContain('Review fixture');
+  expect(none).not.toContain('A new title after sign-off');
   const settings = await (await api.ctx.get('/wp-admin/options-general.php?page=ideatoapps-settings')).text();
   expect(settings).toContain('Install starter articles');
-  expect(settings).toMatch(/\d+ of \d+ starter articles human reviewed/);
+  expect(settings).toMatch(/\d+ of \d+ installed starter articles human reviewed/);
+  expect(settings).toMatch(/\d+ article files not installed yet/);
   expect(settings).toMatch(/\d+ of \d+ article files are installed/);
+});
+
+test('real editor: sign off in the block editor, then press Publish again', async ({ page }) => {
+  const second = await installStarter(api, '02-ml-vs-deep-learning-vs-generative-ai');
+  await page.goto('/wp-login.php');
+  await page.fill('#user_login', 'admin');
+  await page.fill('#user_pass', 'password');
+  await Promise.all([page.waitForURL(/wp-admin/), page.click('#wp-submit')]);
+  await page.goto(`/wp-admin/post.php?post=${second}&action=edit`);
+  await page.evaluate(() => { try { (window as any).wp.data.dispatch('core/preferences').set('core/edit-post', 'welcomeGuide', false); (window as any).wp.data.dispatch('core/preferences').set('core/edit-post', 'fullscreenMode', false); } catch { /* ignore */ } });
+  const box = page.getByTestId('review-box');
+  await expect(box).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId('review-claims').locator('li')).toHaveCount(3);
+  await page.fill('#ita-review-name', 'Real UI Reviewer');
+  for (const cb of await box.locator('input[name="ita_review_check[]"]').all()) await cb.check();
+  await page.getByTestId('review-sign').check();
+  const publish = async () => {
+    const confirm = page.locator('.editor-post-publish-panel__header-publish-button .editor-post-publish-button');
+    if (!(await confirm.isVisible())) await page.locator('.editor-post-publish-panel__toggle').click();
+    await confirm.click();
+  };
+  await publish();
+  // The block editor saves the post first (forced to draft), then the box: signed off but still a draft.
+  await expect(page.getByTestId('review-box-result')).toContainText('press Publish again', { timeout: 30_000 });
+  expect(await statusOf(second)).toBe('draft');
+  await expect(page.getByTestId('review-status')).toHaveText('Human reviewed');
+  await publish();
+  await expect.poll(() => statusOf(second), { timeout: 30_000 }).toBe('publish');
+  await page.goto(`/?p=${second}`);
+  await expect(page.getByTestId('post-byline')).toContainText('Drafted with AI assistance. Edited and reviewed by Real UI Reviewer on ');
 });

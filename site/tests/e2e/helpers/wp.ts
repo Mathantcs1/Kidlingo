@@ -158,6 +158,29 @@ export async function createPost(api: Api, title: string, opts: { status?: 'publ
 }
 
 /**
+ * A starter post made by the real "Install starter articles" button (or "Reinstall a deleted article" when the site remembers
+ * the slug), from tests/e2e/fixtures/articles. It is a draft with review status ai_draft. Returns its post id.
+ */
+export async function installStarter(api: Api, slug: string): Promise<number> {
+  const name = slug.replace(/^\d\d-/, '');
+  const find = async () => ((await send(api, 'GET', '/wp/v2/posts', undefined, `slug=${name}&status=any&context=edit`)) as Array<{ id: number }>)[0]?.id ?? 0;
+  const old = await find();
+  if (old) await send(api, 'DELETE', `/wp/v2/posts/${old}`, undefined, 'force=true');
+  const page = await (await api.ctx.get('/wp-admin/options-general.php?page=ideatoapps-settings')).text();
+  const forms = page.split('<form').filter((f) => f.includes('value="ideatoapps_install_starter"') || (f.includes('value="ideatoapps_reinstall_starter"') && f.includes(`name="slug" value="${slug}"`)));
+  const form = forms.find((f) => f.includes('ideatoapps_reinstall_starter')) ?? forms[0];
+  const nonce = /name="_wpnonce" value="([a-f0-9]+)"/.exec(form)?.[1];
+  if (!nonce) throw new Error('install form not found on Settings > IdeaToApps');
+  const action = form.includes('ideatoapps_reinstall_starter') ? 'ideatoapps_reinstall_starter' : 'ideatoapps_install_starter';
+  const res = await api.ctx.post('/wp-admin/admin-post.php', { form: { action, _wpnonce: nonce, slug }, maxRedirects: 0 });
+  expect(res.status(), `install ${slug}`).toBe(302);
+  const id = await find();
+  expect(id, `starter post ${slug} exists after install`).toBeGreaterThan(0);
+  api.made.push({ route: '/wp/v2/posts', id });
+  return id;
+}
+
+/**
  * Sign a starter post off and publish it in one save, through the real classic edit form (the "Editorial review" box):
  * seven ticks, a typed reviewer name and "Mark as human reviewed". Without this a starter post cannot be published.
  */
