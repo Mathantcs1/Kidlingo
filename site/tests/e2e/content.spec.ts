@@ -293,15 +293,23 @@ test.describe('Contact', () => {
   });
 });
 
+const SIGNUP_OK = 'Thanks. If this address needs confirming, we have emailed it a link. Your sign-up only counts once you click it.';
+
 test.describe('Newsletter', () => {
-  test('the home sign-up exists now that the endpoint does, with a consent checkbox and no promise of mail', async ({ page }) => {
+  // The sign-up is off until the owner switches it on (Settings > IdeaToApps); the double opt-in flow is in newsletter-optin.spec.ts.
+  test.beforeEach(async () => { await saveSettings(api, { newsletter: true }); });
+
+  test('the home sign-up has a consent checkbox and promises only a confirmation email, nothing until confirmed', async ({ page }) => {
     await page.goto('/');
     const section = page.getByTestId('newsletter');
     await expect(section).toBeVisible();
     await expect(section.getByLabel('Email address', { exact: true })).toBeVisible();
     await expect(section.getByRole('checkbox')).toBeVisible();
     const body = await section.innerText();
-    expect(body).not.toMatch(/emails? (you|will)|we will (send|email)|unsubscribe|sent to your inbox/i);
+    expect(body).toMatch(/confirmation email/i);
+    expect(body).toMatch(/nothing is sent until you confirm/i);
+    expect(body).not.toMatch(/weekly|daily|monthly|tips|sent to your inbox/i);
+    expect(body).not.toMatch(EMAIL);
   });
 
   test('consent is required: submitting without it sends nothing', async ({ page }) => {
@@ -320,7 +328,7 @@ test.describe('Newsletter', () => {
     await section.getByLabel('Email address', { exact: true }).fill(`reader${Date.now()}@example.com`);
     await section.getByRole('checkbox').check();
     await page.getByRole('button', { name: 'Subscribe' }).click();
-    await expect(section.getByTestId('form-status')).toHaveText('Thanks, you are on the list.');
+    await expect(section.getByTestId('form-status')).toHaveText(SIGNUP_OK);
     await expect(section.getByLabel('Email address', { exact: true })).toHaveValue('');
     await expect(section.getByRole('checkbox')).not.toBeChecked();
 
@@ -347,7 +355,7 @@ test.describe('Newsletter', () => {
     await page.route('**/ideatoapps/v1/newsletter*', (route) => { posts.push(route.request().headers()['x-wp-nonce']); return route.continue(); });
     await page.route('**/ideatoapps/v1/nonce*', (route) => { refreshes++; return route.continue(); });
     const section = await fillNewsletter(page);
-    await expect(section.getByTestId('form-status')).toHaveText('Thanks, you are on the list.', { timeout: 20_000 });
+    await expect(section.getByTestId('form-status')).toHaveText(SIGNUP_OK, { timeout: 20_000 });
     expect(refreshes, 'one refresh').toBe(1);
     expect(posts).toHaveLength(2);
     expect(posts[0]).toBe('deadbeef00');
@@ -409,10 +417,12 @@ const states: Array<{ name: string; path: string; setup?: Setup }> = [
   { name: 'faq', path: '/faq/' },
   { name: 'contact disabled', path: '/contact/' },
   { name: 'contact enabled', path: '/contact/', setup: async (a) => { await saveSettings(a, { contact: true }); } },
+  { name: 'newsletter link not valid', path: '/?ita_newsletter=confirm&sid=1&t=x' },
   { name: 'privacy', path: '/privacy/' },
   { name: 'terms', path: '/terms/' },
   { name: 'refund', path: '/refund-policy/' },
-  { name: 'home with newsletter', path: '/' },
+  { name: 'home, sign-up not open yet', path: '/' },
+  { name: 'home with newsletter', path: '/', setup: async (a) => { await saveSettings(a, { newsletter: true }); } },
 ];
 
 for (const scheme of ['dark', 'light'] as const) {

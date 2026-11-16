@@ -215,13 +215,14 @@ export async function enableOfflineGateway(api: Api): Promise<void> {
 }
 
 /** Save the IdeaToApps settings through the real admin form (nonce included). Returns the redirect URL. */
-export async function saveSettings(api: Api, s: { featured?: number[]; channel?: string; contact?: boolean }): Promise<string> {
-  api.settingsDirty = s.featured?.length || s.channel || s.contact ? true : false;
+export async function saveSettings(api: Api, s: { featured?: number[]; channel?: string; contact?: boolean; newsletter?: boolean }): Promise<string> {
+  api.settingsDirty = s.featured?.length || s.channel || s.contact || s.newsletter ? true : false;
   const page = await (await api.ctx.get('/wp-admin/options-general.php?page=ideatoapps-settings')).text();
   const nonce = /name="_wpnonce" value="([a-f0-9]+)"/.exec(page)?.[1];
   expect(nonce, 'settings form nonce').toBeTruthy();
   const form = new URLSearchParams({ action: 'ideatoapps_save_settings', _wpnonce: nonce!, youtube_channel_url: s.channel ?? '' });
   if (s.contact) form.set('contact_enabled', '1');
+  if (s.newsletter) form.set('newsletter_enabled', '1');
   // A <select multiple> submits the selected options in the order they appear in the list, not the order they were clicked.
   const listed = [...page.matchAll(/<option value="(\d+)"/g)].map((m) => Number(m[1]));
   for (const id of listed.filter((id) => (s.featured ?? []).includes(id))) form.append('featured_app_ids[]', String(id));
@@ -257,4 +258,13 @@ export async function resetContent(api: Api): Promise<void> {
     for (const it of items) await send(api, 'DELETE', `${route}/${it.id}`, undefined, 'force=true');
   }
   await saveSettings(api, {});
+}
+
+export interface CapturedMail { to: string[]; subject: string; message: string; headers: string[] }
+
+/** Mail captured by tests/e2e/fixtures/ita-mail-capture.php (the Playground site cannot send mail), newest last. */
+export async function capturedMails(api: Api, clear = false): Promise<CapturedMail[]> {
+  const res = await api.ctx.fetch(rest('/ita-test/v1/mails'), { method: clear ? 'DELETE' : 'GET', headers: { 'X-WP-Nonce': api.nonce } });
+  expect(res.ok(), 'mail capture route (is the mu-plugin mounted? restart npm run wp:start)').toBe(true);
+  return res.json();
 }

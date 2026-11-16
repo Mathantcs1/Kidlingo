@@ -183,7 +183,11 @@ test.describe('watch and learn', () => {
 });
 
 test.describe('newsletter', () => {
-  test('present since Task 7 added the endpoint (details in content.spec.ts); with a consent checkbox', async ({ page }) => {
+  test('present since Task 7 added the endpoint (details in content.spec.ts); with a consent checkbox once the owner turns it on', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('newsletter')).toContainText('Sign-up is not open yet');
+    await expect(page.getByTestId('newsletter').locator('input')).toHaveCount(0);
+    await saveSettings(api, { newsletter: true });
     await page.goto('/');
     await expect(page.getByTestId('newsletter')).toHaveCount(1);
     await expect(page.getByTestId('newsletter').locator('input[type="email"]')).toHaveCount(1);

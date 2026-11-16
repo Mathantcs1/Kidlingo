@@ -17,6 +17,8 @@ const args = [
   '--blueprint', resolve(root, 'blueprint.json'),
   '--mount', `${resolve(root, 'wp-content/themes/ideatoapps')}:/wordpress/wp-content/themes/ideatoapps`,
   '--mount', `${resolve(root, 'wp-content/plugins/ideatoapps-core')}:/wordpress/wp-content/plugins/ideatoapps-core`,
+  // Playground cannot send mail: capture wp_mail() so tests can read the newsletter confirmation (tests/e2e/fixtures; never packaged).
+  '--mount', `${resolve(root, 'tests/e2e/fixtures/ita-mail-capture.php')}:/wordpress/wp-content/mu-plugins/ita-mail-capture.php`,
 ];
 const child = spawn('npx', args, { cwd: root, stdio: 'inherit' });
 child.on('exit', (code) => process.exit(code ?? 0));
