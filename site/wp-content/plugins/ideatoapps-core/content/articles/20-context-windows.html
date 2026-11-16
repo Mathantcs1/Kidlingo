@@ -1,6 +1,5 @@
-<!--ita {"slug":"20-context-windows","title":"Context windows","category":"llms","excerpt":"What fills a model's context window besides your messages, why a document that fits can still be read badly, and how builders manage the space.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["builders","workers-and-business-owners"],"check":["Besides the user's messages, a context window can hold the app's own instructions, saved memory notes, files, search and tool results, and the model's earlier replies.","In most setups, the model's reply counts toward the same context limit as the input.","Some research has found that models use information in the middle of a long input less reliably than information near the start or end; results vary between models and are changing.","Replacing older conversation turns with a summary saves space but loses any detail the summary leaves out, and errors in the summary are carried forward.","Larger context windows usually make requests slower and use more computing than smaller ones."]} -->
+<!--ita {"slug":"20-context-windows","title":"Context windows","category":"llms","excerpt":"What fills a model's context window besides your messages, why a document that fits can still be read badly, and how builders manage the space.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["builders","workers-and-business-owners"],"check":["Besides the user's messages, a context window can hold the app's own instructions, saved memory notes, files, search and tool results, and the model's earlier replies.","In most setups, the model's reply counts toward the same context limit as the input.","Some research has found that models use information in the middle of a long input less reliably than information near the start or end; results vary between models and are changing.","Replacing older conversation turns with a summary saves space but loses any detail the summary leaves out, and errors in the summary are carried forward.","Longer inputs usually make requests slower and use more computing than shorter ones."]} -->
 <p>A common mistake with long documents is to paste the whole thing and ask one broad question, such as "what are the risks here?" The document may fit in the model's context window, and the answer can still miss the one paragraph that matters.</p>
-<p>The earlier article on giving context showed what happens in a long chat: the oldest messages can be dropped. This one looks at what fills the window, and at how to use that space on purpose.</p>
 
 <h2>What fills the window</h2>
 <p>The [ita_term define="The amount of text, counted in tokens, that a model can take into account at one time."]context window[/ita_term] is everything the model can take into account when it writes the next part of its answer. Your messages are only part of it. Depending on the app, it can also hold:</p>
@@ -9,13 +8,13 @@
 <li>saved memory notes about you;</li>
 <li>files, pages or documents you added;</li>
 <li>search results and the results of any tools the app used;</li>
-<li>every earlier reply from the chatbot;</li>
+<li>earlier replies from the chatbot (unless the app has dropped or summarized them);</li>
 <li>room for the reply it's writing now, since in most setups the reply counts toward the same limit.</li>
 </ul>
-<p>All of it is measured in tokens, the small chunks of text covered in the article on tokens. A long search result or a pasted spreadsheet can take more space than a whole conversation.</p>
+<p>All of it is measured in tokens (see "Tokens explained"). When the window is full, older parts can be dropped or summarized, depending on the app. A long search result or a pasted spreadsheet can take more space than a whole conversation.</p>
 
 <h2>Fitting in is not the same as being read well</h2>
-<p>Context windows have grown, and many apps now accept very long documents. A bigger window holds more text, but the model doesn't weigh every part of it equally.</p>
+<p>Context windows have grown over time. A bigger window holds more text, but the model doesn't weigh every part of it equally.</p>
 <p>Some research has found that models use details in the middle of a long input less reliably than details near the start or the end. Results vary between models and keep changing, so treat this as a risk to check rather than a fixed rule.</p>
 <p>For work documents, such as a staff handbook, a contract you're reviewing with your manager, or a supplier's terms, a few habits help:</p>
 <ul>
@@ -23,6 +22,7 @@
 <li>Ask one focused question at a time.</li>
 <li>Ask it to quote the sentence its answer is based on, so you can find that sentence in the original.</li>
 </ul>
+<p>Check your workplace's rules before pasting contracts or internal documents into an AI app, and remove names and account numbers.</p>
 [ita_prompt title="Point it to the right part"]
 The document below is our [type of document, for example: staff handbook].
 Use only the section called [section name] to answer.
@@ -32,16 +32,16 @@ If that section does not answer the question, say so.
 Document:
 [paste the document, or only that section]
 [/ita_prompt]
-<p>Checking the quote against the original document takes seconds. If the sentence isn't there, the answer isn't safe to use.</p>
+<p>Find the quoted sentence in the original document before you use the answer.</p>
 
 <h2>For builders: managing the budget</h2>
 <p>In your own app, you decide what goes into the window on every request. Treat the space as a budget:</p>
 <ul>
 <li><strong>Reserve room for the reply.</strong> Count input tokens before sending, and leave enough space for the longest answer you expect.</li>
 <li><strong>Trim the history.</strong> Keep the system instructions and the last few turns whole. Replace older turns with a short state note.</li>
-<li><strong>Fetch, don't stuff.</strong> Instead of sending a whole knowledge base, look up the few passages that match the question and send those.</li>
+<li><strong>Send only the passages that matter.</strong> Instead of sending a whole knowledge base, look up the few passages that match the question and send those.</li>
 <li><strong>Shrink tool results.</strong> A tool may return far more text than the model needs. Keep only the fields that matter before passing it back.</li>
-<li><strong>Leave space unused when you can.</strong> Larger requests are usually slower and use more computing, and extra text gives the model more chances to go wrong.</li>
+<li><strong>Leave space unused when you can.</strong> Longer inputs usually make requests slower and use more computing, and extra text gives the model more chances to go wrong.</li>
 </ul>
 <p>A state note can come from the model itself. Run a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] like this on older turns, and send its output in place of them:</p>
 [ita_prompt title="Rolling state note"]
@@ -55,23 +55,23 @@ Leave out greetings, repeated text and anything already marked done.
 Conversation:
 [older turns]
 [/ita_prompt]
+
 [ita_why title="What does a summary lose?"]
 <p>A summary saves space by dropping detail. Anything that doesn't fit one of the headings is gone from the window, even if it matters three turns later. A short remark such as "I can't do mornings" can disappear this way.</p>
-<p>Errors travel too. If the summary gets a date wrong, every later turn treats the wrong date as a fact. Two habits reduce the damage. Store the full conversation outside the window, so you can fetch it when needed. Test the summary prompt on real conversations before you rely on it.</p>
+<p>Mistakes in the summary stay in every later turn. If the summary gets a date wrong, every later turn treats the wrong date as a fact. Two habits reduce the damage. Store the full conversation outside the window, so you can fetch it when needed. Test the summary prompt on real conversations before you rely on it.</p>
 [/ita_why]
 
 [ita_quiz]
-[ita_q q="Besides your own messages, what else can take up a chatbot's context window?" answers="Only the files you upload, and nothing more|Every chat you have ever had in the app|The app's instructions, tool results and its own replies" correct="3" why="The window holds everything the model reads for this reply, much of which you don't see."]
-[ita_q q="A whole handbook fits in the window, but answers keep missing a rule in the middle. What helps most?" answers="Paste the handbook twice so it gets more attention|Point the model to the section and ask it to quote its source|Ask for a longer and more detailed answer" correct="2" why="A focused question about one section, with a quote to check, makes the answer easier to verify."]
-[ita_q q="Why should an app leave room in the window when it sends a request?" answers="Empty space makes the model answer faster|Providers always reject requests that are close to the limit|In most setups, the reply counts toward the same limit" correct="3" why="If the input fills the window, there is no room left for the answer."]
+[ita_q q="Besides your own messages, what else can take up a chatbot's context window?" answers="Only the files you upload, and nothing more|Every chat you have ever had in the app, in full|The app's instructions, tool results and its own replies" correct="3" why="The window holds everything the model reads for this reply, much of which you don't see."]
+[ita_q q="A whole handbook fits in the window, but answers keep missing a rule in the middle. What helps most?" answers="Paste the handbook twice so it gets more attention|Point it to the section and ask for a quote|Ask for a longer and more detailed answer" correct="2" why="A focused question about one section, with a quote to check, makes the answer easier to verify."]
+[ita_q q="Why should an app leave room in the window when it sends a request?" answers="Empty space makes the model answer faster|A request that fills the window is always refused|In most setups, the reply counts toward the same limit" correct="3" why="If the input fills the window, there is no room left for the answer."]
 [/ita_quiz]
 
 <h2>Try it</h2>
-<p>Make a one-page "what goes in" list that a teammate could use.</p>
+<p>This one needs no app, only a page and a coworker.</p>
 <ol>
 <li>Pick one long document you use at work, or one feature of an app you build.</li>
-<li>List everything that will sit in the window when the model answers: instructions, the document or passages, history, tool results, and the reply.</li>
-<li>Mark each item must keep, can summarize, or can drop.</li>
-<li>Test one item. Workers: run "Point it to the right part" on one section and find the quoted sentence in the document. Builders: run the state note on a long test conversation and check every number and date.</li>
-<li>Give the list to the person who will use the document or maintain the feature next.</li>
+<li>List everything that sits in the window when the model answers: instructions, the document or passages, history, tool results, and the reply.</li>
+<li>Mark each item: must keep, can summarize, or can drop.</li>
+<li>Give the list to the coworker who uses that document or maintains that feature, and ask them to mark anything you missed.</li>
 </ol>

@@ -1,6 +1,6 @@
-<!--ita {"slug":"18-prompting-for-images-and-video","title":"Prompting for images and video","category":"prompting","excerpt":"Describe what a camera would see: subject, setting, framing, light and style. For video, add one action and how the camera moves.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["creators"],"check":["Image and video generators fill details the prompt leaves out with typical choices.","Text inside generated images is often misspelled or garbled, so titles are usually easier to add afterward in an editing app.","In some image generators, mentioning an object in the main description, even with 'no', can make it more likely to appear; some apps offer a separate field for things to leave out.","Many video generators produce short clips, and the maximum length differs between apps.","Generated images can contain errors in details such as hands, the number of objects, or which color belongs to which object."]} -->
+<!--ita {"slug":"18-prompting-for-images-and-video","title":"Prompting for images and video","category":"prompting","excerpt":"Describe what a camera would see: subject, setting, framing, light and style. For video, add one action and how the camera moves.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["creators"],"check":["Image and video generators fill details the prompt leaves out with typical choices.","Text inside generated images can be misspelled or garbled, especially longer text, so titles are often easier to add afterward in an editing app.","In some image generators, mentioning an object in the main description, even with 'no', can make it more likely to appear; some apps offer a separate field for things to leave out.","Many video generators produce short clips, and the maximum length differs between apps.","Generated images can contain errors in details such as hands, the number of objects, or which color belongs to which object.","Many image generators read only the first part of a long description, so details near the end can be lost."]} -->
 <p>"A bowl of soup" gets you a bowl of soup, and very little you chose yourself. Now compare: "A steaming bowl of red lentil soup on a wooden table, shot from above. Soft window light from the left, empty space on the right for a title." The second one is much closer to a thumbnail you could use.</p>
-<p>Image and video generators fill every gap you leave with typical choices, the same way chatbots do with text. Your job is to close the gaps that matter to you.</p>
+<p>Image and video generators fill every detail you leave out with typical choices, the same way chatbots do with text.</p>
 
 <h2>Describe what a camera would see</h2>
 <p>A good image [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] reads a bit like a note to a photographer. It covers six things, roughly in the order a viewer notices them:</p>
@@ -14,7 +14,7 @@
 </ol>
 <p>You can write it as one sentence that fills those slots in order:</p>
 [ita_prompt title="One-sentence image description"]
-[Subject with two or three details], [what it is doing], in [setting]. [Framing and angle], [light]. [Style], [colors and mood]. Leave empty space on the [left or right] for a title. [Aspect: square, tall for phones, or wide].
+[Subject with two or three details], [what it is doing], in [setting]. [Framing and angle], [light]. [Style], [colors and mood]. Leave empty space on the [left or right] for a title. [Shape: square, tall for phones, or wide] (or set it in the app's settings).
 [/ita_prompt]
 <p>Describe what you want to see, rather than what you don't. In some generators, writing "no people" can make people more likely to appear, because the word is now in the description. Where an app offers a separate field for things to leave out, use that field. Otherwise describe the empty space: "an empty street at dawn".</p>
 
@@ -26,29 +26,28 @@ A [length]-second clip, [style].
 Start: [what we see in the first moment]
 Action: [the one main thing that happens]
 End: [what we see in the last moment]
-Camera: [still, slow move toward the subject, or slow pan left or right]
+Camera: [still, slow move toward the subject, or slow turn to the left or right]
 Sound, if the app makes sound: [for example: quiet kitchen sounds, no music]
 [/ita_prompt]
-<p>Describe the camera in plain words. "Slow move toward the subject" is clearer than a film term the generator may read in different ways.</p>
+<p>Plain words are a safe start; if your app's guide lists camera terms, use those.</p>
 
-<h2>Change one thing at a time</h2>
-<p>When a result is close but not right, keep your description and change only the part that's wrong. If the light is too harsh, rewrite the light and nothing else. Change two parts at once and you won't know which one fixed it.</p>
-<p>These problems are common enough to plan for:</p>
+<h2>Problems to plan for</h2>
+<p>When a result is close but not right, keep your description and rewrite only the part that's wrong, such as the light. Some problems are common enough to plan for:</p>
 <ul>
-<li><strong>Text in the image</strong> is often misspelled or garbled. Leave it out and add your title in an editing app.</li>
+<li><strong>Text in the image</strong> can come out misspelled or garbled, especially longer text. Many creators leave it out and add the title in an editing app.</li>
 <li><strong>Small details</strong> can be wrong: extra fingers, the wrong number of cups, the red scarf on the wrong person. Look closely before you post.</li>
-<li><strong>Keeping a character the same</strong> across images is hard from text alone. Some apps let you add a reference image for this.</li>
+<li><strong>Keeping a character the same</strong> across images is hard from text alone. Check the character in every image before you use them together.</li>
 <li><strong>Real people and named artists</strong>: don't ask for a real person's face or a living artist's style by name. Check the app's rules before you use images in paid work.</li>
 </ul>
-[ita_why title="Why do image generators ignore part of a long description?"]
-<p>Image generators read your text in small pieces too, and many of them use only a limited amount of it. Details near the end of a long description can carry less weight or be dropped, depending on the app.</p>
+[ita_why title="How image generators read a long description"]
+<p>Image generators read your text in small pieces too. Many image generators read only the first part of a long description, so details near the end can be lost.</p>
 <p>Details can also get mixed up. Ask for "a red cup and a blue plate" and you may get a blue cup. The generator has learned which words go with which images, but keeping each color attached to the right object is still a weak spot. Shorter descriptions with fewer competing details help.</p>
 [/ita_why]
 
 [ita_quiz]
 [ita_q q="Your thumbnail looks right, except the light is too harsh. What should you change?" answers="The whole description, written again from the start|Add more adjectives about the subject|Only the light part, keeping the rest the same" correct="3" why="Changing one part at a time shows you what each change does."]
-[ita_q q="The title text inside your image comes out misspelled. What's a sensible fix?" answers="Leave text out and add the title in an editing app|Repeat the exact title several times inside the description|Ask for the title in capital letters" correct="1" why="Generators often garble text, so adding it afterward is more reliable."]
-[ita_q q="Why describe one main action for each short video clip?" answers="One action fits the short length and is easier to get right|Video generators reject descriptions with two verbs|Several actions make the video file too large to save" correct="1" why="Short clips have room for one clear action; join several clips for a longer scene."]
+[ita_q q="The title text inside your image comes out misspelled. What's a sensible fix?" answers="Leave text out and add the title in an editing app|Repeat the exact title several times inside the description|Describe the font and its size in more detail" correct="1" why="Generators can garble text, so adding it afterward is more reliable."]
+[ita_q q="Why describe one main action for each short video clip?" answers="One action fits the short length and is easier to get right|Video generators ignore everything after the first verb|Several actions always come out as separate clips" correct="1" why="Short clips have room for one clear action; join several clips for a longer scene."]
 [/ita_quiz]
 
 <h2>Try it</h2>
@@ -56,7 +55,6 @@ Sound, if the app makes sound: [for example: quiet kitchen sounds, no music]
 <ol>
 <li>Pick one of your own photos: a meal, a street, a pet, a view from a window.</li>
 <li>Without looking at it again, write it as one sentence using the six parts: subject, setting, framing, light, style, mood.</li>
-<li>Generate an image from your sentence.</li>
-<li>Find the biggest difference from your photo, and write which of the six parts it belongs to.</li>
-<li>Rewrite only that part, generate again, and save the sentence that came closest as a starting point for your next thumbnail.</li>
+<li>Generate an image from your sentence, and find the biggest difference from your photo.</li>
+<li>Rewrite the part of your sentence that caused it, and save the new sentence as the start of your next thumbnail description.</li>
 </ol>

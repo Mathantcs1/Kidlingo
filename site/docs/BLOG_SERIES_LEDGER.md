@@ -79,62 +79,97 @@ Core lessons and their owner:
 - Prompt patterns: before/after notice with a style sample line (layout echoes 09's weak/better); "ask me first" interview.
 - Example domains: bakery closing on Mondays; message to a customer, school or local group.
 
+## Lessons taught twice: refer back (never re-teach)
+Checking facts in a trusted source; an example beats a description; change one thing at a time; carry a short summary to a new
+chat; save reusable prompts in a note; validate JSON in your code (13); start a new chat vs fix in the same chat (06); context
+window basics (10); training cutoff (04); ask-me-questions-first (10); flag-what-to-double-check (01). Refer by title, once per article.
+
 ## 11 Prompting with examples (intermediate)
-- Lessons (owns few-shot): labeled input/output pairs; same labels, real examples, empty output label at the end; 2-3 varied examples; examples get copied (endings, topics, typos); examples can outweigh instructions (Why: model can't tell coincidence from pattern).
+- Opener: short example (job note becomes invoice line); no thesis line.
+- Lessons (owns few-shot): labeled input/output pairs; same labels, real examples, empty output label at the end; use only facts in the note; 2-3 varied examples; examples get copied (endings, topics, typos); examples can outweigh instructions.
+- Why: "How examples pull the answer toward them". Cross-ref: Give context, get better answers.
 - Quiz stems: example captions all end with a question; why end with an empty output label; which example set teaches a format best.
-- Prompt patterns: Note/Line pairs ending with a blank "Line:".
-- Example domains: plumber job notes to invoice lines; creator captions; hiking trip.
+- Prompt patterns: Note/Line pairs ending with a blank "Line:" (example pairs labeled).
+- Example domains: plumber job notes to invoice lines (trade owner 1 of 2); creator captions.
+- Try it: 4 steps, done with a coworker or friend; ends by adding their answer as a rule.
 
 ## 12 Asking for tables, checklists and JSON (intermediate)
-- Lessons: name columns and order; "missing" instead of guessing; CSV pastes better; checklist lines start with a verb, one action per line; JSON via an example object, null for unknowns; code must check JSON (Why: extra text, renamed key, stops halfway).
-- Quiz stems: table to paste into an existing sheet; what a cell shows when a value is missing; why a program checks chatbot JSON.
-- Prompt patterns: fixed columns plus a "missing" marker; JSON-only reply with an example object.
-- Example domains: hardware store stock count; food truck closing checklist; print shop order message. Format table (HTML table).
+- Opener: common mistake + one-line thesis (thesis 1 of 3 in batch B).
+- Lessons: name columns and order; "missing" instead of guessing, then spot-check rows; CSV: save as .csv or split text into columns, quote values with commas; checklist lines start with a verb, one action per line; JSON via a labeled example object, values taken from the message, null for unknowns; remove customer names before pasting.
+- Why: "Where JSON from a chatbot breaks". Cross-ref: System prompts and structured output for builders. HTML table with caption and scoped headers.
+- Quiz stems: table to paste into an existing sheet; why "missing" beats a filled cell; pasted table lands in one column (CSV).
+- Prompt patterns: fixed columns plus a "missing" marker; JSON-only reply with a labeled example object.
+- Example domains: warehouse team stock count (employee); community center closing checklist for volunteers (community); print order message.
+- Try it: 5 steps, on paper (1 of 2); ends "fix that line and run it again".
 
 ## 13 System prompts and structured output for builders (advanced)
-- Lessons (owns system prompt, prompt injection basics for builders): scope/facts/rules/output order; app injects data (FREE_SLOTS); fallback branch in the output contract; structured modes vary by provider; validate values; retry once then safe reply; small schemas, enums; field order may matter; no secrets; test set after each edit; roles and token markers (Why).
-- Quiz stems: user says ignore your rules, where the guard lives; JSON mode still needs validation; what never goes in a system prompt.
-- Prompt patterns: markdown-sectioned system prompt with an output contract and explicit "cannot help" branch.
-- Example domains: pet-grooming booking assistant; five-message test sheet.
+- Opener: direct answer, no thesis line.
+- Lessons (owns system prompt, JSON validation in code, prompt injection for builders): scope/facts/rules/output order; app injects data (FREE_SLOTS); real JSON shape with allowed values and a "cannot help" branch; structured modes vary; validate values; cut-off replies even in structured modes; retry once then safe reply; small schemas; field order may matter; no secrets; test set after each edit.
+- Why: "Where does the system prompt actually go?" (roles, token markers, trained weight).
+- Quiz stems: user says ignore your rules, where the guard lives; JSON-constraining mode still needs validation; what never goes in a system prompt.
+- Prompt patterns: Markdown-sectioned system prompt with an output contract and explicit fallback.
+- Example domains: pet-grooming booking assistant (shop owner 2 of 2).
+- Try it: 5 steps, test sheet for a teammate; ends committing it next to the prompt.
 
 ## 14 Reusable prompt templates (intermediate, gated)
-- Lessons: fixed rules above a divider, labeled slots below; second real case before saving; remove names; name and date versions; saved sample case to retest after app changes; divider helps separate material from instructions, not reliably (Why).
+- Opener: common mistake; no thesis line.
+- Lessons (owns templates): fixed rules above a divider, labeled slots below; school and workplace rules before pasting; second real case before saving; remove names; name and date versions; saved sample case to retest after app changes.
+- Why: "What the divider does" (helps, not reliably, against instructions in pasted text).
 - Quiz stems: which part is a slot; why test on a second case; what to check before sharing.
-- Prompt patterns: "--- Fill in below this line ---" template. Checklist "prompt-template-ready".
-- Example domains: teacher rubric feedback; care shift handover, landscaper quote, tutor progress summary.
+- Prompt patterns: "--- Fill in below this line ---" template (teacher feedback; care home shift handover with initials only). Checklist "prompt-template-ready".
+- Example domains: teacher rubric feedback; care worker handover (employee).
+- Try it: 5 steps, template from a request sent twice; ends "save it" (1 of 2).
 
 ## 15 Role prompts: when they help (intermediate)
-- Lessons: role changes tone, vocabulary, detail, focus, not knowledge; naming the audience often does the same; reader role, practice partner, specific critic; expert role can sound more certain; "act as my doctor/lawyer" gives style only; accuracy effect debated (Why).
-- Quiz stems: what a role changes most reliably; confident expert-historian date; best role for feedback on a script opening.
+- Opener: reader's question answered in the hook; no thesis line.
+- Lessons: role changes tone, vocabulary, detail, focus, not knowledge; naming the audience often does the same; reader role (answer is a guess about your reader), practice partner, specific critic; expert role can sound more certain; "act as my doctor/lawyer" gives style only.
+- Why: "Why would a role change the answer at all?" (accuracy effect debated). Cross-ref: How a chatbot "knows" things.
+- Quiz stems: what a role changes most reliably; what an expert-economist role tells you about a figure; which role helps feedback on a script opening.
 - Prompt patterns: "Read it as your audience" (mark where the reader loses interest, list their remaining questions, no rewrite).
-- Example domains: photosynthesis explanation; essay introduction; video script opening; debate and podcast practice.
+- Example domains: photosynthesis explanation; university essay introduction; video script opening; debate and podcast practice.
+- Try it: 4 steps, ranking readers by risk; ends by fixing the marked sentence.
 
 ## 16 Breaking big tasks into steps (beginner)
-- Lessons: ask for steps only, edit the list, one step at a time, short checkable answers, repeat a "Decided so far" list; when not to split; length limits and no chance to steer (Why).
+- Opener: scenario ("Say you're moving your family..."), the batch's only scenario opener; no thesis line.
+- Lessons: ask for steps only, edit the list, one step at a time, short checkable answers, "Decided so far" list lets you start a fresh chat; when not to split.
+- Why: "Why does one huge request go wrong?" Cross-ref: Give context, get better answers.
 - Quiz stems: why steps before work; what goes at the top of the next message; which task needs no splitting.
 - Prompt patterns: "Steps only, don't do any yet"; "Decided so far" + step number.
-- Example domains: first craft fair candle stall; school research presentation.
+- Example domains: family move (parent/family logistics); university essay.
+- Try it: 5 steps, on paper (2 of 2); ends sending the second prompt.
 
 ## 17 Fixing a bad answer (beginner)
-- Lessons: five problem kinds (generic, shape, misunderstood, tone, fact) and fixes; Keep/Change/Add; when to open a new chat; edit-and-resend in some apps; why "try again" repeats mistakes (Why). Refers to 06 for same-chat fixes.
-- Quiz stems: correct but too-long study notes; a date you think is wrong; the same mistake after two corrections.
+- Opener: common mistake + one-line thesis (thesis 2 of 3).
+- Lessons: five problem kinds (generic, shape, misunderstood, tone, fact) and fixes; Keep/Change/Add; don't skip Keep; when to open a new chat; edit-and-resend in some apps.
+- Why: "Why does 'try again' often bring back the same mistake?" Cross-ref: AI myths that waste your time.
+- Quiz stems: correct but too-long study notes; misread first message, edit and resend; same mistake after two corrections.
 - Prompt patterns: Keep / Change / Add reply.
-- Example domains: history chapter study notes.
+- Example domains: university biology study notes; lecture notes.
+- Try it: 3-step quick version; ends checking changed parts and skimming the rest.
 
 ## 18 Prompting for images and video (intermediate)
-- Lessons: six parts (subject, setting, framing, light, style, color/mood); describe what is there instead of "no X"; one action per short clip; plain camera words; change one part at a time; garbled text, wrong details, character consistency, no real faces or living artists' names; attribute mixing and long-prompt weighting (Why).
+- Opener: short example (two descriptions) + one-line thesis (thesis 3 of 3).
+- Lessons: six parts (subject, setting, framing, light, style, color/mood); shape in the app's settings; describe what is there instead of "no X"; one action per short clip; plain camera words first; text can be garbled; wrong details; character consistency; no real faces or living artists' names.
+- Why: "How image generators read a long description" (first part read; color/object mix-ups).
 - Quiz stems: only the light is wrong; misspelled title in the image; why one action per clip.
 - Prompt patterns: one-sentence fill-in image description; Start/Action/End/Camera clip beats.
 - Example domains: lentil soup thumbnail; honey on pancakes clip; own photo as target.
+- Try it: 4 steps, own photo as target; ends "save the new sentence" (2 of 2).
 
 ## 19 Tokens explained (beginner)
-- Lessons (owns tokenizer): tokenizer splits, numbers; letters hidden in chunks (figure token-splitting, new angle); output token limits stop answers; other languages take more tokens; long numbers split unevenly; builders: input/output tokens, usage reporting, tokenizers differ, formatting costs tokens; why chunks (Why).
+- Opener: reader's question answered in the hook; no thesis line.
+- Lessons (owns tokenizer): tokenizer splits and numbers; letters inside chunks are never separate (figure token-splitting, example split; spaces often join the next word's token); spell-it-out prompt; output token limits; other languages take more tokens; long numbers split unevenly; builders: input/output tokens, usage reporting, tokenizers differ, formatting costs tokens.
+- Why: "Why not use single letters, or whole words?"
 - Quiz stems: why letters get miscounted; answer stops mid-sentence; token count differs between models.
 - Prompt patterns: spell it out letter by letter, number, then count.
 - Example domains: bookkeeper, Mississippi; a long number; sentence and its translation in a token counter.
+- Try it: fill-in card (no numbered steps); ends "choose a long word and write it on the card".
 
 ## 20 Context windows (intermediate)
-- Lessons (deeper than 10): what fills the window (instructions, memory, files, tool results, replies, room for the reply); fitting is not reading well (middle-of-input risk, debated); point to a section and quote; builders: reserve reply room, trim history, fetch instead of stuff, shrink tool results; what summaries lose (Why).
+- Opener: common mistake; no thesis line.
+- Lessons (deeper than 10): what fills the window (instructions, memory, files, tool results, earlier replies unless dropped or summarized, room for the reply); fitting is not reading well (middle-of-input risk, debated); point to a section and quote; workplace rules before pasting; builders: reserve reply room, trim history, send only the passages that matter, shrink tool results, longer inputs are slower.
+- Why: "What does a summary lose?" Cross-ref: Tokens explained.
 - Quiz stems: what else takes up the window; handbook rule in the middle missed; why leave room in the request.
 - Prompt patterns: "Point it to the right part" (one section, quote first); rolling state note with fixed headings.
 - Example domains: staff handbook, supplier terms; builder chat history.
+- Try it: 4 steps, needs no app, done for a coworker; ends handing them the list to mark.
