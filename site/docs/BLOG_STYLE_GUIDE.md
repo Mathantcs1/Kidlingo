@@ -113,7 +113,9 @@ Pick the claims a careful reader is most likely to question: definitions, how so
 Attribute values go in double quotes and must not contain `"`, `[`, `]` or `<`. Write "less than" instead of `<`.
 
 **Prompt box**: the text is copied exactly as written, so write it the way a reader would paste it. Lint rules apply to prompt
-text too, so a prompt in the reader's voice still avoids phrases such as "when I" or "I asked".
+text too, so a prompt in the reader's voice still avoids phrases such as "when I" or "I asked". Square brackets mean "the reader
+fills this in" and nothing else. **The note is automatic**: a box with a `[bracket]` slot prints "Replace the parts in [brackets]
+with your own details." above the text (not copied). Never write "(example values: replace them)" in a title or sentence.
 ```
 [ita_prompt title="A better version"]
 Write a short email to my landlord asking for the heater to be repaired.
@@ -169,7 +171,30 @@ These either break readers' trust, go stale, or put the owner at risk. The lint 
   They add nothing and sound machine-written.
 - Fake authors or credentials. The byline is "IdeaToApps" and says the draft was AI-assisted.
 
+## Rules learned in review
+Article 51 and later follow these too. `BlogLintSeriesTest` checks the budgets and cross-references; the rest is for the reviewer.
+- **Lesson owners** (others refer back in one short clause, never re-teach): prompt injection 13 and 27; agent loop and limits 27
+  and 31; tool definitions 29; context window 10 and 20; training 22; made-up details 23; sources 40; human approval 35; what never
+  to paste 45; the five-minute fact-check 47; "a step is done only when the log shows it" 31.
+- **Privacy**: outside 45, one short clause ("remove names; only if your workplace allows it"), pointing to 45 when useful.
+- **Banned formulas**: roadmap sentences after the hook; closing aphorisms; comments on a prompt box in the next sentence ("Notice
+  ..."); one-line bridges into the Why box; "The same ... works/applies/helps" pivots (give a second audience its own short
+  paragraph with a real action, or fold it into the main example); "As 'X' explains".
+- **Phrase budgets per article**: "such as" 2; "often" + "usually" 4 (hedge each claim once, drop hedges on safe claims, keep
+  them on privacy, legal, safety and security claims and in `check`); "differ(s) between" 1; one warmth formula ("If you've
+  ever", "You've probably"); one hypothetical lead-in ("Say you", "Imagine", "Picture a", "It's [time]"), and at most 8
+  "It's [time]" openers in the whole series. Justified exceptions go in `tests/php/helpers/blog-lint-series-allow.txt`.
+- **Cross-references**: at most one per article, the title always in double quotes and never the subject of a stock verb: (see
+  "Context windows") or (the article "Context windows" explains why). Vary the sentence around it.
+- **Try it**: when it asks a question, exactly one correct answer; give a time only when it is not about five minutes.
+- **Quizzes**: no distractor a reader rules out on sight, no "pick the calm answer" pattern, no reused stem concept (check the
+  ledger); at least a third of stems concrete ("Which line do you check?", "Where do you look?").
+- **Example domains**: vary them across a batch of ten: at most 2 shop or trade owners, at least one employee role, one older adult,
+  one learner (high-school, adult or vocational) and one family case; "university student" at most once. Record them in the ledger.
+- **Definitions**: every acronym and technical term gets an `[ita_term]` at first use in every article, with the glossary's
+  wording (05, and 12 for JSON); one definition per term per article.
+
 ## Before you hand a draft over
-- Run `php vendor/bin/phpunit --filter BlogContentLintTest` from `site/`.
+- Run `php vendor/bin/phpunit --filter 'BlogContentLintTest|BlogLintSeriesTest'` from `site/`.
 - Read it aloud once. Cut any sentence you would not say to a friend.
 - Every factual sentence should be something a careful reader can check. If you are not sure, soften it or cut it.
