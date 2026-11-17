@@ -175,82 +175,82 @@ window basics (10); training cutoff (04); ask-me-questions-first (10); flag-what
 - Try it: 4 steps, needs no app, done for a coworker; ends handing them the list to mark.
 
 ## 21 Temperature and randomness (intermediate)
-- Opener: short example (same request, regenerate gives a different title); no thesis line.
-- Lessons (owns temperature, top-p, seed): low = steadier, high = more varied; lower is not more correct; small differences even at the lowest setting; scales and defaults differ; settings by task (extraction low, brainstorming higher); test the same input several times; some models ignore the setting; in chat apps, ask for options that differ in named ways.
-- Why: "What the temperature number changes" (scores divided by temperature). Cross-ref: What AI is and isn't.
-- Quiz stems: lowest temperature for a fact question; varied captions with no temperature setting; extraction gives different order numbers.
-- Prompt patterns: "Different on purpose" (N options, each differing in a named way, with a two-word label).
-- Example domains: bike-chain video titles (creator); dates and order numbers from delivery notes (builder).
-- Try it: 4 steps; same request three times, mark what changed; ends lowering the temperature or adding the fact, then three more runs.
+- Opener: "If you've ever asked..." (regenerate gives a new title); no thesis. Layout: myth/fact (three h3 beliefs), mostly paragraphs, no bold-lead lists.
+- Lessons (owns temperature, top-p, seed): low = steadier, high = more varied; zero is not accuracy; small run-to-run differences (server batching); each provider has its own range/default, some models ignore it; settings by task in prose; judge a setting on several runs; in chat apps, ask for options that differ in named ways. Defines API.
+- Why: "What the temperature number changes". Cross-ref: What AI is and isn't ("shows how").
+- Quiz stems: lowest temperature for a fact question; varied captions with no temperature setting; extraction gives different order numbers, which change fits.
+- Prompt patterns: "Different on purpose" (N captions, each differing in a named way, two-word label); example label in the sentence before the box; nothing after the box.
+- Example domains: retired woodworker's workshop captions (older adult, creator); delivery-note dates and order numbers (builder).
+- Try it: 4 steps; same request three times, mark what changed; ends lowering the temperature, comparing numbers with the original, three more runs.
 
 ## 22 How LLMs are trained (intermediate)
-- Opener: direct answer + one-line thesis (thesis 1 of 3 in batch C).
-- Lessons (owns pretraining loop, base model, post-training, reward model): data collection and filtering; next-token loop adjusts parameters; base model continues text; example conversations; preference training; safety training; chats don't change parameters; chats may train later models (settings); fine-tune for format/tone vs send facts that change. No figure (training-stages stays with 04).
-- Why: "How people's choices become training" (reward model; direct methods; written rules with AI feedback). Cross-ref: none by title.
-- Quiz stems: what a pretrained-only model does with a question; what changes after each guess; what people provide in preference training.
-- Prompt patterns: "Quiz me on one phase" (explain in five sentences, then three questions one at a time with feedback).
-- Example domains: university student self-test; base model and a quiz-question continuation.
-- Try it: 4 steps, done with a classmate or family member, no app; ends checking their answer against the second section.
+- Opener: direct answer; no thesis (cut in review). Layout: walkthrough with h3 parts.
+- Lessons (owns training): collection and filtering; next-token loop, parameters changed after batches; base model continues text (boil-an-egg forum example); example conversations; preferences and safety; practice on checkable tasks (math, code with tests); chats don't change parameters; chats may train later models (settings); fine-tune for format/tone vs send changing facts. No figure (training-stages stays with 04).
+- Why: "How people's choices become training". Cross-ref: none by title.
+- Quiz stems: what a pretrained-only model does with a question; what each training step changes; what people provide in preference training. Key 1-3-3.
+- Prompt patterns: "Quiz me on one phase" (explain in five sentences, three questions one at a time with feedback); label before the box; nothing after.
+- Example domains: high-school student self-test.
+- Try it: 4 steps, with a classmate or family member, no app, four boxes; ends asking which box gave most general knowledge (answer: pretraining), checked against the first section.
 
 ## 23 Hallucinations and how to catch them (beginner)
-- Opener: common mistake (trusting a complete-looking reading list); no thesis line.
-- Lessons (owns hallucination causes and spotting signs): likely text on rare topics; training rewarded answering; search doesn't remove it; signs checklist "made-up-detail-signs" (exact niche details, unrequested sources, real author with unknown book, details change between chats, false premise accepted, claims to read a link it can't open); false-premise questions; exact-count requests; open questions leave room for "I don't know".
-- Why: "What makes a fake reference look real". Cross-ref: none by title.
-- Quiz stems: why five sources may be made up; which question (false premise) invites a made-up answer; claims to have read a link the app can't open.
-- Prompt patterns: "Make a checking sheet" (list every name, title, number, quote with search words and a blank for found/not found; don't judge truth).
-- Example domains: reading list and references; town library award (community); class exercise (teacher/student).
+- Opener: short statement ("A reading list from a chatbot can look complete..."); no thesis.
+- Lessons (owns spotting made-up details): likely text on rare topics; scoring that rewarded answering (hedged, researchers); search doesn't remove it; checklist "made-up-detail-signs"; false-premise questions; exact-count requests; open questions; checking sheet in a new chat.
+- Why: "What makes a fake reference look real" (now after the checklist, before the box). Cross-ref: none by title.
+- Quiz stems: why five sources may be made up; false premise about a community choir prize; claims to have read a link the app can't open.
+- Prompt patterns: "Make a checking sheet"; the new-chat instruction comes before the box; nothing after.
+- Example domains: reading list and references; grandmother's community choir (older adult, community); class exercise (teacher/student).
 - Try it: 5 steps, done for a student or child; ends with the student marking each line found or not found.
 
 ## 24 Open vs closed models (intermediate)
-- Opener: direct answer; no thesis line.
-- Lessons (owns open-weight vs closed comparison and license caution): open weights vs code vs data; licenses differ (commercial use, conditions); open source label debated; side-by-side table (runs where, data, setup, version changes, capability, rules); hosted open models; not legal advice. Figure open-vs-closed. HTML table with caption and scoped headers.
-- Why: "Open weights, open code, open data". Cross-ref: A plain-English AI glossary.
-- Quiz stems: downloadable files and what you may do; dental clinic admin, what to settle first; real advantage of a closed model for a small team.
+- Opener: direct answer (closed = the maker's app or API, or a licensed cloud provider); no thesis. Layout: paragraphs plus comparison table.
+- Lessons (owns open-weight vs closed and license caution): weights vs code vs data; licenses differ and can change between versions; open-source label debated; table (runs where, data, setup, version changes, capability, rules); hosted open models; not legal advice. Figure open-vs-closed (relabeled "use it as a service").
+- Why: "Open weights, open code, open data". Cross-ref: A plain-English AI glossary ("The entry for open-weight...").
+- Quiz stems: downloadable files and what you may do; dental clinic admin, which question comes before choosing; real advantage of a closed model for a small team.
 - Prompt patterns: none (checklist "open-or-closed-model").
-- Example domains: dental clinic office admin (employee); builder's own app.
-- Try it: fill-in card (no numbered steps), no app; ends writing and sending one question to the person who approves software.
+- Example domains: dental clinic office admin (employee).
+- Try it: fill-in card, no app; ends sending one question to the person who approves software.
 
 ## 25 Running a model on your own computer (advanced)
-- Opener: reader's question + one-line thesis (thesis 2 of 3).
-- Lessons (owns local models): model files with license, a runner program (no names), local server like hosted APIs, fast memory fit; trusted sources and data-only formats; speed, quality, context length, missing extras (search, filters), heat; privacy settings of the runner; small-model prompting.
-- Why: "How a big model fits into less memory" (quantization). Cross-ref: Open vs closed models.
+- Opener: reader's question; no thesis (merged into hook). Layout: Q&A (h3 questions under "Setting it up" and "Living with a local model"), no bold-lead lists.
+- Lessons (owns local models): model files (weights) and runner; local server like hosted APIs, keep it local-only; fast memory fit; trusted sources, data-only formats, runner updates, code-running options off; speed, quality, context length (small runner defaults), missing extras, heat; privacy settings; small-model prompting. Defines open-weight, weights, API, context window.
+- Why: "How a big model fits into less memory". Cross-ref: Open vs closed models ("see").
 - Quiz stems: model loads but is very slow; why use a quantized version; what changes about safety locally.
-- Prompt patterns: "One job, clear edges" (single task, TEXT START/END markers, one-line output form, NONE fallback).
+- Prompt patterns: "One task, marked input" (TEXT START/END, YYYY-MM-DD output, unclear-date rule, NONE); nothing after.
 - Example domains: date extraction from notes; documentation summaries.
-- Try it: 3-step quick version (five tasks on hosted model, then local); privacy line; ends marking each local answer good enough or not.
+- Try it: 3-step quick version; privacy line; ends marking each local answer good enough or not.
 
 ## 26 RAG: how an AI looks things up (advanced)
-- Opener: scenario ("Say you're building a help assistant for a town's recycling rules"), the batch's only scenario opener; second hook paragraph defines RAG (no punch line).
-- Lessons (owns RAG pipeline): chunks, embeddings, index with source/date/access metadata; embedding + keyword search, re-scoring; numbered passages with citations and NOT_IN_SOURCES; chunk size, metadata filters, number of passages; retrieval misses vs generation errors; log retrieved passages.
-- Why: "Close in meaning is not the same as relevant" (topic vs answer; negation). Cross-ref: Context windows.
-- Quiz stems: wrong answer, what to check first; pizza boxes vs food-soiled cardboard; right passage but extra rule added.
-- Prompt patterns: "Answer from numbered passages" (cite [n] per sentence, exact fallback token).
+- Opener: "If you've ever asked..." then scenario ("Say you're building", the batch's only use); second paragraph defines RAG.
+- Lessons (owns RAG pipeline): chunks, embeddings, index, metadata; embedding + keyword search, re-scoring; numbered passages, citation check (catches made-up numbers only), NOT_IN_SOURCES, passages as information; chunk size, metadata filters, number of passages; retrieval misses vs generation errors; prompt injection in one clause; log retrieved passages.
+- Why: "When the closest passage is the wrong one". Cross-ref: Context windows ("covers this trade-off").
+- Quiz stems: wrong answer, what to check first (the batch's one "first?" stem); pizza boxes vs food-soiled cardboard; right passage but extra rule added.
+- Prompt patterns: "Answer from numbered passages"; nothing after the box (next h2).
 - Example domains: town recycling and bulky-waste rules (community).
-- Try it: 5 steps, test set of ten questions with two unanswerable; ends labeling failures retrieval or generation and fixing the larger group.
+- Try it: 5 steps, ten test questions with two unanswerable; ends labeling failures and fixing the larger group.
 
 ## 28 Chatbot vs workflow vs agent (beginner)
-- Opener: short example (returns questions at a clothing store, handled three ways); no thesis line.
-- Lessons (owns the three-way distinction): chatbot answers, workflow follows fixed steps set by a person, agent chooses steps (model plus code running tools in a loop, as 27); three questions (one-off? same every time? steps depend on findings?); fewer free choices when mistakes are costly; effort differs; blurry line (Why). Figure chatbot-workflow-agent.
-- Why: "Why the line between them is blurry". Cross-ref: What is an AI agent.
-- Quiz stems: weekly sales report pipeline is which; agent vs workflow difference; costly, rarely changing task, safer choice.
-- Prompt patterns: "Sort my tasks" (label each task chatbot/workflow/agent with a one-line reason, name the riskiest).
-- Example domains: retail sales floor (shift lead notice, packing slips, sold-out jacket transfer) (employee).
-- Try it: 4 steps, ranking by harm, no app needed (pen and page or notes app); ends naming who checks the top task and at which step.
+- Opener: short example (returns at a clothing store, three ways); no thesis. Layout: mostly paragraphs, h3 questions.
+- Lessons (owns the three-way distinction): chatbot answers; workflow = steps and rules planned in advance (branches allowed); agent chooses steps, uses tools, until goal met or stopped (as 27); three questions; damaged-gift-jacket exchange as agent work; fewer free choices when costly; effort differs. Figure chatbot-workflow-agent. Defines tool.
+- Why: "How a workflow can use AI without becoming an agent" (AI sorting into planned branches, each testable). Cross-ref: What is an AI agent ("As ... explains", the batch's one use).
+- Quiz stems: weekly sales report pipeline is which; AI picks one of three planned replies, closest to which; costly, rarely changing task, safer choice.
+- Prompt patterns: "Sort my tasks"; label caveat before the box; Why follows the box.
+- Example domains: retail sales floor (shift lead notice, packing slips, damaged gift jacket) (employee).
+- Try it: 4 steps, ranking by harm, no app (pen and page), end of a shift; ends naming who checks the top task and at which step.
 
 ## 29 Tools and function calling (advanced)
-- Opener: direct answer + one-line thesis (thesis 3 of 3).
-- Lessons (owns function-calling round trip and tool definitions): definitions with name, description, schema; tool call with arguments; IDs link results; parallel and forced calls vary by provider; description says when and when not; enums; few distinct tools; short results; actionable errors; permissions, confirmation, repeated calls, tool results as data, call limits and logs. Figure tool-calling.
-- Why: "What the model actually sees of a tool" (definitions become text in the window). Cross-ref: System prompts and structured output for builders.
-- Quiz stems: tool called for to-do items, what to change; past start time, what to return; search result says delete every event.
-- Prompt patterns: JSON tool definition with "Use only after" / "Do not use for" description (family calendar).
+- Opener: direct answer + "If you've ever seen a chatbot..."; no thesis (cut). Layout: worked before/after (vague "Adds an event." description vs fixed one).
+- Lessons (owns tool definitions and the round trip): five steps; JSON, schema, arguments, API defined; providers rename fields; parallel and forced calls; descriptions guide but code checks; few distinct tools; small results; actionable errors; permissions and least privilege; approval in one line; call IDs against duplicate retries; text inside results is information, no complete fix, limit tools; prompt injection referred to 13; limits and logs. Figure tool-calling (now with a "Your code" node).
+- Why: "What the model actually sees of a tool" (moved before the box). Cross-ref: System prompts and structured output for builders ("described in").
+- Quiz stems: tool called for to-do items, which change fixes it; past start time, what to return; search result says delete every event.
+- Prompt patterns: valid JSON tool definition (label moved to the sentence before; wrap/rename for your provider); nothing after the box (next h2).
 - Example domains: family calendar app (parent/family logistics).
 - Try it: 5 steps, three should-call and two should-not messages; ends rewriting descriptions and sending all five again.
 
 ## 30 Memory in agents (intermediate)
-- Opener: common mistake (expecting an agent to remember by itself); no thesis line.
-- Lessons (owns agent memory design): short-term = context window, long-term = stored notes added back (same as app memory features); facts, task records, working rules; search for large collections; model suggests, code decides; save confirmed, dated facts only; never passwords or IDs; users can see and delete; stale, repeated, wrong-user and planted notes; cap notes per request. Figure agent-memory.
-- Why: "Memory is more text in the window" (label notes with date and source; prefer newer message). Cross-ref: Context windows.
-- Quiz stems: where a remembered exam date came from; safest note to save; saved date vs new date from the student.
-- Prompt patterns: "Memory-write rule" (one line per note with date, fact, source; blocked kinds; NO NEW NOTES).
-- Example domains: study helper agent for university students.
-- Try it: 4 steps, on paper (1 of 2 in batch C), no app; ends turning the remaining items into memory-note fields.
+- Opener: short statement ("An agent doesn't remember yesterday's work by itself") + "If you've ever reopened a chat app..."; no thesis. Layout: day-by-day (Week 1 Monday, Week 1 Wednesday, Week 3).
+- Lessons (owns agent memory design): short-term = context window, long-term = stored notes added back (by your code or a service; app memory generally the same); facts, task records, working rules; search for large collections; model suggests, code decides and checks lines; confirmed, dated facts only; stale notes updated after confirmation; repeated, wrong-user, planted (refers to 27) and too many notes; see and delete. Figure agent-memory.
+- Why: "Memory is more text in the window". Cross-ref: What is an AI agent (planted instructions).
+- Quiz stems: where a remembered exam date came from; safest note to save (vs guess or whole session); saved date vs the learner's new date. Key 2-1-2.
+- Prompt patterns: "Memory-write rule" inside the worked example (output YYYY-MM-DD | fact | source: user said OR user confirmed; only [session text] in brackets).
+- Example domains: study helper agent for adults training as nursing assistants (vocational learner).
+- Try it: 4 steps, on paper (the batch's only "on paper"); ends turning the remaining items into memory-note fields.
