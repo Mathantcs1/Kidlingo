@@ -97,7 +97,7 @@ What the parser (`includes/blog-article-file.php`) requires:
 - `excerpt`: 1-160 characters of plain text. It is shown on cards and in search results.
 - `reviewed`: a real `YYYY-MM-DD` date. **It is the date the draft was written, not a human review date.** The installer stores it
   as `ita_drafted_on`; the human review date is recorded only when an editor signs the post off in the Editorial review box.
-- `gated`: `true` or `false` (0/1 also parse). Write `false`. Which posts are subscriber-only is decided later, by the owner.
+- `gated`: `true` or `false` (0/1 also parse). `true` only for the owner-approved slugs 08, 14, 32, 36, 42 and 44; `false` for every other article. It seeds the "Subscribers only" box; the owner can change any post afterwards.
 - `level` and `audiences`: exactly the topic's values in `topics.json` (same audiences, same order), from the lists above.
 - `check`: an array of 3-6 non-empty strings (see below).
 - The body after the comment must not be empty, and the whole file must stay under 400 KB.
