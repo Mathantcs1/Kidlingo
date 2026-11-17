@@ -22,7 +22,7 @@ $ideatoapps_post_id = (int) ( $args['post_id'] ?? 0 );
 	<ul class="gate-card__facts">
 		<li><?php esc_html_e( 'We send you a confirmation email first.', 'ideatoapps' ); ?></li>
 		<li><?php esc_html_e( 'Nothing else is sent until you confirm.', 'ideatoapps' ); ?></li>
-		<li><?php esc_html_e( 'After you confirm, this browser can read every subscriber-only article.', 'ideatoapps' ); ?></li>
+		<li><?php esc_html_e( 'After you confirm, the browser where you open the confirmation link can read every subscriber-only article.', 'ideatoapps' ); ?></li>
 		<li><?php esc_html_e( 'You can unsubscribe at any time, and reading locks again.', 'ideatoapps' ); ?></li>
 	</ul>
 	<form class="newsletter__form" method="post" action="<?php echo esc_url( rest_url( 'ideatoapps/v1/newsletter' ) ); ?>" data-ideatoapps-form data-nonce-url="<?php echo esc_url( rest_url( 'ideatoapps/v1/nonce' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">

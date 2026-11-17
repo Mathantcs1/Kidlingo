@@ -31,6 +31,9 @@ function ita_subscribers( $status = 'confirmed' ) {
 		if ( 'all' !== $status && $st !== $status ) {
 			continue;
 		}
+		if ( 'confirmed' === $status && '0' === (string) get_post_meta( $id, 'newsletter_consent', true ) ) {
+			continue; // confirmed for reading only, no newsletter consent: never on the mailable list (rows without the flag predate it and consented).
+		}
 		$rows[] = array(
 			'id'           => (int) $id,
 			'email'        => (string) get_post_meta( $id, 'email', true ),

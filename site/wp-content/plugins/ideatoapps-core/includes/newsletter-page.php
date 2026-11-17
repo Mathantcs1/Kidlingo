@@ -101,7 +101,7 @@ function ideatoapps_newsletter_page_html( array $res, array $query = array() ) {
 	$view  = $res['view'];
 	$texts = array(
 		'confirm_form'     => array( __( 'Confirm your sign-up', 'ideatoapps-core' ), __( 'Press the button to confirm that you want to join the IdeaToApps newsletter list. Nothing changes until you do.', 'ideatoapps-core' ) ),
-		'confirmed'        => array( __( 'You are confirmed', 'ideatoapps-core' ), __( 'Your address is confirmed for the IdeaToApps newsletter list. Subscriber-only articles open in the browser where you pressed Confirm; on another device, use "Email me a reading link" on any of them. You can unsubscribe at any time with the link in our confirmation email.', 'ideatoapps-core' ) ),
+		'confirmed'        => array( __( 'You are confirmed', 'ideatoapps-core' ), __( 'Your address is confirmed for the IdeaToApps newsletter list. You can unsubscribe at any time with the link in our confirmation email.', 'ideatoapps-core' ) ),
 		'unsubscribe_form' => array( __( 'Unsubscribe', 'ideatoapps-core' ), __( 'Plain Unsubscribe keeps only your email address, the status "unsubscribed" and the time, so we can honour your choice and never contact you again. To remove even that, choose "Unsubscribe and delete my data".', 'ideatoapps-core' ) ),
 		'unsubscribed'     => array( __( 'You are unsubscribed', 'ideatoapps-core' ), __( 'We keep only your email address, the status and the time, so we can honour your choice. You can still delete that too with the link in our confirmation email.', 'ideatoapps-core' ) ),
 		'deleted'          => array( __( 'Your data is deleted', 'ideatoapps-core' ), __( 'Your address and everything stored with it has been permanently deleted from this site.', 'ideatoapps-core' ) ),
@@ -120,6 +120,9 @@ function ideatoapps_newsletter_page_html( array $res, array $query = array() ) {
 	}
 	$html  = '<article class="section page" data-testid="newsletter-page" data-view="' . esc_attr( $view ) . '"><div class="container container--narrow">';
 	$html .= '<h1 class="section-heading__title">' . esc_html( $title ) . '</h1><div class="prose" data-testid="newsletter-result"><p>' . esc_html( $text ) . '</p>';
+	if ( 'confirmed' === $view && function_exists( 'ideatoapps_reader_any_gated' ) && ideatoapps_reader_any_gated() ) {
+		$html .= '<p data-testid="newsletter-reader-note">' . esc_html__( 'Subscriber-only articles open in the browser where you pressed Confirm. On another device, use "Email me a reading link" on any of them.', 'ideatoapps-core' ) . '</p>';
+	}
 	if ( '' !== $buttons ) {
 		$html .= '<form method="post">' . $buttons . '</form>';
 	}

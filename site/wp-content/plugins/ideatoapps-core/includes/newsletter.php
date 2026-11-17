@@ -110,6 +110,9 @@ function ideatoapps_newsletter_subscribe( $request ) {
 					'email'      => $email,
 					'consent_at' => gmdate( 'c' ),
 					'status'     => 'pending',
+					// Marketing consent on its own flag (the box above is required, so always 1 today). The CSV export skips rows with
+					// 0, so a future reading-only sign-up (see DEPLOYMENT_BLUEHOST.md, gate G1 note) can never reach the newsletter.
+					'newsletter_consent' => 1,
 				),
 			),
 			true

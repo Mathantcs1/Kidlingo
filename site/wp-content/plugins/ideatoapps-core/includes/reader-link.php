@@ -14,7 +14,9 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const IDEATOAPPS_READER_LINK_TTL = DAY_IN_SECONDS;
+const IDEATOAPPS_READER_LINK_TTL        = DAY_IN_SECONDS;
+const IDEATOAPPS_READER_LINK_DAILY_CAP  = 3;  // per subscriber per UTC day.
+const IDEATOAPPS_READER_LINK_HOURLY_CAP = 60; // site-wide per UTC hour.
 
 /**
  * Keyed hash of a reading link.
@@ -168,8 +170,31 @@ function ideatoapps_reader_link_request( array $post ): array {
 		return $out( 400, 'bad_email' );
 	}
 	$sid = ideatoapps_find_subscriber( $email );
-	if ( $sid && 'confirmed' === ideatoapps_subscriber_status( $sid ) && time() - (int) get_post_meta( $sid, 'read_link_sent_at', true ) >= 10 * MINUTE_IN_SECONDS ) {
+	if ( $sid && 'confirmed' === ideatoapps_subscriber_status( $sid ) && time() - (int) get_post_meta( $sid, 'read_link_sent_at', true ) >= 10 * MINUTE_IN_SECONDS && ideatoapps_reader_link_claim_caps( $sid ) ) {
 		ideatoapps_reader_link_queue( $sid, $back );
 	}
 	return $out( 200, 'link_sent' );
+}
+
+/**
+ * Count one reading link against the caps (3 per subscriber per UTC day, 60 site-wide per UTC hour); false when either is used up.
+ * The form has no nonce and other sites can make their visitors post it, so these caps (not the per-IP limit) bound the mail volume.
+ *
+ * @param int $sid Subscriber post ID.
+ */
+function ideatoapps_reader_link_claim_caps( int $sid ): bool {
+	$count = static function ( string $raw, string $key ): int {
+		$parts = explode( ':', $raw );
+		return 2 === count( $parts ) && $parts[0] === $key ? (int) $parts[1] : 0;
+	};
+	$day  = gmdate( 'Ymd' );
+	$hour = gmdate( 'YmdH' );
+	$mine = $count( (string) get_post_meta( $sid, 'read_link_day', true ), $day );
+	$all  = $count( (string) get_option( 'ideatoapps_reader_link_hour', '' ), $hour );
+	if ( $mine >= IDEATOAPPS_READER_LINK_DAILY_CAP || $all >= IDEATOAPPS_READER_LINK_HOURLY_CAP ) {
+		return false;
+	}
+	update_post_meta( $sid, 'read_link_day', $day . ':' . ( $mine + 1 ) );
+	update_option( 'ideatoapps_reader_link_hour', $hour . ':' . ( $all + 1 ), false );
+	return true;
 }

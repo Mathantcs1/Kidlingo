@@ -66,6 +66,8 @@ require_once IDEATOAPPS_CORE_DIR . 'includes/blog-installer-admin.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/reader-cookie.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/reader-teaser.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/reader-gate.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/reader-search.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/reader-cache.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/reader-link.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/reader-link-page.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/post-gate-box.php';

@@ -45,7 +45,12 @@ function ideatoapps_gate_save_box( int $post_id, array $req ): void {
 	if ( ! wp_verify_nonce( $req['ita_gate_nonce'], 'ita_gate_' . $post_id ) || ! current_user_can( 'edit_post', $post_id ) ) {
 		return;
 	}
-	update_post_meta( $post_id, 'ita_gated', ! empty( $req['ita_gated'] ) && '1' === (string) $req['ita_gated'] ? 1 : 0 );
+	$new = ! empty( $req['ita_gated'] ) && '1' === (string) $req['ita_gated'] ? 1 : 0;
+	$old = (string) get_post_meta( $post_id, 'ita_gated', true );
+	update_post_meta( $post_id, 'ita_gated', $new );
+	if ( (string) $new !== $old && ( '' !== $old || 1 === $new ) && function_exists( 'ideatoapps_reader_purge_caches' ) ) {
+		ideatoapps_reader_purge_caches( $post_id ); // pages cached before the change must not keep serving the old version.
+	}
 }
 
 add_action(
