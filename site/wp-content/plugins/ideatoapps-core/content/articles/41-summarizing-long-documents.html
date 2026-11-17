@@ -1,0 +1,56 @@
+<!--ita {"slug":"41-summarizing-long-documents","title":"Summarizing long documents","category":"work-and-learning","excerpt":"Get a summary of a long document that says what you need to do and by when, keeps key details exact and names where each point came from.","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["workers-and-business-owners","students","beginners"],"check":["Chatbot summaries can leave out conditions and exceptions, such as 'unless' clauses, or state a detail more strongly or weakly than the original does.","A document longer than an app can handle may be cut, shortened or only partly read, depending on the app, so very long files are safer to summarize part by part.","Some apps read only the text of a file and can miss or misread tables, scanned pages and images.","A summary can mix in general knowledge that is not in the document, such as what similar offices usually ask for.","Asking a chatbot to name the section each point came from makes a summary easier to check, but the section names it gives can also be wrong."]} -->
+<p>A twelve-page letter arrives about your benefits, and somewhere in it is the one thing you have to do. A chatbot can help you find it, if you ask for a summary built around that decision. Then you check the parts you'll act on against the letter itself.</p>
+
+<h2>Before: a summary that helps nobody</h2>
+<p>A retired woman gets a long letter about the yearly review of her benefits. She pastes it into a chatbot and types "summarize this". The answer might look like this:</p>
+<blockquote><p>The letter explains the yearly review of your benefits. It describes the information the office needs, how payments are worked out, and your rights if you disagree. It also lists ways to contact the office.</p></blockquote>
+<p>Every sentence may be true, and none of it tells her what to do. Does she have to send anything back? By when? What happens if she doesn't? A chatbot can't guess which parts matter to her, so it gives every topic a line.</p>
+
+<h2>After: a summary built around one decision</h2>
+<p>Before you write your [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term], decide what the summary is for. For this letter, the question is simple: what does it ask me to do, and by when? Ask for the details you'll act on to be copied word for word, and for each point to name the page it came from.</p>
+<p>If your app accepts files, attach the letter. If it doesn't, paste the letter at the end of this request:</p>
+[ita_prompt title="Action summary (example values: replace them)"]
+I'm [a retired person who receives these benefits]. Below is [a letter about the yearly review of my benefits].
+Summarize it under four headings:
+WHAT I MUST DO: each action, with its deadline if there is one.
+WHAT HAPPENS IF I DON'T: only if the letter says so.
+WHAT I CAN SKIP: parts that don't apply to me, in one line.
+QUESTIONS FOR THE SENDER: anything unclear or missing.
+Copy every date, amount and condition word for word.
+After each point, name the section or page it came from.
+If a heading has nothing under it, write NOTHING FOUND.
+Do not give advice about money or benefits.
+[paste the letter]
+[/ita_prompt]
+
+<p>This time the answer might start with one action: send two named documents back by a date given on page 3.</p>
+
+<h2>Check it before you act on it</h2>
+<p>A summary is shorter because things were left out. Most of the time that's fine. The risk comes when a missing word changes what you should do. If you've ever acted on a short version and later found an "unless" in the small print, look for those words first.</p>
+<p>For each point you'll act on, open the letter at the page the summary names. Compare three things: the dates, the amounts and the conditions. Look for words such as "unless", "except" and "only if". The page numbers can be wrong too, so if a point isn't where the summary says, treat it as unconfirmed.</p>
+<p>For a letter about money, health or the law, the letter itself is what counts. Confirm anything unclear with the sender, using the phone number or address in the letter, or ask a qualified advisor.</p>
+<p>The same method works for a learner. An apprentice electrician with a long training manual can ask for the main actions one chapter at a time. Then each safety rule gets checked in the manual itself.</p>
+<p>Very long documents need one more step. An app may cut, shorten or only partly read a file that's longer than it can handle, and Context windows explains why. Summarize a long file one part at a time, then ask for one combined summary of your part summaries. Some apps also read only the text of a file, so check tables and scanned pages yourself.</p>
+[ita_why title="How a short version can change the meaning"]
+<p>Summaries tend to go wrong in a few ways, even when every sentence sounds right.</p>
+<ul>
+<li>Conditions drop out. "Reply within 30 days unless you have already sent this form" becomes "Reply within 30 days."</li>
+<li>Strength changes. "You may need to send proof of address" can become "Send proof of address", or the other way around.</li>
+<li>Outside knowledge gets mixed in. The summary may add what offices like this usually ask for, even if this letter doesn't.</li>
+<li>Space follows length. A long section can get more room in the summary than a short rule that matters more.</li>
+</ul>
+[/ita_why]
+
+[ita_quiz]
+[ita_q q="A summary says 'Send proof of address within 30 days.' What should you look for in the letter?" answers="Nothing, because chatbots copy dates exactly|A condition or exception the summary left out|Whether last year's letter gave the same deadline" correct="2" why="Short versions often drop words such as 'unless', which can change what you should do."]
+[ita_q q="Why tell the chatbot what decision the summary is for?" answers="It can pick out the parts that matter for that decision|It makes the chatbot read the whole document more carefully|It stops the chatbot from leaving anything out" correct="1" why="Knowing the decision lets it put the actions and deadlines you need first."]
+[ita_q q="Your file is far longer than your app usually handles. What is a safer way to summarize it?" answers="Paste it all at once and ask for a shorter summary|Ask for the summary twice and keep the shorter one|Summarize it part by part, then combine the part summaries" correct="3" why="An app may cut or shorten a very long file, so smaller parts are more likely to be read in full."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>Use a long document you really need to act on, such as a letter from a service provider, a handbook or a work procedure. Take out names and account numbers first, and for work documents, use one only if your workplace allows it.</p>
+<ol>
+<li>Run the action summary request above on your document.</li>
+<li>Pick the two points you would act on first, and find each one in the original using the page the summary names.</li>
+<li>Next to each point, write "same", "missing a condition" or "not found".</li>
+</ol>
