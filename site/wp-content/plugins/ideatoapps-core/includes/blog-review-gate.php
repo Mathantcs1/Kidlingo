@@ -138,7 +138,11 @@ add_action(
 	'admin_notices',
 	static function (): void {
 		$user = get_current_user_id();
-		if ( $user > 0 && get_transient( 'ita_review_refused_' . $user ) ) {
+		// The block editor never shows this page's notices: there the refusal is kept for assets/review-editor.js, whose background
+		// fetch (?ita_box=1) shows it as an editor notice. Every other screen shows and clears it at once.
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$block  = $screen instanceof WP_Screen && $screen->is_block_editor() && ! isset( $_GET['ita_box'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only.
+		if ( $user > 0 && ! $block && get_transient( 'ita_review_refused_' . $user ) ) {
 			delete_transient( 'ita_review_refused_' . $user );
 			echo '<div class="notice notice-error is-dismissible" data-testid="review-refused"><p>' . esc_html__( 'Not published: needs human review. Sign the article off in the "Editorial review" box first.', 'ideatoapps-core' ) . '</p></div>';
 		}

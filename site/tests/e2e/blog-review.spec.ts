@@ -94,7 +94,8 @@ test('the posts list has the Review column and filter; Settings shows the instal
   expect(settings).toMatch(/\d+ of \d+ article files are installed/);
 });
 
-test('real editor: sign off in the block editor, then press Publish again', async ({ page }) => {
+test('real editor: a refused Publish says why; sign off in the block editor, then press Publish again', async ({ page }) => {
+  test.setTimeout(180_000);
   const second = await installStarter(api, '02-ml-vs-deep-learning-vs-generative-ai');
   await page.goto('/wp-login.php');
   await page.fill('#user_login', 'admin');
@@ -105,14 +106,20 @@ test('real editor: sign off in the block editor, then press Publish again', asyn
   const box = page.getByTestId('review-box');
   await expect(box).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId('review-claims').locator('li')).toHaveCount(3);
-  await page.fill('#ita-review-name', 'Real UI Reviewer');
-  for (const cb of await box.locator('input[name="ita_review_check[]"]').all()) await cb.check();
-  await page.getByTestId('review-sign').check();
   const publish = async () => {
     const confirm = page.locator('.editor-post-publish-panel__header-publish-button .editor-post-publish-button');
     if (!(await confirm.isVisible())) await page.locator('.editor-post-publish-panel__toggle').click();
     await confirm.click();
   };
+  // Publish without a sign-off: refused with the reason shown in the editor, and the post stays a draft.
+  await publish();
+  await expect(page.locator('.components-notice, .components-snackbar').filter({ hasText: 'Not published: needs human review' }).first()).toBeVisible({ timeout: 30_000 });
+  expect(await statusOf(second)).toBe('draft');
+  await page.reload();
+  await expect(box).toBeVisible({ timeout: 30_000 });
+  await page.fill('#ita-review-name', 'Real UI Reviewer');
+  for (const cb of await box.locator('input[name="ita_review_check[]"]').all()) await cb.check();
+  await page.getByTestId('review-sign').check();
   await publish();
   // The block editor saves the post first (forced to draft), then the box: signed off but still a draft.
   await expect(page.getByTestId('review-box-result')).toContainText('press Publish again', { timeout: 30_000 });
