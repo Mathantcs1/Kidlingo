@@ -66,3 +66,14 @@ html.js .post-progress { display: block; }
 .post-body th, .post-body td { padding: 8px 12px; color: var(--ink); border: 1px solid var(--line); text-align: left; vertical-align: top; }
 .post-body thead th { background: var(--bg-alt); font-weight: 700; }
 .post-body tbody th { font-weight: 600; }
+
+/* Subscriber-only posts: the teaser fades out into the subscribe card (the rest of the article is not in the page at all). */
+.gate-teaser { position: relative; }
+.gate-teaser::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5rem; background: linear-gradient(to bottom, transparent, var(--bg)); pointer-events: none; }
+.gate-card { margin-top: var(--s-3); padding: var(--s-4) var(--s-3); background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius-card-lg); box-shadow: var(--shadow-card); }
+.gate-card__title { margin: 0 0 var(--s-1); }
+.gate-card__subtitle { margin: var(--s-4) 0 var(--s-1); font-size: 1.1rem; }
+.gate-card__facts { margin: 0 0 var(--s-3); padding-left: 1.2em; }
+.gate-card .newsletter__form { margin-top: var(--s-2); }
+.gate-card .newsletter__row .field { flex: 1 1 14rem; min-width: 0; }
+.gate-card .form__error { color: var(--ink); font-weight: 600; }

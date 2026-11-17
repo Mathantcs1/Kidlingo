@@ -76,7 +76,7 @@ function ideatoapps_is_content_view(): bool {
  * Whether the page can show a JSON form (newsletter or contact).
  */
 function ideatoapps_has_json_form(): bool {
-	return is_front_page() || is_post_type_archive( 'video' ) || is_page( array( 'blog', 'contact' ) );
+	return (bool) apply_filters( 'ideatoapps_has_json_form', is_front_page() || is_post_type_archive( 'video' ) || is_page( array( 'blog', 'contact' ) ) ); // the plugin adds locked subscriber-only posts (gate card).
 }
 
 /**

@@ -63,6 +63,13 @@ require_once IDEATOAPPS_CORE_DIR . 'includes/blog-installer-meta.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-installer-state.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-installer.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-installer-admin.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/reader-cookie.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/reader-teaser.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/reader-gate.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/reader-link.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/reader-link-page.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/post-gate-box.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/seo-article.php';
 
 register_activation_hook( __FILE__, 'ideatoapps_core_activate' );
 register_deactivation_hook( __FILE__, 'ideatoapps_core_deactivate' );

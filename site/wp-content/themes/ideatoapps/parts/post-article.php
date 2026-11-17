@@ -17,6 +17,8 @@ $ideatoapps_body    = ideatoapps_post_toc( str_replace( ']]>', ']]&gt;', (string
 $ideatoapps_has_toc = count( $ideatoapps_body['items'] ) >= 3;
 $ideatoapps_byline  = (string) apply_filters( 'ideatoapps_post_byline_html', '', $ideatoapps_id );
 $ideatoapps_hero    = (string) apply_filters( 'ideatoapps_post_hero_html', '', $ideatoapps_id );
+// Subscriber-only post and a visitor who is not a confirmed reader: the plugin already cut the content to the teaser (the rest is never sent).
+$ideatoapps_locked  = function_exists( 'ideatoapps_reader_is_locked' ) && ideatoapps_reader_is_locked( $ideatoapps_id );
 ?>
 <article class="section post" data-testid="post">
 	<div class="post-progress" data-testid="post-progress" aria-hidden="true"><span class="post-progress__bar"></span></div>
@@ -45,7 +47,14 @@ $ideatoapps_hero    = (string) apply_filters( 'ideatoapps_post_hero_html', '', $
 				ideatoapps_part( 'post-toc', array( 'items' => $ideatoapps_body['items'] ) );
 			}
 			?>
-			<div class="prose post-body"><?php echo $ideatoapps_body['html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the_content output. ?></div>
+			<?php if ( $ideatoapps_locked ) : ?>
+				<div class="post-body">
+					<div class="prose gate-teaser" data-testid="gate-teaser"><?php echo $ideatoapps_body['html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the_content output (the teaser). ?></div>
+					<?php ideatoapps_part( 'gate-card', array( 'post_id' => $ideatoapps_id ) ); ?>
+				</div>
+			<?php else : ?>
+				<div class="prose post-body"><?php echo $ideatoapps_body['html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the_content output. ?></div>
+			<?php endif; ?>
 		</div>
 		<?php ideatoapps_part( 'post-read-next', array( 'post_id' => $ideatoapps_id ) ); ?>
 	</div>

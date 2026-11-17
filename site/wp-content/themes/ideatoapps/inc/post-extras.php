@@ -74,6 +74,7 @@ function ideatoapps_reserved_ids(): array {
 			'newsletter-email', 'newsletter-consent', 'contact-name', 'contact-email', 'contact-message', 'contact-website', 'catalog-category',
 			'catalog-search', 'catalog-sort', 'post-next-title', 'related-apps-title', 'categories-title', 'featured-apps-title',
 			'how-it-works-title', 'watch-learn-title', 'app-faq-title', 'app-features-title', 'app-requirements-title', 'app-whats-new-title',
+			'gate-card-title', 'gate-email', 'gate-consent', 'gate-link-email', 'gate-link-error', 'gate-status',
 		)
 	);
 }
