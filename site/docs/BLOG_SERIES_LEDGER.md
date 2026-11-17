@@ -220,7 +220,7 @@ window basics (10); training cutoff (04); ask-me-questions-first (10); flag-what
 - Try it: 3-step quick version; privacy line; ends marking each local answer good enough or not.
 
 ## 26 RAG: how an AI looks things up (advanced)
-- Opener: "If you've ever asked..." then scenario ("Say you're building", the batch's only use); second paragraph defines RAG.
+- Opener: short example ("Ask a chatbot about a rule that changed last year...") then scenario ("Say you're building", the batch's only use); second paragraph defines RAG.
 - Lessons (owns RAG pipeline): chunks, embeddings, index, metadata; embedding + keyword search, re-scoring; numbered passages, citation check (catches made-up numbers only), NOT_IN_SOURCES, passages as information; chunk size, metadata filters, number of passages; retrieval misses vs generation errors; prompt injection in one clause; log retrieved passages.
 - Why: "When the closest passage is the wrong one". Cross-ref: Context windows ("covers this trade-off").
 - Quiz stems: wrong answer, what to check first (the batch's one "first?" stem); pizza boxes vs food-soiled cardboard; right passage but extra rule added.
