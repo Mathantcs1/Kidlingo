@@ -4,7 +4,7 @@
 
 **Goal:** 50 reviewed AI-education articles with an interactive reading UI, installable as drafts from wp-admin.
 
-**Architecture:** Plugin `ideatoapps-core` holds the shortcodes, content files (`content/articles/NN-slug.html`) and the installer; theme `ideatoapps` holds single-post, blog-index and card styling. Everything degrades without JavaScript.
+**Architecture:** Plugin `ideatoapps-core` holds the shortcodes, content files (`content/articles/NN-slug.php`, guarded; `.html` before the final review) and the installer; theme `ideatoapps` holds single-post, blog-index and card styling. Everything degrades without JavaScript.
 
 **Tech Stack:** PHP 8.0, WordPress core posts and categories, vanilla JS/CSS (no new dependencies), PHPUnit, Playwright.
 

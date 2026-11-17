@@ -14,6 +14,7 @@ mailboxes stay **off** until the mailboxes exist. The privacy policy, terms and 
 | G1 | **Do not mail the newsletter list yet.** Built (Newsletter opt-in task): double opt-in (a sign-up is `pending` until its owner clicks the link in the one confirmation email), a signed unsubscribe link in that email, an "Unsubscribe and delete my data" button, WordPress personal data export/erase for subscribers, and a CSV of **confirmed** subscribers only. The sign-up is **off** until you switch it on (Settings > IdeaToApps > Newsletter sign-up). **Still needed from you before any mail goes out:** a working sender mailbox on the domain with SPF, DKIM and DMARC (section 9), a test that the confirmation email lands in the inbox and not spam, and a mailing tool or composer: **this site sends no newsletter and has no composer, and no List-Unsubscribe header is added (it sends no bulk mail).** Old sign-ups from the single-step form are migrated as `pending`, never `confirmed`, so they are not in the export. | Sending marketing email without confirmed consent and a working opt-out breaks anti-spam rules (CAN-SPAM, GDPR/PECR depending on the reader). Mail from a domain without SPF/DKIM/DMARC is likely to be filtered. |
 | G2 | **Set the `ideatoapps_client_ip` filter** if the site sits behind a proxy or CDN (Cloudflare, a Bluehost proxy cache). Snippet in `ENVIRONMENT.md` ("Client IP and the rate limit"). | The form rate limit (5 per minute per visitor) uses the connecting address. Behind a proxy every visitor looks the same, so a few people would block everyone. Without a proxy do nothing. |
 | G3 | **Raw zip URL returns 403.** In a private window open the direct address of a release zip. Find it in a test purchase: the download goes through a signed link; then try `https://ideatoapps.net/wp-content/uploads/woocommerce_uploads/` (during Phase A use the temporary URL instead of `ideatoapps.net`, here and in the next sentence) and any file path you can guess or see in the media library. It must answer **403** (or 404), never download. Also open `https://ideatoapps.net/wp-json/wp/v2/media?mime_type=application/zip` (and `/wp-json/wp/v2/media?per_page=100`) in a private window: it must list **no** release zip (an empty list `[]` is right). | Release zips must only reach paying customers. The code moves a zip into `woocommerce_uploads/ideatoapps/<random>/` the moment it is uploaded (before it is saved to any version) and makes the media item private, and relies on WooCommerce's `.htaccess` there. This applies to **every** zip uploaded to the media library while WooCommerce is active, so do not use the media library for public zips. nginx ignores `.htaccess`, and the sandbox could not test it. |
+| G3b | **Starter article files are not readable by URL.** In a private window open `https://ideatoapps.net/wp-content/plugins/ideatoapps-core/content/articles/08-your-first-week-with-ai.php`, the old name `.../content/articles/08-your-first-week-with-ai.html`, the folder `.../content/articles/` and `.../content/topics.php` (during Phase A use the temporary URL). Each must show **no article text**: a blank page, 403 or 404. | The plugin folder is under the web root. The article files hold unreviewed AI drafts and the full text of subscriber-only posts. Each file starts with a PHP line that stops a direct request, and `content/.htaccess` plus `index.php` stubs add a second layer (nginx ignores `.htaccess`, so the PHP line is the one that counts). |
 | G4 | **Phase B only:** once DNS points at Bluehost, **WordPress Address and Site Address are both `https://ideatoapps.net`** (the apex, no `www`). Settings > General. Never set them earlier (see the warning in section 2). | Canonical links, the sitemap and structured data are hard-wired to the apex. A `www` address would make core's sitemap list the wrong host. |
 | G5 | **Trash the default "Sample Page"** (Pages > All Pages) and the default "Hello world!" post if present. | WordPress adds them; they would be listed in the sitemap and public. |
 | G6 | **Owner decisions:** refund terms (the Refund page is a draft), sales-tax handling, and working mailboxes. | They are business/legal choices, not code. Not decided in this build. |
@@ -80,9 +81,24 @@ Upload, in this order:
 Replacing the files later (new theme or plugin zip over the old one) is covered in section 8. If the new version adds pages or URLs the
 plugin refreshes its rewrite rules once by itself; if `/apps/...` ever 404s, open Settings > Permalinks and click Save.
 
+**Blog (after step 3, in this order):**
+
+1. **Settings > IdeaToApps > Install starter articles.** Expect "50 created as drafts". Nothing is public yet.
+2. **Review and sign off each post** you want live, as `ADMIN_GUIDE.md` (section 7, "Starter articles and human review") describes:
+   check the claims, tick all seven checks, type your own name, tick **Mark as human reviewed** and press **Publish**. In the block
+   editor the box then says **Signed off. Press Publish again**: press **Publish** a second time.
+3. Check that `/blog/`, `/sitemap.xml`, `/feed/` and `/wp-json/wp/v2/posts` show **only signed-off posts**, each with the byline
+   "Drafted with AI assistance. Edited and reviewed by <name> on <date>."
+4. Run gate **G3b** (the article files are not readable by URL).
+5. Purge every cache (LiteSpeed Cache, Bluehost's caching page, any CDN).
+
+The Newsletter sign-up, and with it subscriber-only posts, stays **off** until the email work in section 9 and the counsel decision there
+are done.
+
 On activation the plugin creates the pages the theme links to (About, Contact, FAQ, Blog, Privacy, Terms, Refund) as empty shells; the theme
 prints their draft text. Cart and checkout pages are converted to WooCommerce's classic shortcodes **once per plugin version**: after the first
-install, load `/cart/` and `/checkout/` once yourself and confirm they show the cart and the checkout form.
+install, load `/cart/` and `/checkout/` once yourself and confirm they show the cart and the checkout form. A new plugin version (for example
+0.5.0) runs that conversion again, so do the same after every plugin update.
 
 ## 4. Add ClipForge, the YouTube channel and the first release
 
@@ -137,8 +153,9 @@ Restore test (do it once before launch, on a copy or a staging site if you can):
 
 - Before **any** update (WordPress, WooCommerce, Stripe plugin, our two zips) take a backup (section 7).
 - Update on a staging copy first when you can. WooCommerce major versions are the usual risk. The tested versions are WooCommerce 11.3.0 and WordPress 7.x; later versions are untested.
-- New theme or plugin zip: Plugins > Add New > Upload; WordPress offers "Replace current with uploaded". The plugin keeps your content (apps, versions, orders) because it lives in the database and in `uploads/`, not in the plugin folder.
+- New theme or plugin zip: Plugins > Add New > Upload; WordPress offers "Replace current with uploaded". The plugin keeps your content (apps, versions, orders) because it lives in the database and in `uploads/`, not in the plugin folder. After a new plugin version (0.5.0 is the blog release) load `/cart/` and `/checkout/` once and confirm they show the cart and the checkout form: each version re-runs the classic cart/checkout conversion and refreshes the rewrite rules once.
 - **Rollback**: re-upload the previous zip (keep every zip you ship, named with its date), or restore the backup. If the site shows a white screen after an update and you must disable the plugin, **first stop the store taking money**: put the store in maintenance mode (or WooCommerce > Settings > Payments: disable the Stripe gateway), and only then deactivate the plugin (Plugins page) or rename its folder in File Manager (`wp-content/plugins/ideatoapps-core` to `ideatoapps-core-off`), then restore the old folder. Without the plugin the **live-Stripe guard, login-for-downloads, no-guest-checkout and the buy gate are all gone**, so the shop would sell and serve downloads with none of those rules until it is back.
+- **Never deactivate the plugin while subscriber-only posts exist or starter drafts are being worked on.** Both blog gates live in the plugin: without it, subscriber-only posts show their whole text to everyone, and any draft can be published without a human sign-off.
 - Removing a ClipForge version from an app takes it away from the product's downloads; buyers' permission rows are kept (dormant), but whether re-adding the same version re-activates them for earlier buyers is **not tested**, so avoid removing a version a customer already owns; add a newer one instead.
 
 ## 9. Email (SPF, DKIM, DMARC) once mailboxes exist
@@ -170,6 +187,11 @@ Mailboxes do not exist yet; the contact form stays off. WooCommerce still sends 
 - [ ] No ratings, review counts, testimonials or "as seen on" claims appear anywhere. The site claims Chromium-based desktop tested, Safari untested.
 - [ ] Trash "Sample Page" (G5), set permalinks, confirm site address is the apex (G4).
 - [ ] `IDEATOAPPS_ALLOW_LIVE_PAYMENTS` is **not** in `wp-config.php` until you approve live payments.
+- [ ] No starter post is public without a human sign-off (`/blog/`, `/sitemap.xml`, `/feed/`, `/wp-json/wp/v2/posts`), and each shows the byline.
+- [ ] The raw article URL is blocked (G3b): no article text at `.../content/articles/08-your-first-week-with-ai.php`, the `.html` name or the folder.
+- [ ] The Newsletter sign-up, and with it subscriber-only posts, stays off until the section 9 email work and the counsel decision are done.
+- [ ] LiteSpeed Cache > Excludes > "Do Not Cache Cookies" contains `ita_reader`.
+- [ ] Bluehost's own page cache is purged after the Newsletter switch is changed (on or off).
 - [ ] Search Console: add the property, submit `https://ideatoapps.net/sitemap.xml` (optional, your account).
 
 ## 11. What I verified, and what only you can verify
@@ -188,6 +210,7 @@ Mailboxes do not exist yet; the contact form stays off. WooCommerce still sends 
 | --- | --- |
 | `.htaccess` snippet on Apache/LiteSpeed | Never run. Use its Verify list. |
 | Raw zip URL answers 403 (G3) | Skipped in the sandbox: the dev server ignores `.htaccess`. Check in a private window. |
+| Starter article files not readable by URL (G3b) | The guard line is checked by PHPUnit (every article and `topics.php`, and the parser refuses a file without it) and by the package test (every shipped article file). The `.htaccess` layer is untested: the dev server ignores it. Check in a private window. |
 | Real MySQL | Everything ran on SQLite. The atomic rate-limit counter and the order/download queries are untested on MySQL. |
 | PHP 8.0 runtime | Declared as minimum; tests ran on 8.3. |
 | Real Stripe | No Stripe keys were ever used. The Stripe form, 3-D Secure, webhooks, webhook replay, refunds through Stripe and Express Checkout are all unverified. |
