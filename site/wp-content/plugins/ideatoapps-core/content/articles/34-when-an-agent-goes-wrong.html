@@ -6,7 +6,7 @@
 [/ita_why]
 
 <h2>What it looks like</h2>
-<p>Agent failures look a lot like ordinary automation failures, such as an automatic email that went to the wrong list. The cause is usually in the goal and [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term], the tools, or the text the agent read. Sometimes it's a plain wrong guess by the model.</p>
+<p>Agent failures look a lot like ordinary automation failures, like an automatic email that went to the wrong list. The cause is usually in the goal and [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term], the tools, or the text the agent read. Sometimes it's a plain wrong guess by the model.</p>
 <p>In a delivery company's dispatch office, for example, an agent might move delivery slots and text customers the new time. Each row of this table could happen there.</p>
 <table>
 <caption>Agent symptoms, likely causes and first checks</caption>
@@ -14,7 +14,7 @@
 <tr><th scope="col">Symptom</th><th scope="col">Likely cause</th><th scope="col">Check first</th></tr>
 </thead>
 <tbody>
-<tr><th scope="row">It says a task is done, but nothing changed.</th><td>The model wrote "done" without a successful tool result.</td><td>The tool log, and the system itself, such as the sent-messages list.</td></tr>
+<tr><th scope="row">It says a task is done, but nothing changed.</th><td>The model wrote "done" without a successful tool result.</td><td>The tool log, and the system itself (for example, the sent-messages list).</td></tr>
 <tr><th scope="row">It acted on the wrong customer or file.</th><td>Two similar names, or it took the first search result.</td><td>Which ID it used, and where that ID came from.</td></tr>
 <tr><th scope="row">It did more than you asked.</th><td>A broad goal plus tools that allow extra actions.</td><td>The goal's wording and the list of tools.</td></tr>
 <tr><th scope="row">It used old information.</th><td>An old note or document was added to what it read.</td><td>The dates on what it read before acting.</td></tr>
@@ -22,11 +22,11 @@
 <tr><th scope="row">It stopped halfway.</th><td>A step limit, a timeout or a failing tool.</td><td>The last step in the log and the stop reason.</td></tr>
 </tbody>
 </table>
-<p>The hidden-instruction row has no complete fix yet, which is why "What is an AI agent" stresses limited tools and approvals.</p>
+<p>The hidden-instruction row has no complete fix yet, which is why limited tools and approvals matter (see "What is an AI agent").</p>
 
 <h2>The first hour</h2>
 <h3>In the first minutes</h3>
-<p>Pause the agent, including any scheduled runs. If you can't pause it, turn off the tool it used, such as its access to the text service. Save the log now, since some logs are kept only for a short time.</p>
+<p>Pause the agent, including any scheduled runs. If you can't pause it, turn off the tool it used, for example its access to the text service. Save the log now, since some logs are kept only for a short time.</p>
 <h3>Within the hour</h3>
 <p>List what changed: messages sent, bookings moved, files edited. Undo what you can, such as moving the delivery slot back, but remember that the customer may already have acted on the change. For messages already sent, follow your workplace's usual process for telling customers about a mistake. If personal details went to the wrong person, tell whoever handles privacy at your workplace; there may be reporting rules.</p>
 <h3>Before anyone runs it again</h3>

@@ -3,7 +3,7 @@
 
 <h2>What an example shows that a description can't</h2>
 <p>An example in a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] carries a lot of information at once: the length, the word choice, the punctuation, and what gets left out. Writing all of that as rules would take a paragraph, and the chatbot could still read words like "short" or "professional" differently from you.</p>
-<p>"Give context, get better answers" shows how one line of your own writing helps a chatbot match your style. A pair of "before" and "after" shows more: a whole change, from rough input to finished output. The chatbot can then repeat that change on new input.</p>
+<p>One line of your own writing also helps a chatbot match your style; see "Give context, get better answers". A pair of "before" and "after" shows more: a whole change, from rough input to finished output. The chatbot can then repeat that change on new input.</p>
 <p>Giving a few worked examples like this is often called [ita_term define="Putting a few worked examples of a task inside the prompt, so the model can follow the same pattern."]few-shot prompting[/ita_term]. Pick examples you were happy with when you sent them.</p>
 
 <h2>Build a set of input and output pairs</h2>
@@ -44,7 +44,7 @@ Line:
 </ul>
 [ita_why title="How examples pull the answer toward them"]
 <p>A language model writes by predicting likely text, based on everything in the conversation. Your examples are strong evidence of what "likely" means for this task.</p>
-<p>The model has no way to know that the repeated question was a coincidence, or that every example being about food was an accident. It treats both as part of the pattern. A written note such as "the topic changes every time" tells the model which features to ignore.</p>
+<p>The model has no way to know that the repeated question was a coincidence, or that every example being about food was an accident. It treats both as part of the pattern. A written note like "the topic changes every time" tells the model which features to ignore.</p>
 [/ita_why]
 
 [ita_quiz]

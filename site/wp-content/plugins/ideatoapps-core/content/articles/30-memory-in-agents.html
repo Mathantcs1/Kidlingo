@@ -25,14 +25,14 @@ Session:
 <h3>Week 1, Wednesday: reading notes back</h3>
 <p>She opens a new session and asks for a review plan. Your code searches her notes, finds the module list and the exam date, and adds them to the request with their dates and sources. The plan uses her real modules, and it shows times in 24-hour format without being asked.</p>
 <h3>Week 3: a note goes stale</h3>
-<p>She says the exam has moved from the 12th to the 19th. The saved note still says the 12th. If you've ever been reminded about a meeting that had already moved, you know this problem. The agent uses the newer date, asks her to confirm it, and your code updates the note with today's date. Without that update, every later session would plan around the wrong day.</p>
+<p>She says the exam has moved from the 12th to the 19th. The saved note still says the 12th. The agent uses the newer date, asks her to confirm it, and your code updates the note with today's date. Without that update, every later session would plan around the wrong day.</p>
 
 <h2>What else goes wrong with saved notes</h2>
 <p>Saved notes fail in a few predictable ways:</p>
 <ul>
 <li><strong>Wrong notes that repeat.</strong> A note saved by mistake is added to every later session until someone removes it. Users need a way to see and delete what's stored about them.</li>
 <li><strong>Notes from the wrong person.</strong> Each user's memory has to stay separate, with a filter by user before any search.</li>
-<li><strong>Planted instructions.</strong> Text an agent saved from a web page or email can carry the hidden instructions that "What is an AI agent" warns about. Once stored, they can affect later sessions.</li>
+<li><strong>Planted instructions.</strong> Text an agent saved from a web page or email can carry hidden instructions (the risk described in "What is an AI agent"). Once stored, they can affect later sessions.</li>
 <li><strong>Too many notes.</strong> Every note takes space in the window, so a cap on notes per request keeps room for the task itself.</li>
 </ul>
 [ita_why title="Memory is more text in the window"]
@@ -43,7 +43,7 @@ Session:
 [ita_quiz]
 [ita_q q="An agent recalls a learner's exam date from last week. Where did that come from?" answers="The model's parameters, updated after the last chat|A saved note that was added to this request|The context window, which keeps every past chat" correct="2" why="The model keeps nothing between requests; the date was stored outside it and added back."]
 [ita_q q="Which note is safest to save to long-term memory?" answers="The learner's confirmed module list, with the date|The agent's guess that she finds infection control hard|Every message from the session, so nothing is lost" correct="1" why="A confirmed, dated fact is stable and checkable; guesses and whole sessions bring errors and clutter into later requests."]
-[ita_q q="A saved note says the exam is on the 12th, but the learner now says the 19th. What should the agent do?" answers="Keep the saved note, since stored memory is more reliable|Use the newer date and update the note after she confirms|Ask the model which date seems more likely" correct="2" why="The newer statement from the user wins, and the stored note should be corrected so the error doesn't repeat."]
+[ita_q q="A saved note says the exam is on the 12th, but the learner now says the 19th. Which date does the agent plan around?" answers="Keep the saved note, since stored memory is more reliable|Use the newer date and update the note after she confirms|Ask the model which date seems more likely" correct="2" why="The newer statement from the user wins, and the stored note should be corrected so the error doesn't repeat."]
 [/ita_quiz]
 
 <h2>Try it</h2>

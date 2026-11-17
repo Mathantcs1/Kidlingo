@@ -2,7 +2,7 @@
 <p>If you've ever asked a chatbot for a video title and then pressed the button that writes the answer again, you've seen the title change. Each word is picked with some randomness, and a setting called [ita_term define="A setting that controls how much randomness goes into picking each next piece of text."]temperature[/ita_term] controls how much.</p>
 
 <h2>How the pick works</h2>
-<p>"What AI is and isn't" shows how a model writes one piece of text (a token) at a time. At each step it gives every possible next token a likelihood, and the software running the model picks one. Temperature changes how spread out that pick is.</p>
+<p>A model writes one piece of text (a token) at a time, as described in "What AI is and isn't". At each step it gives every possible next token a likelihood, and the software running the model picks one. Temperature changes how spread out that pick is.</p>
 <p>At a low temperature, the likely tokens get an even bigger share. The pick is nearly always the top choice, so answers vary less between runs. At a high temperature, the likelihoods are evened out. Less likely tokens are picked more often, so answers vary more and the wording gets more unusual.</p>
 <p>If you send requests from your own code through an [ita_term define="Application programming interface: the connection a program uses to send requests to a model and get answers back."]API[/ita_term], you may see a second control called [ita_term define="A setting that limits the pick to the most likely tokens whose likelihoods add up to a chosen share."]top-p[/ita_term]. With it, the pick is made only from the smallest group of top tokens whose likelihoods add up to the number you set. A lower top-p removes the unlikely tokens from the choice. Each provider sets its own range and default for both controls, and some models ignore them.</p>
 [ita_why title="What the temperature number changes"]
@@ -25,7 +25,7 @@
 
 <h2>Variety without a temperature control</h2>
 <p>Most chat apps choose the temperature for you and don't show it. You can still steer how varied the answers are through the [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] itself.</p>
-<p>Think of a retired woodworker who posts short videos from his workshop and wants ten captions that really differ. You've probably noticed that pressing the button again often gives near-copies. Asking for all ten in one reply, with a named way for each to differ, works better. The model sees its earlier options while it writes the next one, which usually moves it away from repeats. The values in brackets below are only examples, so replace them with your own.</p>
+<p>Think of a retired woodworker who posts short videos from his workshop and wants ten captions that really differ. Pressing the button again tends to give near-copies. Asking for all ten in one reply, with a named way for each to differ, works better. The model sees its earlier options while it writes the next one, which usually moves it away from repeats.</p>
 [ita_prompt title="Different on purpose"]
 Write [number, for example: 10] captions for [your content, for example: a short video of sanding an old oak chair].
 Make each caption differ from the others in one way: [first way, for example: tone], [second way, for example: length], [third way, for example: whether it asks a question].

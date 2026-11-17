@@ -6,7 +6,7 @@
 <p>Every call follows the same five steps, whichever provider you use:</p>
 <ol>
 <li>Your app sends the conversation and a list of tool definitions. Each definition has a name, a description and an input [ita_term define="A description of the shape data must have: its fields, their types and allowed values."]schema[/ita_term].</li>
-<li>The model writes a normal answer, or it returns a tool call: a tool name plus [ita_term define="The input values passed to a function, such as a date or a title."]arguments[/ita_term], usually in [ita_term define="JavaScript Object Notation: a plain-text format for structured data, made of named fields and lists."]JSON[/ita_term].</li>
+<li>The model writes a normal answer, or it returns a tool call: a tool name plus [ita_term define="The input values passed to a function, such as a date or a title."]arguments[/ita_term], usually in [ita_term define="A plain-text format for data, made of named fields and values inside curly braces, that most programs can read."]JSON[/ita_term].</li>
 <li>Your code checks the arguments, calls the real function and captures the result or the error.</li>
 <li>Your code returns the result, labeled as the answer to that call, usually with an ID that links the two.</li>
 <li>The model writes the final answer or asks for another tool.</li>
@@ -18,7 +18,7 @@
 [/ita_why]
 
 <h2>A tool description, before and after</h2>
-<p>The model chooses tools from their names and descriptions, so a description deserves the same care as a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term]. Picture a hypothetical family calendar app with one tool, <code>add_family_event</code>. Its description says only "Adds an event." A parent types "remind me to buy milk", and the model adds a calendar event called "Buy milk" at a guessed time. Nothing in the description said reminders were different. You've probably named functions in ways that made sense only to your team; the model reads those names with no other context.</p>
+<p>The model chooses tools from their names and descriptions, so a description deserves the same care as a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term]. Picture a hypothetical family calendar app with one tool, <code>add_family_event</code>. Its description says only "Adds an event." A parent types "remind me to buy milk", and the model adds a calendar event called "Buy milk" at a guessed time. Nothing in the description said reminders were different. Function names often make sense only to the team that wrote them; the model reads those names with no other context.</p>
 <p>The fix is a description that says when to use the tool and when not to. Fixed lists of values, like the <code>who</code> field below, leave the model less to guess. This line guides the model, though; your code should still check before any action that matters.</p>
 <p>A few habits help beyond the description. Offer few tools with clear differences, since several tools with similar names make wrong choices more likely. Return small results that hold only the fields the model needs. Return errors the model can act on. "Start time is in the past; ask the user for a new time" lets it recover. A raw error dump from your code gives it nothing to act on.</p>
 <p>Here is the "after" version. The values are examples to replace with your own. You will also need to wrap or rename it to match your provider's format, since even the name of the schema field differs.</p>
