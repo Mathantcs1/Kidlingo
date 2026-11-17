@@ -30,7 +30,7 @@ Notes:
 <p>[ita_term define="A plain-text format for data, made of named fields and values inside curly braces, that most programs can read."]JSON[/ita_term] is for answers that a program will use, for example to fill a form or save an order. For builders, show the exact shape you expect. An example object usually gets more consistent JSON than a description of the fields.</p>
 [ita_prompt title="Fixed keys for an order message"]
 Read the customer message below and return only JSON, with no text before or after it.
-Use exactly these keys, in this shape (example values: replace them):
+Use exactly these keys, in this shape:
 {"product": "flyers", "quantity": 200, "paper": "glossy", "deadline": "2026-12-01", "questions": []}
 The values above only show the format. Take every value from the message.
 Use null for any value the message does not give.
@@ -38,7 +38,7 @@ Put anything the customer asked about in "questions" as short strings.
 Message:
 [paste the customer message here]
 [/ita_prompt]
-<p>Before you paste a customer's message, remove their name and contact details. Your code then parses the result and checks it before using it; "System prompts and structured output for builders" covers those checks.</p>
+<p>Before you paste a customer's message, remove their name and contact details. Your code then parses the result and checks it before using it (see "System prompts and structured output for builders" for those checks).</p>
 <p>To choose a format, start from who or what will read the answer:</p>
 <table>
 <caption>Which format to ask for</caption>

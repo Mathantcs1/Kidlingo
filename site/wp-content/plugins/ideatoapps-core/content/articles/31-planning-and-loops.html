@@ -9,8 +9,8 @@
 
 <h2>Keep the plan as data</h2>
 <p>A plan that only exists in the model's earlier replies is hard to inspect. Store it in your code instead, as a list of steps, each with an ID, a description, a status and a short note. A stored plan gives you one place to look, instead of pages of model text.</p>
-<p>Send the current plan with each request, and have the model reply with changes in a fixed shape. [ita_term define="A common text format for structured data, written as named fields and values inside curly braces."]JSON[/ita_term] is a common choice for this. The instructions can then forbid the model from marking a step done without evidence, as in this version:</p>
-[ita_prompt title="Plan with status and a stop reason (example values: replace them)"]
+<p>Send the current plan with each request, and have the model reply with changes in a fixed shape. [ita_term define="A plain-text format for data, made of named fields and values inside curly braces, that most programs can read."]JSON[/ita_term] is a common choice for this. The instructions can then forbid the model from marking a step done without evidence, as in this version:</p>
+[ita_prompt title="Plan with status and a stop reason"]
 Goal: [write a failing test that reproduces bug report 412]
 Current plan:
 [the stored plan as JSON, with id, do, status and note for each step]
@@ -39,7 +39,7 @@ If a step failed, rewrite the steps after it before you choose the next action.
 [/ita_why]
 
 [ita_quiz]
-[ita_q q="A tool result shows that a file the plan depends on doesn't exist. What should the loop do?" answers="Finish the remaining steps as planned, then report the gap|Throw away the plan and start the whole task from step one|Rewrite the steps after this one, using what it just found" correct="3" why="The plan was a guess made before this result arrived, so the steps after a surprise should change."]
+[ita_q q="A tool result shows that a file the plan depends on doesn't exist. Which steps does the loop change?" answers="Finish the remaining steps as planned, then report the gap|Throw away the plan and start the whole task from step one|Rewrite the steps after this one, using what it just found" correct="3" why="The plan was a guess made before this result arrived, so the steps after a surprise should change."]
 [ita_q q="Which stop condition is the most reliable?" answers="An instruction to stop once the work looks complete|An instruction to stop whenever the model feels unsure of the next step|A step cap in the loop's code that the model cannot raise" correct="3" why="Instructions are requests the model may misjudge; a limit in code applies on every run."]
 [ita_q q="The model marks 'run the test' as done, but no test command appears in the log. What rule fixes this?" answers="Accept done if the model explains how it ran the test|Accept done only when a matching tool result is logged|Accept done if the next step's result looks normal" correct="2" why="The tool log is the evidence; the model's status update is only a claim about it."]
 [/ita_quiz]

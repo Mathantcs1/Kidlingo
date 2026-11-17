@@ -10,7 +10,7 @@ let api: Api;
 let url = '';
 let brokenUrl = '';
 
-const PROMPT = 'Explain tokens to me like I am ten.\nUse one example & a short list.';
+const PROMPT = 'Explain [a topic] to me like I am ten.\nUse one example & a short list.'; // [a topic] is a slot: the box shows the note.
 const CONTENT = `
 <p>Intro with a [ita_term define="A chunk of text a model reads"]token[/ita_term] in it.</p>
 
@@ -53,7 +53,8 @@ test.describe('with JavaScript', () => {
     const button = box(page, 'ita-prompt').getByRole('button', { name: 'Copy prompt' });
     await button.click();
     await expect(box(page, 'ita-prompt').getByRole('status')).toHaveText('Copied');
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(PROMPT);
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(PROMPT); // the note above the text is not copied.
+    await expect(box(page, 'ita-prompt').getByTestId('ita-prompt-note')).toHaveText('Replace the parts in [brackets] with your own details.');
   });
 
   test('copy falls back to a textarea when the clipboard API is missing', async ({ page }) => {
@@ -174,7 +175,7 @@ test.describe('without JavaScript', () => {
 
   test('prompt, quiz answers, checklist items and term definition are all readable', async ({ page }) => {
     await page.goto(url);
-    await expect(box(page, 'ita-prompt')).toContainText('Explain tokens to me like I am ten.');
+    await expect(box(page, 'ita-prompt')).toContainText('Explain [a topic] to me like I am ten.');
     await expect(box(page, 'ita-prompt').getByRole('button')).toHaveCount(0);
     const quiz = box(page, 'ita-quiz');
     await expect(quiz).toContainText('What is 2 + 2?');

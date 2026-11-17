@@ -28,6 +28,25 @@ function ideatoapps_blog_multiline( $content ): string {
 }
 
 /**
+ * Whether prompt text has a fill-in slot. Rule: a bracket pair with no brackets inside it, holding at least one letter, that is not
+ * a valid JSON array ("[your name]" and "[3 days]" are slots; ["red", "blue"], [1, 2], [true] and [{"a": "b"}] are not).
+ *
+ * @param string $text Prompt text (shortcodes already expanded).
+ * @return bool
+ */
+function ideatoapps_blog_prompt_has_slots( string $text ): bool {
+	if ( ! preg_match_all( '/\[([^\[\]]*)\]/u', $text, $m ) ) {
+		return false;
+	}
+	foreach ( $m[1] as $inner ) {
+		if ( preg_match( '/\p{L}/u', $inner ) && ! is_array( json_decode( '[' . $inner . ']', true ) ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * Content of an enclosing shortcode written on its own lines arrives from wpautop + shortcode_unautop as "</p>...<p>": drop the stray
  * leading </p> and line break, the unclosed trailing <p> and line break, and empty paragraphs.
  */

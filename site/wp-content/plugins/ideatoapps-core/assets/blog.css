@@ -14,6 +14,7 @@
 }
 .ita-prompt { border-left: 6px solid var(--violet, #7357f5); }
 .ita-prompt__title, .ita-quiz__title { margin: 0 0 var(--s-1, 8px); font-weight: 700; }
+.ita-prompt__note { margin: 0 0 var(--s-1, 8px); font-size: 0.95em; color: var(--ita-ink); }
 .ita-prompt__text { margin: 0; padding: 0; background: transparent; border: 0; color: inherit; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ita-prompt__bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1, 8px); margin-top: var(--s-2, 16px); }
 .ita-prompt__status { min-height: 1.5em; font-weight: 600; color: var(--ita-ink); }

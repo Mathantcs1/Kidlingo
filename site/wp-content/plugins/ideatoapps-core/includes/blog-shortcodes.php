@@ -56,7 +56,8 @@ function ideatoapps_blog_uid( string $prefix ): string {
 }
 
 /**
- * [ita_prompt title=""]text[/ita_prompt]: a prompt in a box; JavaScript adds the copy button.
+ * [ita_prompt title=""]text[/ita_prompt]: a prompt in a box; JavaScript adds the copy button. A box with [bracket]
+ * slots (ideatoapps_blog_prompt_has_slots) gets one standard note above the text, outside what the button copies.
  *
  * @param mixed  $atts    Attributes.
  * @param string $content Prompt text.
@@ -72,6 +73,7 @@ function ideatoapps_blog_prompt( $atts, $content = '' ): string {
 	$title = '' === $title ? __( 'Try this prompt', 'ideatoapps-core' ) : $title;
 	return '<div class="ita-prompt" data-testid="ita-prompt" data-ita-prompt>'
 		. '<p class="ita-prompt__title">' . esc_html( $title ) . '</p>'
+		. ( ideatoapps_blog_prompt_has_slots( $text ) ? '<p class="ita-prompt__note" data-testid="ita-prompt-note">' . esc_html__( 'Replace the parts in [brackets] with your own details.', 'ideatoapps-core' ) . '</p>' : '' ) // not in the copied <pre>.
 		. '<pre class="ita-prompt__text">' . esc_html( $text ) . '</pre></div>';
 }
 
