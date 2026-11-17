@@ -1,10 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 316">
 <title>Tool calling</title>
-<desc>You ask a question. The model decides it needs a tool and sends a request. The tool sends a result back. The model then writes the final answer.</desc>
+<desc>You ask a question. The model decides it needs a tool and sends a request to your app’s code. Your code runs the tool and sends the result back. The model then writes the final answer.</desc>
 <g stroke-width="2">
 <rect x="10" y="10" width="120" height="44" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
 <rect x="10" y="108" width="120" height="56" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
-<rect x="230" y="108" width="120" height="56" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<rect x="230" y="108" width="120" height="56" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
+<rect x="230" y="218" width="120" height="56" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
+<path d="M270 164L270 216" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M270 216L263.5 205L276.5 205Z" fill="var(--ita-fig-line)"/>
+<path d="M310 218L310 166" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
+<path d="M310 166L303.5 177L316.5 177Z" fill="var(--ita-fig-line)"/>
 <rect x="10" y="218" width="120" height="44" rx="12" fill="var(--ita-fig-4)" stroke="var(--ita-fig-4-s)"/>
 <path d="M70 54L70 106" fill="none" stroke="var(--ita-fig-line)" stroke-width="3"/>
 <path d="M70 106L63.5 95L76.5 95Z" fill="var(--ita-fig-line)"/>
@@ -19,11 +24,13 @@
 <text x="70" y="37">You ask</text>
 <text x="70" y="130" font-weight="600">Model</text>
 <text x="70" y="152">needs data</text>
-<text x="290" y="130" font-weight="600">Tool</text>
-<text x="290" y="152">web search</text>
+<text x="290" y="130" font-weight="600">Your code</text>
+<text x="290" y="152">checks, runs</text>
+<text x="290" y="240" font-weight="600">Tool</text>
+<text x="290" y="262">calendar</text>
 <text x="70" y="245">Answer</text>
 <text x="180" y="116" fill="var(--ita-fig-muted)">request</text>
 <text x="180" y="172" fill="var(--ita-fig-muted)">result</text>
-<text x="180" y="304" fill="var(--ita-fig-muted)">The model asks. The tool works.</text>
+<text x="180" y="304" fill="var(--ita-fig-muted)">The model asks. Your code runs the tool.</text>
 </g>
 </svg>

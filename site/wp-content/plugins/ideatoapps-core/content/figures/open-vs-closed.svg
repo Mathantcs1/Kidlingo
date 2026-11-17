@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 318">
 <title>Open and closed models</title>
-<desc>Two panels. An open model has files you can download and run yourself, so you handle the setup. A closed model is used through its maker service, with less setup and less control.</desc>
+<desc>Two panels. An open model has files you can download and run yourself, so you handle the setup. A closed model is used as a service, from its maker or a provider the maker has licensed, with less setup and less control.</desc>
 <g stroke-width="2">
 <rect x="10" y="10" width="340" height="124" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
 <rect x="10" y="150" width="340" height="124" rx="12" fill="var(--ita-fig-2)" stroke="var(--ita-fig-2-s)"/>
@@ -11,8 +11,8 @@
 <text x="180" y="88">You can run it yourself</text>
 <text x="180" y="110">You handle setup and updates</text>
 <text x="180" y="184" font-weight="600">Closed model</text>
-<text x="180" y="206">You use the maker’s service</text>
-<text x="180" y="228">The maker runs it for you</text>
+<text x="180" y="206">You use it as a service</text>
+<text x="180" y="228">The service runs it for you</text>
 <text x="180" y="250">Less setup, less control</text>
 <text x="180" y="304" fill="var(--ita-fig-muted)">Neither is always better.</text>
 </g>
