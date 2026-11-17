@@ -346,94 +346,94 @@ window basics (10); training cutoff (04); ask-me-questions-first (10); flag-what
 - Try it: single task in prose (no list); ends copying the supporting sentence with the page or section.
 
 ## 41 Summarizing long documents (beginner)
-- Opener: second-person moment ("A twelve-page letter arrives about your benefits..."); no thesis. Layout: worked before/after (plain "summarize this" in a blockquote, then a summary built around one decision).
-- Lessons (owns decision-first summaries): say what decision the summary is for; copy dates, amounts and conditions word for word; name the page per point; check "unless/except/only if" in the original; confirm with the sender, no money advice; long files part by part (refers to 20); text-only file reading.
-- Why: "How a short version can change the meaning" (after the box). Cross-ref: Context windows.
-- Quiz stems: summary drops a deadline condition; why say what decision it's for; file far longer than the app handles. Key 2-1-3.
+- Opener: reader's question ("What does this letter want me to do, and by when?"); no thesis. Layout: worked before/after (plain "summarize this" in a blockquote, then a summary built around one decision).
+- Lessons (owns decision-first summaries): say what decision the summary is for; copy dates, amounts and conditions word for word; page if shown plus the first words quoted (search the original for them when pasted); check "unless/except/only if"; confirm with the sender, no money advice; apprentice electrician gets an own paragraph (rules for tomorrow's job); long files part by part, recheck conditions after combining (refers to 20); text-only file reading.
+- Why: "How a short version can change the meaning" (after the box). Cross-ref: (the article "Context windows" explains why).
+- Quiz stems: "may need to" became an order, what changed; why say what decision it's for; file far longer than the app handles. Key 2-1-3.
 - Prompt patterns: "Action summary" (CAPS output headings WHAT I MUST DO / WHAT HAPPENS IF I DON'T / WHAT I CAN SKIP / QUESTIONS FOR THE SENDER, NOTHING FOUND).
 - Example domains: retired woman's benefits review letter (older adult); apprentice electrician's training manual (vocational learner).
 - Try it: 3-step quick version; ends marking each point same / missing a condition / not found.
 
 ## 42 Automating boring tasks (intermediate, gated)
-- Opener: direct answer (often, takes time, little harm); no thesis. Layout: sort table (how often / time / harm / verdict), then map, then a two-week side-by-side run.
-- Lessons (owns choosing tasks to automate): rank by frequency, time and harm; fixed steps often need no AI; models help with messy input; task map labels; fallback to a person; log, daily count, owner, manual note. Refers to 28, 32 and 35 (one clause each), so it is not an agent-design article.
-- Why: "Silent failures in automations" (input changes, 03/04 dates, skipped items, counts). Cross-refs: Chatbot vs workflow vs agent; Guardrails and human approval; Your first simple agent, no code needed.
-- Quiz stems: good first school-office task; habit that catches skipped messages; NEEDS JUDGMENT step. Key 1-3-3.
+- Opener: direct answer (daily or weekly, takes real time, mistake easy to fix); no thesis. Layout: sort table (how often / time / harm / verdict), then map, then a two-week side-by-side run.
+- Lessons (owns choosing tasks to automate): rank by frequency, time and harm; fixed steps often need no AI; models help with messy input; task map labels; school data rules and approval before reading real messages; two-week side-by-side run; fallback, log, daily count, owner; attendance always checked by a person; manual note. Refers to 28 and 35 only.
+- Why: "Silent failures in automations" (input changes, 03/04 dates, skipped items, counts). Cross-refs: see "Chatbot vs workflow vs agent"; see "Guardrails and human approval".
+- Quiz stems: good first school-office task; habit that catches skipped messages; which setup handles a NEEDS JUDGMENT step. Key 1-3-3.
 - Prompt patterns: "Task map" (steps labeled SAME EVERY TIME / NEEDS JUDGMENT / HARD TO UNDO, no software suggestions). One bold-lead list (4 items).
 - Example domains: school office admin (absence messages, permission slips) (employee).
-- Try it: ranking, 4 steps; ends taking the map to whoever approves new software.
+- Try it: ranking, 4 steps, about fifteen minutes; ends taking the map to whoever approves new software.
 
 ## 43 AI for spreadsheets (intermediate)
 - Opener: short example ("A formula that adds the wrong column still gives you a number"); no thesis. Layout: Why in the first section before the box; h3s under "Cleaning and reading sheets".
-- Lessons (owns spreadsheet formulas with hand checks): ask for each part explained; name your program (separators differ); column names plus made-up rows; test on rows worked out by hand, three real rows, a grand total another way, a tricky row; uploaded-sheet analysis may be predicted text; clean via steps, count rows; CSV (refers to 12); pivot table defined.
-- Why: "Why a formula can look right and still be wrong" (ranges, text numbers, moving references, settings). Cross-refs: What not to paste into an AI tool (one clause); Asking for tables, checklists and JSON.
-- Quiz stems: quickest real test of a formula; total of hours too low; what to give for a customer-orders formula. Key 3-1-1.
-- Prompt patterns: "Formula with a hand check" (columns, three made-up rows in brackets, explain each part, give the result for those rows).
+- Lessons (owns spreadsheet formulas with hand checks): ask for each part explained; name your program (separators differ); column names plus made-up rows; test on rows worked out by hand, three real rows, a grand total another way, filled cells vs rows; uploaded-sheet analysis may be predicted text; clean via steps, count rows; CSV defined, split-text option (no cross-ref to 12); pivot table defined.
+- Why: "Why a formula can look right and still be wrong" (ranges, text numbers, moving references, settings). Cross-ref: (see "What not to paste into an AI tool" for the rest).
+- Quiz stems: quickest real test of a formula; total of hours too low; which part of a customer-orders sheet goes into the request. Key 3-1-1.
+- Prompt patterns: "Formula with a hand check" (columns, three made-up rows in brackets, one copyable formula per crew, explain each part, give the result for those rows).
 - Example domains: landscaping company crew hours (trade owner 1 of 2).
 - Try it: 5 steps on a copy or a made-up sheet; ends adding a tricky row and rechecking.
 
 ## 44 An AI-assisted practice routine (beginner, gated)
 - Opener: second-person moment ("You want to get better at speaking to the camera..."); no thesis. Layout: day-by-day week (Monday to Friday h3s), Why before the box.
-- Lessons (owns the weekly practice routine): one focus per week; first attempt alone, feedback on one thing, practice the change, make it harder, redo Monday and compare; written focus, ten minutes on busy days. Refers to 38 (cards) and 37 (hints) instead of reteaching.
-- Why: "What a chatbot can't see in your practice" (text only, recordings can be misjudged, agreeable praise). Cross-refs: Notes to flashcards and quizzes; AI as a study partner.
-- Quiz stems: why one focus all week; chatbot rewrote the whole script; what typed words of a video can't show. Key 1-3-1.
+- Lessons (owns the weekly practice routine): one focus per week; first attempt alone, feedback on one thing, practice the change, make it harder, redo Monday and compare; written focus, ten minutes on busy days; test-bound learner's Wednesday (practice questions, check wrong answers in the official handbook). Refers to 38 only; agreeable chatbots in one clause (06 owns).
+- Why: "What a chatbot can't see in your practice" (text only, recordings can be misjudged, too kind). Cross-ref: see "Notes to flashcards and quizzes".
+- Quiz stems: why one focus all week; chatbot rewrote the whole script, which reply keeps the practice yours; what typed words of a video can't show. Key 1-3-1.
 - Prompt patterns: "Feedback on one thing" (one named focus, one part that works, one change, no rewrite).
 - Example domains: creator speaking on camera; adult on an evening driving-theory course (adult learner).
 - Try it: fill-in weekly plan (no numbered steps, about twenty minutes a day); ends doing Monday's attempt today.
 
 ## 45 What not to paste into an AI tool (beginner)
 - Opener: direct answer ("Most of what people paste into AI apps is fine..."); no thesis. Layout: sort into three h2 groups (fine / remove details first / never), Why in the first half, no prompt box.
-- Lessons (owns what never to paste and app privacy settings): fine as is; roles for names, describe instead of paste, crop screenshots, photo location data; parent school-form worked example in prose; never: passwords and codes, access keys, ID and account numbers, forbidden work/school material; what to do after pasting by mistake; settings: training, retention, memory, temporary chats, shared links; work accounts.
+- Lessons (owns what never to paste and app privacy settings): fine as is; roles for names, describe instead of paste, crop screenshots, photo location data; parent school-form worked example in prose; never (two paragraphs, no list): passwords and codes, access keys, ID and account numbers, forbidden work/school material; after a mistaken paste: change the password or cancel and replace keys or recovery codes, delete the chat, shared link and memory entry, tell IT or security at work; settings: training, retention, memory, temporary chats (may still be kept briefly), shared links; work accounts.
 - Why: "Where your text goes after you send it". Cross-ref: none.
 - Quiz stems: school form about a child's allergy; what never goes in even in a trusted app; training turned off, what is still true. Key 2-3-3.
-- Prompt patterns: none (checklist "before-you-paste"). One bold-lead list (4 items).
+- Prompt patterns: none (checklist "before-you-paste"). No bold-lead lists.
 - Example domains: parent with a school form (parent); "Customer A" at work.
-- Try it: 4 steps, done with a parent, partner or coworker; ends changing one setting together.
+- Try it: 4 steps, done with a parent, partner or coworker; each reads their own memory list privately; ends changing one setting on a personal account.
 
 ## 46 Bias in AI (intermediate)
 - Opener: common belief ("It's easy to assume a computer program can't take sides"); no thesis. Layout: worked comparison (one detail changed between two requests), then a classroom activity; Why in the first half.
-- Lessons (owns bias in AI): data, labels, training choices (refers to 22), use; dialect example; fixes incomplete, can overcorrect, measurement debated; one-detail test, three runs per version because answers vary; invented details only; classroom table; AI never the only judge of students.
-- Why: "Why removing a label doesn't remove bias" (proxies; hypothetical job-application sorter). Cross-ref: How LLMs are trained.
-- Quiz stems: hiring tool without gender data; girl/boy lists differ the same way each time; fair test of harsher essay feedback. Key 3-1-3.
+- Lessons (owns bias in AI): data, labels, training choices (refers to 22), use; dialect example; fixes incomplete, can overcorrect, measurement debated; one-detail test in a temporary chat or with memory off, three runs per version because answers vary; invented details only; classroom table in a school-allowed app; an AI app never the only judge of students.
+- Why: "Why removing a label doesn't remove bias" (proxies; hypothetical job-application sorter). Cross-ref: (see "How LLMs are trained").
+- Quiz stems: job-application sorter without gender data; girl/boy lists differ the same way each time; fair test of harsher essay feedback. Key 3-1-3.
 - Prompt patterns: "One detail changed" (career list for [a 16-year-old girl], rerun with one bracket changed).
 - Example domains: high school career ideas; classroom group activity (teacher).
 - Try it: 4 steps on paper with classmates, no app; ends writing a request that states the default detail yourself.
 
 ## 47 Fact-checking an answer in five minutes (beginner)
 - Opener: "If you've ever stopped before forwarding..." (not the opener's last line); no thesis. Layout: minute-by-minute timeline (h3 per minute), no prompt box.
-- Lessons (owns the five-minute routine): minute 1 pick the claim you'll act on or repeat; minute 2 rewrite as a short checkable sentence; minutes 3-4 one source close to the fact, asking the chatbot again doesn't count; minute 5 confirmed / different / not found; stop the timer when sources disagree; health, money, law and safety need more; training cutoff. Points to 23 (warning signs) and 40 (judging a source) in one clause each.
-- Why: "Limits of a five-minute check". Cross-refs: Hallucinations and how to catch them; AI for research and checking sources.
-- Quiz stems: twelve facts and five minutes; where to check a museum's free Sunday; no source found after five minutes. Key 1-2-1.
+- Lessons (owns the five-minute routine): minute 1 pick the claim you'll act on or repeat; minute 2 rewrite as a short checkable sentence; minutes 3-4 one source close to the fact, asking the chatbot again doesn't count; minute 5 confirmed / different / not found; stop the timer when sources disagree; health, money, law and safety go to a pharmacist, doctor or lawyer, schoolwork to a teacher; training cutoff. Points to 23 (warning signs) and 40 (judging a source) in one quoted clause each (task requirement).
+- Why: "Limits of a five-minute check". Cross-refs: see the warning signs in "Hallucinations and how to catch them"; see "AI for research and checking sources".
+- Quiz stems: twelve facts and five minutes; where to check a museum's first-Sunday free entry; no source found, which note goes next to it. Key 1-2-1.
 - Prompt patterns: none (checklist "five-minute-fact-check").
 - Example domains: city museum free Sunday; student's science-project plant.
 - Try it: single timed task in prose (no list); ends writing the result with the source's name.
 
 ## 48 Copyright and AI (not legal advice) (intermediate)
-- Opener: three reader questions; "not legal advice" paragraph second (rules differ by country, still changing, ask a qualified lawyer). Layout: Q&A (h3 per question), Why in the first half, before the box.
-- Lessons (owns copyright basics for creators): app terms decide use; use is different from owning, human input and protection (hedged, "in some places"); look-alike characters and logos; others' work, styles of living artists, licenses, client permission; labeling rules by platform, contest, client; keep a contribution record; when to ask a lawyer (contracts, selling prints, real faces or voices, takedown notices).
+- Opener: three reader questions ("an AI app"); "not legal advice" paragraph second; copyright defined as usually first held by the creator or their employer (rules differ by country, still changing, ask a qualified lawyer). Layout: Q&A (h3 per question), Why in the first half, before the box.
+- Lessons (owns copyright basics for creators): app terms decide use; use is different from owning, human input and protection (hedged, "in some places"), you might not be able to stop copying; your own creative choices; look-alike characters and logos; the app's terms cover what you paste; others' work, styles of living artists, licenses, client permission; labeling where a platform rule, law or contract requires it; keep a contribution record (musician; marketing assistant gets an own paragraph: project folder); when to ask a lawyer (contracts, selling prints, real faces or voices, takedown notices).
 - Why: "Where the open questions are". Cross-ref: none.
 - Quiz stems: terms allow use, what's still uncertain; lyrics pasted for a new song; why keep a record. Key 3-3-1.
-- Prompt patterns: "Contribution record" (MADE BY ME / MADE WITH AN AI TOOL / FROM OTHER PEOPLE, UNKNOWN, nothing added).
+- Prompt patterns: "Contribution record" (MADE BY ME / MADE WITH AN AI APP / FROM OTHER PEOPLE, UNKNOWN, nothing added).
 - Example domains: musician's lyric video (creator); marketing assistant's brochure (employee).
-- Try it: 5 steps; ends replacing or sourcing every UNKNOWN line before publishing.
+- Try it: 5 steps, about fifteen minutes; ends replacing or sourcing every UNKNOWN line before publishing.
 
 ## 49 A calm guide for parents (beginner)
 - Opener: calm statement ("Your child may already meet AI..."); no thesis. Layout: mostly paragraphs, no checklist, no bold-lead lists; Why in the first half, before the box.
-- Lessons (owns talking with children about AI): specific, lecture-free questions; let the child show you; listen before rules; chatbot predicts the next piece of text, can be wrong, isn't a person; family rules written together; school rules first; minimum ages in terms; when to ask the school, a counselor, a doctor or emergency services; report features. No development or harm claims.
-- Why: "Why a chatbot can feel like a friend". Cross-ref: What not to paste into an AI tool.
-- Quiz stems: child calls a chatbot a friend; school project, what to check; still worried days later. Key 2-1-1.
-- Prompt patterns: "Our family agreement" (four answered questions in brackets, five lines for a child's reading age).
+- Lessons (owns talking with children about AI): specific, lecture-free questions; let the child show you; listen before rules; chatbot predicts the next piece of text, can be wrong, isn't a person; family rules written together, no trouble for telling; school rules first; minimum ages in terms; when to ask the school, a counselor or a doctor; immediate danger = local emergency number; adult or stranger asking for photos, secrets or meeting = police or a child-protection hotline; report features; sexual content involving a child is never saved or forwarded, only reported. No development or harm claims.
+- Why: "Why a chatbot can feel like a friend". Cross-ref: The full list is in "What not to paste into an AI tool".
+- Quiz stems: child calls a chatbot a friend, which reply helps you understand; school project, what to check about it; still worried days later. Key 2-1-1.
+- Prompt patterns: "Our family agreement" (no example-values label) (four answered questions in brackets, five lines for a child's reading age).
 - Example domains: parent and child at home (parent/family).
 - Try it: a conversation in prose, no screen (car ride or meal); ends writing one agreed rule where both will see it.
 
 ## 50 An AI-use policy for a small team (intermediate)
 - Opener: short example (two coworkers guessing) + one-line thesis (the batch's only thesis). Layout: sample policy with bracketed blanks in a copy box, then a fill-in walkthrough by line number.
-- Lessons (owns the team AI-use policy): eight lines (apps, good uses, never paste, check before it goes out, approval, telling people, problems with no blame, review); ask both users and avoiders; sector rules may be stricter; one owner by role; one page; practice with situations. Not legal or HR advice. Points to 45, 47 and 35 in one clause each.
-- Why: "What a written policy won't fix". Cross-refs: What not to paste into an AI tool; Fact-checking an answer in five minutes; Guardrails and human approval.
+- Lessons (owns the team AI-use policy): scope line plus nine lines (apps, good uses, never paste, check before it goes out, approval, telling people incl. wherever law or contract requires, problems with no blame and the owner's check on legal notice duties, no AI-only decisions on hiring, pay or discipline, review); ask both users and avoiders; sector rules may be stricter; one owner by role; work vs personal accounts; one page; practice with situations. Not legal or HR advice. Points to 45, 47 and 35 in one quoted clause each.
+- Why: "What a written policy won't fix". Cross-refs (quoted): "What not to paste into an AI tool"; "Fact-checking an answer in five minutes"; "Guardrails and human approval".
 - Quiz stems: coworker pasted a complaint with contact details; why name one owner; tool that sends email by itself. Key 1-1-2.
-- Prompt patterns: sample policy box; "Situations from our policy" (six situations, allowed / not allowed / ask the owner, deciding line at the end).
+- Prompt patterns: sample policy box; "Situations from our policy" (six situations, allowed / not allowed / check with the owner, deciding line at the end); no example-values labels.
 - Example domains: moving company office team (trade/business owner 2 of 2).
-- Try it: 5 steps with teammates; ends writing the first review date into line 8.
+- Try it: 5 steps with teammates; ends writing the first review date into line 9.
 
-## Batch E counts (v5 self-check)
-"If you've ever": 3 (41, 46, 47); "You've probably": 3 (43, 48, 50); none closes an opener. Example-values label only in box titles. No prompt box: 45, 47. Why before any box or in the first half: 43, 44, 45, 46, 48, 49. Try its without a numbered list: 44, 47, 49. Q1 key 2: 41, 45, 49. Bold-lead lists: 42, 45 only. "Say you / Imagine": none; one "Picture a" (46).
+## Batch E counts (after review edits, v6 self-check)
+"If you've ever": 2 (46, 47); "You've probably": 3 (43, 48, 50); at most one per article, none closes an opener. Example-values label only in box titles, dropped in 49 and 50. No prompt box: 45, 47. Why before any box or in the first half: 43, 44, 45, 46, 48, 49. Try its without a numbered list: 44, 47, 49. Q1 key 2: 41, 45, 49. Bold-lead lists: 42 only. Hypothetical lead-ins: one "Picture a" (46); no "It's [time]" openers. Cross-references quoted, never a sentence subject; more than one only in 42 (28, 35), 47 (23, 40) and 50 (45, 47, 35). "tool" means a model capability; the product is an "app".
