@@ -61,7 +61,7 @@ abstract class ReaderTestCase extends SeoTestCase {
 
 	/** A real starter article file, parsed. */
 	protected function article( string $slug ): array {
-		$a = ideatoapps_blog_parse_article( IDEATOAPPS_CORE_DIR . "content/articles/{$slug}.html" );
+		$a = ideatoapps_blog_parse_article( IDEATOAPPS_CORE_DIR . "content/articles/{$slug}.php" );
 		$this->assertIsArray( $a, $slug );
 		return $a;
 	}

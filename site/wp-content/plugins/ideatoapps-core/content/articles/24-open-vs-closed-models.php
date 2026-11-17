@@ -1,0 +1,59 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"24-open-vs-closed-models","title":"Open vs closed models","category":"llms","excerpt":"What separates an open model from a closed one, how each affects data, setup and control, and the questions to answer before you choose.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["builders","workers-and-business-owners"],"check":["An open-weight model's trained parameters are published so others can download and run it; its training data and training code are often not published.","Licenses for downloadable models differ: some allow commercial use, while others limit it or attach conditions such as an acceptable-use policy or credit to the maker.","Whether some downloadable models count as open source is debated, because their licenses or missing training data do not meet common open-source definitions.","A closed model is used only through a service, either the maker's own app or API or a cloud provider the maker has licensed, and that service's terms say how request data is stored and used.","A maker of a hosted model can update or retire a model version, while downloaded model files stay the same until their user changes them.","A model's license can change between versions of the same model."]} -->
+<p>An open model is one whose trained files you can download and run on computers you choose. A closed model is one you can use only through a service: the maker's own app or [ita_term define="Application programming interface: the connection a program uses to send requests to a service and get answers back."]API[/ita_term], or a cloud provider the maker has licensed. The choice decides where your data goes and who keeps the model running.</p>
+
+<h2>What "open" usually means</h2>
+<p>Most models called open are [ita_term define="A model whose trained parameters are published, so others can download and run it."]open-weight[/ita_term] models. The maker publishes the parameters, the numbers the model learned in training. You can run the model yourself, and often adapt it with more training.</p>
+<p>The maker may still keep the training data and much of the training code private. And every download comes with a [ita_term define="The terms that say how you are allowed to use something, such as software or a model."]license[/ita_term]. Some licenses allow commercial use. Others limit it, or add conditions such as rules about allowed uses or a requirement to credit the maker.</p>
+<p>The entry for open-weight in "A plain-English AI glossary" carries the same warning: open-weight doesn't always mean free to use any way you like. A license can also change between versions of the same model, so the one that counts is the license of the exact version you download.</p>
+[ita_figure name="open-vs-closed" alt="Two panels: an open model you download, run and update yourself; a closed model you use as a service, with less setup and less control." caption="An open model runs where you choose; a closed model is used as a service."]
+
+<h2>Side by side</h2>
+<table>
+<caption>How open and closed models usually differ</caption>
+<thead><tr><th scope="col">Question</th><th scope="col">Open model</th><th scope="col">Closed model</th></tr></thead>
+<tbody>
+<tr><th scope="row">Where does it run?</th><td>Your computer, your server, or a hosting service you choose</td><td>The maker's servers, or a licensed cloud provider's</td></tr>
+<tr><th scope="row">Where does your data go?</th><td>It can stay on machines you control</td><td>To that service; its terms say how it's stored and used</td></tr>
+<tr><th scope="row">Who handles setup and updates?</th><td>You, including hardware and security</td><td>The service</td></tr>
+<tr><th scope="row">Can the version you use change?</th><td>The model files stay the same until you change them</td><td>Yes; the maker can update or retire a version</td></tr>
+<tr><th scope="row">How capable is it?</th><td colspan="2">Varies by model and changes quickly; test on your own tasks</td></tr>
+<tr><th scope="row">What rules apply?</th><td>The model's license</td><td>The service's terms</td></tr>
+</tbody>
+</table>
+<p>If you've used a chatbot at work, you've probably used a closed model. At work, a closed model is often the simpler start, because someone else handles setup and updates. An open model can give a builder predictable behavior and data that stays inside their own systems. It also makes that builder responsible for the hardware and the security updates.</p>
+<p>Some hosting services run open models for you, which sits between the two. Setup is lighter, but your data goes to that host, and its terms matter as much as a closed model's would.</p>
+[ita_why title="Open weights, open code, open data"]
+<p>"Open" can describe three different things: the trained parameters, the code used to train the model, and the data it was trained on. Many downloadable models publish only the first.</p>
+<p>Because of this, whether some of these models count as open source is debated. Their licenses or missing training data may not meet common open-source definitions. When someone calls a model open, ask which of the three they mean and what the license allows.</p>
+[/ita_why]
+
+<h2>Questions to answer before you choose</h2>
+<p>If you're the person who gets asked "can we use this?", the questions below are a place to start. The right choice depends on the task and on your workplace's rules. Picture an office admin at a dental clinic who wants help summarizing internal notes. Before any model is chosen, someone has to decide whether those notes may leave the clinic's systems at all, especially if they include patient information.</p>
+[ita_checklist id="open-or-closed-model"]
+[ita_item]We know what data will go into the model, and whether our rules allow it to leave our systems.[/ita_item]
+[ita_item]Someone is named to install, update and secure an open model, or we've chosen a hosted service instead.[/ita_item]
+[ita_item]We've read the license or service terms for our kind of use, including commercial use.[/ita_item]
+[ita_item]We've tested the model on a handful of our real tasks, with names removed.[/ita_item]
+[ita_item]We know what happens if the model version changes or is retired.[/ita_item]
+[/ita_checklist]
+
+<p>None of this is legal advice. When the use is commercial or a license is unclear, the usual step is to ask a qualified person, such as your organization's legal team.</p>
+
+[ita_quiz]
+[ita_q q="A model's files can be downloaded. What does that tell you about how you may use it?" answers="It may be used for any purpose, including selling a product|It is open source, and its training data is published|Nothing on its own; the license says what's allowed" correct="3" why="Downloadable models come with licenses, and the terms differ from model to model."]
+[ita_q q="A dental clinic's office admin wants a model to summarize internal notes. Which question comes before choosing a model?" answers="Which model gave the clearest summary in a quick test|Whether an open model would cost less to run|Whether the clinic's rules allow the notes to leave its systems" correct="3" why="Where data may go narrows the choice before quality or cost matter."]
+[ita_q q="What is one real advantage of a closed model for a small team?" answers="The service handles setup, updates and hardware|Data never leaves the team's own computers|Its behavior never changes over time" correct="1" why="A hosted service removes the work of running the model, at the cost of some control."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>Fill in this card for one task at work or one feature you build.</p>
+<ul>
+<li>Task: ________</li>
+<li>Data that goes in: ________</li>
+<li>May it leave our systems? yes / no / ask ________</li>
+<li>Who would install and update an open model: ________</li>
+<li>What the license or terms must allow: ________</li>
+<li>Kind to try first, and why: open / closed, because ________</li>
+</ul>
+<p>When the card is full, write one question for the person who approves software at your workplace, and send it to them.</p>

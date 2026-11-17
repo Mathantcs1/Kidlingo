@@ -1,0 +1,72 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"12-asking-for-tables-checklists-and-json","title":"Asking for tables, checklists and JSON","category":"prompting","excerpt":"Name the columns, the order and the word for missing values, and a chatbot's table, checklist or JSON fits the place you'll use it.","reviewed":"2026-11-16","gated":false,"level":"intermediate","audiences":["workers-and-business-owners","builders"],"check":["Without named columns, a chatbot chooses its own columns and order for a table, which may not match an existing spreadsheet.","A table shown in a chat window can lose its layout when pasted into a spreadsheet; the same data as CSV can be saved as a .csv file and opened, or pasted and split into columns with the spreadsheet's split-text option, and values containing commas need quotes.","Showing an example object usually gets more consistent JSON than describing the fields.","A model can return JSON with extra text around it, a missing bracket or a wrong field name, because nothing checks the format unless the app or code adds a check.","A long answer can stop before the end when it reaches an output limit, which can leave JSON unfinished."]} -->
+<p>Ask a chatbot for "a table of this week's stock count" and you'll get a table. The columns and their order, though, are the chatbot's choice, and they may not match the sheet you already use.</p>
+<p>Name the columns, the order and what to write when a value is missing, and the result fits where it's going.</p>
+
+<h2>Tables: you choose the columns</h2>
+<p>In a warehouse where the team writes stock counts on paper, a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] like this turns the notes into rows:</p>
+[ita_prompt title="A table with fixed columns"]
+Make a table from the stock count notes below.
+Columns, in this order: Item, Shelf, Count, Reorder.
+Reorder is "yes" when the count is below [your reorder level], otherwise "no".
+One row per item, sorted by shelf.
+If a note does not give a value, write "missing" in that cell. Do not guess a value.
+Notes:
+[paste the notes here]
+[/ita_prompt]
+<p>Without a word for missing values, a chatbot may fill an empty cell with a likely-looking number. A cell marked "missing" is easy to spot, while a made-up count looks like any other. Still spot-check a few rows against the paper notes.</p>
+<p>Tables in a chat window can lose their layout when you paste them into a spreadsheet. If that happens, ask for the same table as [ita_term define="Comma-separated values: plain text where each line is a row and commas separate the cells. Spreadsheets can open it."]CSV[/ita_term]. Save it as a .csv file and open it, or paste it and use your spreadsheet's option to split text into columns. Ask for quotes around any value that contains a comma.</p>
+
+<h2>Checklists: one action per line</h2>
+<p>A paragraph of instructions is hard to follow at the end of a long day. A checklist is easier. To get a good one, say how it will be used:</p>
+<ul>
+<li><strong>Start each line with a verb</strong>, such as "turn off", "wipe" or "lock".</li>
+<li><strong>One action per line</strong>, so each line can be ticked on its own.</li>
+<li><strong>Group by place or time</strong>, for example "main hall", "kitchen", "last five minutes".</li>
+<li><strong>Say where it will live</strong>: printed on a wall, read on a phone, or pasted into a shared document.</li>
+</ul>
+<p>Think of a community center's closing checklist for its volunteers. "Make sure the hall is tidy" becomes three lines a new volunteer can follow: stack the chairs, wipe the tables, lock the side door. If the chatbot's version merges steps, ask it to split any line that has two verbs.</p>
+
+<h2>JSON: when a program reads the answer</h2>
+<p>[ita_term define="A plain-text format for data, made of named fields and values inside curly braces, that most programs can read."]JSON[/ita_term] is for answers that a program will use, for example to fill a form or save an order. For builders, show the exact shape you expect. An example object usually gets more consistent JSON than a description of the fields.</p>
+[ita_prompt title="Fixed keys for an order message"]
+Read the customer message below and return only JSON, with no text before or after it.
+Use exactly these keys, in this shape:
+{"product": "flyers", "quantity": 200, "paper": "glossy", "deadline": "2026-12-01", "questions": []}
+The values above only show the format. Take every value from the message.
+Use null for any value the message does not give.
+Put anything the customer asked about in "questions" as short strings.
+Message:
+[paste the customer message here]
+[/ita_prompt]
+<p>Before you paste a customer's message, remove their name and contact details. Your code then parses the result and checks it before using it (see "System prompts and structured output for builders" for those checks).</p>
+<p>To choose a format, start from who or what will read the answer:</p>
+<table>
+<caption>Which format to ask for</caption>
+<thead><tr><th scope="col">Format</th><th scope="col">Use it when</th><th scope="col">Say in the prompt</th></tr></thead>
+<tbody>
+<tr><th scope="row">Table</th><td>People compare rows or paste into a sheet</td><td>Column names, order, sorting, missing value</td></tr>
+<tr><th scope="row">Checklist</th><td>Someone follows steps in order</td><td>A verb first, one action per line, groups, where it's used</td></tr>
+<tr><th scope="row">JSON</th><td>A program reads the answer</td><td>An example object, null for unknowns, "JSON only"</td></tr>
+</tbody>
+</table>
+[ita_why title="Where JSON from a chatbot breaks"]
+<p>A model writes JSON the same way it writes a sentence: one piece of text at a time, predicting what comes next. Nothing checks that every bracket closes, unless the app or the code around the model adds that check.</p>
+<p>Three failures are common. The model adds a friendly sentence before the JSON, it renames a key, or a long answer reaches the output limit and stops halfway. A short example object and the line "no text before or after it" make the first two less likely. Only your code can catch all three.</p>
+[/ita_why]
+
+[ita_quiz]
+[ita_q q="You want to paste the table into the sheet you already use. What matters most in the prompt?" answers="Naming the columns in the same order as your sheet|Asking for a neat table with clear borders|Asking for as many columns as the notes allow" correct="1" why="Named columns in your order are what make the rows line up with your sheet."]
+[ita_q q="Why is a word like 'missing' safer than letting the chatbot fill an empty cell?" answers="A guessed number looks real, so nobody notices it needs checking|An empty cell stops the spreadsheet from sorting the rows|Chatbots leave unknown cells blank anyway, so the word only adds clarity" correct="1" why="A made-up value blends in with real ones; a marked gap is easy to find and fix."]
+[ita_q q="You paste the chatbot's table into your spreadsheet and everything lands in one column. What is a sensible next step?" answers="Ask for the same table again, since the layout changes each time|Retype the rows by hand into the right columns|Ask for CSV, then split the text into columns" correct="3" why="CSV keeps each cell separate, and spreadsheets can open it or split it into columns."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>Design the table on paper before you ask for it.</p>
+<ol>
+<li>Pick one real job that ends in a list: a delivery round, a stock count, or prices from three suppliers.</li>
+<li>On paper, write the column names across the top, in the order you want them.</li>
+<li>Fill one row by hand, so you know what a good row looks like.</li>
+<li>Turn the paper into a prompt: columns, order, sorting, the word for missing values, and your hand-filled row as an example.</li>
+<li>Paste the result into your spreadsheet. If a column lands in the wrong place, fix that line of the prompt and run it again.</li>
+</ol>

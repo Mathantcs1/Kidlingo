@@ -13,7 +13,8 @@ test.setTimeout(120_000);
 const base = `http://localhost:${process.env.WP_PORT ?? '8888'}`;
 const LATE = ['Scroll through the week', 'Spotting one yourself teaches you what to watch for', 'Why use one chatbot app for the whole first week'];
 const EARLY = 'A good way to learn an AI chatbot is to use it for small, real tasks';
-const article = readFileSync(resolve(__dirname, '../../wp-content/plugins/ideatoapps-core/content/articles/08-your-first-week-with-ai.html'), 'utf8').replace(/^<!--ita .*?-->\n/, '');
+const article = readFileSync(resolve(__dirname, '../../wp-content/plugins/ideatoapps-core/content/articles/08-your-first-week-with-ai.php'), 'utf8')
+  .replace("<?php defined( 'ABSPATH' ) || exit; ?>\n", '').replace(/^<!--ita .*?-->\n/, ''); // guard line, then the header.
 
 let api: Api;
 let id = 0;

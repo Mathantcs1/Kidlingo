@@ -30,9 +30,9 @@ final class BlogInstallerTest extends WPTestCase {
 		return (string) ( self::topic( $slug )['title'] ?? '' );
 	}
 
-	/** The topic row of a slug in topics.json (empty when unknown). */
+	/** The topic row of a slug in topics.php (empty when unknown). */
 	public static function topic( string $slug ): array {
-		foreach ( json_decode( (string) file_get_contents( IDEATOAPPS_CORE_DIR . 'content/topics.json' ), true ) as $t ) {
+		foreach ( ideatoapps_blog_topics_data() as $t ) {
 			if ( $t['slug'] === $slug ) {
 				return $t;
 			}
@@ -41,11 +41,11 @@ final class BlogInstallerTest extends WPTestCase {
 	}
 
 	private function header( string $slug, string $cat, bool $gated, array $over = array() ): string {
-		return '<!--ita ' . wp_json_encode( $over + array( 'slug' => $slug, 'title' => self::topic_title( $slug ), 'category' => $cat, 'excerpt' => 'Short excerpt.', 'reviewed' => '2026-11-16', 'gated' => $gated, 'level' => self::topic( $slug )['level'] ?? '', 'audiences' => self::topic( $slug )['audiences'] ?? array(), 'check' => array( 'claim "one" \\ x', 'claim two', 'claim three' ) ) ) . " -->\n<p>Body of {$slug} with a back\\slash.</p>\n";
+		return IDEATOAPPS_CONTENT_GUARD . "\n<!--ita " . wp_json_encode( $over + array( 'slug' => $slug, 'title' => self::topic_title( $slug ), 'category' => $cat, 'excerpt' => 'Short excerpt.', 'reviewed' => '2026-11-16', 'gated' => $gated, 'level' => self::topic( $slug )['level'] ?? '', 'audiences' => self::topic( $slug )['audiences'] ?? array(), 'check' => array( 'claim "one" \\ x', 'claim two', 'claim three' ) ) ) . " -->\n<p>Body of {$slug} with a back\\slash.</p>\n";
 	}
 
 	private function article( string $slug, string $cat, bool $gated, array $over = array() ): string {
-		$path = $this->dir . '/' . $slug . '.html';
+		$path = $this->dir . '/' . $slug . '.php';
 		file_put_contents( $path, $this->header( $slug, $cat, $gated, $over ) );
 		return $path;
 	}
@@ -57,7 +57,7 @@ final class BlogInstallerTest extends WPTestCase {
 	/* Parser */
 
 	public function test_parser_returns_the_fields(): void {
-		$a = ideatoapps_blog_parse_article( $this->dir . '/09-the-four-part-prompt-recipe.html' );
+		$a = ideatoapps_blog_parse_article( $this->dir . '/09-the-four-part-prompt-recipe.php' );
 		$this->assertIsArray( $a );
 		$this->assertSame( 'prompting', $a['category'] );
 		$this->assertTrue( $a['gated'] );
@@ -80,13 +80,13 @@ final class BlogInstallerTest extends WPTestCase {
 			$cases[ 'over' . $i ] = $this->header( '01-what-ai-is-and-isnt', 'ai-basics', false, $o );
 		}
 		foreach ( $cases as $name => $text ) {
-			file_put_contents( $this->dir . '/01-what-ai-is-and-isnt.html', $text );
-			$this->assertInstanceOf( WP_Error::class, ideatoapps_blog_parse_article( $this->dir . '/01-what-ai-is-and-isnt.html' ), $name );
+			file_put_contents( $this->dir . '/01-what-ai-is-and-isnt.php', $text );
+			$this->assertInstanceOf( WP_Error::class, ideatoapps_blog_parse_article( $this->dir . '/01-what-ai-is-and-isnt.php' ), $name );
 		}
-		$this->assertInstanceOf( WP_Error::class, ideatoapps_blog_parse_article( $this->dir . '/missing.html' ) );
+		$this->assertInstanceOf( WP_Error::class, ideatoapps_blog_parse_article( $this->dir . '/missing.php' ) );
 		$this->article( '02-ml-vs-deep-learning-vs-generative-ai', 'ai-basics', false );
-		file_put_contents( $this->dir . '/01-what-ai-is-and-isnt.html', $this->header( '02-ml-vs-deep-learning-vs-generative-ai', 'ai-basics', false ) );
-		$this->assertInstanceOf( WP_Error::class, ideatoapps_blog_parse_article( $this->dir . '/01-what-ai-is-and-isnt.html' ), 'slug must match the file name' );
+		file_put_contents( $this->dir . '/01-what-ai-is-and-isnt.php', $this->header( '02-ml-vs-deep-learning-vs-generative-ai', 'ai-basics', false ) );
+		$this->assertInstanceOf( WP_Error::class, ideatoapps_blog_parse_article( $this->dir . '/01-what-ai-is-and-isnt.php' ), 'slug must match the file name' );
 	}
 
 	/* Installer */
@@ -133,7 +133,7 @@ final class BlogInstallerTest extends WPTestCase {
 		ideatoapps_blog_install();
 		$id = $this->starter( '01-what-ai-is-and-isnt' );
 		wp_update_post( array( 'ID' => $id, 'post_content' => 'Owner edit', 'post_title' => 'Owner title' ) );
-		file_put_contents( $this->dir . '/01-what-ai-is-and-isnt.html', $this->header( '01-what-ai-is-and-isnt', 'ai-basics', false, array( 'excerpt' => 'New excerpt.' ) ) . 'changed' );
+		file_put_contents( $this->dir . '/01-what-ai-is-and-isnt.php', $this->header( '01-what-ai-is-and-isnt', 'ai-basics', false, array( 'excerpt' => 'New excerpt.' ) ) . 'changed' );
 		ideatoapps_blog_install();
 		$p = get_post( $id );
 		$this->assertSame( 'Owner edit', $p->post_content );
@@ -152,7 +152,7 @@ final class BlogInstallerTest extends WPTestCase {
 	}
 
 	public function test_malformed_file_counts_as_error_and_the_rest_installs(): void {
-		file_put_contents( $this->dir . '/02-ml-vs-deep-learning-vs-generative-ai.html', '<!--ita {broken -->x' );
+		file_put_contents( $this->dir . '/02-ml-vs-deep-learning-vs-generative-ai.php', '<!--ita {broken -->x' );
 		$r = ideatoapps_blog_install();
 		$this->assertSame( array( 'created' => 2, 'skipped' => 0, 'errors' => 1, 'locked' => false ), $r );
 		$this->assertSame( 0, $this->starter( '02-ml-vs-deep-learning-vs-generative-ai' ) );

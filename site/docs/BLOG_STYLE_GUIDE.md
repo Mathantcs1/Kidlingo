@@ -1,7 +1,7 @@
 # Blog style guide (starter articles)
 
 How to write an article file for the IdeaToApps AI blog. The three reference articles are
-`content/articles/01-what-ai-is-and-isnt.html`, `09-the-four-part-prompt-recipe.html` and `27-what-is-an-ai-agent.html`
+`content/articles/01-what-ai-is-and-isnt.php`, `09-the-four-part-prompt-recipe.php` and `27-what-is-an-ai-agent.php`
 (in `wp-content/plugins/ideatoapps-core/`). `tests/php/BlogContentLintTest.php` enforces the checkable rules below; a human editor
 reviews everything else before a post is published. Every article is an AI-assisted draft until a person signs it off.
 
@@ -12,7 +12,7 @@ article, not an audience. Any technical word gets a plain definition the first t
 definition is not possible, the word probably does not belong in the article.
 
 ## Levels and audiences
-Every topic in `content/topics.json` has a `level` and 1-3 `audiences`; the article header repeats them exactly (the parser rejects
+Every topic in `content/topics.php` (the PHP guard line described under "Article file format", then the JSON list; the one source for the plugin, the tests and `scripts/make-blog-heroes.mjs`) has a `level` and 1-3 `audiences`; the article header repeats them exactly (the parser rejects
 a mismatch). The theme shows a level badge, audience chips and a "Who this is for" line made from them, so never type that line
 into the article.
 - `level`: `beginner` (no background assumed), `intermediate` (has used AI apps and wants to do more), `advanced` (comfortable
@@ -22,7 +22,7 @@ into the article.
 - **Readability** (Flesch reading ease of the visible text, `tests/php/helpers/blog-lint-readability.php`): at least 60 for
   beginner, 50 for intermediate, 40 for advanced. When an article falls short, shorten sentences and use plainer words; never lower
   the threshold. Short paragraphs; no idioms that translate badly ("ballpark", "piece of cake").
-- Targets for the 50 topics (`tests/php/BlogCoverageLintTest.php` checks them on `topics.json`, so they hold before every article
+- Targets for the 50 topics (`tests/php/BlogCoverageLintTest.php` checks them on `topics.php`, so they hold before every article
   exists): beginner >= 22, intermediate >= 14, advanced >= 6; audiences at least beginners 20, students 8, teachers-and-tutors 4,
   parents-and-families 3, workers-and-business-owners 8, creators 4, builders 10; every category has at least one beginner and one
   intermediate topic. Current matrix (the test fails if this copy is out of date):
@@ -81,24 +81,27 @@ into the article.
 8. Length: 800-1,100 words of visible text (the lint allows 700-1,300). Prompt, quiz and checklist text count.
 
 ## Article file format
-One file per article: `content/articles/NN-slug.html`, where `NN-slug` is the `slug` from `content/topics.json`. The file must start
-(an optional byte-order mark and whitespace are allowed before it) with one HTML comment holding a JSON header, then the body:
+One file per article: `content/articles/NN-slug.php`, where `NN-slug` is the `slug` from `content/topics.php`. The first line must
+be exactly `<?php defined( 'ABSPATH' ) || exit; ?>`: the plugin folder is under the web root, so this guard makes a direct URL
+request run PHP and stop with no text (unreviewed drafts and subscriber-only posts must never be readable that way). The parser
+strips that line and refuses a file without it. Then one HTML comment holding a JSON header, then the body:
 
 ```html
+<?php defined( 'ABSPATH' ) || exit; ?>
 <!--ita {"slug":"01-what-ai-is-and-isnt","title":"What AI is and isn't","category":"ai-basics","excerpt":"...","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["beginners","students","parents-and-families"],"check":["claim 1","claim 2","claim 3"]} -->
 <p>First paragraph of the body...</p>
 ```
 
 What the parser (`includes/blog-article-file.php`) requires:
 - The comment starts with `<!--ita ` and the JSON object is followed by `-->`. Keep it on one line; never write `}-->` inside a string.
-- `slug`: two digits, a hyphen, lowercase words joined by hyphens; must equal the file name without `.html` and exist in `topics.json`.
-- `title`: exactly the topic title in `topics.json` (compared after WordPress text sanitising).
-- `category`: the topic's category slug in `topics.json` (`ai-basics`, `prompting`, `llms`, `agents`, ...).
+- `slug`: two digits, a hyphen, lowercase words joined by hyphens; must equal the file name without `.php` and exist in `topics.php`.
+- `title`: exactly the topic title in `topics.php` (compared after WordPress text sanitising).
+- `category`: the topic's category slug in `topics.php` (`ai-basics`, `prompting`, `llms`, `agents`, ...).
 - `excerpt`: 1-160 characters of plain text. It is shown on cards and in search results.
 - `reviewed`: a real `YYYY-MM-DD` date. **It is the date the draft was written, not a human review date.** The installer stores it
   as `ita_drafted_on`; the human review date is recorded only when an editor signs the post off in the Editorial review box.
 - `gated`: `true` or `false` (0/1 also parse). `true` only for the owner-approved slugs 08, 14, 32, 36, 42 and 44; `false` for every other article. It seeds the "Subscribers only" box; the owner can change any post afterwards.
-- `level` and `audiences`: exactly the topic's values in `topics.json` (same audiences, same order), from the lists above.
+- `level` and `audiences`: exactly the topic's values in `topics.php` (same audiences, same order), from the lists above.
 - `check`: an array of 3-6 non-empty strings (see below).
 - The body after the comment must not be empty, and the whole file must stay under 400 KB.
 

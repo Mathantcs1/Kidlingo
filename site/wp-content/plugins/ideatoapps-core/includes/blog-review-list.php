@@ -88,8 +88,10 @@ add_filter(
 		if ( '' === ideatoapps_review_status( (int) $post_id ) ) {
 			return $date;
 		}
-		$on = (string) get_post_meta( (int) $post_id, 'ita_reviewed_on', true );
-		return 'human_reviewed' === ideatoapps_review_status( (int) $post_id ) && ideatoapps_blog_valid_date( $on ) ? $on : null;
+		$on   = (string) get_post_meta( (int) $post_id, 'ita_reviewed_on', true );
+		$post = get_post( (int) $post_id );
+		$ok   = $post && 'human_reviewed' === ideatoapps_review_status( (int) $post_id ) && ideatoapps_review_is_cleared( (int) $post_id, ideatoapps_review_fields( $post ) ); // as the byline: the text must still match the sign-off.
+		return $ok && ideatoapps_blog_valid_date( $on ) ? $on : null;
 	},
 	10,
 	2
@@ -106,7 +108,7 @@ function ideatoapps_review_progress(): array {
 	$trashed = 0;
 	$done    = 0;
 	foreach ( ideatoapps_blog_article_files() as $path ) {
-		$id = ideatoapps_blog_post_for_slug( basename( $path, '.html' ) );
+		$id = ideatoapps_blog_post_for_slug( basename( $path, '.php' ) );
 		if ( $id > 0 ) {
 			$trashed += 'trash' === get_post_status( $id ) ? 1 : 0;
 			$done    += 'trash' !== get_post_status( $id ) && 'human_reviewed' === ideatoapps_review_status( $id ) ? 1 : 0;

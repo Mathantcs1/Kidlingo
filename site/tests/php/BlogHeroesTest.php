@@ -18,7 +18,7 @@ final class BlogHeroesTest extends SeoTestCase {
 
 	/** @return array<int, array<string,string>> */
 	private function topics(): array {
-		$topics = json_decode( (string) file_get_contents( IDEATOAPPS_CORE_DIR . 'content/topics.json' ), true );
+		$topics = ideatoapps_blog_topics_data();
 		$this->assertIsArray( $topics );
 		return $topics;
 	}

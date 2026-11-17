@@ -1,0 +1,54 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"25-running-a-model-on-your-own-computer","title":"Running a model on your own computer","category":"llms","excerpt":"What you need to run a language model locally, what to expect from speed and quality, and how to prompt a smaller model so it stays on task.","reviewed":"2026-11-16","gated":false,"level":"advanced","audiences":["builders"],"check":["Smaller open-weight models can run on ordinary laptops and desktops, and speed depends mostly on whether the whole model fits in fast memory, such as a graphics card's memory.","Quantization stores a model's parameters with fewer bits, which reduces the memory it needs and often speeds it up, at some cost in quality that grows as fewer bits are used.","Some model file formats can run code when they are loaded, so model files should come from trusted sources and use formats that store only data, and options that run code shipped with a model should stay off unless the source is trusted.","Many programs that run local models can offer a local server that accepts requests in a format similar to common hosted APIs, and anyone who can reach that server can use the model.","Hosted services often add their own safety filters around a model; a model run locally has only what is in its weights, what the runner program adds and what the builder adds.","Memory use grows with the length of the context, and some runner programs start with a small default context length, so the usable context on a local machine can be smaller than the model's stated maximum."]} -->
+<p>Can you run a language model on your own laptop or desktop? In many cases, yes. Smaller [ita_term define="A model whose trained numbers (its weights) are published, so anyone can download and run it."]open-weight[/ita_term] models can run on ordinary computers, and faster with a recent graphics card or plenty of memory. You usually give up some speed and capability for privacy and control.</p>
+
+<h2>Setting it up</h2>
+<h3>What do I need?</h3>
+<p>Two things: the model files and a program that runs them. The files hold the model's [ita_term define="The trained numbers inside a model, also called its parameters."]weights[/ita_term], and you need a model whose license allows your use (see "Open vs closed models"). Many models come in several sizes, and a small one is the easier first test.</p>
+<p>The program, called a runner, loads the files and lets you chat with the model or call it from code. Many runners can also start a local server that accepts requests in a format similar to common hosted [ita_term define="Application programming interface: the connection a program uses to send requests to a model and get answers back."]APIs[/ita_term]. That means your code can switch between local and hosted with small changes. Keep that server reachable only from your own machine unless you add access controls, because anyone who can reach it can use your model.</p>
+<h3>Will it fit on my machine?</h3>
+<p>For good speed, the whole model usually needs to fit in the graphics card's memory, or in fast main memory on some machines. If it doesn't fit, the runner may split the work or refuse to load, and speed can drop sharply. If you've ever watched a model type one word every few seconds, this is the usual cause.</p>
+<h3>Is it safe to download models?</h3>
+<p>Treat model files like any other software. Download them only from sources you trust. Some file formats can run code when they're loaded, so prefer formats that store only the numbers. Keep your runner updated, and keep turned off any option that runs code included with a model unless you trust where it came from.</p>
+[ita_why title="How a big model fits into less memory"]
+<p>A model's weights are numbers, and each number takes a certain number of bits to store. [ita_term define="Storing a model's numbers with fewer bits each, so it needs less memory."]Quantization[/ita_term] rounds them so each one uses fewer bits.</p>
+<p>The file gets smaller, the model needs less memory, and it can run faster. The cost is some loss of quality, which grows as fewer bits are used. Many local model files are offered at several quantization levels, so it's worth trying more than one on your own tasks.</p>
+[/ita_why]
+
+<h2>Living with a local model</h2>
+<h3>How fast and how good will it be?</h3>
+<p>You'll probably notice the speed first. Replies can arrive more slowly than from a hosted service, and the first request can take longer while the model loads. Smaller models make more mistakes on hard reasoning, long documents and complex instructions. They can be fine for focused jobs like extracting fields, sorting short messages or rewording text. General reviews go out of date quickly, so the only judgment that counts is a test on your own tasks.</p>
+<h3>How much text can I send?</h3>
+<p>Memory use grows with the length of the input. On your machine, the usable [ita_term define="The amount of text, counted in tokens, that a model can take into account at one time."]context window[/ita_term] can be smaller than the model's stated maximum. Some runners also start with a small default context length, which is a setting worth checking before you blame the model for forgetting.</p>
+<h3>What's missing compared with a hosted app?</h3>
+<p>Hosted apps add features around the model, such as web search, file reading and safety filters. Locally, you get what's in the weights, what your runner adds and what you build yourself. Your machine also does all the work, so expect heat, fan noise and battery drain during long runs.</p>
+<h3>Does my text stay private?</h3>
+<p>Privacy is a common reason builders run models locally. Your text stays on your machine as long as the runner doesn't send anything out. Its settings for update checks, usage reports and optional online features tell you whether it does.</p>
+
+<h2>Prompting a smaller model</h2>
+<p>Smaller models follow long, layered instructions less reliably. A [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] works better when it gives one job, marks where the input starts and ends, and shows the exact output shape. Keep the input short enough to leave room for the reply. If a task needs several steps, send each step as its own request and join the results in your code. Here is a single-job prompt for pulling dates out of a note:</p>
+[ita_prompt title="One task, marked input"]
+You extract dates. Do one task only.
+Task: list every date in the text below and what happens on that date.
+Output: one line per date, in this form:
+YYYY-MM-DD | event
+If a date has no year or is relative, such as next Tuesday, copy it as written and add (unclear).
+If the text has no dates, output only: NONE
+### TEXT START
+[paste the text]
+### TEXT END
+[/ita_prompt]
+
+[ita_quiz]
+[ita_q q="A local model loads, but replies are extremely slow. What is a likely cause?" answers="The context window is set too small|The model doesn't fit in fast memory, so part of it runs from slower memory|The prompt is written in the wrong format" correct="2" why="When the model doesn't fit in fast memory, the work is split or moved to slower memory, and speed drops."]
+[ita_q q="Why do builders choose a quantized version of a model for local use?" answers="It needs less memory, at some cost in quality|It has newer knowledge than the original|It can no longer send any data over the internet" correct="1" why="Fewer bits per number shrink memory use; the trade is some loss of quality."]
+[ita_q q="What changes about safety when you run a model locally?" answers="Nothing, because all safety lives in the model's weights|The model's built-in refusals are removed when it's downloaded|Filters a hosted service adds are missing, so checks are your job" correct="3" why="Hosted services often add their own filters around a model; locally, any extra checks are yours to build."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>A quick version, before you download anything:</p>
+<ol>
+<li>Write five short test tasks from your real work, for example pulling dates from a note or summarizing a page of documentation. Remove names, and use real text only if your workplace allows it.</li>
+<li>Run the five tasks on the hosted model you use now, and mark which answers you would accept.</li>
+<li>After you install a local model, run the same five tasks and mark each answer "good enough" or "not good enough".</li>
+</ol>

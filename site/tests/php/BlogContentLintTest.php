@@ -5,7 +5,7 @@ require_once __DIR__ . '/helpers/blog-lint.php';
 require_once __DIR__ . '/helpers/blog-lint-layout.php';
 
 /**
- * Content lint for the starter articles (content/articles/*.html) against site/docs/BLOG_STYLE_GUIDE.md, plus a self-test proving
+ * Content lint for the starter articles (content/articles/*.php) against site/docs/BLOG_STYLE_GUIDE.md, plus a self-test proving
  * every rule can fail.
  */
 final class BlogContentLintTest extends TestCase {
@@ -13,10 +13,10 @@ final class BlogContentLintTest extends TestCase {
 		return rtrim( IDEATOAPPS_CORE_DIR, '/' ) . '/content';
 	}
 
-	/** Every file in the folder (not only *.html): a stray or misnamed file is an error, not something to skip. */
+	/** Every file in the folder except the index.php stub: a stray or misnamed file is an error, not something to skip. */
 	private static function files(): array {
 		$dir = self::content_dir() . '/articles';
-		return is_dir( $dir ) ? array_values( array_diff( scandir( $dir ) ?: array(), array( '.', '..' ) ) ) : array();
+		return is_dir( $dir ) ? array_values( array_diff( scandir( $dir ) ?: array(), array( '.', '..', 'index.php' ) ) ) : array();
 	}
 
 	public function test_the_folder_has_articles_and_every_file_parses(): void {
@@ -24,11 +24,11 @@ final class BlogContentLintTest extends TestCase {
 		$this->assertNotEmpty( $files, 'content/articles has no article files.' );
 		foreach ( $files as $name ) {
 			$path = self::content_dir() . '/articles/' . $name;
-			$this->assertMatchesRegularExpression( '/\A\d\d-[a-z0-9]+(?:-[a-z0-9]+)*\.html\z/', $name, "{$name}: not an NN-slug.html file." );
+			$this->assertMatchesRegularExpression( '/\A\d\d-[a-z0-9]+(?:-[a-z0-9]+)*\.php\z/', $name, "{$name}: not an NN-slug.php file." );
 			$this->assertContains( $path, ideatoapps_blog_article_files(), "{$name}: the installer would not see this file." );
 			$a = ideatoapps_blog_parse_article( $path );
 			$this->assertIsArray( $a, $name . ': ' . ( is_wp_error( $a ) ? $a->get_error_message() : '' ) );
-			$this->assertSame( $a['slug'] . '.html', $name, "{$name}: file name must match the slug." );
+			$this->assertSame( $a['slug'] . '.php', $name, "{$name}: file name must match the slug." );
 		}
 	}
 

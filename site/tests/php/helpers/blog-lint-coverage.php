@@ -1,7 +1,7 @@
 <?php
 /**
- * Reader-coverage lint over content/topics.json (Task 5b): every topic has a level and 1-3 audiences from the fixed lists, and the
- * 50 topics together meet the target mix. It reads topics.json, not the article files, so it holds before all articles exist.
+ * Reader-coverage lint over content/topics.php (Task 5b): every topic has a level and 1-3 audiences from the fixed lists, and the
+ * 50 topics together meet the target mix. It reads topics.php, not the article files, so it holds before all articles exist.
  * Used by BlogCoverageLintTest; not shipped in the plugin.
  */
 
@@ -35,7 +35,7 @@ function ita_coverage_categories(): array {
  * Counts per level, per audience and per category x level. Every one of the six categories gets a row, even with no topics;
  * a topic in any other category gets its own row after them.
  *
- * @param array<int, array<string, mixed>> $topics Topics as in topics.json.
+ * @param array<int, array<string, mixed>> $topics Topics as in topics.php.
  * @param string[]|null                    $cats   Category slugs; default the theme's six.
  * @return array{level: array<string,int>, audience: array<string,int>, category: array<string, array<string,int>>}
  */
@@ -67,7 +67,7 @@ function ita_coverage_counts( array $topics, ?array $cats = null ): array {
 /**
  * Problems with the topic list (empty = fine).
  *
- * @param array<int, array<string, mixed>> $topics Topics as in topics.json.
+ * @param array<int, array<string, mixed>> $topics Topics as in topics.php.
  * @param string[]|null                    $cats   Category slugs; default the theme's six (tests pass others).
  * @return string[]
  */
@@ -122,7 +122,7 @@ function ita_lint_coverage( array $topics, ?array $cats = null ): array {
 /**
  * The coverage matrix as Markdown tables, exactly as documented in site/docs/BLOG_STYLE_GUIDE.md (the test compares them).
  *
- * @param array<int, array<string, mixed>> $topics Topics as in topics.json.
+ * @param array<int, array<string, mixed>> $topics Topics as in topics.php.
  */
 function ita_coverage_markdown( array $topics ): string {
 	$c     = ita_coverage_counts( $topics );

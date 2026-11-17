@@ -19,7 +19,7 @@ final class BlogRenderLintTest extends TestCase {
 				continue;
 			}
 			foreach ( ita_lint_render( $a['body'] ) as $problem ) {
-				$all[] = basename( $path, '.html' ) . ': ' . $problem;
+				$all[] = basename( $path, '.php' ) . ': ' . $problem;
 			}
 		}
 		$this->assertSame( array(), $all, "\n- " . implode( "\n- ", $all ) );

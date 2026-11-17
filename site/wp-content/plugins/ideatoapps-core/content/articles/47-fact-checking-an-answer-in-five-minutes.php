@@ -1,0 +1,41 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"47-fact-checking-an-answer-in-five-minutes","title":"Fact-checking an answer in five minutes","category":"safety-and-judgment","excerpt":"A minute-by-minute routine for checking the one or two claims in a chatbot answer that you plan to act on or pass on.","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["beginners","students"],"check":["Asking the same chatbot again, even in a new chat, does not confirm a claim, because it can repeat the same mistake.","A source close to the fact, such as an organization's own website for its opening times, is usually more reliable for practical details than a forum post or a chatbot answer.","A chatbot's answer can be out of date because of its training cutoff, even when it sounds current.","An answer can be correct in each fact and still mislead by what it leaves out."]} -->
+<p>If you've ever stopped before forwarding a chatbot's answer to wonder whether it was right, five minutes is often enough to check it. Check only the one or two claims that matter, against one good source.</p>
+
+<h2>The routine, minute by minute</h2>
+<p>You need the answer, a timer, and a way to search or the book where the fact should be. Two examples run through the steps. One is a claim that the city museum is free on the first Sunday of each month. The other is a student's claim that the plant in their science project needs full sun.</p>
+<h3>Minute 1: pick the claim</h3>
+<p>Read the answer and mark the one or two claims you'll act on or repeat to someone. For the museum, that's the free Sunday. Everything else can wait. If nothing in the answer matters that much, you can stop here.</p>
+<h3>Minute 2: make it checkable</h3>
+<p>Rewrite the claim as one short sentence with the key name, number or date: "City museum: free entry, first Sunday of each month." Short sentences like this are easy to search for. If a detail looks oddly exact, see the warning signs in "Hallucinations and how to catch them".</p>
+<h3>Minutes 3 and 4: find one good source</h3>
+<p>Look for one source that isn't a chatbot and is close to the fact. For the museum, that's the museum's own website. For the plant, it's the science textbook, the seed packet or a care guide from a garden center. To judge a source you don't know, see "AI for research and checking sources".</p>
+<p>Asking the chatbot again doesn't count, even in a new chat. It can repeat the same mistake in the same confident tone.</p>
+<h3>Minute 5: decide and write it down</h3>
+<p>Write one word next to the claim: confirmed, different or not found. If the source says something different, use the source's version. If you found nothing, don't pass the claim on as fact. Say it's unconfirmed, or leave it out.</p>
+<p>Tick each step as you go:</p>
+[ita_checklist id="five-minute-fact-check"]
+[ita_item]Minute 1: I marked the one or two claims I'll act on or repeat.[/ita_item]
+[ita_item]Minute 2: I rewrote each one as a short sentence with the key name, number or date.[/ita_item]
+[ita_item]Minutes 3 and 4: I found one source that isn't a chatbot.[/ita_item]
+[ita_item]Minute 5: I wrote confirmed, different or not found.[/ita_item]
+[/ita_checklist]
+
+<h2>When five minutes isn't enough</h2>
+<p>Sometimes the first source says one thing and the second says another. Stop the timer when that happens. Disagreement means the claim needs more time, or a person who knows the subject.</p>
+<p>Some claims always deserve more than five minutes: anything about health, medicine, money, the law or safety. For those, go to an official source or ask a qualified person, such as a pharmacist, a doctor or a lawyer. For schoolwork, ask your teacher.</p>
+<p>Facts that change need care too. Opening times, fees and rules change, and a chatbot's answer can be out of date because of its [ita_term define="The date after which a model has no training data, so it doesn't know about later events unless the app adds newer text."]training cutoff[/ita_term]. Check the date on your source as well.</p>
+[ita_why title="Limits of a five-minute check"]
+<p>The routine checks single claims. An answer can be right in every fact and still mislead by what it leaves out. The free Sunday might need a booking in advance, and the answer might not say so.</p>
+<p>A quick source can also be wrong or out of date. That's why the routine asks for a source close to the fact, like the museum itself. A "not found" is still a useful result, because it stops you from passing on a guess.</p>
+[/ita_why]
+
+[ita_quiz]
+[ita_q q="A chatbot's answer has twelve facts and you have five minutes. What should you check?" answers="The one or two facts you'll act on or repeat|The first five facts in the answer|Every fact, quickly, with one search each" correct="1" why="Five minutes is enough to check one or two claims well, and those are the ones that matter."]
+[ita_q q="Where should you check that a museum is free on the first Sunday of each month?" answers="In a chatbot answer that has search turned on|On the museum's own website, or by calling it|In a travel forum post from a few years ago" correct="2" why="The museum is the source closest to the fact, and it's the one that changes the rule."]
+[ita_q q="After five minutes you can't find any source for a claim. Which note goes next to it?" answers="Not found, so don't pass it on as fact|Confirmed, since nothing said it was false|Different, since the chatbot may be wrong" correct="1" why="A claim you couldn't confirm shouldn't be passed on as a fact."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>Pick one chatbot answer from this week that you were going to act on or share. Start a timer, run the four steps above, and note the time when you reach minute 5.</p>
+<p>When you finish, write the result next to the claim with the name of your source, for example: "Confirmed, museum website." If the timer ran out before you found a source, start with that step the next time you check something.</p>

@@ -1,0 +1,54 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"17-fixing-a-bad-answer","title":"Fixing a bad answer","category":"prompting","excerpt":"Replying 'try again' gives a chatbot nothing to work with. Name the problem, say what to keep, and know when to open a new chat.","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["beginners","students"],"check":["When asked to rewrite without being told what to keep, a chatbot may also change the parts of an answer that were fine.","Within one chat, the chatbot can usually see its earlier answer, so a mistake in it can be repeated in later answers.","Some chat apps let you edit an earlier message and send it again, which replaces the answer that followed it.","Telling a chatbot that a fact is wrong does not make its replacement fact correct; facts need checking in a trusted source.","Restating a request in different words fixes a misunderstanding more often than repeating the same words."]} -->
+<p>When an answer is wrong, it's natural to type "no, try again". That gives the chatbot almost nothing to work with. It knows you're unhappy, but not why, so the next answer is a new guess.</p>
+<p>A better reply names the problem, points to where it is, and says what to keep.</p>
+
+<h2>Name the problem first</h2>
+<p>Before you reply, decide what kind of problem it is. Many bad answers fall into one of five kinds, and each has its own fix.</p>
+<ul>
+<li><strong>Too generic.</strong> It could be for anyone. Add the detail that makes it yours: who it's for, your deadline, what you've tried.</li>
+<li><strong>Wrong shape or length.</strong> Say the shape you want: "five bullet points", "one paragraph", "a table with two columns".</li>
+<li><strong>Misunderstood the task.</strong> Say what it did and what you wanted, in different words from your first [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term]. Repeating the same words often gets the same mistake.</li>
+<li><strong>Wrong tone.</strong> Show it. Paste one line that sounds right, or quote the line that sounds wrong.</li>
+<li><strong>Wrong fact.</strong> Don't argue about it in the chat. Check it in your notes or another trusted source, then give the chatbot the correct fact.</li>
+</ul>
+<p>A quick fix in the same chat usually beats starting from nothing (see "AI myths that waste your time").</p>
+
+<h2>Keep, change, add</h2>
+<p>Say you asked for study notes on chapter 4 of your biology textbook, for a university exam. Two of the three points are good. The second one is about chapter 3. A three-line reply fixes it:</p>
+[ita_prompt title="Keep and change"]
+Keep: [what worked, for example: the first and third points, and the short sentences]
+Change: [what's wrong, for example: the second point is about chapter 3 instead of chapter 4]
+Add: [anything missing, for example: one example from the reading]
+Rewrite with only these changes.
+[/ita_prompt]
+<p>Don't skip the Keep line. If you only list problems, the chatbot may rewrite everything, and the good parts can get worse.</p>
+<p>You don't need all three lines every time. Often "Keep" and "Change" are enough. Skip "Add" unless something is really missing.</p>
+[ita_why title="Why does 'try again' often bring back the same mistake?"]
+<p>In one chat, the chatbot can usually see everything so far, including its own bad answer. That answer is now part of what it reads, so the next answer can borrow from it, mistakes included.</p>
+<p>"Try again" doesn't add anything new to read. Your original request is still unclear in the same way. A short note about what to keep and what to change gives the chatbot new information to work from.</p>
+[/ita_why]
+
+<h2>When to stop fixing and start fresh</h2>
+<p>Sometimes a chat keeps repeating itself. You correct something, and two answers later it's back. Signs it's time for a new chat:</p>
+<ul>
+<li>The same mistake returns after two clear corrections.</li>
+<li>The answers keep getting longer and further from what you asked.</li>
+<li>You changed your mind about the task halfway through.</li>
+</ul>
+<p>Open the new chat with your Keep and Change lines, plus one line naming the mistake to avoid.</p>
+<p>Some apps also let you edit an earlier message and send it again. That replaces the answer that came after it, so the bad answer is no longer part of what the chatbot reads. It's useful when you notice the problem came from your own first message.</p>
+
+[ita_quiz]
+[ita_q q="The chatbot's study notes are correct, but much too long. What is the most useful reply?" answers="Rewrite it, but make it clearer|Keep the same points, but cut it to about half the length|Turn it into a numbered list" correct="2" why="It names the problem and says what to keep, so the chatbot knows exactly what to change."]
+[ita_q q="You notice the chatbot misread your first message because of how you worded it. In an app that allows it, what can you do?" answers="Edit that first message and send it again|Delete the chat history in the app's settings and ask again|Reply 'try again' so it reads your first message once more" correct="1" why="Editing and resending replaces the answer that followed, so the misread answer is no longer part of what the chatbot reads."]
+[ita_q q="You've corrected the same mistake twice, and it keeps coming back. What should you try?" answers="Write the correction again in capital letters|Keep correcting it in the same chat until it stops|Open a new chat with a short summary of what you need" correct="3" why="A fresh chat removes the bad answers the chatbot keeps borrowing from."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>A quick version, in three steps.</p>
+<ol>
+<li>Open a chat where an answer wasn't quite right, or ask for a summary of one page of your lecture notes.</li>
+<li>Write one word that names the problem: generic, shape, misunderstood, tone or fact. Then complete the Keep and Change lines.</li>
+<li>Send it. Check the parts you asked to change, then skim the rest to make sure nothing else changed.</li>
+</ol>

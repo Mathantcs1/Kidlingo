@@ -5,7 +5,7 @@
  */
 final class ReaderTeaserTest extends WPTestCase {
 	private function rendered( string $slug ): string {
-		$a = ideatoapps_blog_parse_article( IDEATOAPPS_CORE_DIR . "content/articles/{$slug}.html" );
+		$a = ideatoapps_blog_parse_article( IDEATOAPPS_CORE_DIR . "content/articles/{$slug}.php" );
 		$this->assertIsArray( $a );
 		return (string) apply_filters( 'the_content', $a['body'] );
 	}

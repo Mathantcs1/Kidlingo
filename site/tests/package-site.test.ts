@@ -43,9 +43,10 @@ describe('the real packages', () => {
     expect(names(core).some((n) => n.startsWith('ideatoapps-core/includes/'))).toBe(true);
   });
 
-  it('contains no .env, dotfiles, node_modules, tests, docs, .git or screenshots', () => {
+  it('contains no .env, dotfiles (except the content deny file), node_modules, tests, docs, .git or screenshots', () => {
     for (const n of [...names(theme), ...names(core)]) {
       const parts = n.split('/');
+      if (n === 'ideatoapps-core/content/.htaccess') continue;
       expect(parts.some((p) => p.startsWith('.')), n).toBe(false);
       expect(parts.some((p) => ['node_modules', 'tests', 'test', 'docs', 'screenshots', 'vendor', '.git'].includes(p)), n).toBe(false);
       expect(n.includes('..') || n.startsWith('/'), n).toBe(false);
@@ -58,6 +59,23 @@ describe('the real packages', () => {
         const body = execFileSync('unzip', ['-p', zip, n], { encoding: 'latin1', maxBuffer: 64 * 1024 * 1024 });
         for (const re of SECRET_PATTERNS as RegExp[]) expect(re.test(body), `${n} ${re}`).toBe(false);
       }
+    }
+  });
+
+  it('ships starter content only as guarded PHP files, plus the deny file and index.php stubs', () => {
+    const guard = "<?php defined( 'ABSPATH' ) || exit; ?>\n";
+    const articles = names(core).filter((n) => n.startsWith('ideatoapps-core/content/articles/'));
+    expect(articles.length).toBe(51); // 50 articles + the index.php stub
+    for (const n of articles) {
+      expect(n, n).toMatch(/\.php$/);
+      if (!n.endsWith('/index.php')) expect(read(core, n).startsWith(guard), n).toBe(true);
+    }
+    expect(names(core).some((n) => /\.(?:html?|json)$/.test(n) && n.startsWith('ideatoapps-core/content/')), 'no .html or .json under content/').toBe(false);
+    expect(read(core, 'ideatoapps-core/content/topics.php').startsWith(guard)).toBe(true);
+    const deny = read(core, 'ideatoapps-core/content/.htaccess');
+    for (const line of ['Options -Indexes', 'Require all denied', 'Deny from all']) expect(deny).toContain(line);
+    for (const dir of ['content', 'content/articles', 'content/figures', 'content/heroes']) {
+      expect(read(core, `ideatoapps-core/${dir}/index.php`)).toBe('<?php // Silence is golden.\n');
     }
   });
 
@@ -97,10 +115,18 @@ describe('fixture trees (packaging rules and the secret scan)', () => {
       'theme/assets/keep.css': 'a{}',
       'plugin/.git/config': 'x',
       'plugin/includes/keep.php': '<?php',
+      'plugin/includes/.htaccess': 'x',
+      'theme/content/.htaccess': 'x',
     });
     const r = await buildPackages(f);
     expect(names(r.themeZip).sort()).toEqual(['ideatoapps/assets/keep.css', 'ideatoapps/style.css']);
     expect(names(r.coreZip).sort()).toEqual(['ideatoapps-core/fixture.php', 'ideatoapps-core/includes/keep.php']);
+  });
+
+  it('lets exactly the plugin content/.htaccess through (all other dotfiles stay out)', async () => {
+    const f = fixture('deny', { 'plugin/content/.htaccess': 'Require all denied', 'plugin/content/.env': 'X=1', 'plugin/content/sub/.htaccess': 'x' });
+    const r = await buildPackages(f);
+    expect(names(r.coreZip).sort()).toEqual(['ideatoapps-core/content/.htaccess', 'ideatoapps-core/fixture.php']);
   });
 
   it('does not scan excluded files (a key in docs/ or tests/ does not fail the build)', async () => {

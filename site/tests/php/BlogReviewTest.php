@@ -9,7 +9,7 @@ final class BlogReviewTest extends WPTestCase {
 		mkdir( $this->dir );
 		add_filter( 'ideatoapps_blog_articles_dir', array( $this, 'dir' ) );
 		foreach ( array( '01-what-ai-is-and-isnt' => 'ai-basics', '02-ml-vs-deep-learning-vs-generative-ai' => 'ai-basics' ) as $slug => $cat ) {
-			file_put_contents( $this->dir . "/$slug.html", '<!--ita ' . wp_json_encode( array( 'slug' => $slug, 'title' => BlogInstallerTest::topic_title( $slug ), 'category' => $cat, 'excerpt' => 'Ex.', 'reviewed' => '2026-01-02', 'level' => BlogInstallerTest::topic( $slug )['level'], 'audiences' => BlogInstallerTest::topic( $slug )['audiences'], 'check' => array( 'Claim <b>A</b>', 'Claim B', 'Claim C' ) ) ) . " -->\n<p>Body $slug</p>" );
+			file_put_contents( $this->dir . "/$slug.php", IDEATOAPPS_CONTENT_GUARD . "\n<!--ita " . wp_json_encode( array( 'slug' => $slug, 'title' => BlogInstallerTest::topic_title( $slug ), 'category' => $cat, 'excerpt' => 'Ex.', 'reviewed' => '2026-01-02', 'level' => BlogInstallerTest::topic( $slug )['level'], 'audiences' => BlogInstallerTest::topic( $slug )['audiences'], 'check' => array( 'Claim <b>A</b>', 'Claim B', 'Claim C' ) ) ) . " -->\n<p>Body $slug</p>" );
 		}
 		$this->admin = self::make_user( 'administrator' );
 		wp_set_current_user( $this->admin );
@@ -230,6 +230,18 @@ final class BlogReviewTest extends WPTestCase {
 		$this->sign( $id );
 		wp_update_post( array( 'ID' => $id, 'post_content' => 'changed' ) );
 		$this->assertSame( '', apply_filters( 'ideatoapps_post_byline_html', '', $id ) );
+	}
+
+	public function test_last_reviewed_needs_a_valid_sign_off_not_only_the_status(): void {
+		$id = $this->starter();
+		$this->sign( $id );
+		update_post_meta( $id, 'ita_reviewed_on', '2026-03-05' );
+		$this->assertSame( '2026-03-05', apply_filters( 'ideatoapps_last_reviewed', null, $id ) );
+		global $wpdb;
+		$wpdb->update( $wpdb->posts, array( 'post_content' => 'changed behind the hooks' ), array( 'ID' => $id ) ); // e.g. a search-replace plugin.
+		clean_post_cache( $id );
+		$this->assertSame( 'human_reviewed', ideatoapps_review_status( $id ), 'status unchanged: no hook ran' );
+		$this->assertNull( apply_filters( 'ideatoapps_last_reviewed', null, $id ) );
 	}
 
 	public function test_box_lists_claims_checklist_and_never_prefills_the_name(): void {

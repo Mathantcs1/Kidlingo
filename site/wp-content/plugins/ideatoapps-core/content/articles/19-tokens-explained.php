@@ -1,0 +1,57 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"19-tokens-explained","title":"Tokens explained","category":"llms","excerpt":"Chatbots read and write text in chunks called tokens. They explain letter-counting mistakes, answers that stop early, and why some languages fill limits faster.","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["beginners","builders"],"check":["Before a language model reads text, a tokenizer splits it into tokens and turns each token into a number; common short words are often a single token, while longer or rarer words are often split into several.","Tokenizers learn their chunks from large amounts of text, keeping frequent pieces whole; single letters would make texts much longer, and a word-only system could only mark unseen words as unknown.","Because the model works with tokens rather than single letters, tasks such as counting letters in a word can go wrong.","The same meaning can take more tokens in some languages and writing systems than in English, so it reaches length limits sooner.","Different models can split the same text into different tokens, so a token count from one model's tokenizer may not match another's.","Model APIs usually report how many input and output tokens a request used."]} -->
+<p>Why can a chatbot write a whole essay and still miscount the letters in a word? Because it never sees single letters the way you do. It reads and writes text in chunks called tokens.</p>
+
+<h2>Text in chunks</h2>
+<p>Before a language model reads anything, a small program called a [ita_term define="The program that splits text into tokens and turns each token into a number before a model reads it."]tokenizer[/ita_term] splits the text into pieces. Each piece is a [ita_term define="A small piece of text, often a whole short word or part of a longer one, that a language model reads and writes."]token[/ita_term]. Each token then becomes a number, and the model works with those numbers.</p>
+<p>Common short words are often one token each. Longer or rarer words are split into several. Spaces and punctuation are part of tokens too.</p>
+[ita_figure name="token-splitting" alt="The sentence Learning AI is fun, with a period, is split into six chunks: Learn, ing, AI, is, fun and the period." caption="Learn and ing are two chunks, so the letters inside them are not separate. Example only."]
+<p>Look at "Learning" in the picture. In this example split, the model gets two chunks, "Learn" and "ing". Real tokenizers may split it differently, but the letters inside each chunk are never separate. To know which letters a chunk holds, the model has to rely on what it learned in training.</p>
+<p>(The picture leaves spaces out to keep it simple; in many tokenizers the space before a word is part of that word's token.)</p>
+
+<h2>Four things tokens explain</h2>
+<h3>1. Spelling and letter puzzles</h3>
+<p>Ask how many times the letter "e" appears in "bookkeeper", and a chatbot can get it wrong. The letters are hidden inside chunks. You can make this easier with a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] that asks for the letters to be written out first:</p>
+[ita_prompt title="Spell it out first"]
+Write the word [word] one letter at a time, with a space between letters.
+Number each letter.
+Then count how many times the letter [letter] appears, and show your count.
+[/ita_prompt]
+<p>With spaces between them, each letter usually becomes its own token, so the count no longer depends on what a chunk holds. Spacing the letters also helps with other word puzzles, like reversing a word.</p>
+<h3>2. Answers that stop early</h3>
+<p>Apps and models measure length in tokens, not words. An answer has a limit on how many tokens it can use. When it reaches that limit, the answer can stop in the middle of a sentence. Asking it to continue is the usual fix.</p>
+<h3>3. Other languages and writing systems</h3>
+<p>Tokenizers are built from large amounts of text, and English is very common in that text. The same meaning written in some other languages or writing systems can take more tokens. That text reaches length limits sooner.</p>
+<h3>4. Long numbers and rare names</h3>
+<p>A long number such as 4,817,206 may be split into uneven chunks. That's one reason doing arithmetic "in its head" can go wrong. For sums that matter, use a calculator, or an app that can run a calculation for you.</p>
+
+<h2>For builders: counting tokens</h2>
+<p>If you send requests to a model from your own code, tokens are your unit of measure. Every request has input tokens (everything you send) and output tokens (the reply). Each model has limits on both, and services that charge by usage usually count tokens.</p>
+<ul>
+<li>Most model APIs report the tokens a request used in the response. Log those numbers from the start.</li>
+<li>Different models split text differently. A count from one model's tokenizer may not match another's.</li>
+<li>Formatting uses tokens too. Long JSON keys, indentation and repeated instructions all add to the count.</li>
+<li>Count before you send, if your provider offers a counting function, so a request doesn't fail for being too long.</li>
+</ul>
+[ita_why title="Why not use single letters, or whole words?"]
+<p>Single letters would make every text very long. The model would need many more steps to read and write the same sentence, and less text would fit in at once.</p>
+<p>Whole words have the opposite problem. There are too many of them, and new words, names and typos appear all the time. A word-only system could only mark a word it had never seen as unknown.</p>
+<p>Chunks sit between the two. Tokenizers learn their chunks from large amounts of text, keeping frequent pieces whole and splitting rare ones. Any new word can still be built from smaller chunks.</p>
+[/ita_why]
+
+[ita_quiz]
+[ita_q q="Why can a chatbot miscount the letters in a word?" answers="Its training stopped before it learned to count|It reads chunks, and the letters inside a chunk aren't separate|It skips short words to save time" correct="2" why="The model works with tokens, so the single letters inside a chunk are not directly visible to it."]
+[ita_q q="An answer stops in the middle of a sentence. What is one likely reason?" answers="It ran out of things to say about the topic|It reached its limit on output tokens|The app lost its connection halfway through" correct="2" why="Answers have a token limit, and an answer can stop as soon as it reaches it."]
+[ita_q q="A builder counts tokens with one model's tokenizer. Why might the count be wrong for another model?" answers="Different models can split the same text differently|Some models count words while others count letters|Only some models count punctuation and spaces" correct="1" why="Each model family can use its own tokenizer, so the same text can give different counts."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>Copy this card into a note, then fill it in line by line.</p>
+<ul>
+<li>Word and letter: ________ (for example: Mississippi, the letter s)</li>
+<li>Chatbot's count, asked plainly: ________</li>
+<li>Count with the "Spell it out first" prompt, in a new chat: ________</li>
+<li>Your own count: ________</li>
+<li>Builders: tokens for one sentence ________ and for its translation ________, from your provider's token counter</li>
+</ul>
+<p>Start with the first line: choose a long word with a repeated letter and write it on the card.</p>

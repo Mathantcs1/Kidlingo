@@ -1,7 +1,7 @@
 // Builds the two zips that are uploaded to WordPress (Appearance > Themes > Add New, Plugins > Add New):
 //   node site/scripts/package-site.mjs [--out dist-site]
 //   -> ideatoapps-theme.zip (top folder ideatoapps/) and ideatoapps-core.zip (top folder ideatoapps-core/)
-// Development files never ship: dotfiles (.env, .git, .DS_Store), node_modules, vendor, tests, docs, screenshots, logs.
+// Development files never ship: dotfiles (.env, .git, .DS_Store; only the plugin's content/.htaccess deny file is kept), node_modules, vendor, tests, docs, screenshots, logs.
 // Every file that WOULD ship is scanned for key-like strings first; any hit fails the build and no zip is written.
 import { ZipArchive } from 'archiver';
 import { createWriteStream, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync } from 'node:fs';
@@ -26,13 +26,17 @@ export const SECRET_PATTERNS = SECRET_RULES.map(([, re]) => re);
 const SKIP_DIRS = new Set(['node_modules', 'vendor', 'tests', 'test', 'docs', 'screenshots']);
 const SKIP_EXT = /\.(?:log|bak|orig|swp|map|zip)$|~$/i;
 
-/** Every file under `dir` that belongs in a package, as relative posix paths, sorted. Symlinks are refused. */
-function collect(dir) {
+/** The only dotfile that ships: the plugin's deny file in front of the starter content (exact relative path). */
+const PLUGIN_DOTFILES = new Set(['content/.htaccess']);
+
+/** Every file under `dir` that belongs in a package, as relative posix paths, sorted. Symlinks are refused. `keepDot` lists the
+ *  exact relative paths of dotfiles that ship; every other dotfile is dropped. */
+function collect(dir, keepDot = new Set()) {
   const found = [];
   const visit = (abs) => {
     for (const e of readdirSync(abs, { withFileTypes: true })) {
       const p = join(abs, e.name);
-      if (e.name.startsWith('.')) continue; // .env, .git, .DS_Store, .htaccess of the dev tree, ...
+      if (e.name.startsWith('.') && !(e.isFile() && keepDot.has(relative(dir, p).split(sep).join('/')))) continue; // .env, .git, .DS_Store, ...
       if (e.isSymbolicLink() || lstatSync(p).isSymbolicLink()) throw new Error(`symbolic link not allowed in a package: ${relative(dir, p)}`);
       if (e.isDirectory()) {
         if (!SKIP_DIRS.has(e.name.toLowerCase())) visit(p);
@@ -85,7 +89,7 @@ export async function buildPackages({
   const parts = [
     ['ideatoapps-theme.zip', themeDir, 'ideatoapps'],
     ['ideatoapps-core.zip', pluginDir, 'ideatoapps-core'],
-  ].map(([zip, dir, top]) => ({ zip, dir, top, files: collect(dir) }));
+  ].map(([zip, dir, top]) => ({ zip, dir, top, files: collect(dir, top === 'ideatoapps-core' ? PLUGIN_DOTFILES : new Set()) }));
 
   if (!parts[0].files.includes('style.css')) throw new Error('theme has no style.css (WordPress needs its header)');
   if (!parts[1].files.some((f) => !f.includes('/') && f.endsWith('.php'))) throw new Error('plugin has no main .php file');

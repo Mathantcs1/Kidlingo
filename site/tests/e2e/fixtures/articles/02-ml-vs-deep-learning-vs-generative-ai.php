@@ -1,0 +1,3 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug": "02-ml-vs-deep-learning-vs-generative-ai", "title": "ML vs deep learning vs generative AI", "category": "ai-basics", "excerpt": "Fixture article for the e2e suite.", "reviewed": "2026-01-02", "gated": false, "level": "intermediate", "audiences": ["students", "builders"], "check": ["Fixture claim one", "Fixture claim two", "Fixture claim three"]} -->
+<p>Fixture body for 02-ml-vs-deep-learning-vs-generative-ai.</p>

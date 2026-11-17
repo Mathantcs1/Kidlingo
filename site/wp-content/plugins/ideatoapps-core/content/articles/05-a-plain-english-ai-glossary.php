@@ -1,0 +1,59 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"05-a-plain-english-ai-glossary","title":"A plain-English AI glossary","category":"ai-basics","excerpt":"Short, plain meanings for the AI words you keep running into, from tokens and context windows to hallucinations and agents.","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["beginners","students"],"check":["Language models read and write text in small pieces called tokens, which can be whole words, parts of words or punctuation, and different systems split text differently.","A context window is the amount of text a model can take into account at once; depending on the app, the oldest messages in a long chat can be dropped or summarized.","A model's training cutoff is the point after which its training data stops, and it knows nothing newer unless the app adds it, for example from a web search.","Temperature is a setting that controls how much randomness goes into picking each next piece of text.","An open-weight model is one whose trained numbers are published so others can download and run it, and open-weight does not always mean free to use any way you like.","Fine-tuning means training an existing model further on a smaller, focused set of examples."]} -->
+<p>You don't need to learn every AI word to use AI well. A handful come up again and again, in app settings, news stories and help pages. Read the ones you need and skip the rest.</p>
+
+<h2>How AI is built</h2>
+<p><strong>AI (artificial intelligence)</strong>: a broad label for software that does tasks we used to think needed human judgment, like spotting spam or writing a paragraph. It covers many different systems.</p>
+<p><strong>Machine learning</strong>: a way of building software that learns patterns from examples instead of following only hand-written rules.</p>
+<p><strong>Model</strong>: the trained program at the heart of an AI system. You send it input, and it gives back a prediction or some new content.</p>
+<p><strong>Training data</strong>: the examples a model learned from before it was released. For a chatbot, that's mostly a huge amount of text.</p>
+<p><strong>Training cutoff</strong>: the point after which a model's training data stops. It knows nothing newer unless the app adds it, for example from a web search.</p>
+<p><strong>Parameters</strong>: the adjustable numbers inside a model. Training changes them, and together they hold what the model learned.</p>
+<p><strong>Neural network</strong> and <strong>deep learning</strong>: a neural network is a model made of many simple connected units. Deep learning means using networks with many layers.</p>
+<p><strong>Generative AI</strong>: AI that produces new content, such as text, pictures, audio or code.</p>
+<p><strong>Language model</strong>: a model trained on lots of text to predict the next piece of text. A very large one is often called an <strong>LLM</strong>, short for large language model.</p>
+<p><strong>Fine-tuning</strong>: training an existing model a bit more on a smaller set of examples, so it gets better at one kind of job.</p>
+<p><strong>Open-weight model</strong>: a model whose trained numbers are published, so others can download and run it. Open-weight doesn't always mean free to use any way you like; check the license. Many models aren't shared this way and are used only through an app or a service.</p>
+
+<h2>Words you'll meet in a chat</h2>
+<p><strong>Chatbot</strong>: an app you talk to by typing or speaking. Most new chatbots run on a language model.</p>
+<p><strong>[ita_term define="The message or instructions you type to an AI app to tell it what you want."]Prompt[/ita_term]</strong>: anything you send to ask for something. It can be a question, an instruction, or a piece of text to work on, plus any background you add.</p>
+<p><strong>Token</strong>: a small piece of text that a model reads and writes. It can be a short word, part of a longer word or a punctuation mark.</p>
+[ita_figure name="token-splitting" alt="The sentence Learning AI is fun is split into six pieces: Learn, ing, AI, is, fun and a period." caption="Example only: real tools split text in their own ways."]
+<p><strong>Context window</strong>: how much text a model can take into account at once, counted in tokens. Depending on the app, the oldest messages in a long chat can be dropped or summarized, so the model may lose track of them.</p>
+<p><strong>Memory</strong>: a feature in some apps that saves notes about you between chats and adds them to later chats. You can often see and delete these notes in the settings.</p>
+<p><strong>Temperature</strong>: a setting that controls how much randomness goes into each next piece of text. Lower means steadier, more predictable answers; higher means more variety. Most apps set it for you.</p>
+<p><strong>Multimodal</strong>: able to handle more than one kind of input or output, for example reading a photo and answering in text.</p>
+
+<h2>Mistakes, safety and doing things</h2>
+<p><strong>Hallucination</strong>: when a model states something false or made up as if it were true. It often sounds confident, so check facts that matter.</p>
+<p><strong>Bias</strong>: unfair patterns in a model's output, often learned from the human-written text it was trained on.</p>
+<p><strong>Guardrails</strong>: rules and checks built around a model to block harmful output or risky actions.</p>
+<p><strong>Tool</strong>: on this site, a capability the model can call, like searching the web, reading a file or adding a calendar entry. The chat product itself is called an app.</p>
+<p><strong>Agent</strong>: a program that uses a model to decide the next step, uses tools, looks at the result and repeats until a goal is met.</p>
+[ita_why title="Why do the same words mean different things in different places?"]
+<p>AI words change quickly, and many were borrowed from everyday speech. "Memory" in a chat app is a feature that saves notes. In computer hardware it means something else entirely. "Agent" is used for anything from a simple automated helper to a system that works through long tasks on its own.</p>
+<p>Some terms are also still argued about. "Hallucination" is popular, but some people dislike it because it makes a model sound like it has a mind. When a word matters, ask what the system actually does.</p>
+[/ita_why]
+
+[ita_prompt title="Explain a new AI word"]
+Explain the term [type the word] in two plain sentences for someone new to AI.
+Then give one everyday example.
+Then name one common misunderstanding about it.
+[/ita_prompt]
+
+[ita_quiz]
+[ita_q q="What is a token?" answers="A small piece of text a model reads|A password that lets you sign in to a chatbot app|A whole sentence the model stores in memory" correct="1" why="Models work with small pieces of text: short words, parts of words or punctuation."]
+[ita_q q="In a very long chat, the chatbot loses track of something you said at the start. Which term explains this?" answers="Temperature|Context window|Memory" correct="2" why="The context window is limited, so the oldest messages can be dropped or summarized."]
+[ita_q q="What does fine-tuning mean?" answers="Asking the same question twice to get a better answer|Turning the temperature setting up or down|Training an existing model more on a focused set of examples|Saving notes about you to add to later chats" correct="3" why="Fine-tuning is extra training on a smaller set of examples for one kind of job."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>Turn three entries into your own words.</p>
+<ol>
+<li>Pick three words above that you have seen before but couldn't have explained.</li>
+<li>Cover each entry and fill in this line on paper: "[word] means ___. For example, ___."</li>
+<li>Uncover the entry and correct your line where it differs.</li>
+<li>Paste the hardest of the three into the prompt above, and add its common misunderstanding to your line.</li>
+<li>Save your three lines in a note on your phone, under the heading "AI words".</li>
+</ol>

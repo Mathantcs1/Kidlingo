@@ -103,7 +103,7 @@ function ideatoapps_blog_install( ?string $only = null ): array {
 	}
 	try {
 		foreach ( ideatoapps_blog_article_files() as $path ) {
-			if ( null !== $only && basename( $path, '.html' ) !== $only ) {
+			if ( null !== $only && basename( $path, '.php' ) !== $only ) {
 				continue;
 			}
 			$article = ideatoapps_blog_parse_article( $path );
@@ -122,7 +122,7 @@ function ideatoapps_blog_install( ?string $only = null ): array {
  * @return string[]
  */
 function ideatoapps_blog_missing_slugs(): array {
-	$files = array_map( static fn( $p ) => basename( $p, '.html' ), ideatoapps_blog_article_files() );
+	$files = array_map( static fn( $p ) => basename( $p, '.php' ), ideatoapps_blog_article_files() );
 	$out   = array();
 	foreach ( ideatoapps_blog_installed_slugs() as $slug => $post_id ) {
 		// Deleted only when the recorded post is really gone (any status, trash included, counts as there) and no post carries the slug.
@@ -164,7 +164,7 @@ function ideatoapps_blog_install_status(): array {
 	$files = ideatoapps_blog_article_files();
 	$have  = 0;
 	foreach ( $files as $path ) {
-		$have += ideatoapps_blog_post_for_slug( basename( $path, '.html' ) ) > 0 ? 1 : 0;
+		$have += ideatoapps_blog_post_for_slug( basename( $path, '.php' ) ) > 0 ? 1 : 0;
 	}
 	return array( 'total' => count( $files ), 'installed' => $have );
 }

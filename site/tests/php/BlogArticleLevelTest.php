@@ -2,7 +2,7 @@
 require_once __DIR__ . '/WPTestCase.php';
 
 /**
- * Article header `level` and `audiences`: whitelisted, equal to the topic's values in topics.json, stored by the installer as the
+ * Article header `level` and `audiences`: whitelisted, equal to the topic's values in topics.php, stored by the installer as the
  * protected meta ita_level and ita_audiences.
  */
 final class BlogArticleLevelTest extends WPTestCase {
@@ -30,7 +30,7 @@ final class BlogArticleLevelTest extends WPTestCase {
 	}
 
 	private static function topic( string $slug ): array {
-		foreach ( json_decode( (string) file_get_contents( IDEATOAPPS_CORE_DIR . 'content/topics.json' ), true ) as $t ) {
+		foreach ( ideatoapps_blog_topics_data() as $t ) {
 			if ( $t['slug'] === $slug ) {
 				return $t;
 			}
@@ -46,8 +46,8 @@ final class BlogArticleLevelTest extends WPTestCase {
 			$over
 		);
 		$h    = array_filter( $h, static fn( $v ) => null !== $v );
-		$path = $this->dir . '/' . $slug . '.html';
-		file_put_contents( $path, '<!--ita ' . wp_json_encode( $h ) . " -->\n<p>Body.</p>\n" );
+		$path = $this->dir . '/' . $slug . '.php';
+		file_put_contents( $path, IDEATOAPPS_CONTENT_GUARD . "\n<!--ita " . wp_json_encode( $h ) . " -->\n<p>Body.</p>\n" );
 		return $path;
 	}
 
@@ -90,7 +90,7 @@ final class BlogArticleLevelTest extends WPTestCase {
 		$this->assertInstanceOf( WP_Error::class, $r );
 	}
 
-	/** Even when topics.json itself holds an unknown value, the header is refused: the whitelist is checked, not only equality. */
+	/** Even when topics.php itself holds an unknown value, the header is refused: the whitelist is checked, not only equality. */
 	public function test_unknown_values_are_refused_even_when_topics_json_has_them(): void {
 		foreach ( array( array( 'level' => 'expert' ), array( 'audiences' => array( 'robots' ) ), array( 'audiences' => array( 'beginners', 'students', 'creators', 'builders' ) ) ) as $bad ) {
 			$filter = static function ( array $topics ) use ( $bad ): array {

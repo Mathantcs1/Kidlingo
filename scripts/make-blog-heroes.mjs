@@ -7,7 +7,11 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const core = join(root, 'site/wp-content/plugins/ideatoapps-core');
-const topics = JSON.parse(readFileSync(join(core, 'content/topics.json'), 'utf8'));
+// content/topics.php: the PHP guard line (so the file is not readable by URL), then the JSON topic list.
+const GUARD = "<?php defined( 'ABSPATH' ) || exit; ?>\n";
+const topicsRaw = readFileSync(join(core, 'content/topics.php'), 'utf8');
+if (!topicsRaw.startsWith(GUARD)) throw new Error('content/topics.php must start with the guard line');
+const topics = JSON.parse(topicsRaw.slice(GUARD.length));
 const out = join(core, 'content/heroes');
 
 function hash(str) { // FNV-1a, 32 bit

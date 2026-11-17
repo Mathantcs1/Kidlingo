@@ -1,0 +1,51 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"04-how-a-chatbot-knows-things","title":"How a chatbot \"knows\" things","category":"ai-basics","excerpt":"A chatbot's knowledge is patterns from training, plus whatever is in the chat right now. Where its answers come from, and where they can go wrong.","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["beginners","students"],"check":["A language model learns by reading a very large amount of text and is then trained further on example conversations and on people's ratings of its answers.","A model does not usually keep a copy of every page it was trained on; what it learns is stored as patterns in a very large set of numbers.","Facts that appear often in training text tend to come out more reliably than rare facts, such as small details about a little-known person or place.","After its training cutoff, a chatbot can only use newer information if the app adds it to the conversation, for example from a web search, a file the user shares, or a memory feature that adds saved notes to later chats.","Text that appeared many times in training, like a famous poem, can sometimes come back almost word for word.","A chatbot's confident tone is not a sign that its answer is correct."]} -->
+<p>A chatbot "knows" things in two ways. Some knowledge is built in, as patterns it learned from a huge amount of text. The rest is whatever sits in the conversation right now. That means your messages, plus anything the app adds, such as search results or a shared file.</p>
+<p>Neither of these works like a person remembering something.</p>
+
+<h2>Where does the built-in knowledge come from?</h2>
+<p>A chatbot runs on a [ita_term define="A program trained on a very large amount of text to predict which piece of text is likely to come next."]language model[/ita_term]. Before anyone chats with it, the model goes through [ita_term define="The long process in which a model is shown huge numbers of examples and adjusts itself to predict them better."]training[/ita_term], which usually happens in stages.</p>
+[ita_figure name="training-stages" alt="Three stages from top to bottom: read lots of text to learn patterns, practice on example conversations, learn from people's ratings." caption="A simplified view of how a language model is trained."]
+<p>First, the model reads an enormous amount of text and learns to guess the next piece of text (a token). Doing this well means picking up grammar, common facts and the usual ways ideas connect. Next, it practices on example conversations, so it learns to follow instructions. Last, people rate its answers, and it's tuned toward the ones they prefer.</p>
+<p>All of this happens before release. The point where the training data stops is called the [ita_term define="The date after which a model's training data stops, so it has no built-in knowledge of later events."]training cutoff[/ita_term]. Anything newer, like this morning's weather or a rule that changed last month, isn't part of what the model learned.</p>
+
+<h2>Does it keep a copy of everything it read?</h2>
+<p>Usually not. What the model keeps is a very large set of numbers, called [ita_term define="The adjustable numbers inside a model that change during training and decide how it turns input into output."]parameters[/ita_term]. Training adjusts these numbers so the model gets better at predicting text. Knowledge ends up spread across them as patterns. It's a bit like knowing how a word is spelled without remembering the page where you first saw it.</p>
+<p>This has a practical consequence. Facts that appeared again and again in the training text, like the capital of a country, tend to come out right. Rare facts are much shakier, like the opening hours of a small shop or a detail about a little-known person. The model may blend them with similar facts and produce something that sounds right but isn't.</p>
+[ita_why title="Can a model ever repeat its training text word for word?"]
+<p>Sometimes, yes. Text that appeared many times in training, like a famous poem or a well-known saying, can come back almost exactly. Models can also occasionally reproduce rarer passages.</p>
+<p>But that's an exception. For most questions, the model isn't looking anything up. It writes a fresh answer from patterns, picking each piece with a little randomness. This is why the wording can change each time and small details can drift.</p>
+[/ita_why]
+
+<h2>So how does it answer questions about today?</h2>
+<p>By getting new text added to the chat. Many apps can search the web and pass the results to the model along with your question. Some let you upload a document. Some have a memory feature that saves notes about you and adds them to later chats.</p>
+<p>In each case, the model reads the text it was given, then writes an answer based on it. It can still misread a source, mix two sources up, or use its older patterns instead. If an answer cites a web page, open the page and check that it really says what the answer claims.</p>
+<p>If nothing new was added, a question about recent events gets an answer built only from patterns learned before the training cutoff. The chatbot may say it doesn't know. It may also guess, and the guess can sound just as sure as a real fact.</p>
+
+<h2>How can I tell when it's guessing?</h2>
+<p>Often you can't tell from the tone. A chatbot writes in the same smooth, confident style whether it's right or wrong. That's why a wrong answer can be so convincing. Instead, look at the type of question:</p>
+<ul>
+<li><strong>Safer ground:</strong> widely known ideas, explanations of common topics, rewording your own text.</li>
+<li><strong>Shakier ground:</strong> exact numbers, dates, quotes, recent events, niche details, and anything about a specific person.</li>
+</ul>
+<p>A student checking a history date for homework is on shakier ground than one asking for an explanation of what caused a war. You can also ask the chatbot to name where each part of its answer came from. A [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] for that looks like this:</p>
+[ita_prompt title="Ask where each part comes from"]
+My question: [type your question]
+Answer it in a short paragraph.
+Then label each fact in your answer: search results in this chat, a file I shared, or only your training.
+[/ita_prompt]
+
+[ita_quiz]
+[ita_q q="Which training stage teaches a chatbot to follow instructions?" answers="Reading a huge amount of text|Practicing on example conversations|People rating its answers" correct="2" why="Practice on example conversations is the stage where the model learns to follow instructions."]
+[ita_q q="Which fact is a chatbot most likely to get wrong?" answers="The capital of a large country|What the word 'recipe' means|The opening hours of a small local shop" correct="3" why="Rare details appear little in training text, so the model is more likely to blend or invent them."]
+[ita_q q="An app adds web search results to your chat. Which step is still yours?" answers="Open the cited page and check it|Nothing, since search results come from real websites|Ask the same question in a new chat to compare" correct="1" why="The model can misread or mix up sources, so check the page itself."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>Test the two kinds of knowledge with facts you can check.</p>
+<ol>
+<li>Pick one well-known fact, for example the year a famous war ended. Then pick one small local fact, such as the name of a park or the year your local library opened. Write down the true answers first.</li>
+<li>Ask a chatbot about each one, in separate chats, using the prompt above.</li>
+<li>Mark each answer right or wrong, and note which source it said it used.</li>
+<li>If your app has web search, turn it on and ask the local question again. Write down whether the answer and the named source change.</li>
+</ol>

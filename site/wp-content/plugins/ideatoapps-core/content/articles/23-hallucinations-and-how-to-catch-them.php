@@ -1,0 +1,59 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"23-hallucinations-and-how-to-catch-them","title":"Hallucinations and how to catch them","category":"llms","excerpt":"Why chatbots sometimes make up books, quotes and numbers, the signs that give a made-up detail away, and an exercise for a class.","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["beginners","students","teachers-and-tutors"],"check":["Chatbots can produce made-up book titles, authors, quotes and page numbers that look real, especially on less common topics, because the format of a reference is very common in training text.","Researchers have pointed out that models have often been scored better for giving an answer than for saying they don't know, which is likely part of the reason for made-up answers; developers are working on this.","A question that assumes something false, such as a prize that was never won, can lead a chatbot to explain the false thing as if it were true.","If an app cannot open web links, a chatbot may still write a summary of a linked page from the words in the link and the rest of the chat.","Asking for an exact number of sources can push a chatbot to fill that number even if it knows of fewer."]} -->
+<p>A reading list from a chatbot can look complete and still include books that don't exist. The title, the author and the page number can all look real. When a model states something false or made up as if it were true, it's called a [ita_term define="When an AI model states something false or made up as if it were true."]hallucination[/ita_term].</p>
+
+<h2>Why a chatbot makes things up</h2>
+<p>A chatbot writes what is likely to come next. It doesn't look anything up unless the app adds search results or a file to the chat.</p>
+<p>On a well-known topic, the likely text is often true. On a rare topic, the model still writes likely-looking text. It produces a typical-sounding name, a plausible title or a round number. Nothing reliably makes it stop and say "I don't have this fact."</p>
+<p>Training is likely part of the reason too. Researchers point out that models have often been scored better for giving an answer than for saying "I don't know." Developers are working on this, but for now a chatbot often answers when it should say "I don't know."</p>
+<p>Search helps, but it doesn't remove the problem. A chatbot can misread a page, mix two pages together, or add details that no page contains.</p>
+
+<h2>Signs that a detail may be made up</h2>
+<p>If you've ever copied a neat quote from a chatbot into an essay or a handout, this list is for you. You can't spot every hallucination by reading, but some signs make a check more urgent:</p>
+[ita_checklist id="made-up-detail-signs"]
+[ita_item]The answer gives very exact details on a niche topic: page numbers, dates, percentages or word-for-word quotes.[/ita_item]
+[ita_item]It lists sources you didn't give it, and you can't see search results in the chat.[/ita_item]
+[ita_item]A real author is linked to a book or article you have never heard of.[/ita_item]
+[ita_item]Names, numbers or dates change when you ask the same question in a new chat.[/ita_item]
+[ita_item]Your question assumed something, and the answer treats it as true.[/ita_item]
+[ita_item]It says it read a link or file that your app can't open.[/ita_item]
+[/ita_checklist]
+
+<p>The last sign is easy to miss. If an app can't open web links, the chatbot may still "summarize" a linked page. It builds the summary from the words in the link and the rest of the chat.</p>
+[ita_why title="What makes a fake reference look real"]
+<p>Training text contains a huge number of references. They all follow a few patterns: author, year, title, publisher or journal. A model learns these patterns very well.</p>
+<p>So when it doesn't know a real source, it can still write something in the right shape. It may use a real journal name, a common surname and a title made of the topic's usual words. Every piece looks right, but the whole thing may not exist.</p>
+[/ita_why]
+
+<h2>Questions that invite made-up answers</h2>
+<p>The way you word a [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term] can make a hallucination more likely. If you teach, you may already have seen a student cite a book that doesn't exist. You can use these questions on purpose to show students how it happens.</p>
+<ul>
+<li><strong>Questions with a false idea inside.</strong> Say your grandmother's community choir has never won a prize. Ask "Why did our choir win a national prize?" and a chatbot may explain the prize.</li>
+<li><strong>Requests for an exact count.</strong> "Give me five sources" can push it to fill all five, even if it knows of two.</li>
+<li><strong>Questions about small details.</strong> Exact words from a speech, or the page number of a quote, rarely appear often enough in training text for a model to get right.</li>
+</ul>
+<p>Ask open questions instead: "Are there any studies on this?" leaves room for "I don't know of any." When you do get names, titles and numbers back, you can turn them into a list to check one line at a time. Open a new chat, so the list is made without the earlier conversation, and paste this:</p>
+[ita_prompt title="Make a checking sheet"]
+Here is an answer from a chatbot:
+[paste the answer]
+List every name, title, number, date, quote and source in it, one per line.
+Next to each one, write the words I could search for to find it.
+After each line, leave a blank for me to write "found" or "not found".
+Do not tell me whether any of them are true.
+[/ita_prompt]
+
+[ita_quiz]
+[ita_q q="You ask for five sources on a niche topic. Why might some of them be made up?" answers="It tends to fill the number you asked for, even if it knows fewer|It copies sources from other people's chats|It searched the web and picked unreliable pages" correct="1" why="An exact count can push a chatbot to write more sources than it really knows."]
+[ita_q q="A community choir has never won a prize. Which question is most likely to get a made-up answer?" answers="What do community choirs usually do in a year?|Why did our choir win a national prize?|How can an older adult join a local choir?" correct="2" why="The question assumes something false, and a chatbot may explain it as if it were true."]
+[ita_q q="A chatbot says it read the web page you linked, but your app can't open links. What does that suggest?" answers="The page must be public, so it could read it|Its summary may be built from the link's words|It read a saved copy of the page from training" correct="2" why="Without access, it can only guess from the link and the chat, so the summary may be invented."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<p>This works well with a student, a class or your own child.</p>
+<ol>
+<li>Pick a topic your student knows well from class.</li>
+<li>Ask a chatbot for a short paragraph on it with three sources, including authors and years.</li>
+<li>Run the checking-sheet prompt above on that paragraph.</li>
+<li>Before you share it, try to find each line yourself and note which ones you could find.</li>
+<li>Give the student the paragraph and the blank sheet, and ask them to mark each line "found" or "not found".</li>
+</ol>

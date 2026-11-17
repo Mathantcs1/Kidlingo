@@ -4,13 +4,13 @@ use PHPUnit\Framework\TestCase;
 require_once __DIR__ . '/helpers/blog-lint-coverage.php';
 
 /**
- * Reader coverage over content/topics.json (levels, audiences, per-category mix) and the matrix documented in the style guide,
+ * Reader coverage over content/topics.php (levels, audiences, per-category mix) and the matrix documented in the style guide,
  * plus self-tests on deliberately skewed topic lists proving each rule can fail.
  */
 final class BlogCoverageLintTest extends TestCase {
 	/** @return array<int, array<string, mixed>> */
 	private static function topics(): array {
-		$t = json_decode( (string) file_get_contents( IDEATOAPPS_CORE_DIR . 'content/topics.json' ), true );
+		$t = ideatoapps_blog_topics_data();
 		return is_array( $t ) ? $t : array();
 	}
 

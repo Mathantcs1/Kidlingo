@@ -22,7 +22,7 @@ final class BlogLintSeriesTest extends TestCase {
 	}
 
 	private static function titles(): array {
-		$t = json_decode( (string) file_get_contents( IDEATOAPPS_CORE_DIR . 'content/topics.json' ), true );
+		$t = ideatoapps_blog_topics_data();
 		$t = isset( $t['topics'] ) ? $t['topics'] : $t;
 		return array_column( (array) $t, 'title', 'slug' );
 	}

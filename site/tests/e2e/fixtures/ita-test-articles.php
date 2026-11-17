@@ -1,6 +1,6 @@
 <?php
 /**
- * Test-only mu-plugin (never packaged): points the starter-article installer at tests/e2e/fixtures/articles, so specs can
+ * Test-only mu-plugin (never packaged): points the starter-article installer at tests/e2e/fixtures/articles (guarded NN-slug.php files, like the shipped ones), so specs can
  * create starter posts through the real "Install starter articles" button, and lets specs set a post's level and audiences.
  */
 add_filter( 'ideatoapps_blog_articles_dir', static fn() => WP_CONTENT_DIR . '/ita-test-articles' );

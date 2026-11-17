@@ -1,0 +1,57 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<!--ita {"slug":"38-notes-to-flashcards-and-quizzes","title":"Notes to flashcards and quizzes","category":"work-and-learning","excerpt":"Pasteable prompts that turn your own notes into flashcards or a class quiz, and how to check the result before you study from it.","reviewed":"2026-11-16","gated":false,"level":"beginner","audiences":["students","teachers-and-tutors"],"check":["Testing yourself and spacing reviews over several days are well-supported ways to remember material longer than rereading it.","Many flashcard apps can import cards written one per line with a separator between the front and the back; the separator they expect differs between apps.","A chatbot told to use only your notes can still add facts that aren't in them, so each card should be checked against the notes.","Schools often have rules about which apps teachers may use with class materials and student information."]} -->
+<p>With the right [ita_term define="The message or instructions you type to an AI app to tell it what you want."]prompt[/ita_term], a chatbot can turn a page of your notes into flashcards or a short quiz in a few seconds. Tell it to use only your notes, so the cards match what your class covered. Then check every card before you study from it.</p>
+
+<h2>Flashcards from your own notes</h2>
+[ita_why title="What makes a flashcard work"]
+<p>Testing yourself, and spreading your reviews over several days, are well-studied ways to remember material for longer than rereading. A flashcard works when you try to recall the answer before you turn the card.</p>
+<p>Keep the front to one question and the back to a few words. Study a card until you get it right, then review it again after a day or two, and again after a longer gap.</p>
+[/ita_why]
+
+<p>This works for lecture notes, textbook summaries and vocabulary lists. Before you paste, remove names and anything about a student (the rest is in "What not to paste into an AI tool"). Teachers should also check which apps their school allows. Change the numbers in brackets to suit your notes:</p>
+[ita_prompt title="Cards from my notes only"]
+Make flashcards from my notes below. Use only facts that are in the notes.
+Write [15] cards. Each card tests one fact.
+Write each card on one line: the question, then a | sign, then the answer.
+Keep each answer under [12] words.
+Mix the card types: some definitions, some "why" questions, some examples.
+If my notes don't have enough for [15] good cards, make fewer.
+Notes:
+[paste your notes]
+[/ita_prompt]
+
+<p>Many flashcard apps can import one card per line, with a separator between front and back. Your app's import help says which separator it expects.</p>
+<p>You've probably studied from a card that turned out to be wrong at least once. Cross out any card that fails one of these checks:</p>
+<ul>
+<li><strong>Is the back in your notes?</strong> Even when told to use only your notes, a chatbot can add facts from elsewhere.</li>
+<li><strong>Does it test one thing?</strong> If the back has two facts, split it into two cards.</li>
+<li><strong>Do you have to remember the answer?</strong> "Mitosis makes two identical cells: true or false?" can be guessed from the wording. "What does mitosis produce?" can't.</li>
+</ul>
+
+<h2>A quiz for your class</h2>
+<p>Teachers and tutors can use the same idea for a quick class quiz. Use a handout you wrote, or one you're allowed to share. Set the grade and the numbers for your class:</p>
+[ita_prompt title="Quiz from my handout only"]
+Write a quiz for [grade 7] students from the handout below. Use only facts in the handout.
+Write [8] questions: [5] multiple choice and [3] short answer.
+For multiple choice, give four options. Make each wrong option a mistake students often make on this topic.
+Put all the answers in a key at the end, after the last question.
+Handout:
+[paste the handout]
+[/ita_prompt]
+
+<p>Before you print it, answer every question yourself without the key. Check the wording, the reading level and that each question has only one right answer. A chatbot's quiz can include a question with two defensible answers, or a "wrong" option that is actually right.</p>
+
+[ita_quiz]
+[ita_q q="Why tell the chatbot to use only facts in your notes?" answers="It can't use facts from anywhere else anyway|So the cards match what your class taught, and you can check them|Outside facts would make each card too long" correct="2" why="Your notes are what you'll be tested on, and they're what you can check each card against."]
+[ita_q q="A teacher wants a quiz from class notes that include a few comments about students. What should come out before pasting?" answers="The comments about students|The headings and page numbers|The learning goals at the top of the page" correct="1" why="Personal details about students don't belong in a chat; headings and goals can help the quiz."]
+[ita_q q="After your first study session, when should you review the new cards again?" answers="Right away, until you get every card right again|Only on the night before the test|After a day or two, then less often" correct="3" why="Spacing reviews over days usually helps you remember longer than one long session."]
+[/ita_quiz]
+
+<h2>Try it</h2>
+<ol>
+<li>Choose one page of your notes from this week, and remove names and anything personal.</li>
+<li>Paste it into the flashcard prompt above, and ask for ten cards.</li>
+<li>Cross out any card whose back isn't in your notes, and any card you can answer from the front's wording alone.</li>
+<li>Test yourself on the rest, and mark the ones you missed.</li>
+<li>Set a reminder for two days from now to review the marked cards again.</li>
+</ol>
