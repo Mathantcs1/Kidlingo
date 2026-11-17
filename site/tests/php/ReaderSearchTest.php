@@ -57,6 +57,19 @@ final class ReaderSearchTest extends ReaderTestCase {
 		$this->assertSame( $all, preg_match_all( '/\w+\.ID NOT IN \(' . $id . '\) AND \w+\.post_content LIKE/', $sql ), 'every body match, in the WHERE and in the relevance ORDER BY, is fenced off for gated ids' );
 	}
 
+	public function test_the_fenced_ids_are_looked_up_once_per_search_query(): void {
+		$this->gated_post();
+		$count = 0;
+		$spy   = static function ( $sql ) use ( &$count ) {
+			$count += false !== strpos( (string) $sql, "meta_key = 'ita_gated'" ) ? 1 : 0;
+			return $sql;
+		};
+		add_filter( 'query', $spy );
+		new WP_Query( array( 's' => 'week scroll', 'post_type' => 'post' ) );
+		remove_filter( 'query', $spy );
+		$this->assertSame( 1, $count, 'posts_search and posts_search_orderby share one lookup' );
+	}
+
 	public function test_readers_and_editors_find_it_and_open_posts_are_unaffected(): void {
 		$id   = $this->gated_post();
 		$open = $this->gated_post( '14-reusable-prompt-templates', false );

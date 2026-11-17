@@ -23,17 +23,25 @@ function ideatoapps_blog_art_dir( string $kind ): string {
 
 /**
  * Names of the SVG files in a folder (lowercase letters, digits and dashes only). This list is the allowlist: a name that is not
- * in it never reaches the file system.
+ * in it never reaches the file system. The plugin's own folders are scanned once per request.
  *
  * @param string $dir Folder.
  * @return string[]
  */
 function ideatoapps_blog_art_names( string $dir ): array {
+	static $memo = array();
+	$shipped = 0 === strpos( $dir, IDEATOAPPS_CORE_DIR . 'content/' ); // the plugin's own folders do not change during a request.
+	if ( $shipped && isset( $memo[ $dir ] ) ) {
+		return $memo[ $dir ];
+	}
 	$names = array();
 	foreach ( ( '' !== $dir && is_dir( $dir ) ? scandir( $dir ) : false ) ?: array() as $file ) {
 		if ( 1 === preg_match( '/\A([a-z0-9-]+)\.svg\z/', $file, $m ) ) {
 			$names[] = $m[1];
 		}
+	}
+	if ( $shipped ) {
+		$memo[ $dir ] = $names;
 	}
 	return $names;
 }

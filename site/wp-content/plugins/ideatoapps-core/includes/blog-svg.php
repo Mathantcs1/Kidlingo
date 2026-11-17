@@ -132,7 +132,16 @@ function ideatoapps_blog_svg_has_size( DOMElement $el ): bool {
  * @return bool
  */
 function ideatoapps_blog_svg_is_safe( string $svg ): bool {
-	$doc  = ideatoapps_blog_svg_parse( $svg );
+	return ideatoapps_blog_svg_doc_is_safe( ideatoapps_blog_svg_parse( $svg ) );
+}
+
+/**
+ * The same check on an already parsed document (so a clean parses once).
+ *
+ * @param DOMDocument|null $doc Parsed SVG.
+ * @return bool
+ */
+function ideatoapps_blog_svg_doc_is_safe( ?DOMDocument $doc ): bool {
 	$root = $doc ? $doc->documentElement : null;
 	if ( ! $root instanceof DOMElement || 'svg' !== $root->localName || ideatoapps_blog_svg_has_size( $root ) ) {
 		return false;
@@ -181,9 +190,6 @@ function ideatoapps_blog_svg_emit( DOMNode $node, array $extra = array() ): stri
  * @return string
  */
 function ideatoapps_blog_svg_clean( string $svg, array $root_attrs = array() ): string {
-	if ( ! ideatoapps_blog_svg_is_safe( $svg ) ) {
-		return '';
-	}
 	$doc = ideatoapps_blog_svg_parse( $svg );
-	return $doc ? ideatoapps_blog_svg_emit( $doc->documentElement, $root_attrs ) : '';
+	return $doc && ideatoapps_blog_svg_doc_is_safe( $doc ) ? ideatoapps_blog_svg_emit( $doc->documentElement, $root_attrs ) : '';
 }

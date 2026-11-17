@@ -17,11 +17,27 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Ids of gated posts the current visitor may not search by body ([] when nothing is fenced).
+ * Ids of gated posts the current visitor may not search by body ([] when nothing is fenced). Pass the WP_Query to compute it once
+ * per query (posts_search and posts_search_orderby both need it).
  *
+ * @param object|null $query The query being built (memo key), or null for no memo.
  * @return int[]
  */
-function ideatoapps_reader_search_fenced_ids(): array {
+function ideatoapps_reader_search_fenced_ids( $query = null ): array {
+	static $memo = null;
+	$memo = $memo ?? new WeakMap();
+	if ( is_object( $query ) && isset( $memo[ $query ] ) ) {
+		return $memo[ $query ];
+	}
+	$ids = ideatoapps_reader_search_fenced_ids_now();
+	if ( is_object( $query ) ) {
+		$memo[ $query ] = $ids;
+	}
+	return $ids;
+}
+
+/** The fenced ids, always freshly computed (one query). @return int[] */
+function ideatoapps_reader_search_fenced_ids_now(): array {
 	if ( ! ideatoapps_newsletter_enabled() || ideatoapps_reader_current_subscriber() > 0 ) {
 		return array();
 	}
@@ -62,7 +78,7 @@ function ideatoapps_reader_fence_content_sql( string $sql, array $ids, string $f
 add_filter(
 	'posts_search',
 	static function ( $search, $query ) {
-		return is_string( $search ) && '' !== $search ? ideatoapps_reader_fence_content_sql( $search, ideatoapps_reader_search_fenced_ids() ) : $search;
+		return is_string( $search ) && '' !== $search ? ideatoapps_reader_fence_content_sql( $search, ideatoapps_reader_search_fenced_ids( $query ) ) : $search;
 	},
 	99,
 	2
@@ -70,8 +86,9 @@ add_filter(
 
 add_filter(
 	'posts_search_orderby',
-	static function ( $orderby ) {
-		return is_string( $orderby ) && '' !== $orderby ? ideatoapps_reader_fence_content_sql( $orderby, ideatoapps_reader_search_fenced_ids(), '' ) : $orderby;
+	static function ( $orderby, $query ) {
+		return is_string( $orderby ) && '' !== $orderby ? ideatoapps_reader_fence_content_sql( $orderby, ideatoapps_reader_search_fenced_ids( $query ), '' ) : $orderby;
 	},
-	99
+	99,
+	2
 );

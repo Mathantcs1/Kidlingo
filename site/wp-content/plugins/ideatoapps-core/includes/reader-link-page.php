@@ -122,6 +122,9 @@ function ideatoapps_reader_template_redirect(): void {
 	$res    = ideatoapps_reader_page_response( $method, wp_unslash( $_GET ), wp_unslash( $_POST ) ); // phpcs:ignore WordPress.Security.NonceVerification -- see the file comment.
 	status_header( $res['status'] );
 	nocache_headers();
+	if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+		define( 'DONOTCACHEPAGE', true ); // page caches (LiteSpeed, WP Super Cache, ...) skip this page, as they do gated posts.
+	}
 	foreach ( ideatoapps_newsletter_page_headers() as $name => $value ) {
 		header( $name . ': ' . $value );
 	}
