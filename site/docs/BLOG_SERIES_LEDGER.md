@@ -256,91 +256,91 @@ window basics (10); training cutoff (04); ask-me-questions-first (10); flag-what
 - Try it: 4 steps, on paper (the batch's only "on paper"); ends turning the remaining items into memory-note fields.
 
 ## 31 Planning and loops (advanced)
-- Opener: short example (made-up trace of a coding agent repeating one search); no thesis line. Layout: mostly paragraphs, no bold-lead lists.
-- Lessons (owns plan-first vs step-by-step vs hybrid, plan as data, stop reasons; shares agent loop and limits with 27): rewrite later steps after a surprise; step cap in the planning prompt; plan stored in code with id/status/note, updates checked against the tool log, restart from the first unfinished step; stop reasons goal met, budget, no progress, blocked, canceled, enforced in code. No figure (agent-loop stays with 27).
-- Why: "How a loop can notice it's stuck" (tool name + arguments + result hash; failure and rewrite counts; polling exception). Cross-ref: none by title.
-- Quiz stems: a file the plan depends on doesn't exist; most reliable stop condition; "done" with no test command in the log. Key 2-3-1.
-- Prompt patterns: "Plan with status and a stop reason" (stored plan in, one JSON update out; allowed values listed; stop NONE/GOAL_MET/BLOCKED).
+- Opener: short example (made-up trace of a coding agent repeating one search); no thesis line, no warmth line. Layout: mostly paragraphs, no bold-lead lists; box mid-article, Why at the end of the stop-conditions section.
+- Lessons (owns plan-first vs step-by-step vs hybrid, plan as data, "a step is done only when the log shows it", stop reasons; shares agent loop and limits with 27): rewrite later steps after a surprise; step cap in the planning prompt; plan stored in code, updates checked against the tool log; budget/no-progress/canceled stops come from code; restart from the first unfinished step after checking steps left in "doing".
+- Why: "How a loop can notice it's stuck" (tool name + arguments + hash of the meaningful part of the result; failure and rewrite counts; polling exception). Cross-ref: none by title.
+- Quiz stems: a file the plan depends on doesn't exist; most reliable stop condition; "done" with no test command in the log. Key 3-3-2.
+- Prompt patterns: "Plan with status and a stop reason" (label in title; stored plan in, one JSON update out; stop NONE/GOAL_MET/BLOCKED).
 - Example domains: coding agent reproducing a bug report (builder).
-- Try it: 4 steps, always-failing tool in a test copy; ends confirming the log ends with "no progress".
+- Try it: "a short work session"; 4 steps, cap check first, always-failing tool in a test copy; ends confirming the log ends with "no progress".
 
 ## 32 Your first simple agent, no code needed (beginner, gated)
-- Opener: reader's question answered in the hook (five answers on one page); no thesis line. Layout: Step 1/2/3 walkthrough with a before/after goal.
-- Lessons (owns the paper agent design): goal with "done"; inputs (only what it needs); tools marked reads/changes; approval points in one sentence (others see it, costs money, hard to undo; 35 owns approval); two-part stop rule (finished; give up and ask). Defines agent and tool.
-- Why: "What the page has to do with real apps" (no-code builders use other names for the same parts). Cross-ref: none by title.
+- Opener: reader's question answered in the hook (five answers as questions); no thesis line. Layout: Step 1/2/3 walkthrough with a before/after goal; box then Why.
+- Lessons (owns the paper agent design): goal with "done"; inputs only (connected email often opens the whole inbox: check, use a folder or filter); tools marked reads/changes; approval points in one sentence with a pointer to 35; hiding comments changes what others see, so a first agent lists suspected spam; everything that changes something waits for you in the first runs; two-part stop rule.
+- Why: "What the page has to do with real apps". Cross-ref: Guardrails and human approval.
 - Quiz stems: which goal is clearest; what a stop rule tells an agent; why leave income out of the inputs. Key 2-3-3.
 - Prompt patterns: "Where would it have to guess?" (paste the five-part plan; list guess points by part; no rewrite).
 - Example domains: weekly cooking-video comment roundup and a caption/title agent from a video script (creator); school emails to a list of forms and dates (parent/family).
-- Try it: fill-in page (blank lines, no numbered steps), on paper (batch D's only "on paper"), no app; ends circling tools that change what others see and checking they are on the approval line.
+- Try it: fill-in page (blank lines, no numbered list), on paper, no app; ends checking each circled tool is on the "Waits for my yes" line.
 
 ## 33 MCP and connectors (advanced)
-- Opener: direct answer + one-line thesis (thesis 1 of 3 in batch D). Layout: Q&A (h3 questions under "Common questions").
-- Lessons (owns MCP/connectors): host, client, server; tools, resources, prompt templates; discovery returns ordinary tool definitions (round trip refers to 29); local vs remote servers; spec details change (hedged); server habits (few tools, read-only first, narrow scopes, stable names); before connecting: who wrote it, descriptions can carry instructions (one clause; 13/27 own injection), untrusted input + private data + outbound sending in one agent, re-review after updates.
-- Why: "Local and remote servers carry different risks" (account permissions and containers vs access tokens and scopes). Cross-ref: Tools and function calling.
-- Quiz stems: what MCP standardizes; what a second app needs to use the same server; local vs remote server difference. Key 3-1-1.
-- Prompt patterns: "Review a server's tool list" (CAPS line format NAME | READS or CHANGES | ... | STEERING TEXT, or NONE; approval list).
+- Opener: direct answer (with an "If you've connected one service to two AI apps" line mid-paragraph) + one-line thesis. Layout: Q&A (h3 questions); Why inside the Q&A section, before the box; "Writing a server" in paragraphs.
+- Lessons (owns MCP/connectors): host, client, server; tools, resources, prompt templates; discovery returns ordinary tool definitions (round trip refers to 29); every definition and result uses context; local vs remote; spec details change (hedged); before connecting: who wrote it, descriptions can carry instructions and one server's text can affect another's tools, untrusted input + private data + outbound sending, remote servers can change without an update on your side.
+- Why: "Local and remote servers carry different risks". Cross-ref: Tools and function calling.
+- Quiz stems: what MCP standardizes; what a second app needs to use the same server (standard + connection type); local vs remote. Key 3-1-1.
+- Prompt patterns: "Review a server's tool list" (four parts separated by |, NONE when no steering text; approval list); the "read it yourself" warning comes before the box.
 - Example domains: support-ticket connector (builder).
 - Try it: ranking, 4 steps; ends restricting the top-ranked connector and running one normal task.
 
 ## 34 When an agent goes wrong (intermediate)
-- Opener: "When an agent does something wrong, the first urge..." (common reaction); no thesis line. Layout: symptom table, then a timeline ("The first hour": first minutes / within the hour / before anyone runs it again).
-- Lessons (owns incident response for agents): symptom / likely cause / first check table (false "done", wrong record, more than asked, old info, hidden instruction, stopped halfway); pause, list changes, undo, keep evidence, name the cause; fixes matched to causes. HTML table with caption and scoped headers. Consistent with 27: hidden instructions have no complete fix.
-- Why: "How an agent can report success that didn't happen" (likely text vs tool log). Cross-ref: What is an AI agent ("stresses limited tools and approvals").
-- Quiz stems: summary says it texted, log shows nothing; wrong delivery slot, which step before all others; two customers named J. Smith, which fix. Key 2-1-2.
-- Prompt patterns: "Incident summary from a log" (fixed headings, NOT IN LOG, no guessing causes; names removed). Box ends its section.
+- Opener: "When an agent does something wrong, the first reaction..." (two short sentences); Why box directly after the hook. Layout: Why first, symptom table, then a timeline ("The first hour").
+- Lessons (owns incident response): second runs add changes; symptom / cause / first check table (check the system itself too); pause, save the log now, list changes, undo (customer may have acted), privacy contact and reporting rules, name the cause; fixes matched to causes (false "done" refers to 31's rule in one clause). Hidden instructions: no complete fix (27).
+- Why: "Why a second run can make things worse". Cross-ref: What is an AI agent.
+- Quiz stems: which record shows why it acted; why save the log early; two customers named J. Smith. Key 1-1-2.
+- Prompt patterns: "Incident summary from a log" (fixed headings, NOT IN LOG; names removed). Box ends its section.
 - Example domains: delivery company dispatch office (employee).
-- Try it: 5 steps, done with a coworker, no app (tabletop talk); ends agreeing who can pause the agent and where.
+- Try it: conversation with a coworker (prose, no list, no app); ends agreeing who can pause the agent and where. Its questions ("how would we notice, who would notice first") are open, with no single answer.
 
 ## 35 Guardrails and human approval (intermediate)
-- Opener: direct answer; no thesis line.
-- Lessons (owns human approval for hard-to-undo actions, guardrails in code vs instructions, approval groups, approval request design): run / run and report / ask first / never; four deciding questions; approval fatigue; run the exact approved action, no answer = no, a changed action needs new approval; review the approval log. Figure guardrail-approval-flow.
-- Why: "What approval can't catch". Cross-ref: none by title.
-- Quiz stems: what an approval request for a group message shows; coordinators approve without reading; reminder rewritten after approval. Key 1-3-3.
-- Prompt patterns: "Approval request format" (Action / Exact content / Who is affected / Can it be undone / Reason in CAPS; wait for "approve").
+- Opener: direct answer; no thesis line. Why placed before the box (end of "What needs a person").
+- Lessons (owns human approval and approval-request design; code beats instructions shared with 13/31): rules in code vs instructions; run / run and report / ask first / never; four deciding questions; approval fatigue; code fills the request from the real tool call; exact approved action only, no answer = no; read the approval log every few weeks. Figure guardrail-approval-flow (caption notes the never group).
+- Why: "What approval can't catch" (ends on the food bank's capped list). Cross-ref: none by title.
+- Quiz stems: what an approval request for a group message shows; fifty mostly small, undoable requests unread; reminder rewritten after approval. Key 1-3-3.
+- Prompt patterns: "Approval request format" (five labeled lines described in words; reply APPROVE).
 - Example domains: community food bank volunteer coordinator (community).
 - Try it: sort into four groups, 4 steps; ends asking whoever configured the agent to remove a "never" tool.
 
 ## 36 Evaluating an agent (advanced, gated)
-- Opener: scenario ("Say you change one line..."), batch D scenario 1 of 2; no thesis line.
-- Lessons (owns agent evaluation): test set mix (common, edge, pass to a person, tool failure, hostile input); success and must-never lines; sandbox with mock tools; grade outcome and path; graders in order (code, people with a rubric, model); repeated runs and pass rates; rerun after every change; record steps, time, tokens; add real failures. Figure eval-loop.
-- Why: "When a model grades a model" (length/confidence bias, swayed by instructions, per-criterion evidence). Cross-ref: none by title.
-- Quiz stems: passes once then fails twice; why grade the path; before relying on a model grader. Key 2-1-1.
-- Prompt patterns: "Rubric grader with quoted evidence" (PASS/FAIL per criterion, quoted line or NONE, JSON). Box ends its section.
+- Opener: scenario ("Say you change one line..."), the batch's only "Say" lead-in; no thesis line. Why placed before the box.
+- Lessons (owns agent evaluation): test set mix; success and must-never lines; about twelve tasks; sandbox with mock tools; grade outcome and path; code checks first, people with a rubric as the reference, a model grader for volume once it agrees on a sample; code verifies quoted evidence; repeated runs and pass rates; rerun after every change including provider model updates; record steps, time, tokens. Figure eval-loop (relabeled: tasks, several times, grade outcome and path).
+- Why: "When a model grades a model". Cross-ref: none by title.
+- Quiz stems: passes once then fails twice; why grade the path; what makes a model grader safe to rely on. Key 2-1-2.
+- Prompt patterns: "Rubric grader with quoted evidence" (judgment criteria only, PASS/FAIL, NONE, JSON). Box ends its section.
 - Example domains: home-care visit rescheduling agent (care work, builder side).
-- Try it: 5 steps, ten tasks run three times; ends rerunning after the next change and comparing task by task.
+- Try it: "a work session, not five minutes"; 5 steps; ends rerunning the circled tasks after the next change and writing down which ones changed.
 
 ## 37 AI as a study partner (beginner)
-- Opener: short example (two students, same chemistry question) + one-line thesis (thesis 2 of 3). Layout: mostly paragraphs, no bold-lead lists.
-- Lessons (owns hints-not-answers and explain-back): hint ladder; check final answers in class materials; explain-back in prose; trust class notes over a disagreeing chatbot; school rules for graded work; keep personal details out.
-- Why: "Explaining and remembering" (recall vs rereading, hedged). Cross-ref: none by title.
+- Opener: short example (two made-up students, same chemistry question); no thesis line.
+- Lessons (owns hints-not-answers and explain-back): hint ladder; check answers in class materials; explain-back in prose; check textbook or class materials when feedback disagrees; school rules for graded work; app age rules; privacy as one pointer to 45.
+- Why: "Explaining and remembering". Cross-ref: What not to paste into an AI tool.
 - Quiz stems: learning to solve a problem type yourself; graded essay when AI is allowed for practice; chatbot disagrees with the textbook. Key 3-1-3.
-- Prompt patterns: "Hints, one at a time" (no answer, one hint, smaller hint on the first wrong step, SHOW ME). Box ends its section.
+- Prompt patterns: "Hints, one at a time" (SHOW ME). Box ends its section.
 - Example domains: high school chemistry; university statistics (median vs mean), the batch's only university student.
 - Try it: 3-step quick version; ends checking the questioned part in class notes.
 
 ## 38 Notes to flashcards and quizzes (beginner)
-- Opener: direct answer ("With the right prompt..."); no thesis line.
-- Lessons (owns flashcards from notes): remove names, grades, student details before pasting; school app rules for teachers; card checks (in notes, one fact, needs recall); one-card-per-line import (hedged); teacher quiz with the key at the end, answer every question yourself first.
-- Why: "What makes a flashcard work" (self-testing and spacing). Cross-ref: none by title.
-- Quiz stems: why use only facts in your notes; what to remove from a handout; when to review new cards. Key 2-1-3.
-- Prompt patterns: "Cards from my notes only" (FRONT | BACK, one fact, fewer if notes are thin); variant "Quiz from my handout only" (wrong options from common mistakes, key after the last question).
+- Opener: direct answer ("With the right prompt..."); no thesis, no warmth line. Layout: Why at the top of the first section, before both boxes; no separate privacy section.
+- Lessons (owns flashcards from notes): one privacy sentence pointing to 45 plus school app rules; card checks (in notes, one fact, needs recall); one-card-per-line import (hedged); teacher quiz with the key at the end, answer every question yourself first.
+- Why: "What makes a flashcard work" (self-testing and spacing). Cross-ref: What not to paste into an AI tool.
+- Quiz stems: why use only facts in your notes; what to remove from class notes with comments about students; when to review after the first session. Key 2-1-3.
+- Prompt patterns: "Cards from my notes only" (question | answer per line, fewer if notes are thin); variant "Quiz from my handout only".
 - Example domains: biology notes (mitosis); grade 7 class handout (teacher).
 - Try it: 5 steps; ends setting a reminder for two days later.
 
 ## 39 Lesson plans with AI (intermediate)
-- Opener: scenario ("It's Sunday evening..."), batch D scenario 2 of 2; no thesis line. Layout: worked before/after (bare request, then the rebuilt request).
-- Lessons (owns lesson planning): school/district rules first; class described without students (needs, no names); fixed conditions then a timed plan; judgment checks (timing, accuracy, your students, materials and safety, curriculum links); three-version differentiation; adult class at a community center.
-- Why: "Standard codes and curriculum references" (codes that look official may be wrong). Cross-ref: none by title.
-- Quiz stems: which class detail is safe to include; draft lists a standard code; five activities in 45 minutes. Key 1-2-1.
-- Prompt patterns: "Fixed conditions, then a timed plan" (labeled conditions, times must add up, check for understanding, two confusion points). Box ends its section.
+- Opener: second-person moment ("It's Sunday evening, and you need..."); no thesis line. Layout: worked before/after (bare request, then the conditions to add); no prompt box (checklist instead); Why in the judgment section.
+- Lessons (owns lesson planning): school/district rules first; needs instead of names, no test scores or health plans, small-class caution; conditions checklist including timings that add up and an end check; judgment checks; three-version differentiation; adult class at a community center.
+- Why: "Standard codes and curriculum references". Cross-ref: none by title.
+- Quiz stems: which class detail is safe to include; draft lists a standard code; five activities, your class needs longer for each. Key 1-2-2.
+- Prompt patterns: none (checklist "lesson-plan-request": lines to put at the top of the request).
 - Example domains: grade 5 equivalent fractions (teacher); older adults learning video calls at a community center (older adult/community).
 - Try it: 5 steps, done with a colleague; ends rewriting the circled part before teaching.
 
 ## 40 AI for research and checking sources (intermediate)
-- Opener: "Checking that a source exists is only the first check" + one-line thesis (thesis 3 of 3). Layout: myth/fact (three beliefs as h3 quotes), no bold-lead lists.
-- Lessons (owns finding/reading sources, primary vs secondary): real-source failures (doesn't support, wrong source, mixed details); search links are where checking starts; news story vs study; plan the search with a chatbot instead of asking for titles; checks table (exists, says what's claimed, who and why, when, original or report); copy the supporting sentence. HTML table with caption and scoped headers. Does not reteach 23's causes or checking sheet.
-- Why: "Primary and secondary sources". Cross-ref: Hallucinations and how to catch them ("covers how to spot them").
-- Quiz stems: right author and title but wrong year; news article about a study; why ask for search phrases instead of sources. Key 2-3-2.
-- Prompt patterns: "Research map" (no titles; search phrases, source kinds, questions to ask, points of disagreement). Box ends its section.
+- Opener: "Checking that a source exists is only the first check" + one-line thesis. Layout: myth/fact (three beliefs as h3 quotes), Why in the first half, no prompt box (research map as a plain list; source checks as a checklist), no bold-lead lists.
+- Lessons (owns finding/reading sources, primary vs secondary): real-source failures; search links are where checking starts; news story vs study; class rules on AI for research first; research map instead of titles; checks (exists, says what's claimed, who and why, date with correction or retraction, original or report); quote or reword with a citation. Does not reteach 23's causes or checking sheet.
+- Why: "Primary and secondary sources" (fields draw the line differently). Cross-ref: Hallucinations and how to catch them.
+- Quiz stems: right author and title but wrong year; news article about a study; why ask for search phrases instead of sources. Key 3-3-2.
+- Prompt patterns: research map described in prose (no titles; phrases, source kinds, questions, disagreements); checklist "source-checks-before-citing".
 - Example domains: street trees and summer heat in cities (student research); class source check (teacher).
-- Try it: 4 steps; ends copying the exact supporting sentence with page or section.
+- Try it: single task in prose (no list); ends copying the supporting sentence with the page or section.
