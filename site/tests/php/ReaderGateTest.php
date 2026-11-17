@@ -76,7 +76,7 @@ final class ReaderGateTest extends ReaderTestCase {
 		$this->assertNoLateText( (string) ob_get_clean(), 'the embed page' );
 		$provider = wp_sitemaps_get_server()->registry->get_provider( 'posts' );
 		$this->assertNoLateText( (string) wp_json_encode( $provider->get_url_list( 1, 'post' ) ), 'the sitemap' );
-		$this->go_to( home_url( '/?s=chatbot' ) );
+		$this->go_to( home_url( '/?s=first+week' ) ); // a title match (body words no longer find a gated post: ReaderSearchTest).
 		$this->assertTrue( is_search() );
 		ob_start();
 		ideatoapps_part( 'post-list', array( 'posts' => $GLOBALS['wp_query']->posts ) ); // what index.php prints for search results.

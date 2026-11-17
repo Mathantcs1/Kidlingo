@@ -69,15 +69,15 @@ function ideatoapps_reader_rendering( ?bool $set = null ): bool {
  */
 function ideatoapps_reader_teaser_for_post( int $post_id ): string {
 	$post = get_post( $post_id );
-	if ( ! $post instanceof WP_Post ) {
-		return '';
+	if ( ! $post instanceof WP_Post || post_password_required( $post ) ) {
+		return ''; // a password post shows its password form, never a teaser of its body.
 	}
 	$saved = $GLOBALS['post'] ?? null;
 	$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- restored below.
 	setup_postdata( $post );
 	ideatoapps_reader_rendering( true );
 	try {
-		$html = (string) apply_filters( 'the_content', $post->post_content );
+		$html = (string) apply_filters( 'the_content', str_replace( '<!--nextpage-->', '', $post->post_content ) ); // all pages, joined.
 	} finally {
 		ideatoapps_reader_rendering( false );
 		$GLOBALS['post'] = $saved; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
@@ -110,7 +110,11 @@ function ideatoapps_reader_filter_content( $content ) {
 	if ( ideatoapps_reader_rendering() || ! $post instanceof WP_Post || ! ideatoapps_reader_is_locked( $post->ID ) ) {
 		return $content;
 	}
-	return ideatoapps_reader_teaser( (string) $content );
+	if ( post_password_required( $post ) ) {
+		return $content; // core already replaced the body with the password form.
+	}
+	// Always the start of the WHOLE post: $content is only the current page of a post with page breaks (<!--nextpage-->).
+	return ideatoapps_reader_teaser_for_post( $post->ID );
 }
 add_filter( 'the_content', 'ideatoapps_reader_filter_content', 1000 );
 
@@ -158,6 +162,30 @@ function ideatoapps_reader_send_headers(): void {
 	header( 'Vary: ' . $headers['Vary'], false );
 }
 add_action( 'template_redirect', 'ideatoapps_reader_send_headers' );
+
+/**
+ * Where to send a visitor who asks for page 2+ of a locked post: its permalink ('' when nothing to do).
+ */
+function ideatoapps_reader_page_redirect(): string {
+	$id = is_singular( 'post' ) ? get_queried_object_id() : 0;
+	if ( ! $id || (int) get_query_var( 'page' ) < 2 || ! ideatoapps_reader_is_locked( $id ) ) {
+		return '';
+	}
+	return (string) get_permalink( $id );
+}
+
+/**
+ * template_redirect: page 2+ of a locked post goes to page 1 (the teaser), never cached.
+ */
+function ideatoapps_reader_redirect_pages(): void {
+	$to = ideatoapps_reader_page_redirect();
+	if ( '' !== $to ) {
+		nocache_headers();
+		wp_safe_redirect( $to, 302 );
+		exit;
+	}
+}
+add_action( 'template_redirect', 'ideatoapps_reader_redirect_pages', 2 );
 
 // The gate card and the reading-link form need the theme's sign-up script on a locked post.
 add_filter( 'ideatoapps_has_json_form', static fn( $has ) => $has || ( is_singular( 'post' ) && ideatoapps_reader_is_locked( get_queried_object_id() ) ) );
