@@ -56,21 +56,6 @@ function ideatoapps_blog_uid( string $prefix ): string {
 }
 
 /**
- * Body of a shortcode as text with line breaks kept (wpautop has already turned them into <br> and <p>).
- *
- * @param mixed $content Raw body.
- * @return string Unescaped text.
- */
-function ideatoapps_blog_multiline( $content ): string {
-	$text = is_string( $content ) ? $content : '';
-	$text = (string) preg_replace( '#<br\s*/?>\s*#i', "\n", $text );
-	$text = (string) preg_replace( '#</p>\s*<p[^>]*>#i', "\n\n", $text );
-	$text = wp_strip_all_tags( wp_specialchars_decode( $text, ENT_QUOTES ) );
-	$text = str_replace( array( "\r\n", "\r", "\u{A0}" ), array( "\n", "\n", ' ' ), $text );
-	return trim( (string) preg_replace( "/\n{3,}/", "\n\n", $text ) );
-}
-
-/**
  * [ita_prompt title=""]text[/ita_prompt]: a prompt in a box; JavaScript adds the copy button.
  *
  * @param mixed  $atts    Attributes.
@@ -88,14 +73,6 @@ function ideatoapps_blog_prompt( $atts, $content = '' ): string {
 	return '<div class="ita-prompt" data-testid="ita-prompt" data-ita-prompt>'
 		. '<p class="ita-prompt__title">' . esc_html( $title ) . '</p>'
 		. '<pre class="ita-prompt__text">' . esc_html( $text ) . '</pre></div>';
-}
-
-/**
- * Content of an enclosing shortcode written on its own lines arrives from wpautop + shortcode_unautop as "</p>...<p>": drop the stray
- * leading </p> and line break, the unclosed trailing <p> and line break, and empty paragraphs.
- */
-function ideatoapps_blog_unautop_edges( string $html ): string {
-	return (string) preg_replace( array( '#\A(?:\s|</p>|<br\s*/?>)+#i', '#(?:\s|<p>|<br\s*/?>)+\z#i', '#<p>\s*</p>#i' ), '', $html );
 }
 
 /**

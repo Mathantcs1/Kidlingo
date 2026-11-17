@@ -52,6 +52,7 @@ require_once IDEATOAPPS_CORE_DIR . 'includes/seo-text.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-head.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-robots.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/seo-headers.php';
+require_once IDEATOAPPS_CORE_DIR . 'includes/blog-shortcode-text.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-shortcodes.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-article-file.php';
 require_once IDEATOAPPS_CORE_DIR . 'includes/blog-review.php';
