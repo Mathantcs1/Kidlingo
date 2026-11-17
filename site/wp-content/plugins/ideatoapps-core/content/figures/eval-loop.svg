@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 290">
 <title>The evaluation loop</title>
-<desc>Test questions are run through the agent, the results are scored, one thing is changed, and the tests run again to see whether the score improved.</desc>
+<desc>Test tasks are run through the agent several times, each run is graded on its outcome and path, one thing is changed, and the tests run again to compare the results task by task.</desc>
 <g stroke-width="2">
 <rect x="10" y="10" width="150" height="52" rx="12" fill="var(--ita-fig-3)" stroke="var(--ita-fig-3-s)"/>
 <rect x="10" y="102" width="150" height="52" rx="12" fill="var(--ita-fig-1)" stroke="var(--ita-fig-1-s)"/>
@@ -17,11 +17,11 @@
 </g>
 <g font-size="18" text-anchor="middle" fill="var(--ita-fig-ink)">
 <text x="85" y="30" font-weight="600">Test set</text>
-<text x="85" y="52">questions</text>
+<text x="85" y="52">tasks</text>
 <text x="85" y="122" font-weight="600">Run agent</text>
-<text x="85" y="144">answers</text>
-<text x="275" y="122" font-weight="600">Score</text>
-<text x="275" y="144">grade them</text>
+<text x="85" y="144">several times</text>
+<text x="275" y="122" font-weight="600">Grade</text>
+<text x="275" y="144">outcome, path</text>
 <text x="275" y="212" font-weight="600">Change</text>
 <text x="275" y="234">one thing</text>
 <text x="98" y="208" text-anchor="start" fill="var(--ita-fig-muted)">run again</text>
