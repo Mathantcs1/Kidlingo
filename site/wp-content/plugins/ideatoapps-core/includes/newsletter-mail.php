@@ -51,7 +51,7 @@ function ideatoapps_newsletter_confirmation_body( $id ) {
  */
 function ideatoapps_newsletter_send_confirmation( $id ) {
 	$email = (string) get_post_meta( $id, 'email', true );
-	$sent  = is_email( $email ) && wp_mail( $email, __( 'Confirm your IdeaToApps newsletter sign-up', 'ideatoapps-core' ), ideatoapps_newsletter_confirmation_body( $id ), array( 'Content-Type: text/plain; charset=UTF-8' ) );
+	$sent  = is_email( $email ) && ideatoapps_with_sender( static fn() => wp_mail( $email, __( 'Confirm your IdeaToApps newsletter sign-up', 'ideatoapps-core' ), ideatoapps_newsletter_confirmation_body( $id ), array( 'Content-Type: text/plain; charset=UTF-8' ) ) );
 	if ( $sent ) {
 		update_post_meta( $id, 'confirmation_sent_at', time() );
 		delete_option( 'ideatoapps_newsletter_mail_failures' );

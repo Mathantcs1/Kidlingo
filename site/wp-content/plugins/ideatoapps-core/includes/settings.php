@@ -77,6 +77,7 @@ function ideatoapps_register_settings() {
 	register_setting( 'ideatoapps', 'ideatoapps_featured_app_ids', array( 'type' => 'array', 'sanitize_callback' => 'ideatoapps_sanitize_featured_ids', 'default' => array(), 'show_in_rest' => false ) );
 	register_setting( 'ideatoapps', 'ideatoapps_contact_enabled', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false, 'show_in_rest' => false ) );
 	register_setting( 'ideatoapps', 'ideatoapps_newsletter_enabled', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false, 'show_in_rest' => false ) );
+	ideatoapps_register_mail_sender_settings();
 	register_setting( 'ideatoapps', 'ideatoapps_youtube_channel_url', array( 'type' => 'string', 'sanitize_callback' => 'ideatoapps_sanitize_channel_url', 'default' => '', 'show_in_rest' => false ) );
 }
 add_action( 'init', 'ideatoapps_register_settings' );
@@ -111,6 +112,7 @@ function ideatoapps_process_settings( array $post ) {
 	} else {
 		update_option( 'ideatoapps_youtube_channel_url', ideatoapps_sanitize_channel_url( $raw ), false );
 	}
+	$errors += ideatoapps_save_mail_sender( $post );
 	return array( 'status' => 'ok', 'errors' => $errors );
 }
 
@@ -123,7 +125,7 @@ function ideatoapps_handle_settings_post() {
 	if ( 'ok' !== $result['status'] ) {
 		wp_die( esc_html__( 'You are not allowed to change these settings, or the form expired.', 'ideatoapps-core' ), '', array( 'response' => 403 ) );
 	}
-	$status = isset( $result['errors']['invalid_url'] ) ? 'invalid_url' : 'saved';
+	$status = $result['errors'] ? implode( '-', array_keys( $result['errors'] ) ) : 'saved';
 	wp_safe_redirect( add_query_arg( 'ideatoapps_status', $status, admin_url( 'options-general.php?page=ideatoapps-settings' ) ) );
 	exit;
 }
@@ -153,8 +155,11 @@ function ideatoapps_render_settings_page() {
 		<h1><?php esc_html_e( 'IdeaToApps settings', 'ideatoapps-core' ); ?></h1>
 		<?php if ( 'saved' === $status ) : ?>
 			<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'ideatoapps-core' ); ?></p></div>
-		<?php elseif ( 'invalid_url' === $status ) : ?>
+		<?php elseif ( false !== strpos( $status, 'invalid_url' ) ) : ?>
 			<div class="notice notice-error"><p><?php esc_html_e( 'The YouTube channel URL was not saved: it must start with http:// or https://. Everything else was saved.', 'ideatoapps-core' ); ?></p></div>
+		<?php endif; ?>
+		<?php if ( false !== strpos( $status, 'invalid_sender' ) ) : ?>
+			<div class="notice notice-error"><p><?php esc_html_e( 'The sender for site emails was not saved: use one plain address on this site\'s own domain (no line breaks, brackets or commas) and a name of up to 80 characters without commas. The previous sender was kept.', 'ideatoapps-core' ); ?></p></div>
 		<?php endif; ?>
 		<?php if ( '' !== ideatoapps_newsletter_mail_failure_notice() ) : ?>
 			<div class="notice notice-warning"><p><?php echo esc_html( ideatoapps_newsletter_mail_failure_notice() ); ?></p></div>
@@ -203,6 +208,7 @@ function ideatoapps_render_settings_page() {
 						<p class="description"><?php esc_html_e( 'Leave this off until the site can really send email (a sender mailbox with SPF, DKIM and DMARC). Each sign-up gets one confirmation email and is only counted once the visitor clicks its link. While it is off, the form says sign-up is not open yet. This site sends no newsletter.', 'ideatoapps-core' ); ?></p>
 					</td>
 				</tr>
+				<?php ideatoapps_render_mail_sender_rows(); ?>
 			</table>
 			<?php submit_button(); ?>
 		</form>

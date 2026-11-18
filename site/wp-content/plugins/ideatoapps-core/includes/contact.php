@@ -80,7 +80,7 @@ function ideatoapps_contact_send( $request ) {
 
 	$body = sprintf( "Name: %s\nEmail: %s\n\n%s\n", $name, $email, $message );
 	// Reply-To carries only the validated address (no display name), so nothing typed in the form can add a header.
-	$sent = wp_mail( (string) get_option( 'admin_email' ), '[IdeaToApps] New contact form message', $body, array( 'Reply-To: ' . $email, 'Content-Type: text/plain; charset=UTF-8' ) );
+	$sent = ideatoapps_with_sender( static fn() => wp_mail( (string) get_option( 'admin_email' ), '[IdeaToApps] New contact form message', $body, array( 'Reply-To: ' . $email, 'Content-Type: text/plain; charset=UTF-8' ) ) );
 	if ( ! $sent ) {
 		return new WP_Error( 'ideatoapps_mail_failed', __( 'The message could not be sent. Please try again later.', 'ideatoapps-core' ), array( 'status' => 500 ) );
 	}

@@ -137,7 +137,7 @@ function ideatoapps_reader_link_flush_queue(): void {
 	foreach ( $queue as $sid => $back ) {
 		try {
 			$email = (string) get_post_meta( (int) $sid, 'email', true );
-			$sent  = is_email( $email ) && wp_mail( $email, __( 'Your IdeaToApps reading link', 'ideatoapps-core' ), ideatoapps_reader_link_body( (int) $sid, (int) $back ), array( 'Content-Type: text/plain; charset=UTF-8' ) );
+			$sent  = is_email( $email ) && ideatoapps_with_sender( static fn() => wp_mail( $email, __( 'Your IdeaToApps reading link', 'ideatoapps-core' ), ideatoapps_reader_link_body( (int) $sid, (int) $back ), array( 'Content-Type: text/plain; charset=UTF-8' ) ) );
 		} catch ( \Throwable $e ) {
 			$sent = false;
 		}
