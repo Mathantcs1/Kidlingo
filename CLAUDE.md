@@ -62,3 +62,9 @@ Large work follows `superpowers:brainstorming` → `writing-plans` (user approve
 - Headless Chromium here: WebCodecs H.264 + AAC decode, no native AAC encode (WASM fallback is used), WebGL2 via SwiftShader.
 - Real Safari/Chrome-on-Mac behaviour is unverified: do not claim browser support beyond what is tested (see README).
 - The Vercel/GitHub MCP tools connect intermittently; the sandbox cannot reach vercel.com directly.
+
+## Faceless video skill
+For any faceless YouTube Short or long video (script, build, render, mix, QC, upload text), use `.claude/skills/faceless-video-studio/` (read `SKILL.md` first). The render studio folder is not in this repo; ask the owner for the `growkaz-stickman-studio` folder. Token rules: `.claude/skills/faceless-video-studio/references/token-efficiency.md`. Never put secrets in files.
+
+## STRICT POLICY: review panel for every video
+Before any video reaches the owner, run the six-persona review panel in `.claude/skills/faceless-video-studio/references/review-panel.md` (builder fixes all blockers/majors, re-check, all scores >= 8). Every Short also ends by educating the viewer (a "Lesson:" line or a moral). Never skip; if something is unreviewed, say so.
