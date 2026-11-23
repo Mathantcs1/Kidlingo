@@ -2,7 +2,7 @@
 
 Channel promise (from its description): follow the money, the decisions and the timing behind restaurants, retail and consumer brands: the ones that ruled their moment, the ones that vanished, the ones that adapted just in time. Each episode finds **the one number or choice that explains the story**, shows who paid whom, where growth came from and where it broke. **Figures on screen come with sources; when the data is uncertain, say so.** New episodes weekly.
 
-Kit: `kits/brandwake.json` (deep-water teal + signal coral, ripple-ring "wake" backgrounds, rail RISE / PEAK / BREAK / WAKE, calm broadcaster voice).
+Kit: `kits/brandwake.json` (deep-water teal + signal coral, ripple-ring "wake" backgrounds, rail RISE / PEAK / BREAK / WAKE, Indian male voice: Rudra, ElevenLabs id EitqXD7jgIy0K5Z1zGGp; Pride Parables keeps George).
 
 ## Episode formula (Short, 60-80 s; open from the surprising end state, see `story-craft.md` "60-90 second structure")
 | Act | Rail | Transition | Content |

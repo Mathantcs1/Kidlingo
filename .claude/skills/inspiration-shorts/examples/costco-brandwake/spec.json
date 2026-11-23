@@ -1,0 +1,644 @@
+{
+ "kitFile": "../../kits/brandwake.json",
+ "tail": 2.2,
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "night"
+  },
+  {
+   "id": "a1",
+   "from": "started-0.1",
+   "bg": "amber",
+   "rail": 0,
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 950
+   },
+   "title": {
+    "text": "1985 \u00b7 PORTLAND",
+    "bg": "#e0543a",
+    "y": 415,
+    "at": "started"
+   }
+  },
+  {
+   "id": "a2",
+   "from": "costco's",
+   "bg": "violet",
+   "rail": 1,
+   "transition": "diagonal",
+   "title": {
+    "text": "THE FOUNDER'S RULE",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a3",
+   "from": "rule",
+   "bg": "steel",
+   "rail": 1,
+   "transition": "wipe-left",
+   "title": {
+    "text": "MARCH 2026",
+    "bg": "#2f6fd6",
+    "y": 415
+   }
+  },
+  {
+   "id": "a4",
+   "from": "so#2",
+   "bg": "night",
+   "rail": 2,
+   "transition": "cut",
+   "title": {
+    "text": "WHERE THE MONEY REALLY IS",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a5",
+   "from": "stay-0.4",
+   "bg": "amber",
+   "rail": 2,
+   "transition": "wipe-up",
+   "title": {
+    "text": "WHO STAYS",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  },
+  {
+   "id": "a6",
+   "from": "here's",
+   "bg": "violet",
+   "rail": 3,
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 900
+   },
+   "title": {
+    "text": "THE LOGIC",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a7",
+   "from": "great-0.2",
+   "bg": "night",
+   "rail": 3,
+   "transition": "zoom",
+   "title": {
+    "text": "THE LESSON",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  }
+ ],
+ "counter": {
+  "act": "a5",
+  "fmt": "pct1",
+  "prefix": "",
+  "until": "here's",
+  "keys": [
+   [
+    "stay",
+    0
+   ],
+   [
+    "ninetytwo",
+    0
+   ],
+   [
+    "ninetytwo+0.9",
+    92.3
+   ]
+  ]
+ },
+ "items": [
+  {
+   "act": "hook",
+   "type": "gold",
+   "y": 210,
+   "size": 210,
+   "parts": [
+    {
+     "t": "$1.50",
+     "at": "one"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "chip",
+   "y": 560,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "40 YEARS AGO",
+     "at": "forty"
+    },
+    {
+     "t": "= TODAY",
+     "at": "today",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "gold",
+   "y": 730,
+   "size": 130,
+   "parts": [
+    {
+     "t": "245M+",
+     "at": "fortyfive"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "chip",
+   "y": 895,
+   "size": 36,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "COMBOS SOLD IN 2025",
+     "at": "million"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "hotdog",
+   "x": 540,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "pop",
+   "at": "hot",
+   "bob": 0.5
+  },
+  {
+   "act": "hook",
+   "type": "source",
+   "text": "USA Today, Mar 2026",
+   "at": "million+0.5"
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 548,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "A HOT DOG CART",
+     "at": "cart"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "stand",
+   "x": 540,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "rise",
+   "at": "cart",
+   "opts": {
+    "label": "HOT DOGS",
+    "color": "#e0543a"
+   },
+   "until": "adjusted-0.2"
+  },
+  {
+   "act": "a1",
+   "type": "bars",
+   "base": 1200,
+   "h": 380,
+   "max": 5,
+   "fmt": "usd2",
+   "labelSize": 28,
+   "gap": 40,
+   "accent": "#e0543a",
+   "items": [
+    {
+     "label": "1985 PRICE",
+     "value": 1.5,
+     "at": "adjusted"
+    },
+    {
+     "label": "TODAY, ADJUSTED",
+     "value": 4.65,
+     "at": "sixtyfive-0.3"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "source",
+   "text": "USA Today inflation estimate",
+   "at": "sixtyfive+0.4"
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 548,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "CRAIG JELINEK \u00b7 EX-CEO",
+     "at": "jelinek"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 668,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "JIM SINEGAL \u00b7 FOUNDER",
+     "at": "sinegal"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "glasses": true
+   },
+   "x": 190,
+   "y": 1200,
+   "scale": 0.95,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#1e6b57",
+    "body2": "#14513f",
+    "hair": "#cfcfcf",
+    "tie": "#ff7a5c"
+   },
+   "x": 880,
+   "y": 1200,
+   "scale": 0.95,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true,
+   "brow": 8,
+   "phase": 1
+  },
+  {
+   "act": "a2",
+   "type": "stamp",
+   "text": "DON'T RAISE THE PRICE",
+   "at": "raise",
+   "y": 1060,
+   "hit": false,
+   "color": "#e0543a",
+   "size": 44
+  },
+  {
+   "act": "a2",
+   "type": "source",
+   "text": "Fortune, 2024 (Jelinek's retelling)",
+   "at": "will+0.3"
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "CEO RON VACHRIS",
+     "at": "vachris"
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c"
+   },
+   "x": 230,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "hotdog",
+   "x": 800,
+   "y": 1200,
+   "scale": 1.1,
+   "enter": "pop",
+   "at": "price",
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "banner",
+   "text": "THE PRICE WILL NOT CHANGE",
+   "at": "price",
+   "y": 690,
+   "size": 40
+  },
+  {
+   "act": "a3",
+   "type": "source",
+   "text": "USA Today, 19 Mar 2026",
+   "at": "around+0.2",
+   "y": 1440
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "NOT AT THE FOOD COURT",
+     "at": "not",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "bars",
+   "base": 1215,
+   "h": 330,
+   "max": 12000000000.0,
+   "fmt": "usdb",
+   "labelSize": 28,
+   "gap": 50,
+   "accent": "#ff7a5c",
+   "color": "#62f0c8",
+   "valueSize": 56,
+   "items": [
+    {
+     "label": "MEMBERSHIP FEES",
+     "value": 5907000000.0,
+     "at": "five",
+     "c": "#62f0c8"
+    },
+    {
+     "label": "OPERATING PROFIT",
+     "value": 11685000000.0,
+     "at": "operating",
+     "c": "#ff7a5c"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 668,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "FEES \u2248 HALF OF PROFIT",
+     "at": "half",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "source",
+   "text": "Costco FY2026 results, 24 Sep 2026",
+   "at": "fees+0.3"
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "US & CANADA RENEWAL",
+     "at": "united"
+    }
+   ]
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 668,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "84.1M PAID MEMBERS",
+     "at": "eightyfour",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c"
+   },
+   "x": 190,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "tower",
+   "x": 850,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "rise",
+   "at": "warehouse",
+   "opts": {
+    "label": "WAREHOUSE",
+    "rows": 4
+   }
+  },
+  {
+   "act": "a5",
+   "type": "source",
+   "text": "Costco Q4 FY2026 earnings call",
+   "at": "walk+0.5"
+  },
+  {
+   "act": "a6",
+   "type": "chip",
+   "y": 548,
+   "size": 38,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "THE HOT DOG ISN'T THE PRODUCT",
+     "at": "isn't"
+    }
+   ]
+  },
+  {
+   "act": "a6",
+   "type": "chip",
+   "y": 668,
+   "size": 56,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "IT'S THE PROOF",
+     "at": "proof",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "hotdog",
+   "x": 540,
+   "y": 1200,
+   "scale": 1.3,
+   "enter": "pop",
+   "at": "logic",
+   "bob": 0.5
+  },
+  {
+   "act": "a7",
+   "type": "chip",
+   "y": 548,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "A GREAT BRAND IS",
+     "at": "great"
+    }
+   ]
+  },
+  {
+   "act": "a7",
+   "type": "chip",
+   "y": 668,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "A PROMISE IT",
+     "at": "promise"
+    },
+    {
+     "t": "NEVER BREAKS",
+     "at": "never",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c"
+   },
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "hotdog",
+   "x": 800,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "pop",
+   "at": "brand",
+   "bob": 0.5
+  },
+  {
+   "act": "a7",
+   "type": "banner",
+   "text": "WHICH BRAND PROMISE DO YOU TRUST?",
+   "at": "which",
+   "y": 1420,
+   "size": 38
+  }
+ ],
+ "kit": {
+  "rail": [
+   {
+    "label": "THE PRICE",
+    "color": "#e0543a"
+   },
+   {
+    "label": "THE RULE",
+    "color": "#7a52d9"
+   },
+   {
+    "label": "THE MONEY",
+    "color": "#139f7d"
+   },
+   {
+    "label": "THE LOGIC",
+    "color": "#2f6fd6"
+   }
+  ]
+ }
+}

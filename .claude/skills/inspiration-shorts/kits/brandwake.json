@@ -32,8 +32,15 @@
     }
   ],
   "voice": {
-    "id": "onwK4e9ZLuTAKqWW03F9",
-    "name": "Daniel - steady broadcaster"
+    "id": "EitqXD7jgIy0K5Z1zGGp",
+    "name": "Rudra - Indian male, deep, trustworthy (in the owner's ElevenLabs account)",
+    "alternatives": {
+      "Ranbir - Warm and Friendly (library)": "9PvnT6XRzlljoaDG6Knu",
+      "Viraj - Energetic and Confident (library)": "bajNon13EdhNMndG3z05",
+      "Ruhaan - Clear, Loud and Cheerful (library)": "siw1N9V8LmYeEWKyWBxv",
+      "Jeevan - Expressive and Confident (library)": "mCQMfsqGDT6IDkEKR20a"
+    },
+    "note": "Library voices must be added to the account before use. Owner asked for an Indian male voice for Brandwake (23 Nov 2026). Judged from metadata only; the owner should audition."
   },
   "bgs": {
     "night": {

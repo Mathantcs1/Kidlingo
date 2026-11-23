@@ -54,6 +54,8 @@
 
   const el = (cls, html, style = '', parent = stage) => { const d = document.createElement('div'); d.className = cls; if (html) d.innerHTML = html; d.style.cssText = style; parent.appendChild(d); return d; };
   const money = (v, mode) => {
+    if (mode === 'usd2') return '$' + v.toFixed(2);
+    if (mode === 'usdb') return '$' + (v / 1e9).toFixed(1) + 'B';
     if (mode === 'pct1') return v.toFixed(1) + '%';
     if (mode === 'pct0') return Math.round(v) + '%';
     if (mode === 'plain') return Math.round(v).toLocaleString('en-US');
@@ -97,8 +99,9 @@
 
   const MAKERS = {
     gold(it) {
-      const w = row(it.y); const sp = document.createElement('div'); sp.style.cssText = goldCss() + `;font-size:${it.size || 128}px;white-space:nowrap;display:flex;gap:${it.gap || 18}px;align-items:center`; sp.className = 'qa'; sp.dataset.kind = 'gold'; w.appendChild(sp);
-      const parts = it.parts.map(p => { const s = document.createElement('span'); s.textContent = p.t; s.style.display = 'inline-block'; if (p.c) { s.style.background = 'none'; s.style.color = p.c; s.style.webkitTextFillColor = p.c; } sp.appendChild(s); return { s, at: R(p.at) }; });
+      const w = row(it.y); const sp = document.createElement('div'); sp.style.cssText = `font-size:${it.size || 128}px;white-space:nowrap;display:flex;gap:${it.gap || 18}px;align-items:center`; sp.className = 'qa'; sp.dataset.kind = 'gold'; w.appendChild(sp);
+      // gradient + outline live on each span: background-clip:text ignores a child's transform, so a per-part pop needs its own clip
+      const parts = it.parts.map(p => { const s = document.createElement('span'); s.textContent = p.t; s.style.cssText = p.c ? `display:inline-block;font-weight:800;line-height:1;color:${p.c};filter:drop-shadow(0 8px 0 #3a1f08) drop-shadow(0 0 3px #3a1f08)` : `display:inline-block;${goldCss()}`; sp.appendChild(s); return { s, at: R(p.at) }; });
       parts.forEach(p => EV.push({ t: p.at, type: 'pop' }));
       return { el: w, base: it, update(t) { parts.forEach(p => { const k = pop(t, p.at, .45); p.s.style.transform = `scale(${k})`; p.s.style.opacity = clamp(k * 2); }); } };
     },
@@ -211,7 +214,7 @@
     });
     // title chips per act + counter + rail
     ACTS.forEach(a => { if (a.title) { const t = a.title; const w = row(t.y ?? 362); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'chip'; c.style.cssText = chipCss(t.bg || '#ff5d73', '#fff', 46, '12px 38px'); c.textContent = t.text; w.appendChild(c); const at = R(t.at ?? a.from); EV.push({ t: at, type: 'pop' }); ITEMS.push({ el: w, act: a, base: { type: 'title' }, update(tt) { w.style.transform = `scale(${pop(tt, at, .4)})`; } }); } });
-    if (S.counter) { const cn = S.counter; counterEl = el('cnt qa', '', `position:absolute;left:0;width:1080px;top:${cn.y ?? 150}px;text-align:center;font-size:${cn.size ?? 150}px;${goldCss()}`); counterEl.dataset.kind = 'counter'; cn._keys = resolveKeys(cn.keys); cn._until = cn.until !== undefined ? R(cn.until) : null; cn._at = R(cn.at ?? cn.keys[0][0] - .0); cn._at = ACTS.find(a => a.id === cn.act) ? ACTS.find(a => a.id === cn.act).start + .35 : cn._at; cn._keys.forEach((k, i) => i && k[1] !== cn._keys[i - 1][1] && EV.push({ t: k[0], type: 'tick' })); }
+    if (S.counter) { const cn = S.counter; counterEl = el('cnt qa', '', `position:absolute;left:0;width:1080px;top:${cn.y ?? 150}px;text-align:center;font-size:${cn.size ?? 150}px;${goldCss()}`); counterEl.dataset.kind = 'counter'; cn._keys = resolveKeys(cn.keys); cn._until = cn.until !== undefined ? R(cn.until) : null; cn._from = cn.from !== undefined ? R(cn.from) : null; cn._at = R(cn.at ?? cn.keys[0][0] - .0); cn._at = ACTS.find(a => a.id === cn.act) ? ACTS.find(a => a.id === cn.act).start + .35 : cn._at; if (cn._from !== null) cn._at = cn._from; cn._keys.forEach((k, i) => i && k[1] !== cn._keys[i - 1][1] && EV.push({ t: k[0], type: 'tick' })); }
     if (KIT.rail) railEl = el('rail', KIT.rail.map(r => `<div style="flex:1;border-radius:40px 40px 0 0;border:5px solid ${KIT.ink};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:30px;color:#fff;background:${r.color}">${r.label}</div>`).join(''), 'position:absolute;left:0;right:0;bottom:' + (KIT.railBottom ?? 70) + 'px;height:80px;display:flex;gap:10px;padding:0 30px');
     capEl = el('cap', '', `position:absolute;left:0;right:0;top:${KIT.caption.y}px;display:flex;justify-content:center`);
     buildCaptions();
@@ -251,9 +254,10 @@
       const uf = o.untilT === undefined ? 1 : 1 - clamp((t - o.untilT) / .25); const ugone = o.untilT !== undefined && t > o.untilT + .3;
       if (gone || ugone || t < (a.start - a.wipeLead * 0.4)) { if (o.el) o.el.style.display = 'none'; if (o.extra) o.extra.forEach(c => c.style.opacity = 0); return; }
       if (o.el) { o.el.style.display = o.el.dataset.d || ''; }
+      if (o.el && o.base.type !== 'prop') o.el.style.opacity = '';
       o.update(t);
       const fade = Math.min(out, uf);
-      if (o.el) { if (o.base.type === 'prop') { if (fade < 1) o.el.style.opacity = Math.min(parseFloat(o.el.style.opacity || 1), fade); } else o.el.style.opacity = fade < 1 ? fade : ''; }
+      if (o.el && fade < 1) o.el.style.opacity = Math.min(o.el.style.opacity === '' ? 1 : parseFloat(o.el.style.opacity), fade);
     });
     // counter
     if (counterEl) { const cn = S.counter; const v = interp(cn._keys, t); counterEl.textContent = (cn.prefix ?? '$') + money(v, cn.fmt || 'full'); const k = pop(t, cn._at, .5); counterEl.style.transform = `scale(${k})`; counterEl.style.opacity = clamp(k * 2) * (cn._until === null ? 1 : 1 - clamp((t - cn._until) / .3)); }

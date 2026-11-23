@@ -85,6 +85,12 @@
 
   P.cup = (o = {}) => wrap('-10 -10 120 150', 100, 130, `<path d="M6 0 H94 L80 126 H20Z" fill="${o.color || '#fff'}"/><path d="M12 36 H88 L80 126 H20Z" fill="url(#gold)" stroke="none"/><path d="M6 0 H94 L80 126 H20Z" fill="none"/>`);
 
+  P.hotdog = (o = {}) => wrap('-10 -10 340 190', 340, 190, `
+ <path d="M10 120 q0 -50 150 -50 q150 0 150 50 q0 40 -150 40 q-150 0 -150 -40Z" fill="#e8b46a"/>
+ <rect x="0" y="60" width="320" height="64" rx="32" fill="${o.meat || '#c4553a'}"/><path d="M24 78 q30 -10 60 0" fill="none" stroke="#e98a73" stroke-width="6"/>
+ <path d="M20 96 q20 -22 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" fill="none" stroke="#ffd21f" stroke-width="9"/>
+ <path d="M10 112 q0 36 150 36 q150 0 150 -36 q0 56 -150 56 q-150 0 -150 -56Z" fill="#d79a4e"/>`);
+
   P.defs = `<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9be7ff"/><stop offset="1" stop-color="#3a86e0"/></linearGradient><linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe45c"/><stop offset="1" stop-color="#f5a800"/></linearGradient>`;
   window.PROPS = P;
 })();
