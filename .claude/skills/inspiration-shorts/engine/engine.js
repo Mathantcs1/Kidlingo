@@ -15,15 +15,24 @@
     caption: { hl: '#ffc928', bg: 'rgba(30,20,40,.80)', size: 74, y: 1262, words: 3 },
     layout: { counterY: 150 },
     rail: null,
+    // Original background system: diagonal gradient + drifting colour glows + faint dot texture + layered hills.
+    // (No spotlight rays, no star field, no flat ground band.)
     bgs: {
-      night:  { stops: ['#101b3d', '#25307e', '#3b2a8f'], stars: true, rays: true },
-      mint:   { stops: ['#e6fff4', '#9cf0cc', '#3fcfa4', '#14937a'], ground: { top: 1150, stops: ['#10806a', '#0a5a4c'] } },
-      amber:  { stops: ['#fff3c4', '#ffd36e', '#f6a23c', '#d9741c'], ground: { top: 1150, stops: ['#c7681a', '#8f4510'] } },
-      violet: { stops: ['#8a5ae0', '#6a3fc4', '#3c2a86', '#241a55'], stars: true, rays: true },
-      sunset: { stops: ['#ffb36b', '#ff7a59', '#7a3b8f', '#2a1b4d'], rays: true },
-      ink:    { stops: ['#1b1730', '#14112a', '#0d0b1e'], stars: true },
-      paper:  { stops: ['#fffaf0', '#f6ecd6', '#e9dab8'], ground: { top: 1150, stops: ['#d9c79c', '#b7a174'] } },
-      steel:  { stops: ['#e8f1ff', '#b9d3f5', '#7ea6dc', '#3f6aa8'], ground: { top: 1150, stops: ['#2f527f', '#1d3556'] } }
+      night:  { angle: 155, stops: ['#0b1026', '#1b1f5e', '#3a1f6e'], dots: { o: .07 },
+                blobs: [ { c: '#7b5cff', x: 160, y: 300, r: 540, s: .35, dx: 80, dy: 60, o: .5 }, { c: '#00c2ff', x: 930, y: 1260, r: 580, s: .28, dx: 70, dy: 50, o: .26 } ] },
+      mint:   { angle: 170, stops: ['#e9fff7', '#aef3dc', '#4fd1b4', '#17897c'], dots: { c: '#ffffff', o: .22, s: 52 },
+                blobs: [ { c: '#ffffff', x: 880, y: 260, r: 520, s: .3, dx: 60, dy: 40, o: .6 } ], hills: { y: 1110, colors: ['#35b3a1', '#1f8f80', '#0f6358'] } },
+      amber:  { angle: 160, stops: ['#fff6dc', '#ffd9a0', '#ffab6b', '#e2723a'], dots: { c: '#ffffff', o: .22, s: 52 },
+                blobs: [ { c: '#fff2c4', x: 200, y: 300, r: 520, s: .3, dx: 70, dy: 40, o: .7 } ], hills: { y: 1110, colors: ['#f28c52', '#d96a33', '#a8481f'] } },
+      violet: { angle: 165, stops: ['#9a7cf5', '#7456d6', '#43308f', '#271a5f'], dots: { o: .08 },
+                blobs: [ { c: '#ff7ad9', x: 900, y: 320, r: 500, s: .33, dx: 70, dy: 50, o: .38 }, { c: '#5ad1ff', x: 120, y: 1240, r: 520, s: .27, dx: 60, dy: 40, o: .25 } ] },
+      sunset: { angle: 175, stops: ['#ffc98a', '#ff8c6b', '#c9467a', '#34205e'], dots: { c: '#ffffff', o: .1 },
+                blobs: [ { c: '#fff0b8', x: 540, y: 220, r: 600, s: .25, dx: 90, dy: 30, o: .55 } ] },
+      ink:    { angle: 160, stops: ['#16122c', '#100e24', '#0a0919'], dots: { o: .05 },
+                blobs: [ { c: '#5b4bd6', x: 540, y: 700, r: 640, s: .22, dx: 90, dy: 80, o: .22 } ] },
+      paper:  { angle: 165, stops: ['#fffaf0', '#f6ecd6', '#e9dab8'], blobs: [], hills: { y: 1110, colors: ['#e2cf9f', '#cbb583', '#a89462'] } },
+      steel:  { angle: 168, stops: ['#eef4ff', '#bcd3f7', '#7fa7e0', '#41679f'], dots: { c: '#ffffff', o: .2, s: 52 },
+                blobs: [ { c: '#ffffff', x: 220, y: 280, r: 520, s: .3, dx: 70, dy: 40, o: .6 } ], hills: { y: 1110, colors: ['#4f78b3', '#365d93', '#244470'] } }
     }
   };
   const deepMerge = (a, b) => { const o = Object.assign({}, a); for (const k in (b || {})) o[k] = (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k]) ? deepMerge(a[k], b[k]) : b[k]; return o; };
@@ -57,13 +66,23 @@
   const resolveKeys = ks => ks.map(k => [R(k[0]), k[1]]);
 
   // ---------- backgrounds ----------
+  function hillPath(y0, amp, wl, phase, w = 1400) {
+    let d = `M0 1920 L0 ${y0 + amp * Math.sin(phase)}`;
+    for (let x = 20; x <= w; x += 20) d += ` L${x} ${(y0 + amp * Math.sin(x / wl + phase)).toFixed(1)}`;
+    return d + ` L${w} 1920 Z`;
+  }
   function buildBg(name) {
     const b = KIT.bgs[name]; if (!b) throw new Error('unknown bg ' + name);
-    const wrap = el('bgl', '', 'position:absolute;inset:0');
-    el('', '', `position:absolute;inset:0;background:linear-gradient(${b.stops.join(',')})`, wrap);
-    if (b.stars) el('', Array.from({ length: 44 }, (_, i) => `<i style="position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;left:${(i * 137) % 1080}px;top:${(i * 263) % 1500}px;opacity:${.25 + ((i * 7) % 6) / 10}"></i>`).join(''), 'position:absolute;inset:0', wrap);
-    if (b.rays) el('', '', 'position:absolute;inset:0;opacity:.3;mix-blend-mode:soft-light;background:repeating-conic-gradient(from -60deg at 50% 45%,#fff 0 5deg,transparent 5deg 14deg);-webkit-mask-image:radial-gradient(ellipse at 50% 42%,#000 0,transparent 72%)', wrap);
-    if (b.ground) el('', '', `position:absolute;left:0;right:0;bottom:0;top:${b.ground.top}px;background:linear-gradient(${b.ground.stops.join(',')})`, wrap);
+    const wrap = el('bgl', '', 'position:absolute;inset:0;overflow:hidden');
+    el('', '', `position:absolute;inset:0;background:linear-gradient(${b.angle ?? 165}deg,${b.stops.join(',')})`, wrap);
+    const blobs = (b.blobs || []).map((o, i) => ({ o, i, d: el('', '', `position:absolute;left:0;top:0;width:${o.r * 2}px;height:${o.r * 2}px;border-radius:50%;background:radial-gradient(circle,${o.c} 0,transparent 68%);opacity:${o.o ?? .5}`, wrap) }));
+    if (b.dots) el('', '', `position:absolute;inset:0;background-image:radial-gradient(${b.dots.c || '#fff'} 2.5px,transparent 3px);background-size:${b.dots.s || 44}px ${b.dots.s || 44}px;opacity:${b.dots.o ?? .1};-webkit-mask-image:linear-gradient(180deg,#000,transparent 75%)`, wrap);
+    const hills = b.hills ? b.hills.colors.map((c, i) => {
+      const d = el('', `<svg width="1400" height="1920" viewBox="0 0 1400 1920" style="display:block"><path d="${hillPath(b.hills.y + i * 46, 26 + i * 10, 150 + i * 70, i * 1.9)}" fill="${c}"/></svg>`, 'position:absolute;left:-160px;top:0', wrap); return { d, i }; }) : [];
+    wrap._anim = (t) => {
+      blobs.forEach(({ o, i, d }) => d.style.transform = `translate(${o.x - o.r + Math.sin(t * (o.s || .3) + i * 2) * (o.dx || 60)}px,${o.y - o.r + Math.cos(t * (o.s || .3) * .8 + i) * (o.dy || 40)}px)`);
+      hills.forEach(({ d, i }) => d.style.transform = `translateX(${Math.sin(t * (.25 + i * .12) + i) * (30 + i * 16)}px)`);
+    };
     return wrap;
   }
 
@@ -188,7 +207,7 @@
     stage.style.transform = `translate(${sh}px,${sh * .5}px)`;
     // backgrounds: each act's layer wipes in from the bottom
     ACTS.forEach(a => {
-      const b = a.bgEl.style; if (a.i === 0) { b.clipPath = 'none'; b.zIndex = 0; return; }
+      a.bgEl._anim(t); const b = a.bgEl.style; if (a.i === 0) { b.clipPath = 'none'; b.zIndex = 0; return; }
       b.zIndex = a.i; b.transform = 'none'; b.opacity = '1'; b.clipPath = 'none'; b.webkitMaskImage = 'none';
       const type = a.tr.type, p = type === 'cut' ? (t >= a.start ? 1 : 0) : eInOut(clamp((t - a.wipeAt) / (a.wipeLead + .14)));
       if (p >= 1) return;

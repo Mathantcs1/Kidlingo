@@ -48,3 +48,6 @@ node scripts/qa.mjs <project>
 node scripts/render.mjs <project> stills 1.5,6,12
 sh scripts/build.sh <project> [--music bed.mp3]
 ```
+
+## Backgrounds (original system)
+Presets: `night, mint, amber, violet, sunset, ink, paper, steel`. Each is a diagonal gradient (`angle`, `stops`) plus optional drifting colour glows (`blobs:[{c,x,y,r,s,dx,dy,o}]`), a faint dot texture (`dots:{c,o,s}`) and layered rolling hills (`hills:{y, colors:[3]}`) that slowly drift. Define or override any preset in a kit's `bgs` to give a channel its own look; change the hue, the blob positions and whether hills are used. Do not add spotlight rays or star fields: they belong to the reference video this skill is deliberately different from.

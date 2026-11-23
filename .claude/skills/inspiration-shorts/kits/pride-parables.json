@@ -7,8 +7,8 @@
   "transition": "wipe-left",
   "voice": { "id": "JBFqnCBsd6RMkjVDRZzb", "name": "George - warm, captivating storyteller" },
   "bgs": {
-    "night":  { "stops": ["#150d2e", "#2d1b69", "#4a2a8f"], "stars": true, "rays": true },
-    "violet": { "stops": ["#7a52d9", "#5b36b8", "#33206e", "#1f1348"], "stars": true, "rays": true },
+    "night":  { "stops": ["#150d2e", "#2d1b69", "#4a2a8f"] },
+    "violet": { "stops": ["#7a52d9", "#5b36b8", "#33206e", "#1f1348"] },
     "sunset": { "stops": ["#ffd27a", "#ff9a52", "#c2456b", "#3a1b5c"], "rays": true }
   }
 }

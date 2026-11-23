@@ -6,7 +6,7 @@
   "rail": null,
   "voice": { "id": "TX3LPaxmHKxFdv7VOQHJ", "name": "Liam - energetic creator" },
   "bgs": {
-    "night": { "stops": ["#071a1f", "#0f3b44", "#16606b"], "stars": true, "rays": true },
+    "night": { "stops": ["#071a1f", "#0f3b44", "#16606b"] },
     "steel": { "stops": ["#e6fbff", "#a8e6ee", "#4fb7c9", "#1f7f93"], "ground": { "top": 1150, "stops": ["#176678", "#0e4553"] } }
   }
 }
