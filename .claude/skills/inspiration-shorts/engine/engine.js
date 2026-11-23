@@ -55,6 +55,7 @@
   const el = (cls, html, style = '', parent = stage) => { const d = document.createElement('div'); d.className = cls; if (html) d.innerHTML = html; d.style.cssText = style; parent.appendChild(d); return d; };
   const money = (v, mode) => {
     if (mode === 'usd2') return '$' + v.toFixed(2);
+    if (mode === 'dec1') return v.toFixed(1);
     if (mode === 'usdb') return '$' + (v / 1e9).toFixed(1) + 'B';
     if (mode === 'pct1') return v.toFixed(1) + '%';
     if (mode === 'pct0') return Math.round(v) + '%';
@@ -139,11 +140,11 @@
         const sc = it.scale ?? 1; let ox = 0, oy = 0, s = 1;
         const dist = it.dist || 600;
         if (it.enter === 'slide-left') ox = -(1 - k) * dist; else if (it.enter === 'slide-right') ox = (1 - k) * dist; else if (it.enter === 'rise') oy = (1 - k) * dist; else if (it.enter === 'drop') oy = -(1 - k) * dist; else if (it.enter !== 'none') s = k;
-        oy += it.bob ? Math.sin(t * 3 + (it.phase || 0)) * 8 * it.bob : 0;
+        oy += it.bob ? Math.sin(t * 3 + (it.phase || 0)) * 8 * it.bob : 0; if (it.jitter) ox += Math.sin(t * 38 + (it.phase || 0)) * it.jitter * (t > at ? 1 : 0);
         const rot = it.rot ? it.rot + Math.sin(t * 2) * 3 : 0;
         w.style.transform = `translate(${it.x + ox}px,${it.y + oy}px) rotate(${rot}deg) scale(${sc * s}) translate(${-p.w / 2}px,${-p.h}px)`;
         w.style.opacity = t < at ? 0 : 1; qaEl.dataset.settled = (it.enter === 'none' || k >= .995) ? '1' : '0';
-        if (mouth) mouth.setAttribute('d', (it.talk && speaking(t) && Math.sin(t * 22) > -.25) ? 'M-20 70 q20 26 40 0 q-20 -7 -40 0Z' : 'M-18 72 q18 12 36 0');
+        if (mouth) mouth.setAttribute('d', (it.talk && speaking(t) && Math.sin(t * 22) > -.25) ? 'M-20 70 q20 26 40 0 q-20 -7 -40 0Z' : (mouth.dataset.closed || 'M-18 72 q18 12 36 0'));
         if (arm) arm.style.transform = `rotate(${(t > pourA && t < pourB) ? Math.sin(t * 6) * 10 - 8 : Math.sin(t * 2) * 4}deg)`;
         if (gray !== null) { const g = clamp((t - gray) / .6); w.style.filter = `grayscale(${g * .85}) brightness(${1 - g * .25})`; }
       } };
@@ -179,6 +180,25 @@
         b.innerHTML = `<span style="font-weight:800;font-size:${it.labelSize || 30}px;color:${KIT.ink};white-space:nowrap">${x.label}</span>`;
         const v = document.createElement('div'); v.style.cssText = `position:absolute;left:${60 + i * (bw + gap) - 20}px;width:${bw + 40}px;text-align:center;${goldCss()};font-size:${it.valueSize || 52}px`; w.appendChild(b); w.appendChild(v); EV.push({ t: at, type: 'pop' }); return { b, v, at, val: x.value }; });
       return { el: w, base: it, update(t) { bs.forEach(o => { const g = eOut(clamp((t - o.at) / .7)), h = Math.max(0, o.val / max * H * g); o.b.style.height = h + 'px'; o.b.style.opacity = g > 0 ? 1 : 0; o.v.style.bottom = (h + 10) + 'px'; o.v.style.opacity = g > .15 ? 1 : 0; o.v.textContent = money(o.val * g, it.fmt || 'pct1'); }); } };
+    },
+    rect(it) { // panel / bubble: x,y = top-left, w,h, bg, border, radius, text, size, color, at, enter (pop|rise|slide-left|slide-right)
+      const w = el('it', '', `position:absolute;left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px;will-change:transform,opacity;transform-origin:50% 50%`);
+      const b = document.createElement('div'); b.style.cssText = `position:absolute;inset:0;border:${it.bw ?? 6}px solid ${KIT.ink};border-radius:${it.radius ?? 28}px;background:${it.bg || '#fff'};box-shadow:0 10px 0 rgba(0,0,0,.28);opacity:${it.alpha ?? 1}`; w.appendChild(b);
+      if (it.text) { const tx = document.createElement('div'); if (it.qa !== false) { tx.className = 'qa'; tx.dataset.kind = 'chip'; } tx.style.cssText = `position:absolute;inset:0;display:flex;align-items:${it.valign || 'center'};justify-content:center;text-align:center;padding:${typeof it.pad === 'string' ? it.pad : (it.pad ?? 16) + 'px'};font-weight:800;font-size:${it.size || 44}px;line-height:1.1;color:${it.color || KIT.ink}`; tx.innerHTML = it.text; w.appendChild(tx); }
+      const at = R(it.at); EV.push({ t: at, type: 'pop' });
+      return { el: w, base: it, update(t) { const k = pop(t, at, .45); let ox = 0, oy = 0, s = 1; const d = it.dist || 500;
+        if (it.enter === 'rise') oy = (1 - k) * d; else if (it.enter === 'slide-left') ox = -(1 - k) * d; else if (it.enter === 'slide-right') ox = (1 - k) * d; else s = .6 + .4 * k;
+        w.style.transform = `translate(${ox}px,${oy}px) scale(${s})`; w.style.opacity = clamp(k * 2); } };
+    },
+    grid(it) { // tile grid: x,y,w,h,cols,rows,gap,base,numbers; groups:[{from,count,c,at,end|dur,ring:1|2}] fill tiles in order (ring draws an inset outline instead of a fill)
+      const cols = it.cols, rows = it.rows, gap = it.gap ?? 8, cw = (it.w - gap * (cols - 1)) / cols, ch = (it.h - gap * (rows - 1)) / rows, base = it.base || 'rgba(255,255,255,.2)';
+      const w = el('it', '', `position:absolute;left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px;will-change:transform,opacity;transform-origin:50% 0`);
+      const cells = Array.from({ length: cols * rows }, (_, i) => { const d = document.createElement('div'); d.style.cssText = `position:absolute;left:${(i % cols) * (cw + gap)}px;top:${Math.floor(i / cols) * (ch + gap)}px;width:${cw}px;height:${ch}px;border-radius:${it.radius ?? 10}px;border:${it.bw ?? 4}px solid ${KIT.ink};box-sizing:border-box;background:${base};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${it.numSize || 30}px;color:${KIT.ink}`; if (it.numbers) d.textContent = i + 1; w.appendChild(d); return d; });
+      const groups = (it.groups || []).map(g => { const at = R(g.at); return { ...g, at, end: g.end !== undefined ? R(g.end) : at + (g.dur ?? .8) }; });
+      groups.forEach(g => EV.push({ t: g.at, type: 'tick' })); const at0 = R(it.at ?? 0); EV.push({ t: at0, type: 'pop' });
+      return { el: w, base: it, update(t) { const k = pop(t, at0, .5); w.style.opacity = clamp(k * 2); w.style.transform = `scale(${.9 + .1 * k})`;
+        cells.forEach((d, i) => { let fill = null, r1 = null, r2 = null; for (const g of groups) { if (i < g.from || i >= g.from + g.count) continue; const rt = g.at + (g.count > 1 ? (i - g.from) / (g.count - 1) : 0) * (g.end - g.at); if (t < rt) continue; if (g.ring === 2) r2 = g.c; else if (g.ring) r1 = g.c; else fill = g.c; }
+          d.style.background = fill || base; d.style.boxShadow = [r1 ? `inset 0 0 0 7px ${r1}` : '', r2 ? `inset 0 0 0 14px ${r2}` : ''].filter(Boolean).join(',') || 'none'; }); } };
     },
     hit(it) { HITS.push({ t: R(it.at), shake: it.shake ?? .3, flash: it.flash ?? .3 }); EV.push({ t: R(it.at), type: 'thud' }); return null; }
   };

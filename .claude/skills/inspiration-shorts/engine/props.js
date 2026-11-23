@@ -9,9 +9,12 @@
 
   // ---- people: one rig, many looks (suit / hoodie / cap / glasses) -------------
   P.person = (o = {}) => {
-    const c = Object.assign({ body: '#3a4a9f', body2: '#2c3a80', pants: '#232a55', skin: '#f3b27a', hair: '#5a3a22', hat: null, tie: '#ff5d73', shirt: '#fff', hood: false, glasses: false, brow: 0, band: null }, o);
+    const c = Object.assign({ body: '#3a4a9f', body2: '#2c3a80', pants: '#232a55', skin: '#f3b27a', hair: '#5a3a22', hat: null, tie: '#ff5d73', shirt: '#fff', hood: false, glasses: false, brow: 0, band: null, hairStyle: 'short', beard: false, stache: false, mood: 'neutral', sweat: false }, o);
     const hat = c.hat ? `<path d="M-70 30 q4 -58 70 -62 q66 4 70 62 q-34 -22 -70 -22 q-36 0 -70 22Z" fill="${c.hat}"/><path d="M-18 -26 q58 -20 96 24 q14 6 18 16 q-26 -8 -60 -4 q-22 -14 -54 -36Z" fill="${c.hat}" style="filter:brightness(.85)"/>`
-      : `<path d="M-68 38 q-6 -64 68 -66 q74 2 68 66 q-26 -30 -68 -30 q-42 0 -68 30Z" fill="${c.hair}"/>`;
+      : (c.hairStyle === 'bald' ? '' : c.hairStyle === 'curly' ? [[-52,2],[-28,-22],[0,-30],[28,-22],[52,2],[-62,28],[62,28]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="22" fill="${c.hair}"/>`).join('') : `<path d="M-68 38 q-6 -64 68 -66 q74 2 68 66 q-26 -30 -68 -30 q-42 0 -68 30Z" fill="${c.hair}"/>` + (c.hairStyle === 'bun' ? `<circle cx="0" cy="-40" r="26" fill="${c.hair}"/>` : ''));
+    const backHair = c.hairStyle === 'long' && !c.hat ? `<path d="M-74 30 q-14 100 10 150 h128 q24 -50 10 -150 Z" fill="${c.hair}"/>` : '';
+    const moodMouth = { worried: 'M-18 80 q9 -9 18 0 q9 9 18 0', shock: 'M-9 70 q9 -14 18 0 q-9 16 -18 0Z', smug: 'M-18 76 q18 6 34 -8', sad: 'M-18 82 q18 -16 36 0', angry: 'M-18 80 q18 -10 36 0', happy: 'M-22 68 q22 26 44 0 q-22 6 -44 0Z', neutral: 'M-18 72 q18 12 36 0' }[c.mood] || 'M-18 72 q18 12 36 0';
+    const moodBrow = { worried: 'M-42 24 l24 6M42 24 l-24 6', shock: 'M-42 18 l24 -2M42 18 l-24 -2', angry: 'M-42 22 l24 10M42 22 l-24 10', sad: 'M-42 34 l24 -10M42 34 l-24 -10', smug: 'M-42 28 l24 -4M42 34 l-24 -2', happy: 'M-40 28 q12 -12 22 -4M40 28 q-12 -12 -22 -4' }[c.mood] || null;
     const torso = c.hood
       ? `<path d="M-64 124 q0 -30 32 -30 h64 q32 0 32 30 V268 q0 10 -10 10 H-54 q-10 0 -10 -10Z" fill="${c.body}"/><path d="M-30 96 q30 34 60 0" fill="${c.body2}"/><rect x="-34" y="190" width="68" height="40" rx="12" fill="${c.body2}"/>`
       : `<path d="M-62 120 q0 -26 30 -26 h64 q30 0 30 26 V268 H-62Z" fill="${c.body}"/><path d="M-26 94 L0 168 L26 94 Z" fill="${c.shirt}"/><path d="M-2 120 h4 l5 48 l-7 12 l-7 -12Z" fill="${c.tie}" stroke-width="4"/>`;
@@ -21,15 +24,19 @@
  <rect x="-62" y="332" width="52" height="24" rx="11" fill="${c.hood ? '#fff' : '#14161f'}"/><rect x="10" y="332" width="52" height="24" rx="11" fill="${c.hood ? '#fff' : '#14161f'}"/>
  ${torso}
  ${sleeve('M-62 130 q-30 40 -22 94')}<circle cx="-84" cy="232" r="17" fill="${c.skin}"/>
+ ${backHair}
  <circle cx="0" cy="40" r="68" fill="${c.skin}"/>
+${c.beard ? `<path d="M-60 56 q10 64 60 66 q50 -2 60 -66 q-14 28 -60 28 q-46 0 -60 -28Z" fill="${c.hair}"/>` : ''}
  ${hat}
  ${c.band ? `<path d="M-68 22 q68 -24 136 0 l-2 16 q-66 -22 -132 0Z" fill="${c.band}"/>` : ''}
  <circle cx="-24" cy="48" r="7" fill="${INK}" stroke="none"/><circle cx="24" cy="48" r="7" fill="${INK}" stroke="none"/>
  <circle cx="-21" cy="45" r="2.4" fill="#fff" stroke="none"/><circle cx="27" cy="45" r="2.4" fill="#fff" stroke="none"/>
  ${c.glasses ? `<circle cx="-24" cy="48" r="17" fill="none"/><circle cx="24" cy="48" r="17" fill="none"/><path d="M-7 48 h14" />` : ''}
- <path d="M-40 ${30 + c.brow} l22 ${-4 - c.brow}M40 ${30 + c.brow} l-22 ${-4 - c.brow}" fill="none" stroke-width="6"/>
+ <path d="${moodBrow || `M-40 ${30 + c.brow} l22 ${-4 - c.brow}M40 ${30 + c.brow} l-22 ${-4 - c.brow}`}" fill="none" stroke-width="6"/>
+ ${c.sweat || c.mood === 'worried' ? `<path d="M64 -2 q-14 24 0 30 q14 -6 0 -30Z" fill="#9fdcff" stroke-width="4"/>` : ''}
+ ${c.stache ? `<path d="M-30 62 q14 -10 30 0 q16 -10 30 0 q-8 14 -30 6 q-22 8 -30 -6Z" fill="${c.hair}"/>` : ''}
  <ellipse cx="-40" cy="66" rx="9" ry="5" fill="#ff8a8a" stroke="none" opacity=".6"/><ellipse cx="40" cy="66" rx="9" ry="5" fill="#ff8a8a" stroke="none" opacity=".6"/>
- <path class="mouth" d="M-18 72 q18 12 36 0" fill="none" stroke-width="5"/>
+ <path class="mouth" data-closed="${moodMouth}" d="${moodMouth}" fill="none" stroke-width="5"/>
  <g class="arm" style="transform-origin:62px 130px">${sleeve('M62 130 q40 18 70 62')}<circle cx="138" cy="198" r="17" fill="${c.skin}"/></g>`;
     return wrap('-110 -60 330 420', 330, 420, body);
   };
@@ -84,6 +91,7 @@
 
   P.bottle = (o = {}) => wrap('-10 -10 120 200', 90, 150, `<rect x="30" y="0" width="40" height="28" rx="6" fill="#fff"/><path d="M20 28 h60 v40 q20 14 20 40 v50 q0 14 -14 14 h-72 q-14 0 -14 -14 v-50 q0 -26 20 -40Z" fill="url(#glass)"/><path d="M6 110 h88 v54 q0 14 -14 14 h-60 q-14 0 -14 -14Z" fill="url(#gold)" stroke="none"/>`);
 
+  P.pot = (o = {}) => wrap('-10 -40 280 240', 280, 240, `<path d="M40 70 H220 V150 Q220 200 170 200 H90 Q40 200 40 150Z" fill="${o.color || '#9aa3b8'}"/><rect x="28" y="52" width="204" height="26" rx="12" fill="#c9d0e0"/><path d="M28 100 H6 M232 100 H254" fill="none" stroke-width="12" stroke-linecap="round"/><path d="M90 40 q-14 -18 0 -34 M130 40 q-14 -18 0 -34 M170 40 q-14 -18 0 -34" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="7" stroke-linecap="round"/><text x="130" y="150" text-anchor="middle" font-size="40" font-weight="800" fill="#232a55" stroke="none">${o.label || ''}</text>`);
   P.cup = (o = {}) => wrap('-10 -10 120 150', 100, 130, `<path d="M6 0 H94 L80 126 H20Z" fill="${o.color || '#fff'}"/><path d="M12 36 H88 L80 126 H20Z" fill="url(#gold)" stroke="none"/><path d="M6 0 H94 L80 126 H20Z" fill="none"/>`);
 
   P.hotdog = (o = {}) => wrap('-10 -10 340 190', 340, 190, `

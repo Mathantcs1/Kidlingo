@@ -1,0 +1,574 @@
+{
+ "kitFile": "../../kits/brandwake.json",
+ "tail": 2.2,
+ "kit": {
+  "rail": [
+   {
+    "label": "THE REVENUE",
+    "color": "#e0543a"
+   },
+   {
+    "label": "THE MODEL",
+    "color": "#7a52d9"
+   },
+   {
+    "label": "THE FLOOR",
+    "color": "#139f7d"
+   },
+   {
+    "label": "THE VERDICT",
+    "color": "#2f6fd6"
+   }
+  ],
+  "caption": {
+   "y": 1322
+  }
+ },
+ "counter": {
+  "act": "a1",
+  "fmt": "pct1",
+  "prefix": "",
+  "until": "here's",
+  "label": "FRANCHISED SHARE",
+  "y": 215,
+  "keys": [
+   [
+    "sixteen",
+    0
+   ],
+   [
+    "sixtytwo",
+    0
+   ],
+   [
+    "sixtytwo+0.9",
+    61.6
+   ]
+  ]
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "ink"
+  },
+  {
+   "id": "a1",
+   "from": "twenty-0.3",
+   "bg": "steel",
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 950
+   },
+   "rail": 0,
+   "title": {
+    "text": "2025 \u00b7 REVENUE",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a2",
+   "from": "here's",
+   "bg": "violet",
+   "transition": "diagonal",
+   "rail": 1,
+   "title": {
+    "text": "WHO PAYS WHOM",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a3",
+   "from": "now-0.1",
+   "bg": "night",
+   "transition": "cut",
+   "rail": 2,
+   "title": {
+    "text": "THE CATCH",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a4",
+   "from": "owns-0.5",
+   "bg": "amber",
+   "transition": "wipe-up",
+   "rail": 2,
+   "title": {
+    "text": "THE LAND",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  },
+  {
+   "id": "a5",
+   "from": "one-0.2",
+   "bg": "steel",
+   "transition": "wipe-left",
+   "rail": 2,
+   "title": {
+    "text": "ONE CAUTION",
+    "bg": "#2f6fd6",
+    "y": 415
+   }
+  },
+  {
+   "id": "a6",
+   "from": "so#3-0.1",
+   "bg": "violet",
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 900
+   },
+   "rail": 3,
+   "title": {
+    "text": "THE VERDICT",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a7",
+   "from": "brand-0.4",
+   "bg": "night",
+   "transition": "zoom",
+   "rail": 3,
+   "title": {
+    "text": "THE LESSON",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "gold",
+   "y": 210,
+   "size": 150,
+   "parts": [
+    {
+     "t": "BURGERS?",
+     "at": "burgers"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "MOST PEOPLE THINK",
+     "at": "most"
+    },
+    {
+     "t": "\u2192 BURGERS",
+     "at": "think",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "grid",
+   "x": 225,
+   "y": 640,
+   "w": 630,
+   "h": 645,
+   "cols": 10,
+   "rows": 10,
+   "at": "most",
+   "groups": [
+    {
+     "from": 0,
+     "count": 100,
+     "c": "#ffc531",
+     "at": "sells",
+     "end": "burgers"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "$26.9B TOTAL REVENUE",
+     "at": "twentysix"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 60,
+   "y": 700,
+   "w": 591,
+   "h": 330,
+   "at": "sixteen",
+   "bg": "#62f0c8",
+   "enter": "slide-left",
+   "text": "FRANCHISED<br>$16.5B",
+   "size": 46
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 671,
+   "y": 700,
+   "w": 346,
+   "h": 330,
+   "at": "only",
+   "bg": "#ff9b82",
+   "enter": "slide-right",
+   "text": "COMPANY-RUN<br>$9.7B",
+   "size": 34
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 60,
+   "y": 1080,
+   "w": 957,
+   "h": 205,
+   "at": "sixtytwo",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "\u2248 62% FROM FRANCHISED RESTAURANTS",
+   "size": 36
+  },
+  {
+   "act": "a1",
+   "type": "source",
+   "text": "FY2025 10-K \u00b7 other revenue $0.6B not shown",
+   "at": "reported+0.3",
+   "y": 1470
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 548,
+   "size": 38,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "45,356 RESTAURANTS",
+     "at": "fortyfive"
+    },
+    {
+     "t": "\u2248 95% FRANCHISED",
+     "at": "franchised#2",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "grid",
+   "x": 225,
+   "y": 640,
+   "w": 630,
+   "h": 645,
+   "cols": 10,
+   "rows": 10,
+   "at": "here's",
+   "groups": [
+    {
+     "from": 0,
+     "count": 100,
+     "c": "#ffc531",
+     "at": "here's",
+     "end": "here's+0.01"
+    },
+    {
+     "from": 0,
+     "count": 95,
+     "c": "#62f0c8",
+     "at": "ninetyfive",
+     "end": "franchised#2"
+    },
+    {
+     "from": 95,
+     "count": 5,
+     "c": "#ff7a5c",
+     "at": "franchised#2",
+     "dur": 0.4
+    }
+   ],
+   "to": "a4"
+  },
+  {
+   "act": "a2",
+   "type": "stamp",
+   "text": "RENT + ROYALTIES + FEES",
+   "at": "royalties",
+   "y": 1510,
+   "hit": false,
+   "color": "#7a52d9",
+   "size": 38
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 548,
+   "size": 38,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "MINIMUM RENT",
+     "at": "minimum",
+     "c": "#e0543a"
+    },
+    {
+     "t": "= A FLOOR",
+     "at": "floor"
+    },
+    {
+     "t": "(OWN SITE COST)",
+     "at": "investment",
+     "c": "#7a52d9"
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "source",
+   "text": "FY2025 10-K, franchise arrangements",
+   "at": "says",
+   "y": 1470
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 548,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "56% LAND OWNED",
+     "at": "fiftysix",
+     "c": "#b8860b"
+    },
+    {
+     "t": "80% BUILDINGS",
+     "at": "eighty",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "source",
+   "text": "FY2025 10-K \u00b7 consolidated markets only",
+   "at": "consolidates",
+   "y": 1470
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "ONE LINE IN THE FILING",
+     "at": "combine",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 50,
+   "y": 680,
+   "w": 300,
+   "h": 260,
+   "at": "rent#4",
+   "bg": "#ff9b82",
+   "enter": "pop",
+   "text": "RENT",
+   "size": 52
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 390,
+   "y": 680,
+   "w": 300,
+   "h": 260,
+   "at": "royalties#2",
+   "bg": "#9bb4ff",
+   "enter": "pop",
+   "text": "ROYALTIES",
+   "size": 40
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 730,
+   "y": 680,
+   "w": 300,
+   "h": 260,
+   "at": "fees#2",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "FEES",
+   "size": 52
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 50,
+   "y": 990,
+   "w": 980,
+   "h": 295,
+   "at": "combine",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "RENT ALONE: NOT SPLIT OUT",
+   "size": 42,
+   "color": "#e0543a"
+  },
+  {
+   "act": "a6",
+   "type": "chip",
+   "y": 548,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "REAL ESTATE COMPANY?",
+     "at": "real"
+    },
+    {
+     "t": "NOT EXACTLY",
+     "at": "not",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a6",
+   "type": "grid",
+   "x": 225,
+   "y": 640,
+   "w": 630,
+   "h": 645,
+   "cols": 10,
+   "rows": 10,
+   "at": "so#3",
+   "groups": [
+    {
+     "from": 0,
+     "count": 95,
+     "c": "#62f0c8",
+     "at": "so#3-0.01",
+     "end": "so#3"
+    },
+    {
+     "from": 95,
+     "count": 5,
+     "c": "#ff7a5c",
+     "at": "so#3-0.01",
+     "end": "so#3"
+    },
+    {
+     "from": 0,
+     "count": 56,
+     "c": "#ffd21f",
+     "at": "franchisor",
+     "end": "ground",
+     "ring": 1
+    }
+   ]
+  },
+  {
+   "act": "a6",
+   "type": "banner",
+   "text": "MY READ, NOT A COMPANY CLAIM",
+   "at": "read",
+   "y": 1470,
+   "size": 28
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 50,
+   "y": 560,
+   "w": 460,
+   "h": 725,
+   "at": "product",
+   "bg": "#ffd9a8",
+   "enter": "pop",
+   "text": "THE<br>PRODUCT",
+   "size": 56,
+   "valign": "flex-start",
+   "pad": 40,
+   "qa": false
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 570,
+   "y": 560,
+   "w": 460,
+   "h": 725,
+   "at": "landlord",
+   "bg": "#b9ecff",
+   "enter": "pop",
+   "text": "THE<br>LANDLORD",
+   "size": 56,
+   "valign": "flex-start",
+   "pad": 40,
+   "qa": false
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "stand",
+   "x": 280,
+   "y": 1285,
+   "scale": 1.344,
+   "enter": "rise",
+   "at": "product",
+   "opts": {
+    "label": "BURGERS",
+    "color": "#e0543a"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "tower",
+   "x": 800,
+   "y": 1285,
+   "scale": 1.12,
+   "enter": "rise",
+   "at": "landlord",
+   "opts": {
+    "label": "SITES",
+    "rows": 4
+   }
+  },
+  {
+   "act": "a7",
+   "type": "banner",
+   "text": "WHICH WOULD YOU RATHER OWN?",
+   "at": "which",
+   "y": 1470,
+   "size": 28
+  }
+ ]
+}

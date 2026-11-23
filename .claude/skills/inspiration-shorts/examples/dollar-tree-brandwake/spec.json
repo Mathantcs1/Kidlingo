@@ -1,0 +1,761 @@
+{
+ "kitFile": "../../kits/brandwake.json",
+ "tail": 2.2,
+ "counter": {
+  "act": "hook",
+  "fmt": "usd2",
+  "prefix": "",
+  "until": "by#2",
+  "label": "PRICE POINT",
+  "y": 215,
+  "keys": [
+   [
+    "one",
+    1.0
+   ],
+   [
+    "announced",
+    1.0
+   ],
+   [
+    "twentyfive",
+    1.25
+   ],
+   [
+    "march",
+    1.25
+   ],
+   [
+    "fifty",
+    1.5
+   ],
+   [
+    "seven",
+    7.0
+   ],
+   [
+    "seven+1.3",
+    7.0
+   ],
+   [
+    "twentyfive#2",
+    1.25
+   ]
+  ]
+ },
+ "kit": {
+  "rail": [
+   {
+    "label": "THE DOLLAR",
+    "color": "#e0543a"
+   },
+   {
+    "label": "THE SWITCH",
+    "color": "#7a52d9"
+   },
+   {
+    "label": "THE LADDER",
+    "color": "#139f7d"
+   },
+   {
+    "label": "THE VERDICT",
+    "color": "#2f6fd6"
+   }
+  ],
+  "caption": {
+   "y": 1322
+  }
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "night"
+  },
+  {
+   "id": "a1",
+   "from": "three-0.1",
+   "bg": "amber",
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 950
+   },
+   "rail": 0,
+   "title": {
+    "text": "1986 \u00b7 THE START",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a2",
+   "from": "september-0.2",
+   "bg": "violet",
+   "transition": "diagonal",
+   "rail": 1,
+   "title": {
+    "text": "SEPT 2021 \u00b7 $1.25",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a3",
+   "from": "its-0.1",
+   "bg": "steel",
+   "transition": "wipe-up",
+   "rail": 1,
+   "title": {
+    "text": "THE STATED REASON",
+    "bg": "#2f6fd6",
+    "y": 415
+   }
+  },
+  {
+   "id": "a4",
+   "from": "by-0.1",
+   "bg": "mint",
+   "transition": "wipe-left",
+   "rail": 1,
+   "title": {
+    "text": "FEB 2022 \u00b7 ALL STORES",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  },
+  {
+   "id": "a5",
+   "from": "didn't-0.3",
+   "bg": "night",
+   "transition": "cut",
+   "rail": 2,
+   "title": {
+    "text": "THE LADDER",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a6",
+   "from": "by#2-0.1",
+   "bg": "violet",
+   "transition": "push",
+   "rail": 2,
+   "title": {
+    "text": "JAN 2026 \u00b7 MULTI-PRICE",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a7",
+   "from": "compare-0.1",
+   "bg": "amber",
+   "transition": "diagonal",
+   "rail": 3,
+   "title": {
+    "text": "VS COSTCO'S HOT DOG",
+    "bg": "#2f6fd6",
+    "y": 415
+   }
+  },
+  {
+   "id": "a8",
+   "from": "october-0.2",
+   "bg": "night",
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 900
+   },
+   "rail": 3,
+   "title": {
+    "text": "OCT 2026 \u00b7 STORE 9,500",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  },
+  {
+   "id": "a9",
+   "from": "when-0.2",
+   "bg": "violet",
+   "transition": "zoom",
+   "rail": 3,
+   "title": {
+    "text": "THE LESSON",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "35+ YEARS",
+     "at": "thirtyfive"
+    },
+    {
+     "t": "= ONE DOLLAR",
+     "at": "dollar",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 190,
+   "y": 650,
+   "w": 700,
+   "h": 635,
+   "at": "one",
+   "bg": "#ffc531",
+   "enter": "pop",
+   "text": "$1",
+   "size": 320,
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "stamp",
+   "text": "THEN IT WAS OVER",
+   "at": "over",
+   "y": 1510,
+   "hit": false,
+   "color": "#e0543a",
+   "size": 46
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "\"ONLY $1.00\"",
+     "at": "only"
+    },
+    {
+     "t": "5 STORES",
+     "at": "five",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "grid",
+   "x": 70,
+   "y": 650,
+   "w": 940,
+   "h": 220,
+   "cols": 5,
+   "rows": 1,
+   "at": "opened",
+   "groups": [
+    {
+     "from": 0,
+     "count": 5,
+     "c": "#ff7a5c",
+     "at": "five",
+     "end": "virginia"
+    }
+   ],
+   "numbers": true,
+   "numSize": 80,
+   "gap": 14,
+   "radius": 18
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 70,
+   "y": 920,
+   "w": 940,
+   "h": 160,
+   "at": "virginia",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "GEORGIA \u00b7 TENNESSEE \u00b7 VIRGINIA",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "source",
+   "text": "Dollar Tree, \"Our history\"",
+   "at": "virginia+0.3",
+   "y": 1470
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "COMPANY: \"PERMANENT\"",
+     "at": "permanent"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 50,
+   "y": 650,
+   "w": 430,
+   "h": 410,
+   "at": "announced",
+   "bg": "#cfd6e6",
+   "enter": "pop",
+   "text": "$1.00",
+   "size": 130,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 600,
+   "y": 650,
+   "w": 430,
+   "h": 410,
+   "at": "twentyfive",
+   "bg": "#ff7a5c",
+   "enter": "pop",
+   "text": "$1.25",
+   "size": 130,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 500,
+   "y": 780,
+   "w": 80,
+   "h": 120,
+   "at": "twentyfive",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "\u2192",
+   "size": 60,
+   "pad": 4,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "source",
+   "text": "Dollar Tree Q3 FY2021 release",
+   "at": "conditions+0.3",
+   "y": 1470
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 548,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "THE COMPANY'S STATED REASON",
+     "at": "stated",
+     "c": "#2f6fd6"
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 60,
+   "y": 650,
+   "w": 960,
+   "h": 120,
+   "at": "historical",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "GOAL: HISTORICAL GROSS MARGIN",
+   "size": 42,
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 60,
+   "y": 800,
+   "w": 960,
+   "h": 150,
+   "at": "freight",
+   "bg": "#ffd9a8",
+   "enter": "pop",
+   "text": "FREIGHT COSTS UP",
+   "size": 48,
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 60,
+   "y": 980,
+   "w": 960,
+   "h": 305,
+   "at": "wage",
+   "bg": "#ffb5a3",
+   "enter": "pop",
+   "text": "WAGE COSTS UP",
+   "size": 48,
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "source",
+   "text": "Q3 FY2021 release",
+   "at": "climbed+0.3",
+   "y": 1470
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "EVERY U.S. STORE",
+     "at": "every",
+     "c": "#139f7d"
+    },
+    {
+     "t": "SWITCHED",
+     "at": "switched"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "grid",
+   "x": 120,
+   "y": 650,
+   "w": 840,
+   "h": 635,
+   "cols": 10,
+   "rows": 6,
+   "at": "every",
+   "groups": [
+    {
+     "from": 0,
+     "count": 60,
+     "c": "#62f0c8",
+     "at": "every",
+     "end": "switched"
+    }
+   ],
+   "gap": 8,
+   "radius": 10
+  },
+  {
+   "act": "a4",
+   "type": "source",
+   "text": "Dollar Tree Q4 FY2021 release, 2 Mar 2022",
+   "at": "switched+0.4",
+   "y": 1470
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "MARCH 2024",
+     "at": "march"
+    },
+    {
+     "t": "300+ ITEMS: $1.50 TO $7",
+     "at": "hundred",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 60,
+   "y": 1060,
+   "w": 300,
+   "h": 225,
+   "at": "twentyfive#2",
+   "bg": "#62f0c8",
+   "enter": "rise",
+   "text": "$1.25",
+   "size": 52,
+   "qa": false
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 390,
+   "y": 940,
+   "w": 300,
+   "h": 345,
+   "at": "fifty",
+   "bg": "#ffd21f",
+   "enter": "rise",
+   "text": "$1.50",
+   "size": 52,
+   "qa": false
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 720,
+   "y": 650,
+   "w": 300,
+   "h": 635,
+   "at": "seven",
+   "bg": "#ff7a5c",
+   "enter": "rise",
+   "text": "$7",
+   "size": 90,
+   "qa": false
+  },
+  {
+   "act": "a5",
+   "type": "source",
+   "text": "Fortune, 15 Mar 2024 \u00b7 most items stayed at $1.25",
+   "at": "dollars+0.6",
+   "y": 1470
+  },
+  {
+   "act": "a6",
+   "type": "chip",
+   "y": 548,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "~5,300 MULTI-PRICE STORES",
+     "at": "fiftythree",
+     "c": "#7a52d9"
+    },
+    {
+     "t": "\u2248 57% OF 9,282",
+     "at": "format"
+    }
+   ]
+  },
+  {
+   "act": "a6",
+   "type": "grid",
+   "x": 270,
+   "y": 760,
+   "w": 540,
+   "h": 525,
+   "cols": 10,
+   "rows": 10,
+   "at": "stores",
+   "groups": [
+    {
+     "from": 0,
+     "count": 57,
+     "c": "#b18cff",
+     "at": "fiftythree",
+     "end": "format"
+    }
+   ],
+   "gap": 6,
+   "radius": 8
+  },
+  {
+   "act": "a6",
+   "type": "chip",
+   "y": 668,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "85% OF ITEMS \u2264 $2",
+     "at": "eightyfive",
+     "c": "#2f6fd6"
+    }
+   ]
+  },
+  {
+   "act": "a6",
+   "type": "source",
+   "text": "FY2025 release; Retail Dive; 5,300 \u00f7 9,282 computed",
+   "at": "format+0.3",
+   "y": 1470
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 40,
+   "y": 580,
+   "w": 1000,
+   "h": 300,
+   "at": "half",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "COSTCO: FEES \u2248 HALF OF OPERATING PROFIT",
+   "size": 44,
+   "qa": false,
+   "pad": "30px 30px 30px 360px"
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 40,
+   "y": 910,
+   "w": 1000,
+   "h": 375,
+   "at": "whole",
+   "bg": "#ffb5a3",
+   "enter": "pop",
+   "text": "DOLLAR TREE: THE DOLLAR WAS THE WHOLE MODEL",
+   "size": 44,
+   "qa": false,
+   "pad": "30px 30px 30px 360px"
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "hotdog",
+   "x": 210,
+   "y": 840,
+   "scale": 1.2,
+   "enter": "pop",
+   "at": "half",
+   "bob": 0.5
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "bill",
+   "x": 210,
+   "y": 1170,
+   "scale": 1.3,
+   "enter": "drop",
+   "at": "whole",
+   "opts": {
+    "label": "$1"
+   },
+   "bob": 0.4
+  },
+  {
+   "act": "a7",
+   "type": "banner",
+   "text": "MY READ, NOT A COMPANY CLAIM",
+   "at": "read",
+   "y": 1470,
+   "size": 28
+  },
+  {
+   "act": "a8",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "40 YEARS AFTER THE FIRST",
+     "at": "forty",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a8",
+   "type": "rect",
+   "x": 90,
+   "y": 650,
+   "w": 900,
+   "h": 270,
+   "at": "nine",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "9,500TH STORE",
+   "size": 100,
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "tower",
+   "x": 540,
+   "y": 1285,
+   "scale": 1.568,
+   "enter": "rise",
+   "at": "store",
+   "opts": {
+    "label": "STORE 9,500",
+    "rows": 3
+   }
+  },
+  {
+   "act": "a8",
+   "type": "source",
+   "text": "Dollar Tree release, 23 Oct 2026",
+   "at": "store+0.4",
+   "y": 1470
+  },
+  {
+   "act": "a9",
+   "type": "rect",
+   "x": 40,
+   "y": 580,
+   "w": 470,
+   "h": 400,
+   "at": "price#2",
+   "bg": "#ffd9a8",
+   "enter": "pop",
+   "text": "THE PRICE",
+   "size": 56,
+   "qa": false
+  },
+  {
+   "act": "a9",
+   "type": "rect",
+   "x": 570,
+   "y": 580,
+   "w": 470,
+   "h": 400,
+   "at": "promise",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "IS THE PROMISE",
+   "size": 50,
+   "qa": false
+  },
+  {
+   "act": "a9",
+   "type": "chip",
+   "y": 1030,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "CAN'T KEEP IT?",
+     "at": "keep",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a9",
+   "type": "banner",
+   "text": "TELL ME BELOW",
+   "at": "tell",
+   "y": 1470,
+   "size": 28
+  }
+ ]
+}

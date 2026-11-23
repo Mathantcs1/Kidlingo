@@ -1,0 +1,652 @@
+{
+ "kitFile": "../../kits/brandwake.json",
+ "tail": 2.2,
+ "kit": {
+  "rail": [
+   {
+    "label": "THE CALL",
+    "color": "#e0543a"
+   },
+   {
+    "label": "THE TEST",
+    "color": "#7a52d9"
+   },
+   {
+    "label": "THE BACKLASH",
+    "color": "#2f6fd6"
+   },
+   {
+    "label": "THE LESSON",
+    "color": "#139f7d"
+   }
+  ],
+  "caption": {
+   "y": 1322
+  }
+ },
+ "counter": {
+  "act": "a4",
+  "fmt": "plain",
+  "prefix": "",
+  "until": "seventynine#2+1.5",
+  "label": "DAYS ON THE MARKET",
+  "y": 215,
+  "keys": [
+   [
+    "launched",
+    0
+   ],
+   [
+    "july",
+    79
+   ]
+  ]
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "night"
+  },
+  {
+   "id": "a1",
+   "from": "myth-0.2",
+   "bg": "amber",
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 950
+   },
+   "rail": 0,
+   "title": {
+    "text": "THE MYTH",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a2",
+   "from": "by-0.1",
+   "bg": "steel",
+   "transition": "wipe-up",
+   "rail": 0,
+   "title": {
+    "text": "THE PROBLEM",
+    "bg": "#2f6fd6",
+    "y": 415
+   }
+  },
+  {
+   "id": "a3",
+   "from": "so-0.1",
+   "bg": "violet",
+   "transition": "diagonal",
+   "rail": 1,
+   "title": {
+    "text": "THE TEST",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a4",
+   "from": "april-0.1",
+   "bg": "sunset",
+   "transition": "wipe-left",
+   "rail": 1,
+   "title": {
+    "text": "23 APR 1985 \u00b7 LAUNCH",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a5",
+   "from": "then-0.1",
+   "bg": "night",
+   "transition": "cut",
+   "rail": 2,
+   "title": {
+    "text": "THE BACKLASH",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a6",
+   "from": "here's-0.1",
+   "bg": "steel",
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 900
+   },
+   "rail": 2,
+   "title": {
+    "text": "WHAT THE TESTS MISSED",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a7",
+   "from": "july-0.2",
+   "bg": "mint",
+   "transition": "wipe-up",
+   "rail": 3,
+   "title": {
+    "text": "11 JUL 1985 \u00b7 CLASSIC",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  },
+  {
+   "id": "a8",
+   "from": "within-0.1",
+   "bg": "amber",
+   "transition": "push",
+   "rail": 3,
+   "title": {
+    "text": "AFTERWARD",
+    "bg": "#2f6fd6",
+    "y": 415
+   }
+  },
+  {
+   "id": "a9",
+   "from": "data-0.2",
+   "bg": "violet",
+   "transition": "zoom",
+   "rail": 3,
+   "title": {
+    "text": "THE LESSON",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "gold",
+   "y": 210,
+   "size": 200,
+   "parts": [
+    {
+     "t": "79 DAYS",
+     "at": "seventynine"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "chip",
+   "y": 560,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "THE DATA SAID:",
+     "at": "numbers"
+    },
+    {
+     "t": "LAUNCH",
+     "at": "said",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "grid",
+   "x": 140,
+   "y": 660,
+   "w": 800,
+   "h": 625,
+   "cols": 10,
+   "rows": 8,
+   "at": "seventynine",
+   "groups": [],
+   "radius": 8,
+   "gap": 7
+  },
+  {
+   "act": "hook",
+   "type": "stamp",
+   "text": "THEN: OLD ONE BACK",
+   "at": "brought",
+   "y": 1510,
+   "hit": false,
+   "color": "#139f7d",
+   "size": 44
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 600,
+   "w": 470,
+   "h": 685,
+   "at": "careless",
+   "bg": "#ffb5a3",
+   "enter": "pop",
+   "text": "MYTH:<br>CARELESS<br>EXECUTIVES",
+   "size": 48,
+   "valign": "flex-start",
+   "pad": 40,
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 570,
+   "y": 600,
+   "w": 470,
+   "h": 685,
+   "at": "record",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "THE RECORD:<br>STRANGER",
+   "size": 48,
+   "valign": "flex-start",
+   "pad": 40,
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "person",
+   "x": 290,
+   "y": 1285,
+   "scale": 1.12,
+   "enter": "pop",
+   "at": "careless",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "glasses": true
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "bottle",
+   "x": 800,
+   "y": 1285,
+   "scale": 2.24,
+   "enter": "pop",
+   "at": "record",
+   "bob": 0.5
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "SHARE LEAD SLIPPING",
+     "at": "share"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "grid",
+   "x": 190,
+   "y": 650,
+   "w": 700,
+   "h": 635,
+   "cols": 5,
+   "rows": 3,
+   "at": "slipping",
+   "groups": [
+    {
+     "from": 0,
+     "count": 15,
+     "c": "#ff7a5c",
+     "at": "fifteen",
+     "end": "row"
+    }
+   ],
+   "numbers": true,
+   "numSize": 54,
+   "gap": 10,
+   "radius": 16
+  },
+  {
+   "act": "a2",
+   "type": "source",
+   "text": "Coca-Cola Company history page (1 tile = 1 year)",
+   "at": "account+0.3",
+   "y": 1470
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "1 TILE = 1,000 TASTERS",
+     "at": "sweeter"
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "grid",
+   "x": 90,
+   "y": 650,
+   "w": 900,
+   "h": 635,
+   "cols": 20,
+   "rows": 10,
+   "at": "sweeter",
+   "groups": [
+    {
+     "from": 0,
+     "count": 200,
+     "c": "#b18cff",
+     "at": "nearly",
+     "end": "thousand#2"
+    }
+   ],
+   "gap": 5,
+   "radius": 6
+  },
+  {
+   "act": "a3",
+   "type": "stamp",
+   "text": "NEARLY 200,000 PREFER IT",
+   "at": "preferred",
+   "y": 1130,
+   "hit": false,
+   "color": "#7a52d9",
+   "size": 36
+  },
+  {
+   "act": "a3",
+   "type": "source",
+   "text": "Company's own figure. History.com: 190,000",
+   "at": "ninety+0.4",
+   "y": 1470
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 548,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "PRESIDENT: \"NEVER AS CONFIDENT\"",
+     "at": "confident"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 110,
+   "y": 650,
+   "w": 860,
+   "h": 210,
+   "at": "launched",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "NEW COKE<br>LAUNCHES",
+   "size": 70,
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "bottle",
+   "x": 540,
+   "y": 1285,
+   "scale": 2.688,
+   "enter": "pop",
+   "at": "launched",
+   "bob": 0.5
+  },
+  {
+   "act": "a4",
+   "type": "source",
+   "text": "History.com, 2015",
+   "at": "confident+0.5",
+   "y": 1470
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "THE HOTLINE LIT UP",
+     "at": "hotline",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 40,
+   "y": 650,
+   "w": 470,
+   "h": 210,
+   "at": "disagree",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "COMPANY PAGE:<br>1,500 CALLS A DAY<br>(JUNE)",
+   "size": 38,
+   "qa": false
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 570,
+   "y": 650,
+   "w": 470,
+   "h": 210,
+   "at": "disagree+1.2",
+   "bg": "#ffd9a8",
+   "enter": "pop",
+   "text": "HISTORY.COM:<br>8,000 CALLS A DAY<br>(JUNE)",
+   "size": 38,
+   "qa": false
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "phone",
+   "x": 540,
+   "y": 1285,
+   "scale": 0.896,
+   "enter": "pop",
+   "at": "hotline",
+   "opts": {
+    "label": "HOTLINE"
+   },
+   "bob": 0.4
+  },
+  {
+   "act": "a5",
+   "type": "source",
+   "text": "Each source's own June 1985 figure",
+   "at": "above+0.2",
+   "y": 1470
+  },
+  {
+   "act": "a6",
+   "type": "rect",
+   "x": 60,
+   "y": 580,
+   "w": 960,
+   "h": 260,
+   "at": "tests#2",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "TESTED:<br>TASTE",
+   "size": 64,
+   "qa": false
+  },
+  {
+   "act": "a6",
+   "type": "rect",
+   "x": 60,
+   "y": 870,
+   "w": 960,
+   "h": 415,
+   "at": "replaced",
+   "bg": "#ffb5a3",
+   "enter": "pop",
+   "text": "NOT ASKED:<br>HOW WOULD YOU FEEL IF THE OLD ONE WERE REPLACED?",
+   "size": 44,
+   "qa": false
+  },
+  {
+   "act": "a6",
+   "type": "source",
+   "text": "History.com, 2015",
+   "at": "dot+0.4",
+   "y": 1470
+  },
+  {
+   "act": "a7",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "COCA-COLA CLASSIC",
+     "at": "classic",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a7",
+   "type": "grid",
+   "x": 140,
+   "y": 650,
+   "w": 800,
+   "h": 635,
+   "cols": 10,
+   "rows": 8,
+   "at": "july",
+   "groups": [
+    {
+     "from": 0,
+     "count": 79,
+     "c": "#e0543a",
+     "at": "july",
+     "end": "seventynine#2"
+    }
+   ],
+   "radius": 8,
+   "gap": 7,
+   "numbers": false
+  },
+  {
+   "act": "a7",
+   "type": "stamp",
+   "text": "79 DAYS",
+   "at": "seventynine#2",
+   "y": 1510,
+   "hit": false,
+   "color": "#e0543a",
+   "size": 56
+  },
+  {
+   "act": "a8",
+   "type": "rect",
+   "x": 60,
+   "y": 580,
+   "w": 960,
+   "h": 300,
+   "at": "topselling",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "CLASSIC:<br>TOP-SELLING SUGAR COLA AGAIN",
+   "size": 50,
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "rect",
+   "x": 60,
+   "y": 910,
+   "w": 960,
+   "h": 375,
+   "at": "ahead",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "AHEAD OF PEPSI",
+   "size": 56,
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "source",
+   "text": "History.com, 2015 (no sales figures given)",
+   "at": "pepsi+0.2",
+   "y": 1470
+  },
+  {
+   "act": "a9",
+   "type": "rect",
+   "x": 40,
+   "y": 580,
+   "w": 470,
+   "h": 420,
+   "at": "right",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "RIGHT ABOUT:<br>TASTE",
+   "size": 50,
+   "qa": false
+  },
+  {
+   "act": "a9",
+   "type": "rect",
+   "x": 570,
+   "y": 580,
+   "w": 470,
+   "h": 420,
+   "at": "measured",
+   "bg": "#ffb5a3",
+   "enter": "pop",
+   "text": "BLIND TO:<br>ATTACHMENT",
+   "size": 50,
+   "qa": false
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "bottle",
+   "x": 540,
+   "y": 1285,
+   "scale": 1.792,
+   "enter": "pop",
+   "at": "product",
+   "bob": 0.5
+  },
+  {
+   "act": "a9",
+   "type": "banner",
+   "text": "WHICH PRODUCT WOULD YOU NEVER LET CHANGE?",
+   "at": "which",
+   "y": 1470,
+   "size": 28
+  }
+ ]
+}
