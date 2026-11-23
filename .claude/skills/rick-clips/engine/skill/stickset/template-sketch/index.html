@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden}canvas{position:absolute;left:0;top:0}</style></head><body>
+<canvas id="c"></canvas>
+<script type="module">
+import { createRenderer } from './stickset/sketchscene.js';
+import { composite } from './stickset/sketchfx.js';
+import { transitionWindow } from './stickset/transitions.js';
+import { buildCaptionTrack, captionAt } from './stickset/captions.js';
+import { shape, roundRectPts, rng } from './stickset/sketch.js';
+
+const TL = await (await fetch('./timeline.json')).json();
+const W = innerWidth, H = innerHeight, cv = document.getElementById('c'); cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d'), mkctx = () => Object.assign(document.createElement('canvas'), { width: W, height: H });
+const A = mkctx(), B = mkctx(), actx = A.getContext('2d'), bctx = B.getContext('2d');
+const shots = TL.shots, R = createRenderer(W, H, shots, TL.words), track = buildCaptionTrack(TL.words, { cuts: shots.map(s => s.t0) });
+const Q = new URLSearchParams(location.search), FROM = +(Q.get('from') || 0), TO = +(Q.get('to') || TL.DUR);   // chapter window
+window.DUR = TO - FROM; window.READY = true;
+
+const shotAtTime = t => shots.find(s => t >= s.t0 && t < s.t1) || shots.at(-1);
+const hashStr = s => [...s].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 7);
+
+function caption(word) {   // one hand-lettered word on a marker tag, tilted a little differently each time
+  const fs = Math.round(H * 0.052), rot = (rng(hashStr(word))() - 0.5) * 0.05;
+  ctx.save(); ctx.font = `italic 800 ${fs}px "DejaVu Sans", sans-serif`;
+  const w = ctx.measureText(word).width + fs * 1.1, h = fs * 1.55;
+  ctx.translate(W / 2, H * 0.645); ctx.rotate(rot);
+  shape(ctx, roundRectPts(-w / 2, -h / 2, w, h, h * 0.28), { fill: '#fbe48f', line: { width: 4, seed: hashStr(word) & 255 }, seed: hashStr(word) & 255 });
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#2f2a26'; ctx.fillText(word, 0, fs * 0.04); ctx.restore();
+}
+const renderAt = t => {
+  const win = transitionWindow(shots, t);
+  if (win) {
+    const prev = shots.find(s => s.id === win.prev.id), next = shots.find(s => s.id === win.next.id);
+    R.drawShot(actx, prev, t); R.drawShot(bctx, next, t);
+    composite(ctx, A, B, win.type, win.k, W, H, R.subjectScreen(next, t));
+  } else R.drawShot(ctx, shotAtTime(t), t);
+  const word = captionAt(track, t); if (word) caption(word);
+};
+window.render = t => renderAt(t + FROM);
+window.TEXTS = t => { t += FROM; const w = captionAt(track, t); return w ? [{ id: 'cap-' + w, text: w, x0: 0, y0: H * .6, x1: W, y1: H * .69, pass: true }] : []; };
+</script></body></html>
