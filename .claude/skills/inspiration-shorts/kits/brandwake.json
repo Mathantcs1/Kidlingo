@@ -1,0 +1,12 @@
+{
+  "_note": "PLACEHOLDER kit for Brandwake. The channel's niche has not been confirmed. Replace palette/voice once known.",
+  "ink": "#0f2a2e",
+  "gold": ["#e8fff6", "#5ef0c3", "#12a37f"],
+  "caption": { "hl": "#5ef0c3", "bg": "rgba(15,42,46,.84)", "size": 74, "y": 1262 },
+  "rail": null,
+  "voice": { "id": "TX3LPaxmHKxFdv7VOQHJ", "name": "Liam - energetic creator" },
+  "bgs": {
+    "night": { "stops": ["#071a1f", "#0f3b44", "#16606b"], "stars": true, "rays": true },
+    "steel": { "stops": ["#e6fbff", "#a8e6ee", "#4fb7c9", "#1f7f93"], "ground": { "top": 1150, "stops": ["#176678", "#0e4553"] } }
+  }
+}

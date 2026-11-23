@@ -1,0 +1,14 @@
+{
+  "_note": "Starter kit chosen by Claude (not copied from any reference). Edit freely; keep ink + gold + ONE accent per act so every video reads as the same channel.",
+  "ink": "#1c1233",
+  "gold": ["#fff1b8", "#f6c445", "#c98a10"],
+  "caption": { "hl": "#f6c445", "bg": "rgba(28,18,51,.82)", "size": 74, "y": 1262 },
+  "rail": null,
+  "transition": "wipe-left",
+  "voice": { "id": "JBFqnCBsd6RMkjVDRZzb", "name": "George - warm, captivating storyteller" },
+  "bgs": {
+    "night":  { "stops": ["#150d2e", "#2d1b69", "#4a2a8f"], "stars": true, "rays": true },
+    "violet": { "stops": ["#7a52d9", "#5b36b8", "#33206e", "#1f1348"], "stars": true, "rays": true },
+    "sunset": { "stops": ["#ffd27a", "#ff9a52", "#c2456b", "#3a1b5c"], "rays": true }
+  }
+}

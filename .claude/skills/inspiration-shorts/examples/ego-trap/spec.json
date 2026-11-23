@@ -1,0 +1,619 @@
+{
+ "tail": 2.2,
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "night"
+  },
+  {
+   "id": "a1",
+   "from": "marcus",
+   "bg": "steel",
+   "title": {
+    "text": "HALDEN LOGISTICS",
+    "bg": "#3b5bdb",
+    "y": 415,
+    "at": "marcus"
+   },
+   "transition": {
+    "type": "iris",
+    "x": 220,
+    "y": 1000
+   }
+  },
+  {
+   "id": "a2",
+   "from": "year",
+   "bg": "amber",
+   "title": {
+    "text": "YEAR 1",
+    "bg": "#e07b00",
+    "y": 415
+   },
+   "transition": "wipe-left"
+  },
+  {
+   "id": "a3",
+   "from": "year#2",
+   "bg": "violet",
+   "title": {
+    "text": "YEAR 2",
+    "bg": "#7b4fd6",
+    "y": 415
+   },
+   "transition": "wipe-left"
+  },
+  {
+   "id": "a4",
+   "from": "year#3",
+   "bg": "sunset",
+   "title": {
+    "text": "YEAR 3",
+    "bg": "#d6336c",
+    "y": 415
+   },
+   "transition": "cut"
+  },
+  {
+   "id": "a5",
+   "from": "you",
+   "bg": "ink",
+   "transition": "zoom"
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "to": "a4",
+   "type": "tug",
+   "y": 150,
+   "at": "fifty",
+   "fmt": "short",
+   "left": {
+    "label": "HIS COMPANY",
+    "color": "#ff5d73",
+    "keys": [
+     [
+      0,
+      50000000
+     ],
+     [
+      "year",
+      50000000
+     ],
+     [
+      "noise+0.6",
+      44000000
+     ],
+     [
+      "year#2",
+      44000000
+     ],
+     [
+      "left+0.5",
+      27000000
+     ],
+     [
+      "year#3",
+      27000000
+     ],
+     [
+      "nine+0.2",
+      9000000
+     ]
+    ]
+   },
+   "right": {
+    "label": "THEIRS",
+    "color": "#3ee0b0",
+    "keys": [
+     [
+      0,
+      50000
+     ],
+     [
+      "year",
+      50000
+     ],
+     [
+      "hundred#2+0.3",
+      400000
+     ],
+     [
+      "year#2",
+      400000
+     ],
+     [
+      "pocket+0.4",
+      6000000
+     ],
+     [
+      "year#3",
+      6000000
+     ],
+     [
+      "million#2",
+      60000000
+     ]
+    ]
+   }
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "tower",
+   "opts": {
+    "label": "HALDEN",
+    "rows": 7
+   },
+   "x": 300,
+   "y": 1180,
+   "scale": 1.0,
+   "enter": "rise",
+   "at": "company"
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "APP"
+   },
+   "x": 800,
+   "y": 1180,
+   "scale": 0.55,
+   "enter": "pop",
+   "at": "fifty#2",
+   "bob": 0.5
+  },
+  {
+   "act": "hook",
+   "type": "stamp",
+   "text": "HA!",
+   "at": "laughed",
+   "y": 1010,
+   "hit": false,
+   "color": "#ff9f0a"
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 548,
+   "size": 52,
+   "text": "400 PEOPLE",
+   "bg": "#fff",
+   "at": "four"
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 668,
+   "size": 52,
+   "bg": "#fff",
+   "until": "founders",
+   "parts": [
+    {
+     "t": "BOX",
+     "at": "two"
+    },
+    {
+     "t": "= $2,000",
+     "c": "#e11d48",
+     "at": "two"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 668,
+   "size": 52,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "APP",
+     "at": "free"
+    },
+    {
+     "t": "= $0",
+     "c": "#19a974",
+     "at": "free"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#2b2b33",
+    "tie": "#ff5d73"
+   },
+   "x": 220,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "slide-left",
+   "at": "marcus",
+   "bob": 0.6,
+   "talk": true
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "tower",
+   "opts": {
+    "label": "HALDEN",
+    "rows": 7
+   },
+   "x": 860,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "rise",
+   "at": "marcus+0.2"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "box",
+   "opts": {
+    "label": "$2,000"
+   },
+   "x": 560,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "drop",
+   "at": "tracked",
+   "until": "showed"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "APP"
+   },
+   "x": 560,
+   "y": 1200,
+   "scale": 0.62,
+   "enter": "rise",
+   "at": "garage",
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "stamp",
+   "text": "COME BACK WITH REVENUE",
+   "at": "revenue",
+   "y": 1000,
+   "size": 42,
+   "hit": false,
+   "color": "#e11d48"
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 548,
+   "size": 52,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "12",
+     "c": "#3b5bdb",
+     "at": "twelve"
+    },
+    {
+     "t": "\u2192",
+     "at": "became"
+    },
+    {
+     "t": "200 CUSTOMERS",
+     "c": "#19a974",
+     "at": "hundred#2"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 668,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "3 OF HIS",
+     "c": "#e11d48",
+     "at": "three"
+    },
+    {
+     "t": "STOP PAYING",
+     "at": "stopped"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#2b2b33",
+    "tie": "#ff5d73",
+    "brow": 6
+   },
+   "x": 220,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "tower",
+   "opts": {
+    "label": "HALDEN",
+    "rows": 7
+   },
+   "x": 860,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "none",
+   "at": 0,
+   "grayAt": "stopped"
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "APP"
+   },
+   "x": 560,
+   "y": 1200,
+   "scale": 0.7,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.8
+  },
+  {
+   "act": "a2",
+   "type": "stamp",
+   "text": "NOISE",
+   "at": "noise",
+   "y": 1000,
+   "hit": false,
+   "color": "#6b7280"
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 548,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "SALES TEAM:",
+     "at": "sales"
+    },
+    {
+     "t": "BUILD AN APP",
+     "c": "#3b5bdb",
+     "at": "app"
+    }
+   ],
+   "until": "exit"
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 668,
+   "size": 56,
+   "bg": "#e11d48",
+   "color": "#fff",
+   "text": "NO.",
+   "at": "chase",
+   "until": "exit"
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#2b2b33",
+    "tie": "#ff5d73",
+    "brow": 8
+   },
+   "x": 190,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "truck",
+   "opts": {
+    "label": "HALDEN"
+   },
+   "x": 850,
+   "y": 1200,
+   "scale": 0.7,
+   "enter": "slide-right",
+   "at": "customer",
+   "dist": 900
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "letter",
+   "opts": {},
+   "x": 520,
+   "y": 1200,
+   "scale": 0.78,
+   "enter": "rise",
+   "at": "exit"
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 548,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "YOUR BOX",
+     "at": "your"
+    },
+    {
+     "t": "NEEDS A TRUCK",
+     "c": "#e11d48",
+     "at": "truck"
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 668,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "THEIRS",
+     "at": "theirs"
+    },
+    {
+     "t": "NEEDS A POCKET",
+     "c": "#19a974",
+     "at": "pocket"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 548,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "AN EMAIL ARRIVES",
+     "at": "email"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 668,
+   "size": 52,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "OFFER:",
+     "at": "nine#2"
+    },
+    {
+     "t": "$9 MILLION",
+     "c": "#e11d48",
+     "at": "million#3"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#2b2b33",
+    "tie": "#ff5d73",
+    "brow": 10
+   },
+   "x": 190,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.4,
+   "talk": true
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "letter",
+   "opts": {},
+   "x": 560,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "drop",
+   "at": "email"
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "APP"
+   },
+   "x": 900,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "demo",
+   "bob": 0.5
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 540,
+   "size": 64,
+   "bg": "#ffd21f",
+   "text": "LAUGH AT SMALL",
+   "at": "giants"
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 680,
+   "size": 64,
+   "bg": "#ff5d73",
+   "color": "#fff",
+   "text": "= PAY FOR BIG",
+   "at": "lose#2"
+  },
+  {
+   "act": "a5",
+   "type": "banner",
+   "text": "WHICH SMALL THING ARE YOU IGNORING?",
+   "at": "seriously@end+0.1",
+   "y": 1130,
+   "size": 42
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "APP"
+   },
+   "x": 540,
+   "y": 1060,
+   "scale": 0.55,
+   "enter": "rise",
+   "at": "giants+0.3",
+   "bob": 0.6
+  }
+ ]
+}

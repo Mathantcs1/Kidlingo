@@ -1,0 +1,21 @@
+{
+  "kit": { "rail": [ {"label":"1 LABOR","color":"#ff5d73"}, {"label":"2 CAPITAL","color":"#1f9d62"}, {"label":"3 SYSTEMS","color":"#7b4fd6"}, {"label":"4 DEALS","color":"#b9791f"} ] },
+  "acts": [
+    { "id": "hook", "bg": "night" },
+    { "id": "l1", "from": "level", "bg": "mint", "rail": 0, "title": { "text": "LEVEL 1: LABOR", "bg": "#ff5d73", "at": "one#2" } }
+  ],
+  "counter": { "act": "l1", "keys": [[0, 20], ["eighty#2", 20], ["eighty#2+0.9", 80]] },
+  "items": [
+    { "act": "hook", "type": "gold", "y": 380, "size": 112, "parts": [ {"t":"$20","at":0}, {"t":"→","at":"into","c":"#ffd21f"}, {"t":"$120,000","at":"one"} ] },
+    { "act": "hook", "type": "prop", "id": "bill", "x": 220, "y": 1130, "enter": "pop", "at": 0.5, "rot": -8 },
+    { "act": "hook", "type": "prop", "id": "stand", "x": 650, "y": 1130, "scale": 1.15, "enter": "rise", "at": "lemonade" },
+
+    { "act": "l1", "type": "chip", "y": 490, "size": 68, "pad": "14px 46px", "parts": [ {"t":"$20","c":"#19a974","at":"twenty#3"}, {"t":"=","at":"twenty#3"}, {"t":"80 CUPS","c":"#ff9f0a","at":"eighty"} ] },
+    { "act": "l1", "type": "chip", "y": 640, "size": 40, "bg": "#3a3f8f", "color": "#fff", "pad": "8px 34px", "text": "SOLD BY HAND", "at": "sells+0.15" },
+    { "act": "l1", "type": "prop", "id": "person", "opts": { "hood": true, "body": "#ffd23f", "body2": "#f4a300", "hat": "#ff5d73", "pants": "#3a3f8f" }, "x": 250, "y": 1170, "scale": 1.12, "enter": "slide-left", "at": "level+0.1", "bob": 0.6, "talk": true, "armAt": "sells", "armUntil": "stops" },
+    { "act": "l1", "type": "prop", "id": "stand", "x": 790, "y": 1170, "scale": 1.2, "enter": "slide-right", "at": "level+0.2", "grayAt": "stops" },
+    { "act": "l1", "type": "coins", "at": "eighty#2", "n": 9, "x": 790, "y0": 640, "y1": 900 },
+    { "act": "l1", "type": "stamp", "text": "STOP = $0", "at": "stops", "y": 1010 },
+    { "act": "l1", "type": "banner", "text": "STOP POURING = NO MONEY", "at": "pouring", "y": 1440 }
+  ]
+}
