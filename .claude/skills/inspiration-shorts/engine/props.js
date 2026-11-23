@@ -9,7 +9,7 @@
 
   // ---- people: one rig, many looks (suit / hoodie / cap / glasses) -------------
   P.person = (o = {}) => {
-    const c = Object.assign({ body: '#3a4a9f', body2: '#2c3a80', pants: '#232a55', skin: '#f3b27a', hair: '#5a3a22', hat: null, tie: '#ff5d73', shirt: '#fff', hood: false, glasses: false, brow: 0 }, o);
+    const c = Object.assign({ body: '#3a4a9f', body2: '#2c3a80', pants: '#232a55', skin: '#f3b27a', hair: '#5a3a22', hat: null, tie: '#ff5d73', shirt: '#fff', hood: false, glasses: false, brow: 0, band: null }, o);
     const hat = c.hat ? `<path d="M-70 30 q4 -58 70 -62 q66 4 70 62 q-34 -22 -70 -22 q-36 0 -70 22Z" fill="${c.hat}"/><path d="M-18 -26 q58 -20 96 24 q14 6 18 16 q-26 -8 -60 -4 q-22 -14 -54 -36Z" fill="${c.hat}" style="filter:brightness(.85)"/>`
       : `<path d="M-68 38 q-6 -64 68 -66 q74 2 68 66 q-26 -30 -68 -30 q-42 0 -68 30Z" fill="${c.hair}"/>`;
     const torso = c.hood
@@ -23,6 +23,7 @@
  ${sleeve('M-62 130 q-30 40 -22 94')}<circle cx="-84" cy="232" r="17" fill="${c.skin}"/>
  <circle cx="0" cy="40" r="68" fill="${c.skin}"/>
  ${hat}
+ ${c.band ? `<path d="M-68 22 q68 -24 136 0 l-2 16 q-66 -22 -132 0Z" fill="${c.band}"/>` : ''}
  <circle cx="-24" cy="48" r="7" fill="${INK}" stroke="none"/><circle cx="24" cy="48" r="7" fill="${INK}" stroke="none"/>
  <circle cx="-21" cy="45" r="2.4" fill="#fff" stroke="none"/><circle cx="27" cy="45" r="2.4" fill="#fff" stroke="none"/>
  ${c.glasses ? `<circle cx="-24" cy="48" r="17" fill="none"/><circle cx="24" cy="48" r="17" fill="none"/><path d="M-7 48 h14" />` : ''}
@@ -90,6 +91,20 @@
  <rect x="0" y="60" width="320" height="64" rx="32" fill="${o.meat || '#c4553a'}"/><path d="M24 78 q30 -10 60 0" fill="none" stroke="#e98a73" stroke-width="6"/>
  <path d="M20 96 q20 -22 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" fill="none" stroke="#ffd21f" stroke-width="9"/>
  <path d="M10 112 q0 36 150 36 q150 0 150 -36 q0 56 -150 56 q-150 0 -150 -56Z" fill="#d79a4e"/>`);
+
+  // "Pride": a small smug shadow that whispers bad advice (original character)
+  P.pride = (o = {}) => { const c = o.color || '#5b3aa8'; return wrap('-10 -30 190 230', 190, 230, `
+ <path d="M26 24 l-18 -38 l42 22Z M144 24 l18 -38 l-42 22Z" fill="${c}"/>
+ <path d="M20 84 q0 -74 65 -74 q65 0 65 74 q0 62 -18 104 q-8 16 -26 16 h-42 q-18 0 -26 -16 q-18 -42 -18 -104Z" fill="${c}"/>
+ <path d="M40 78 q18 -16 36 0 q-18 8 -36 0Z M94 78 q18 -16 36 0 q-18 8 -36 0Z" fill="#ffd21f" stroke-width="5"/>
+ <path d="M46 78 h24 M100 78 h24" stroke-width="6"/>
+ <path d="M48 124 q37 36 76 0 q-38 -12 -76 0Z" fill="#1c1233"/><path d="M62 128 l6 8 l6 -8 M96 128 l6 8 l6 -8" fill="#fff" stroke-width="3"/>`); };
+  P.laptop = (o = {}) => wrap('-10 -10 330 230', 330, 230, `<rect x="30" y="0" width="250" height="160" rx="12" fill="#2c2f45"/><rect x="44" y="14" width="222" height="132" rx="6" fill="${o.screen || '#cfe8ff'}"/>
+ ${[0,1,2,3].map(i => `<path d="M60 ${40 + i * 24} h${150 - i * 20}" stroke="#7aa0d8" stroke-width="7"/>`).join('')}<path d="M0 172 h310 l-14 28 h-282Z" fill="#b9bfd6"/>`);
+  P.carton = (o = {}) => wrap('-10 -50 290 270', 290, 270, `<path d="M40 30 l-30 -30 M230 30 l30 -30" fill="none"/><path d="M10 40 l40 -34 h170 l40 34Z" fill="#d9a35f"/>
+ <path d="M110 40 q-4 -60 40 -70 q4 30 -10 70Z" fill="#46c27a"/><rect x="170" y="-4" width="46" height="52" rx="8" fill="#fff"/><path d="M216 8 q22 4 0 28" fill="none"/>
+ <rect x="10" y="40" width="250" height="170" rx="6" fill="#e7b570"/><rect x="100" y="40" width="70" height="26" fill="#c98a45" stroke-width="5"/>
+ <text x="135" y="140" text-anchor="middle" font-family="Poppins" font-weight="800" font-size="30" fill="${INK}" stroke="none">${o.label || 'DESK'}</text>`);
 
   P.defs = `<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9be7ff"/><stop offset="1" stop-color="#3a86e0"/></linearGradient><linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe45c"/><stop offset="1" stop-color="#f5a800"/></linearGradient>`;
   window.PROPS = P;

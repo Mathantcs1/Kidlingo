@@ -10,7 +10,7 @@ A project folder holds `script.txt`, `vo.mp3`, `words.json` (from `tts.py`) and 
   "acts": [ { "id":"hook", "bg":"night" },
             { "id":"a1", "from":"marcus", "bg":"steel", "transition":{"type":"iris","x":220,"y":1000}, "rail":0,
               "title": { "text":"HALDEN LOGISTICS", "bg":"#3b5bdb", "y":415, "at":"marcus" } } ],
-  "counter": { "act":"a1", "keys":[[0,20],["eighty#2",20],["eighty#2+0.9",80]], "prefix":"$", "fmt":"full", "until":"so#2" },   // fmt: full | short | plain | pct1 | pct0 ; until = fade-out time ref
+  "counter": { "act":"a1", "keys":[[0,20],["eighty#2",20],["eighty#2+0.9",80]], "prefix":"$", "fmt":"full", "until":"so#2", "label":"SAVINGS", "y":215 },   // fmt: full | short | plain | pct1 | pct0 ; until = fade-out time ref
   "items": [ ... ]
 }
 ```
@@ -38,7 +38,7 @@ Each act has a `transition` (see `transitions.md`; default `wipe-up`) and a back
 `prop.enter`: `pop, rise, drop, slide-left, slide-right, none`. `talk:true` flaps the mouth while the narrator speaks (person only). `fmt` for money: `short` ($50K, $9M) or `full`/`plain`.
 
 ## Props (in `engine/props.js`)
-`person` (opts: body, body2, pants, skin, hair, hat, tie, shirt, hood, glasses, brow), `stand` (label, color), `tower` (label, rows, color), `phone` (label, screen), `box` (label), `truck` (label, cab), `letter` (lines, color), `doc` (label), `bill` (label), `coin`, `bottle`, `cup`. To add a prop, add a function to `props.js` that returns `wrap(viewBox, w, h, svgBody)`; keep stroke weight 7 and the ink colour so the set stays consistent.
+`person` (opts: body, body2, pants, skin, hair, hat, band (headband), tie, shirt, hood, glasses, brow), `stand` (label, color), `tower` (label, rows, color), `phone` (label, screen), `box` (label), `truck` (label, cab), `letter` (lines, color), `doc` (label), `bill` (label), `coin`, `bottle`, `cup`, `hotdog` (meat), `pride` (smug shadow character for Pride Parables), `laptop` (screen), `carton` (label). To add a prop, add a function to `props.js` that returns `wrap(viewBox, w, h, svgBody)`; keep stroke weight 7 and the ink colour so the set stays consistent.
 
 ## Layout grid (1080x1920)
 Counter/tug y 150-400 · title chip y ~415 · chips y ~548 and ~668 · scene (props anchored on y ~1170-1200) · caption y 1262 · banner y 1130-1440 · bottom 15% and right 12% are covered by YouTube UI, keep important content out.

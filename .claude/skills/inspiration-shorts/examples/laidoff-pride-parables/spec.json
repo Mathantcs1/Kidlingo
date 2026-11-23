@@ -1,0 +1,959 @@
+{
+ "kitFile": "../../kits/pride-parables.json",
+ "tail": 3.0,
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "ink"
+  },
+  {
+   "id": "a1",
+   "from": "ace",
+   "bg": "violet",
+   "transition": "wipe-left",
+   "title": {
+    "text": "MONDAY: LAID OFF",
+    "bg": "#e0543a",
+    "y": 415,
+    "at": "laid"
+   }
+  },
+  {
+   "id": "a2",
+   "from": "pride",
+   "bg": "night",
+   "transition": "iris",
+   "title": {
+    "text": "PRIDE'S ADVICE",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a3",
+   "from": "friday#2",
+   "bg": "steel",
+   "transition": "diagonal",
+   "title": {
+    "text": "THE LIBRARY",
+    "bg": "#2f6fd6",
+    "y": 415,
+    "at": "library"
+   }
+  },
+  {
+   "id": "a4",
+   "from": "pride#2",
+   "bg": "night",
+   "transition": "iris",
+   "title": {
+    "text": "PRIDE LOVES IT",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a5",
+   "from": "day",
+   "bg": "amber",
+   "transition": "push",
+   "title": {
+    "text": "DAY 23",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a6",
+   "from": "pride#3",
+   "bg": "night",
+   "transition": "diagonal",
+   "title": {
+    "text": "PRIDE WHISPERS",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a7",
+   "from": "ignored-0.5",
+   "bg": "sunset",
+   "transition": "cut",
+   "title": {
+    "text": "THE TURN",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  },
+  {
+   "id": "a8",
+   "from": "sam#4",
+   "bg": "sunset",
+   "transition": "wipe-up",
+   "title": {
+    "text": "SAM HELPS",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  },
+  {
+   "id": "a9",
+   "from": "friday#3",
+   "bg": "mint",
+   "transition": "wipe-up",
+   "title": {
+    "text": "A WEEK LATER",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  },
+  {
+   "id": "a10",
+   "from": "pride#4",
+   "bg": "night",
+   "transition": "iris"
+  },
+  {
+   "id": "a11",
+   "from": "pride#5",
+   "bg": "violet",
+   "transition": "zoom",
+   "title": {
+    "text": "THE LESSON",
+    "bg": "#f6c445",
+    "y": 415
+   }
+  }
+ ],
+ "counter": {
+  "act": "a3",
+  "from": "savings",
+  "label": "SAVINGS",
+  "fmt": "full",
+  "prefix": "$",
+  "until": "sulked",
+  "keys": [
+   [
+    "savings",
+    4800
+   ],
+   [
+    "thirtysix",
+    4800
+   ],
+   [
+    "thirtysix+0.7",
+    3600
+   ],
+   [
+    "twentyfour",
+    3600
+   ],
+   [
+    "twentyfour+0.7",
+    2400
+   ],
+   [
+    "sulked",
+    2400
+   ]
+  ],
+  "y": 215
+ },
+ "items": [
+  {
+   "act": "hook",
+   "type": "chip",
+   "y": 548,
+   "size": 56,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "9:00 AM",
+     "at": "nine",
+     "c": "#2f6fd6"
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "person",
+   "x": 220,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "slide-left",
+   "at": "left",
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "carton",
+   "x": 760,
+   "y": 1200,
+   "scale": 0.7,
+   "enter": "pop",
+   "at": "work",
+   "opts": {
+    "label": "NO WORK"
+   }
+  },
+  {
+   "act": "hook",
+   "type": "stamp",
+   "text": "NO WORK",
+   "at": "no",
+   "y": 900,
+   "color": "#e0543a",
+   "size": 64,
+   "hit": false
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 548,
+   "size": 52,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "LAID OFF",
+     "at": "laid",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 668,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "TUESDAY:",
+     "at": "tuesday"
+    },
+    {
+     "t": "SAME SHIRT",
+     "at": "shirt",
+     "c": "#2f6fd6"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "person",
+   "x": 220,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "carton",
+   "x": 780,
+   "y": 1200,
+   "scale": 0.9,
+   "enter": "drop",
+   "at": "laid",
+   "opts": {
+    "label": "DESK"
+   }
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 548,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "PRIDE:",
+     "at": "pride",
+     "c": "#7a52d9"
+    },
+    {
+     "t": "\"DON'T WORRY ANYONE\"",
+     "at": "worry"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 668,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "NEW JOB BY FRIDAY",
+     "at": "job"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "person",
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "pride",
+   "x": 470,
+   "y": 1200,
+   "scale": 0.95,
+   "enter": "pop",
+   "at": "pride",
+   "bob": 0.8
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 548,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "41 APPLICATIONS",
+     "at": "applications",
+     "c": "#2f6fd6"
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 668,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "2 REPLIES:",
+     "at": "replies"
+    },
+    {
+     "t": "BOTH NO",
+     "at": "no#2",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "person",
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a",
+    "brow": 6
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "laptop",
+   "x": 680,
+   "y": 1200,
+   "scale": 0.9,
+   "enter": "rise",
+   "at": "library"
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 548,
+   "size": 38,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "\"NOBODY SUSPECTS A THING\"",
+     "at": "nobody"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "person",
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a",
+    "brow": 8
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "pride",
+   "x": 760,
+   "y": 1200,
+   "scale": 1.15,
+   "enter": "pop",
+   "at": "loved",
+   "bob": 0.8
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 548,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "AT THIS TABLE SINCE 8:30",
+     "at": "table",
+     "c": "#2f6fd6"
+    }
+   ]
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 668,
+   "size": 46,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "FOR 3 WEEKS",
+     "at": "weeks",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "person",
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a",
+    "brow": 8
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "laptop",
+   "x": 560,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "none",
+   "at": 0
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "person",
+   "x": 880,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "slide-right",
+   "at": "sam",
+   "opts": {
+    "hood": true,
+    "body": "#2fa37a",
+    "body2": "#1f7d5d",
+    "hair": "#2b2b33",
+    "hat": null,
+    "pants": "#2c3a60"
+   },
+   "bob": 0.6,
+   "phase": 1.2
+  },
+  {
+   "act": "a5",
+   "type": "stamp",
+   "text": "THE SAME SHIRT",
+   "at": "shirt#2",
+   "y": 1010,
+   "color": "#e0543a",
+   "size": 48,
+   "hit": false
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "person",
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a",
+    "brow": 10
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "pride",
+   "x": 540,
+   "y": 1200,
+   "scale": 1.05,
+   "enter": "pop",
+   "at": "pride#3",
+   "bob": 0.8
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "person",
+   "x": 880,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "hood": true,
+    "body": "#2fa37a",
+    "body2": "#1f7d5d",
+    "hair": "#2b2b33",
+    "hat": null,
+    "pants": "#2c3a60"
+   },
+   "bob": 0.6,
+   "phase": 1.2
+  },
+  {
+   "act": "a6",
+   "type": "stamp",
+   "text": "LIE. QUICK.",
+   "at": "lie",
+   "y": 1020,
+   "color": "#7a52d9",
+   "size": 58,
+   "hit": false
+  },
+  {
+   "act": "a7",
+   "type": "chip",
+   "y": 548,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "\"I GOT LAID OFF.\"",
+     "at": "laid#2",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a7",
+   "type": "chip",
+   "y": 668,
+   "size": 36,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "\"I DIDN'T WANT YOU TO WORRY.\"",
+     "at": "worry#2"
+    }
+   ]
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "person",
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "person",
+   "x": 880,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "hood": true,
+    "body": "#2fa37a",
+    "body2": "#1f7d5d",
+    "hair": "#2b2b33",
+    "hat": null,
+    "pants": "#2c3a60"
+   },
+   "bob": 0.6,
+   "phase": 1.2
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "pride",
+   "x": 540,
+   "y": 1200,
+   "scale": 0.9,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.8,
+   "until": "laid#2"
+  },
+  {
+   "act": "a8",
+   "type": "chip",
+   "y": 548,
+   "size": 42,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "\"I WAS WORRIED ANYWAY.\"",
+     "at": "worried"
+    }
+   ]
+  },
+  {
+   "act": "a8",
+   "type": "chip",
+   "y": 668,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "\"NOW I CAN HELP.\"",
+     "at": "help",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "person",
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "person",
+   "x": 880,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "hood": true,
+    "body": "#2fa37a",
+    "body2": "#1f7d5d",
+    "hair": "#2b2b33",
+    "hat": null,
+    "pants": "#2c3a60"
+   },
+   "bob": 0.6,
+   "phase": 1.2
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "phone",
+   "x": 540,
+   "y": 1200,
+   "scale": 0.55,
+   "enter": "pop",
+   "at": "call",
+   "opts": {
+    "label": "CALL"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a9",
+   "type": "chip",
+   "y": 548,
+   "size": 50,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "2 INTERVIEWS",
+     "at": "interviews",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a9",
+   "type": "chip",
+   "y": 668,
+   "size": 50,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "DAY 31:",
+     "at": "thirtyone"
+    },
+    {
+     "t": "NEW JOB",
+     "at": "job#2",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "person",
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "person",
+   "x": 880,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "hood": true,
+    "body": "#2fa37a",
+    "body2": "#1f7d5d",
+    "hair": "#2b2b33",
+    "hat": null,
+    "pants": "#2c3a60"
+   },
+   "bob": 0.6,
+   "phase": 1.2
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "doc",
+   "x": 540,
+   "y": 1200,
+   "scale": 0.9,
+   "enter": "drop",
+   "at": "job#2",
+   "opts": {
+    "label": "OFFER"
+   }
+  },
+  {
+   "act": "a9",
+   "type": "stamp",
+   "text": "SAVINGS STOPPED DROPPING",
+   "at": "stopped",
+   "y": 980,
+   "color": "#139f7d",
+   "size": 40,
+   "hit": false
+  },
+  {
+   "act": "a10",
+   "type": "chip",
+   "y": 548,
+   "size": 50,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "PRIDE SULKS",
+     "at": "sulked",
+     "c": "#7a52d9"
+    }
+   ]
+  },
+  {
+   "act": "a10",
+   "type": "prop",
+   "id": "person",
+   "x": 230,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a10",
+   "type": "prop",
+   "id": "pride",
+   "x": 800,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "sulked",
+   "grayAt": "sulked"
+  },
+  {
+   "act": "a11",
+   "type": "chip",
+   "y": 548,
+   "size": 34,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "PRIDE: TELL THEM WHEN IT'S FIXED",
+     "at": "pride#5",
+     "c": "#7a52d9"
+    }
+   ]
+  },
+  {
+   "act": "a11",
+   "type": "chip",
+   "y": 668,
+   "size": 34,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "HUMILITY: TELL THEM SO WE CAN FIX IT",
+     "at": "humility",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a11",
+   "type": "prop",
+   "id": "person",
+   "x": 200,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": "#ffd21f",
+    "band": "#e0543a"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a11",
+   "type": "prop",
+   "id": "pride",
+   "x": 860,
+   "y": 1200,
+   "scale": 0.7,
+   "enter": "none",
+   "at": 0,
+   "grayAt": 0
+  },
+  {
+   "act": "a11",
+   "type": "banner",
+   "text": "TELL ONE PERSON TODAY",
+   "at": "tell#3",
+   "y": 1430,
+   "size": 42
+  },
+  {
+   "act": "a11",
+   "type": "banner",
+   "text": "EVERY FALL BEGINS WITH ONE PROUD DECISION",
+   "at": "every",
+   "y": 1535,
+   "size": 30
+  }
+ ]
+}
