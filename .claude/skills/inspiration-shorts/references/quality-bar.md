@@ -3,6 +3,7 @@
 Fail the video if any item is false. These are the failures that make Shorts feel "useless".
 
 ## Story
+- [ ] A new open loop or turn lands at least every 12 s; a re-hook sits near 25 s.
 - [ ] First 3 seconds contain the irony or the final number, not a title or greeting.
 - [ ] Every beat adds a new number or a new fact. No beat repeats the previous one.
 - [ ] Arithmetic is consistent between voice, chips and counter (recompute it).
@@ -27,7 +28,7 @@ Fail the video if any item is false. These are the failures that make Shorts fee
 - [ ] No logos; no claims about motives or character; as-of date in the description.
 
 ## Delivery
-- [ ] 1080x1920, h264 + aac, under 59 s.
+- [ ] 1080x1920, h264 + aac, 60-90 s (owner's minimum is 60 s; maximum 3 min).
 - [ ] `FACTS.md` present if any real person, company, repo or statistic is used.
 - [ ] Title (hook first, < 60 chars), description (2 lines + 3 hashtags), pinned comment question.
 - [ ] Fictional stories say so; the AI-narration/synthetic disclosure is mentioned to the user.

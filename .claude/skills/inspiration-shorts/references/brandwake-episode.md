@@ -4,7 +4,7 @@ Channel promise (from its description): follow the money, the decisions and the 
 
 Kit: `kits/brandwake.json` (deep-water teal + signal coral, ripple-ring "wake" backgrounds, rail RISE / PEAK / BREAK / WAKE, calm broadcaster voice).
 
-## Episode formula (Short, 45-58 s)
+## Episode formula (Short, 60-80 s; open from the surprising end state, see `story-craft.md` "60-90 second structure")
 | Act | Rail | Transition | Content |
 |---|---|---|---|
 | Hook (0-4 s) | - | - | The paradox in one line + the key number ("Sold in 40 countries. Gone in 18 months.") |

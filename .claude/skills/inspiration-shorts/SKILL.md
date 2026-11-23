@@ -1,6 +1,6 @@
 ---
 name: inspiration-shorts
-description: Make high-quality vertical YouTube Shorts (30-58 s, 1080x1920) from an idea, a story, a parable, or a public GitHub repository, entirely in code - animated money/lesson counters, chips, stamps, a transition library (wipes, iris, push, shutters, zoom, impact cut), word-synced captions, ElevenLabs narration, procedural sound design and an automatic layout QA gate, with the Lemo-Opuscar film-style library for other looks. Use this whenever the user wants a Short, an inspirational / motivational / moral-story / money-lesson / "how X went from A to B" video, a faceless story or explainer, a repo-story or "GitHub repo explained" video, or mentions inspiration shorts, Pride Parables, Brandwake, Lemo-Opuscar, or wants videos "like this reference" instead of generic AI slideshow clips - even if they never say "skill".
+description: Make high-quality vertical YouTube Shorts (60-90 s by default, up to 3 min, 1080x1920) from an idea, a story, a parable, or a public GitHub repository, entirely in code - animated money/lesson counters, chips, stamps, a transition library (wipes, iris, push, shutters, zoom, impact cut), word-synced captions, ElevenLabs narration, procedural sound design and an automatic layout QA gate, with the Lemo-Opuscar film-style library for other looks. Use this whenever the user wants a Short, an inspirational / motivational / moral-story / money-lesson / "how X went from A to B" video, a faceless story or explainer, a repo-story or "GitHub repo explained" video, or mentions inspiration shorts, Pride Parables, Brandwake, Lemo-Opuscar, or wants videos "like this reference" instead of generic AI slideshow clips - even if they never say "skill".
 ---
 
 # inspiration-shorts
@@ -11,10 +11,10 @@ The look is **inspired by** a reference format the user supplied (counter + chip
 
 ## Workflow (in order; do not skip the treatment: most bad Shorts fail in the story)
 
-1. **Brief (ask once, only what you cannot decide).** Topic or source, channel kit, length (default 45-55 s), voice. Real people, brands or repos mean facts must be sourced. If a channel's niche is unknown, say so and use the placeholder kit.
+1. **Brief (ask once, only what you cannot decide).** Topic or source, channel kit, length (default 60-80 s; owner's minimum is 60 s; Shorts may run to 3 min; never pad), voice. Real people, brands or repos mean facts must be sourced. If a channel's niche is unknown, say so and use the placeholder kit.
 2. **Pick the look.** Default is this skill's engine (counter/lesson format). Use the Lemo-Opuscar library when the story fits another medium better: see "Lemo-Opuscar" below and `references/lemo-opuscar.md`. Decide now, because it changes the build path.
 3. **Story.** Read `references/story-craft.md`. Write the beat sheet *before* any script: hook, 4-5 beats, each with (a) a new number or fact, (b) a visual action, (c) a spoken line, (d) the transition into it. Real repo/company/person: collect numbers from a public source into `FACTS.md` (claim + URL). Fictional stories get labelled fictional.
-4. **Script.** `script.txt`, one short sentence per fact, numbers spelled as words (the screen carries digits). 110-150 words for 50 s.
+4. **Script.** `script.txt`, one short sentence per fact, numbers spelled as words (the screen carries digits). About 150-190 words for 65-80 s.
 5. **Voice.** `python3 scripts/tts.py <project>` -> `vo.mp3` + `words.json` (word timings, pauses tightened). Voice comes from the kit. Re-run if a line sounds wrong.
 6. **Spec.** Write `spec.json` (acts, items, counters, transitions); format in `references/spec-format.md`. Time everything to words (`"eighty#2"`, `"stops+0.2"`), never hand-typed seconds, so a re-recorded voice cannot desync the picture. Start from `examples/ego-trap/` (two-sided tug counter) or `examples/lemonade/` (single counter, hero + stand).
 7. **Build.** `sh scripts/build.sh <project>`: layout QA first (fails on off-frame text, text over text, text over props), then sound design, frames, mux, loudness and black-frame checks. Fix every QA error; read the warnings.
@@ -44,6 +44,7 @@ Node 20+, ffmpeg, Python 3 + numpy, Playwright with Chromium (preinstalled in Cl
 ## Hard rules
 
 - Hook inside 3 s; something new on screen every 1-2 s; never more than ~2.4 s with only the caption showing.
+- A minute-plus Short needs a new open loop (a question the viewer wants answered) every 8-12 s and a re-hook near 25 s; see `references/story-craft.md` "60-90 second structure".
 - One accent colour per act; text never on a same-colour background; all text inside the safe area (QA enforces).
 - Spoken and on-screen numbers are real and consistent; do the arithmetic before building.
 - Never copy another creator's characters, chip wording, handle or palette; no real brands or people in fictional stories without the right to.
