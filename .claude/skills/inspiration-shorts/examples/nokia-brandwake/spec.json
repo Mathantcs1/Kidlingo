@@ -1,0 +1,843 @@
+{
+ "kitFile": "../../kits/brandwake.json",
+ "tail": 2.0,
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "night"
+  },
+  {
+   "id": "a1",
+   "from": "that",
+   "bg": "steel",
+   "rail": 1,
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 950
+   },
+   "title": {
+    "text": "SYMBIAN \u00b7 2008",
+    "bg": "#2f6fd6",
+    "y": 415,
+    "at": "symbian"
+   }
+  },
+  {
+   "id": "a2",
+   "from": "because",
+   "bg": "violet",
+   "rail": 1,
+   "transition": "diagonal",
+   "title": {
+    "text": "2007: NEW RIVALS",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a3",
+   "from": "symbian#2",
+   "bg": "amber",
+   "rail": 2,
+   "transition": "wipe-left",
+   "title": {
+    "text": "SYMBIAN SLIDES",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a4",
+   "from": "nokia's#2",
+   "bg": "sunset",
+   "rail": 2,
+   "transition": "push",
+   "title": {
+    "text": "FEB 2011: THE BET",
+    "bg": "#d6336c",
+    "y": 415
+   }
+  },
+  {
+   "id": "a5",
+   "from": "last",
+   "bg": "ink",
+   "rail": 2,
+   "transition": "cut",
+   "title": {
+    "text": "Q4 2011 \u00b7 LAST 3 MONTHS",
+    "bg": "#e0543a",
+    "y": 415
+   }
+  },
+  {
+   "id": "a6",
+   "from": "2013",
+   "bg": "steel",
+   "rail": 2,
+   "transition": "wipe-down",
+   "title": {
+    "text": "2013: THE SALE",
+    "bg": "#2f6fd6",
+    "y": 415
+   }
+  },
+  {
+   "id": "a7",
+   "from": "so#2",
+   "bg": "night",
+   "rail": 3,
+   "transition": "zoom",
+   "title": {
+    "text": "IS NOKIA DEAD?",
+    "bg": "#7a52d9",
+    "y": 415
+   }
+  },
+  {
+   "id": "a8",
+   "from": "today",
+   "bg": "steel",
+   "rail": 3,
+   "transition": "wipe-up",
+   "title": {
+    "text": "TODAY",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  },
+  {
+   "id": "a9",
+   "from": "lesson",
+   "bg": "violet",
+   "rail": 3,
+   "transition": {
+    "type": "iris",
+    "x": 540,
+    "y": 900
+   },
+   "title": {
+    "text": "THE LESSON",
+    "bg": "#139f7d",
+    "y": 415
+   }
+  }
+ ],
+ "counter": {
+  "act": "hook",
+  "fmt": "pct1",
+  "prefix": "",
+  "until": "so#2",
+  "keys": [
+   [
+    0,
+    52.4
+   ],
+   [
+    "didn't",
+    52.4
+   ],
+   [
+    "didn't+0.9",
+    11.7
+   ],
+   [
+    "fiftytwo-0.2",
+    11.7
+   ],
+   [
+    "fiftytwo+0.5",
+    52.4
+   ],
+   [
+    "fortyseven",
+    52.4
+   ],
+   [
+    "fortyseven+0.7",
+    46.9
+   ],
+   [
+    "thirtyeight",
+    46.9
+   ],
+   [
+    "thirtyeight+0.7",
+    37.6
+   ],
+   [
+    "twelve-0.3",
+    37.6
+   ],
+   [
+    "twelve+0.5",
+    11.7
+   ]
+  ]
+ },
+ "items": [
+  {
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "SYMBIAN"
+   },
+   "x": 810,
+   "y": 1200,
+   "scale": 0.75,
+   "enter": "rise",
+   "at": "software",
+   "bob": 0.5,
+   "act": "hook"
+  },
+  {
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "brow": 0
+   },
+   "x": 190,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "slide-left",
+   "at": "nokia's",
+   "bob": 0.6,
+   "talk": true,
+   "act": "hook"
+  },
+  {
+   "act": "hook",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "HALF THE WORLD'S",
+     "at": "half"
+    },
+    {
+     "t": "SMARTPHONES",
+     "at": "smartphones"
+    }
+   ]
+  },
+  {
+   "type": "stamp",
+   "text": "THEN IT DIDN'T",
+   "at": "didn't",
+   "y": 900,
+   "hit": true,
+   "color": "#e0543a",
+   "act": "hook"
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 548,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "2008 \u00b7 FULL YEAR",
+     "at": "2008"
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "chip",
+   "y": 668,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "#1 PHONE MAKER SINCE 1998",
+     "at": "biggest",
+     "c": "#2f6fd6"
+    }
+   ]
+  },
+  {
+   "type": "source",
+   "text": "Gartner, via press reports",
+   "at": "fiftytwo+0.4",
+   "act": "a1"
+  },
+  {
+   "type": "stamp",
+   "text": "SO WHY WORRY?",
+   "at": "worry",
+   "y": 960,
+   "hit": false,
+   "color": "#2f6fd6",
+   "size": 50,
+   "act": "a1"
+  },
+  {
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "brow": 0
+   },
+   "x": 190,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true,
+   "act": "a1"
+  },
+  {
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "SYMBIAN"
+   },
+   "x": 780,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "rise",
+   "at": "symbian",
+   "bob": 0.5,
+   "act": "a1"
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 548,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "APPLE IPHONE",
+     "at": "apple"
+    },
+    {
+     "t": "2007",
+     "at": "2007"
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "chip",
+   "y": 668,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "A YEAR LATER:",
+     "at": "year",
+     "c": "#e11d48"
+    },
+    {
+     "t": "ANDROID",
+     "at": "android"
+    }
+   ]
+  },
+  {
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "brow": 6
+   },
+   "x": 170,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true,
+   "act": "a2"
+  },
+  {
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "iPHONE",
+    "screen": "#cfd8ff"
+   },
+   "x": 520,
+   "y": 1200,
+   "scale": 0.62,
+   "enter": "pop",
+   "at": "iphone",
+   "bob": 0.5,
+   "act": "a2"
+  },
+  {
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "ANDROID",
+    "screen": "#a4e870"
+   },
+   "x": 800,
+   "y": 1200,
+   "scale": 0.62,
+   "enter": "pop",
+   "at": "android",
+   "bob": 0.5,
+   "phase": 1,
+   "act": "a2"
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 548,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "FEBRUARY 2011",
+     "at": "february"
+    }
+   ]
+  },
+  {
+   "act": "a4",
+   "type": "chip",
+   "y": 668,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "ALL IN ON",
+     "at": "bet"
+    },
+    {
+     "t": "WINDOWS PHONE",
+     "at": "windows",
+     "c": "#2f6fd6"
+    }
+   ]
+  },
+  {
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "brow": 8
+   },
+   "x": 170,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true,
+   "act": "a4"
+  },
+  {
+   "type": "prop",
+   "id": "phone",
+   "opts": {
+    "label": "WINDOWS",
+    "screen": "#4aa3ff"
+   },
+   "x": 780,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "rise",
+   "at": "windows",
+   "bob": 0.5,
+   "act": "a4"
+  },
+  {
+   "act": "a5",
+   "type": "chip",
+   "y": 548,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "ABOUT 1 IN 8",
+     "at": "twelve",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "type": "source",
+   "text": "Gartner, via press reports",
+   "at": "twelve+0.5",
+   "act": "a5"
+  },
+  {
+   "act": "a6",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "MICROSOFT",
+     "at": "microsoft"
+    },
+    {
+     "t": "BUYS THE PHONES",
+     "at": "buy"
+    }
+   ]
+  },
+  {
+   "act": "a6",
+   "type": "chip",
+   "y": 668,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "ABOUT",
+     "at": "about#2"
+    },
+    {
+     "t": "\u20ac5.4 BILLION",
+     "at": "euros",
+     "c": "#e0543a"
+    }
+   ]
+  },
+  {
+   "type": "source",
+   "text": "Microsoft/Nokia announcement, 2013",
+   "at": "euros+0.3",
+   "estimate": true,
+   "act": "a6"
+  },
+  {
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "brow": 8
+   },
+   "x": 170,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true,
+   "act": "a6"
+  },
+  {
+   "type": "prop",
+   "id": "doc",
+   "opts": {
+    "label": "DEAL"
+   },
+   "x": 780,
+   "y": 1200,
+   "scale": 0.95,
+   "enter": "drop",
+   "at": "agreed",
+   "act": "a6"
+  },
+  {
+   "type": "stamp",
+   "text": "NO.",
+   "at": "no",
+   "y": 900,
+   "hit": true,
+   "color": "#19a974",
+   "size": 120,
+   "act": "a7"
+  },
+  {
+   "act": "a7",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "NOKIA IS STILL HERE",
+     "at": "dead",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "brow": 0
+   },
+   "x": 360,
+   "y": 1200,
+   "scale": 1.15,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true,
+   "act": "a7"
+  },
+  {
+   "act": "a8",
+   "type": "chip",
+   "y": 548,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "NETWORK EQUIPMENT",
+     "at": "equipment"
+    },
+    {
+     "t": "FOR AI",
+     "at": "ai",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "act": "a8",
+   "type": "chip",
+   "y": 668,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "NVIDIA INVESTS",
+     "at": "nvidia"
+    },
+    {
+     "t": "$1B",
+     "at": "billion#2",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "type": "source",
+   "text": "Nvidia press release, Oct 2025",
+   "at": "billion#2+0.3",
+   "act": "a8"
+  },
+  {
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "brow": 0
+   },
+   "x": 170,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true,
+   "act": "a8"
+  },
+  {
+   "type": "prop",
+   "id": "box",
+   "opts": {
+    "label": "AI"
+   },
+   "x": 560,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "drop",
+   "at": "connects",
+   "act": "a8"
+  },
+  {
+   "type": "prop",
+   "id": "tower",
+   "opts": {
+    "label": "DATA",
+    "rows": 5
+   },
+   "x": 870,
+   "y": 1200,
+   "scale": 0.8,
+   "enter": "rise",
+   "at": "data",
+   "act": "a8"
+  },
+  {
+   "act": "a9",
+   "type": "chip",
+   "y": 548,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "BIG NUMBER",
+     "at": "big"
+    },
+    {
+     "t": "\u2260 SAFETY",
+     "at": "safety",
+     "c": "#e11d48"
+    }
+   ]
+  },
+  {
+   "act": "a9",
+   "type": "chip",
+   "y": 668,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "CHECK THE TREND",
+     "at": "check",
+     "c": "#139f7d"
+    }
+   ]
+  },
+  {
+   "type": "stamp",
+   "text": "RISING?",
+   "at": "rising",
+   "y": 950,
+   "hit": false,
+   "color": "#19a974",
+   "act": "a9",
+   "until": "or+0.1"
+  },
+  {
+   "type": "stamp",
+   "text": "FALLING?",
+   "at": "falling",
+   "y": 1060,
+   "hit": false,
+   "color": "#e11d48",
+   "rot": 5,
+   "act": "a9"
+  },
+  {
+   "type": "prop",
+   "id": "person",
+   "opts": {
+    "body": "#2f4fa8",
+    "body2": "#243d85",
+    "hair": "#2b2b33",
+    "tie": "#ff7a5c",
+    "brow": 0
+   },
+   "x": 170,
+   "y": 1200,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "bob": 0.6,
+   "talk": true,
+   "act": "a9"
+  },
+  {
+   "type": "banner",
+   "text": "WHICH BIG NAME ARE YOU TRUSTING?",
+   "at": "which",
+   "y": 1420,
+   "size": 38,
+   "act": "a9"
+  },
+  {
+   "act": "a3",
+   "type": "chip",
+   "y": 548,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "SHARE OF SMARTPHONE SALES",
+     "at": "slid"
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "bars",
+   "base": 1210,
+   "h": 420,
+   "max": 55,
+   "fmt": "pct1",
+   "labelSize": 32,
+   "items": [
+    {
+     "label": "2008",
+     "value": 52.4,
+     "at": "slid"
+    },
+    {
+     "label": "2009",
+     "value": 46.9,
+     "at": "fortyseven+0.4"
+    },
+    {
+     "label": "2010",
+     "value": 37.6,
+     "at": "thirtyeight+0.4"
+    }
+   ],
+   "accent": "#e0543a"
+  },
+  {
+   "act": "a5",
+   "type": "bars",
+   "base": 1210,
+   "h": 420,
+   "max": 55,
+   "fmt": "pct1",
+   "labelSize": 26,
+   "gap": 18,
+   "items": [
+    {
+     "label": "2008",
+     "value": 52.4,
+     "at": "last-0.2"
+    },
+    {
+     "label": "2009",
+     "value": 46.9,
+     "at": "last-0.1"
+    },
+    {
+     "label": "2010",
+     "value": 37.6,
+     "at": "last"
+    },
+    {
+     "label": "Q4 '11",
+     "value": 11.7,
+     "at": "twelve"
+    }
+   ],
+   "accent": "#e0543a"
+  }
+ ]
+}

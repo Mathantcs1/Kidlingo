@@ -1,21 +1,185 @@
 {
   "_note": "Brandwake: 'why brands rise, and why they fall' (restaurants, retail, consumer brands; weekly). Calm, evidence-first documentary tone. Palette = deep water + signal coral; the background ripple rings are the 'wake'. Acts: RISE (wipe-up), PEAK (iris), BREAK (cut), WAKE (wipe-left).",
   "ink": "#0b1a22",
-  "gold": ["#e6fffa", "#62f0c8", "#139f7d"],
-  "caption": { "hl": "#ff7a5c", "bg": "rgba(8,22,30,.86)", "size": 74, "y": 1262 },
+  "gold": [
+    "#e6fffa",
+    "#62f0c8",
+    "#139f7d"
+  ],
+  "caption": {
+    "hl": "#ff7a5c",
+    "bg": "rgba(8,22,30,.86)",
+    "size": 74,
+    "y": 1262
+  },
   "transition": "wipe-up",
-  "rail": [ { "label": "RISE", "color": "#139f7d" }, { "label": "PEAK", "color": "#2f6fd6" }, { "label": "BREAK", "color": "#e0543a" }, { "label": "WAKE", "color": "#7a52d9" } ],
-  "voice": { "id": "onwK4e9ZLuTAKqWW03F9", "name": "Daniel - steady broadcaster" },
+  "rail": [
+    {
+      "label": "RISE",
+      "color": "#139f7d"
+    },
+    {
+      "label": "PEAK",
+      "color": "#2f6fd6"
+    },
+    {
+      "label": "BREAK",
+      "color": "#e0543a"
+    },
+    {
+      "label": "WAKE",
+      "color": "#7a52d9"
+    }
+  ],
+  "voice": {
+    "id": "onwK4e9ZLuTAKqWW03F9",
+    "name": "Daniel - steady broadcaster"
+  },
   "bgs": {
-    "night": { "angle": 160, "stops": ["#06151c", "#0b2d3a", "#0f4a55"], "dots": { "o": 0.06 },
-               "blobs": [ { "c": "#18c3a0", "x": 220, "y": 300, "r": 520, "s": 0.3, "dx": 70, "dy": 50, "o": 0.32 }, { "c": "#ff7a5c", "x": 900, "y": 1280, "r": 520, "s": 0.26, "dx": 60, "dy": 40, "o": 0.2 } ],
-               "ripples": { "x": 540, "y": 980, "c": "#7ff3d6", "n": 4, "period": 7, "max": 1200, "o": 0.2 } },
-    "steel": { "angle": 168, "stops": ["#eefbff", "#b9e8f0", "#62bfd1", "#237f95"], "dots": { "c": "#ffffff", "o": 0.2, "s": 52 },
-               "blobs": [ { "c": "#ffffff", "x": 220, "y": 280, "r": 520, "s": 0.3, "dx": 70, "dy": 40, "o": 0.6 } ],
-               "hills": { "y": 1110, "colors": ["#3aa0b5", "#237f95", "#145a6b"] },
-               "ripples": { "x": 540, "y": 1180, "c": "#ffffff", "n": 3, "period": 8, "max": 900, "o": 0.28 } },
-    "amber": { "angle": 160, "stops": ["#fff4e2", "#ffd2a8", "#ff9d78", "#d9573a"], "blobs": [ { "c": "#fff0d0", "x": 200, "y": 300, "r": 520, "s": 0.3, "dx": 70, "dy": 40, "o": 0.7 } ],
-               "hills": { "y": 1110, "colors": ["#f0805a", "#d6593a", "#9f3a22"] }, "ripples": { "x": 540, "y": 1180, "c": "#ffffff", "n": 3, "period": 8, "max": 900, "o": 0.26 } },
-    "violet": { "angle": 165, "stops": ["#8f7af0", "#6a56d0", "#3d2f8c", "#231a5c"], "dots": { "o": 0.08 }, "ripples": { "x": 540, "y": 1000, "c": "#c9bcff", "n": 4, "period": 7, "max": 1200, "o": 0.2 } }
-  }
+    "night": {
+      "angle": 160,
+      "stops": [
+        "#06151c",
+        "#0b2d3a",
+        "#0f4a55"
+      ],
+      "dots": {
+        "o": 0.06
+      },
+      "blobs": [
+        {
+          "c": "#18c3a0",
+          "x": 220,
+          "y": 300,
+          "r": 520,
+          "s": 0.3,
+          "dx": 70,
+          "dy": 50,
+          "o": 0.32
+        },
+        {
+          "c": "#ff7a5c",
+          "x": 900,
+          "y": 1280,
+          "r": 520,
+          "s": 0.26,
+          "dx": 60,
+          "dy": 40,
+          "o": 0.2
+        }
+      ],
+      "ripples": {
+        "x": 540,
+        "y": 980,
+        "c": "#7ff3d6",
+        "n": 4,
+        "period": 7,
+        "max": 1200,
+        "o": 0.2
+      }
+    },
+    "steel": {
+      "angle": 168,
+      "stops": [
+        "#eefbff",
+        "#b9e8f0",
+        "#62bfd1",
+        "#237f95"
+      ],
+      "dots": {
+        "c": "#ffffff",
+        "o": 0.2,
+        "s": 52
+      },
+      "blobs": [
+        {
+          "c": "#ffffff",
+          "x": 220,
+          "y": 280,
+          "r": 520,
+          "s": 0.3,
+          "dx": 70,
+          "dy": 40,
+          "o": 0.6
+        }
+      ],
+      "hills": {
+        "y": 1110,
+        "colors": [
+          "#3aa0b5",
+          "#237f95",
+          "#145a6b"
+        ]
+      },
+      "ripples": {
+        "x": 540,
+        "y": 1180,
+        "c": "#ffffff",
+        "n": 3,
+        "period": 8,
+        "max": 900,
+        "o": 0.28
+      }
+    },
+    "amber": {
+      "angle": 160,
+      "stops": [
+        "#fff4e2",
+        "#ffd2a8",
+        "#ff9d78",
+        "#d9573a"
+      ],
+      "blobs": [
+        {
+          "c": "#fff0d0",
+          "x": 200,
+          "y": 300,
+          "r": 520,
+          "s": 0.3,
+          "dx": 70,
+          "dy": 40,
+          "o": 0.7
+        }
+      ],
+      "hills": {
+        "y": 1110,
+        "colors": [
+          "#f0805a",
+          "#d6593a",
+          "#9f3a22"
+        ]
+      },
+      "ripples": {
+        "x": 540,
+        "y": 1180,
+        "c": "#ffffff",
+        "n": 3,
+        "period": 8,
+        "max": 900,
+        "o": 0.26
+      }
+    },
+    "violet": {
+      "angle": 165,
+      "stops": [
+        "#8f7af0",
+        "#6a56d0",
+        "#3d2f8c",
+        "#231a5c"
+      ],
+      "dots": {
+        "o": 0.08
+      },
+      "ripples": {
+        "x": 540,
+        "y": 1000,
+        "c": "#c9bcff",
+        "n": 4,
+        "period": 7,
+        "max": 1200,
+        "o": 0.2
+      }
+    }
+  },
+  "railBottom": 300
 }

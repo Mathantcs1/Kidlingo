@@ -10,13 +10,13 @@ A project folder holds `script.txt`, `vo.mp3`, `words.json` (from `tts.py`) and 
   "acts": [ { "id":"hook", "bg":"night" },
             { "id":"a1", "from":"marcus", "bg":"steel", "transition":{"type":"iris","x":220,"y":1000}, "rail":0,
               "title": { "text":"HALDEN LOGISTICS", "bg":"#3b5bdb", "y":415, "at":"marcus" } } ],
-  "counter": { "act":"a1", "keys":[[0,20],["eighty#2",20],["eighty#2+0.9",80]], "prefix":"$", "fmt":"full" },
+  "counter": { "act":"a1", "keys":[[0,20],["eighty#2",20],["eighty#2+0.9",80]], "prefix":"$", "fmt":"full", "until":"so#2" },   // fmt: full | short | plain | pct1 | pct0 ; until = fade-out time ref
   "items": [ ... ]
 }
 ```
 
 ## Time references
-A number is seconds. A string is a word in the narration: `"stops"` (start of the first "stops"), `"stops#2"` (2nd occurrence, 1-based), `"stops@end"` (end of the word), plus an optional offset: `"stops+0.3"`, `"nine#2-0.1"`. Matching ignores case and punctuation. An unknown word fails the build with a clear message. Use `node scripts/render.mjs <project> events` and read `words.json` to find words.
+A number is seconds. A string is a word in the narration: `"stops"` (start of the first "stops"), `"stops#2"` (2nd occurrence, 1-based), `"stops@end"` (end of the word), plus an optional offset: `"stops+0.3"`, `"nine#2-0.1"`. Matching ignores case, punctuation and hyphens (`fifty-two` -> `fiftytwo`). An unknown word fails the build with a clear message. Use `node scripts/render.mjs <project> events` and read `words.json` to find words.
 
 ## Acts
 Each act has a `transition` (see `transitions.md`; default `wipe-up`) and a background preset (`night, mint, amber, violet, sunset, ink, paper, steel`, or any key you add in the kit `bgs`), starts at `from` (first act starts at 0) and arrives with a bottom-up wipe that begins `wipe` seconds earlier. Items belong to an act and fade out when the next act's wipe begins. Give an item `"to":"a4"` to keep it alive through later acts (the tug counter does this). `title` adds a pill chip; `rail` highlights an index of `kit.rail`.
@@ -32,6 +32,7 @@ Each act has a `transition` (see `transitions.md`; default `wipe-up`) and a back
 | `coins` | falling coins: `at, n, x, y0, y1` |
 | `tug` | two money counters + split bar: `at, y, fmt, left:{label,color,keys}, right:{...}`; keys `[[ref, value],...]` |
 | `source` | small attribution pill (use for every sourced figure): `text, at, y (<= 1560), estimate:true` adds an ESTIMATE tag |
+| `bars` | growing metric bars (value labels in gold): `base` (baseline y), `h` (max height), `max`, `fmt` (`pct1`), `items:[{label,value,at,c?}]`, `accent`, `gap` |
 | `hit` | shake/flash on a word: `at, shake, flash` |
 
 `prop.enter`: `pop, rise, drop, slide-left, slide-right, none`. `talk:true` flaps the mouth while the narrator speaks (person only). `fmt` for money: `short` ($50K, $9M) or `full`/`plain`.

@@ -54,6 +54,8 @@
 
   const el = (cls, html, style = '', parent = stage) => { const d = document.createElement('div'); d.className = cls; if (html) d.innerHTML = html; d.style.cssText = style; parent.appendChild(d); return d; };
   const money = (v, mode) => {
+    if (mode === 'pct1') return v.toFixed(1) + '%';
+    if (mode === 'pct0') return Math.round(v) + '%';
     if (mode === 'plain') return Math.round(v).toLocaleString('en-US');
     if (mode === 'short') { const a = Math.abs(v); if (a >= 1e9) return (v / 1e9).toFixed(1).replace(/\.0$/, '') + 'B'; if (a >= 1e6) return (v / 1e6).toFixed(a < 1e7 ? 1 : 0).replace(/\.0$/, '') + 'M'; if (a >= 1e3) return (v / 1e3).toFixed(a < 1e4 ? 1 : 0).replace(/\.0$/, '') + 'K'; return String(Math.round(v)); }
     return Math.round(v).toLocaleString('en-US');
@@ -160,11 +162,20 @@
       } };
     },
     source(it) { // small attribution pill for sourced figures; `estimate:true` adds an "ESTIMATE" tag. Keep inside the safe area (y <= 1560).
-      const w = row(it.y ?? 1540); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'source';
+      const w = row(it.y ?? 1440); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'source';
       c.style.cssText = `display:inline-block;white-space:nowrap;font-weight:600;font-size:${it.size || 30}px;color:#fff;background:rgba(10,14,24,.72);border:3px solid rgba(255,255,255,.55);border-radius:999px;padding:8px 26px`;
       c.innerHTML = (it.estimate ? `<b style="color:#ffd21f;margin-right:10px">ESTIMATE</b>` : '') + `Source: ${it.text}`; w.appendChild(c);
       const at = R(it.at); EV.push({ t: at, type: 'pop2' });
       return { el: w, base: it, update(t) { const k = pop(t, at, .3); w.style.transform = `translateY(${(1 - k) * 30}px) scale(${.9 + .1 * k})`; w.style.opacity = clamp(k * 2); } };
+    },
+    bars(it) { // growing share/metric bars: items:[{label,value,at,c?}], base (baseline y), h (max bar height), max, fmt
+      const n = it.items.length, gap = it.gap ?? 26, bw = (960 - gap * (n - 1)) / n, base = it.base ?? 1200, H = it.h ?? 380, top = base - H - 80, max = it.max ?? Math.max(...it.items.map(x => x.value));
+      const w = el('it', '', `position:absolute;left:0;top:${top}px;width:1080px;height:${H + 80}px`); w.classList.add('qa'); w.dataset.kind = 'bars';
+      const bs = it.items.map((x, i) => { const at = R(x.at), c = x.c || (i === n - 1 ? (it.accent || '#ff7a5c') : (it.color || '#9bb4d8'));
+        const b = document.createElement('div'); b.style.cssText = `position:absolute;left:${60 + i * (bw + gap)}px;width:${bw}px;bottom:0;border:6px solid ${KIT.ink};border-radius:18px 18px 6px 6px;background:${c};box-shadow:0 10px 0 rgba(0,0,0,.28);display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;box-sizing:border-box`;
+        b.innerHTML = `<span style="font-weight:800;font-size:${it.labelSize || 30}px;color:${KIT.ink};white-space:nowrap">${x.label}</span>`;
+        const v = document.createElement('div'); v.style.cssText = `position:absolute;left:${60 + i * (bw + gap) - 20}px;width:${bw + 40}px;text-align:center;${goldCss()};font-size:${it.valueSize || 52}px`; w.appendChild(b); w.appendChild(v); EV.push({ t: at, type: 'pop' }); return { b, v, at, val: x.value }; });
+      return { el: w, base: it, update(t) { bs.forEach(o => { const g = eOut(clamp((t - o.at) / .7)), h = Math.max(0, o.val / max * H * g); o.b.style.height = h + 'px'; o.b.style.opacity = g > 0 ? 1 : 0; o.v.style.bottom = (h + 10) + 'px'; o.v.style.opacity = g > .15 ? 1 : 0; o.v.textContent = money(o.val * g, it.fmt || 'pct1'); }); } };
     },
     hit(it) { HITS.push({ t: R(it.at), shake: it.shake ?? .3, flash: it.flash ?? .3 }); EV.push({ t: R(it.at), type: 'thud' }); return null; }
   };
@@ -200,8 +211,8 @@
     });
     // title chips per act + counter + rail
     ACTS.forEach(a => { if (a.title) { const t = a.title; const w = row(t.y ?? 362); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'chip'; c.style.cssText = chipCss(t.bg || '#ff5d73', '#fff', 46, '12px 38px'); c.textContent = t.text; w.appendChild(c); const at = R(t.at ?? a.from); EV.push({ t: at, type: 'pop' }); ITEMS.push({ el: w, act: a, base: { type: 'title' }, update(tt) { w.style.transform = `scale(${pop(tt, at, .4)})`; } }); } });
-    if (S.counter) { const cn = S.counter; counterEl = el('cnt qa', '', `position:absolute;left:0;width:1080px;top:${cn.y ?? 150}px;text-align:center;font-size:${cn.size ?? 150}px;${goldCss()}`); counterEl.dataset.kind = 'counter'; cn._keys = resolveKeys(cn.keys); cn._at = R(cn.at ?? cn.keys[0][0] - .0); cn._at = ACTS.find(a => a.id === cn.act) ? ACTS.find(a => a.id === cn.act).start + .35 : cn._at; cn._keys.forEach((k, i) => i && k[1] !== cn._keys[i - 1][1] && EV.push({ t: k[0], type: 'tick' })); }
-    if (KIT.rail) railEl = el('rail', KIT.rail.map(r => `<div style="flex:1;border-radius:40px 40px 0 0;border:5px solid ${KIT.ink};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:30px;color:#fff;background:${r.color}">${r.label}</div>`).join(''), 'position:absolute;left:0;right:0;bottom:70px;height:80px;display:flex;gap:10px;padding:0 30px');
+    if (S.counter) { const cn = S.counter; counterEl = el('cnt qa', '', `position:absolute;left:0;width:1080px;top:${cn.y ?? 150}px;text-align:center;font-size:${cn.size ?? 150}px;${goldCss()}`); counterEl.dataset.kind = 'counter'; cn._keys = resolveKeys(cn.keys); cn._until = cn.until !== undefined ? R(cn.until) : null; cn._at = R(cn.at ?? cn.keys[0][0] - .0); cn._at = ACTS.find(a => a.id === cn.act) ? ACTS.find(a => a.id === cn.act).start + .35 : cn._at; cn._keys.forEach((k, i) => i && k[1] !== cn._keys[i - 1][1] && EV.push({ t: k[0], type: 'tick' })); }
+    if (KIT.rail) railEl = el('rail', KIT.rail.map(r => `<div style="flex:1;border-radius:40px 40px 0 0;border:5px solid ${KIT.ink};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:30px;color:#fff;background:${r.color}">${r.label}</div>`).join(''), 'position:absolute;left:0;right:0;bottom:' + (KIT.railBottom ?? 70) + 'px;height:80px;display:flex;gap:10px;padding:0 30px');
     capEl = el('cap', '', `position:absolute;left:0;right:0;top:${KIT.caption.y}px;display:flex;justify-content:center`);
     buildCaptions();
     flashEl = el('', '', 'position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9999');
@@ -238,14 +249,14 @@
       const a = o.act, nxt = (o.last || o.act).next; const nw = nxt ? nxt.wipeAt : 1e9;
       const out = 1 - eInOut(clamp((t - (nw - .1)) / .3)); const gone = nxt && t > nw + .5;
       const uf = o.untilT === undefined ? 1 : 1 - clamp((t - o.untilT) / .25); const ugone = o.untilT !== undefined && t > o.untilT + .3;
-      if (gone || ugone || t < (a.start - a.wipeLead)) { if (o.el) o.el.style.display = 'none'; if (o.extra) o.extra.forEach(c => c.style.opacity = 0); return; }
+      if (gone || ugone || t < (a.start - a.wipeLead * 0.4)) { if (o.el) o.el.style.display = 'none'; if (o.extra) o.extra.forEach(c => c.style.opacity = 0); return; }
       if (o.el) { o.el.style.display = o.el.dataset.d || ''; }
       o.update(t);
       const fade = Math.min(out, uf);
       if (o.el) { if (o.base.type === 'prop') { if (fade < 1) o.el.style.opacity = Math.min(parseFloat(o.el.style.opacity || 1), fade); } else o.el.style.opacity = fade < 1 ? fade : ''; }
     });
     // counter
-    if (counterEl) { const cn = S.counter; const v = interp(cn._keys, t); counterEl.textContent = (cn.prefix ?? '$') + money(v, cn.fmt || 'full'); const k = pop(t, cn._at, .5); counterEl.style.transform = `scale(${k})`; counterEl.style.opacity = clamp(k * 2); }
+    if (counterEl) { const cn = S.counter; const v = interp(cn._keys, t); counterEl.textContent = (cn.prefix ?? '$') + money(v, cn.fmt || 'full'); const k = pop(t, cn._at, .5); counterEl.style.transform = `scale(${k})`; counterEl.style.opacity = clamp(k * 2) * (cn._until === null ? 1 : 1 - clamp((t - cn._until) / .3)); }
     // rail
     if (railEl) { const act = [...ACTS].reverse().find(a => t >= a.start - 0.1) || ACTS[0]; const idx = act.rail; const r = (idx === undefined || idx === null) ? 0 : clamp((t - (act.start + .3)) / .3); railEl.style.opacity = r; railEl.style.transform = `translateY(${(1 - r) * 80}px)`; [...railEl.children].forEach((c, i) => c.style.opacity = i === idx ? 1 : .45); }
     setCaption(t);
