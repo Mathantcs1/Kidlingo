@@ -1,0 +1,12 @@
+# Lessons learned (each is now a guard in the engine)
+- **Two re-zoomed rooms is not a film.** The storyboard lint (scenes, camera change, shot-size coverage) stops the build. Plan phrase -> scene first.
+- **Unit tests cannot see browser page code.** A commented-out draw line once rendered blank paper in every frame while all tests stayed green. `tests/render-smoke.test.mjs` renders real frames in portrait AND landscape and fails on blank paper (needs LEMO_OPUSCAR_HOME).
+- **Blur around transitions looks amateur.** Whips dropped to 0.3x sharpness with an all-direction blur. Now: a thin horizontal streak, fast shots start in focus (only shots > 1.6 s pull focus). Measure with `tests/sharpness.py`.
+- **Loudness:** many loud foley hits (page flips) hit the limiter and the mux missed -14 LUFS. Keep foley quiet; read the mux's loudness line.
+- **Speech check:** if the speech-to-text check disagrees ("shop" heard as "sharp"), reword the line; do not use the override, it can hide a real mispronunciation.
+- **Captions use the script's words** (spelling, numbers, punctuation) placed on the voice timings; a caption never crosses a cut; a punctuation-only token is never a caption.
+- **Each style accepts only the transitions its page can draw** (classic: cut/fade/cctv/whip/punch; sketch: cut/fade/whip/flip/ink/scribble); anything else would render black frames, so it is rejected at prepare time.
+- **A new beat in the same scene gets a different camera automatically**, but a beat shorter than 0.5 s is refused: place beats from `voice/words.json`.
+- **Chapters (long-form)** resume: a chapter re-renders only when its shots, words, page code or size change (hash).
+- **Render budget:** the build stops past ~2 hours (estimate calibrated on software rendering: classic 0.081, sketch ~0.13 s/frame at 1080x1920 per 3 workers).
+- **Look at frames.** Contact sheets per shot and boundary strips found every real visual bug (cropped heads, stacked characters, empty scenes, wrong aim). Do this every draft.
