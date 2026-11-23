@@ -3,7 +3,7 @@ import { openProject } from './common.mjs';
 const proj = process.argv[2];
 const { browser, page } = await openProject(proj);
 const dur = await page.evaluate(() => window.DURATION);
-const TEXT = new Set(['chip', 'gold', 'banner', 'caption', 'counter', 'stamp']);
+const TEXT = new Set(['chip', 'gold', 'banner', 'caption', 'counter', 'stamp', 'source']);
 const errors = [], warns = []; const seen = new Set();
 const add = (arr, key, msg) => { if (!seen.has(key)) { seen.add(key); arr.push(msg); } };
 const ov = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));

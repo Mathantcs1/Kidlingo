@@ -79,7 +79,9 @@
     if (b.dots) el('', '', `position:absolute;inset:0;background-image:radial-gradient(${b.dots.c || '#fff'} 2.5px,transparent 3px);background-size:${b.dots.s || 44}px ${b.dots.s || 44}px;opacity:${b.dots.o ?? .1};-webkit-mask-image:linear-gradient(180deg,#000,transparent 75%)`, wrap);
     const hills = b.hills ? b.hills.colors.map((c, i) => {
       const d = el('', `<svg width="1400" height="1920" viewBox="0 0 1400 1920" style="display:block"><path d="${hillPath(b.hills.y + i * 46, 26 + i * 10, 150 + i * 70, i * 1.9)}" fill="${c}"/></svg>`, 'position:absolute;left:-160px;top:0', wrap); return { d, i }; }) : [];
+    const rp = b.ripples ? Array.from({ length: b.ripples.n || 4 }, (_, i) => el('', '', `position:absolute;left:0;top:0;border-radius:50%;border:${b.ripples.w || 4}px solid ${b.ripples.c || '#fff'}`, wrap)) : [];
     wrap._anim = (t) => {
+      rp.forEach((d, i) => { const n = rp.length, per = b.ripples.period || 6, f = ((t / per) + i / n) % 1, r = 120 + f * (b.ripples.max || 1100); d.style.width = d.style.height = r * 2 + 'px'; d.style.transform = `translate(${(b.ripples.x ?? 540) - r}px,${(b.ripples.y ?? 1000) - r}px)`; d.style.opacity = String((b.ripples.o ?? .22) * (1 - f) * Math.min(1, f * 6)); });
       blobs.forEach(({ o, i, d }) => d.style.transform = `translate(${o.x - o.r + Math.sin(t * (o.s || .3) + i * 2) * (o.dx || 60)}px,${o.y - o.r + Math.cos(t * (o.s || .3) * .8 + i) * (o.dy || 40)}px)`);
       hills.forEach(({ d, i }) => d.style.transform = `translateX(${Math.sin(t * (.25 + i * .12) + i) * (30 + i * 16)}px)`);
     };
@@ -156,6 +158,13 @@
         const a = interp(lk, t), b = interp(rk, t); vl[0].textContent = '$' + money(a, it.fmt || 'short'); vl[1].textContent = '$' + money(b, it.fmt || 'short');
         fill.style.width = (a / (a + b) * 100) + '%'; const k = pop(t, at, .5); w.style.transform = `scale(${k})`; w.style.opacity = clamp(k * 2); w.style.transformOrigin = '50% 0';
       } };
+    },
+    source(it) { // small attribution pill for sourced figures; `estimate:true` adds an "ESTIMATE" tag. Keep inside the safe area (y <= 1560).
+      const w = row(it.y ?? 1540); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'source';
+      c.style.cssText = `display:inline-block;white-space:nowrap;font-weight:600;font-size:${it.size || 30}px;color:#fff;background:rgba(10,14,24,.72);border:3px solid rgba(255,255,255,.55);border-radius:999px;padding:8px 26px`;
+      c.innerHTML = (it.estimate ? `<b style="color:#ffd21f;margin-right:10px">ESTIMATE</b>` : '') + `Source: ${it.text}`; w.appendChild(c);
+      const at = R(it.at); EV.push({ t: at, type: 'pop2' });
+      return { el: w, base: it, update(t) { const k = pop(t, at, .3); w.style.transform = `translateY(${(1 - k) * 30}px) scale(${.9 + .1 * k})`; w.style.opacity = clamp(k * 2); } };
     },
     hit(it) { HITS.push({ t: R(it.at), shake: it.shake ?? .3, flash: it.flash ?? .3 }); EV.push({ t: R(it.at), type: 'thud' }); return null; }
   };

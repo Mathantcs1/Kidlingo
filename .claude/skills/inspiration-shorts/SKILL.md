@@ -39,7 +39,7 @@ Node 20+, ffmpeg, Python 3 + numpy, Playwright with Chromium (preinstalled in Cl
 
 ## Channel kits
 
-`kits/<channel>.json`: ink colour, gold gradient, caption colours, background presets, default transition, voice id. Reference with `"kitFile": "../../kits/pride-parables.json"`. New channel = copy a kit, change palette and voice; keep ink + gold + one accent per act. `kits/brandwake.json` is a placeholder until the niche is confirmed.
+`kits/<channel>.json`: ink colour, gold gradient, caption colours, background presets, default transition, voice id. Reference with `"kitFile": "../../kits/pride-parables.json"`. New channel = copy a kit, change palette and voice; keep ink + gold + one accent per act. `kits/brandwake.json` is built for Brandwake (why brands rise and fall; sourced figures): read `references/brandwake-episode.md` before writing any Brandwake episode, including the sourcing rules. Use `source` items for every real figure.
 
 ## Hard rules
 

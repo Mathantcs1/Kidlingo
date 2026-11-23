@@ -31,6 +31,7 @@ Each act has a `transition` (see `transitions.md`; default `wipe-up`) and a back
 | `prop` | an illustration: `id, opts, x, y (bottom-centre), scale, enter, at, bob, talk, armAt/armUntil, grayAt, rot, dist` |
 | `coins` | falling coins: `at, n, x, y0, y1` |
 | `tug` | two money counters + split bar: `at, y, fmt, left:{label,color,keys}, right:{...}`; keys `[[ref, value],...]` |
+| `source` | small attribution pill (use for every sourced figure): `text, at, y (<= 1560), estimate:true` adds an ESTIMATE tag |
 | `hit` | shake/flash on a word: `at, shake, flash` |
 
 `prop.enter`: `pop, rise, drop, slide-left, slide-right, none`. `talk:true` flaps the mouth while the narrator speaks (person only). `fmt` for money: `short` ($50K, $9M) or `full`/`plain`.
@@ -50,4 +51,5 @@ sh scripts/build.sh <project> [--music bed.mp3]
 ```
 
 ## Backgrounds (original system)
+Optional `ripples:{x,y,c,n,period,max,o}` draws slowly expanding rings (Brandwake's "wake").
 Presets: `night, mint, amber, violet, sunset, ink, paper, steel`. Each is a diagonal gradient (`angle`, `stops`) plus optional drifting colour glows (`blobs:[{c,x,y,r,s,dx,dy,o}]`), a faint dot texture (`dots:{c,o,s}`) and layered rolling hills (`hills:{y, colors:[3]}`) that slowly drift. Define or override any preset in a kit's `bgs` to give a channel its own look; change the hue, the blob positions and whether hills are used. Do not add spotlight rays or star fields: they belong to the reference video this skill is deliberately different from.

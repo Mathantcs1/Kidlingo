@@ -21,6 +21,11 @@ Fail the video if any item is false. These are the failures that make Shorts fee
 - [ ] At least one near-silence before the turn (the reversal beat).
 - [ ] No clipping; check `build.sh` loudness line.
 
+## Sources (channels that report real facts, e.g. Brandwake)
+- [ ] Every real figure has a `source` pill on screen and a row in `FACTS.md` (URL, date, quoted wording).
+- [ ] Estimates are tagged ESTIMATE and spoken as "about"; disputed numbers are flagged.
+- [ ] No logos; no claims about motives or character; as-of date in the description.
+
 ## Delivery
 - [ ] 1080x1920, h264 + aac, under 59 s.
 - [ ] `FACTS.md` present if any real person, company, repo or statistic is used.
