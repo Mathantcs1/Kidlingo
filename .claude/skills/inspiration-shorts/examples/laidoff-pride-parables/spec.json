@@ -163,6 +163,23 @@
  "items": [
   {
    "act": "hook",
+   "type": "hook",
+   "y": 235,
+   "size": 88,
+   "until": "ace",
+   "lines": [
+    {
+     "t": "HE LEFT FOR WORK AT NINE.",
+     "c": "#ffffff"
+    },
+    {
+     "t": "HE HAD NO WORK.",
+     "c": "#ffd21f"
+    }
+   ]
+  },
+  {
+   "act": "hook",
    "type": "chip",
    "y": 548,
    "size": 56,

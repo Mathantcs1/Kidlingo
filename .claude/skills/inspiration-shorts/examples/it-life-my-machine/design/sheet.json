@@ -1,0 +1,17 @@
+{ "title": "IT LIFE · S08 IT WORKS ON MY MACHINE: character, location and property sheet",
+  "sections": [
+  { "name": "CHARACTERS", "items": [
+    { "id": "itdev", "opts": {"mood":"smile","raise":true}, "scale": 0.75, "label": "DEV, proud: tested five times" },
+    { "id": "itdev", "opts": {"mood":"shock","sweat":true}, "scale": 0.75, "label": "DEV, wide-eyed at the error" },
+    { "id": "itdev", "opts": {"mood":"grin"}, "scale": 0.75, "label": "DEV, smiling politely (on fire inside)" },
+    { "id": "itflame", "opts": {}, "scale": 0.9, "label": "the fire inside" } ]},
+  { "name": "LOCATIONS", "items": [
+    { "id": "itconf", "opts": {}, "scale": 0.5, "label": "L1  Client conference room: wall TV with the app, five people behind the table (one manager in a tie)" },
+    { "id": "itconf", "opts": {"lean":true}, "scale": 0.5, "label": "L2  The same room, everyone leaning forward at the error" },
+    { "id": "itmap", "opts": {}, "scale": 0.5, "label": "L3  The two worlds: my laptop island (tick) and the client's island (red flag)" },
+    { "id": "itplain", "opts": {}, "scale": 0.5, "label": "L4  Soft stage for the sticky-note lesson" } ]},
+  { "name": "PROPERTIES", "items": [
+    { "id": "itlaptop", "opts": {"screen":"#3ec97a"}, "scale": 0.5, "label": "laptop with a green RUNNING badge" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "live: sparkles over the laptop, spinning loader, ERROR 500 card with shake and flash" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "live: sticky note 'TEST IN THEIR WORLD FIRST' pressed on the laptop, then held up" } ]}
+ ] }

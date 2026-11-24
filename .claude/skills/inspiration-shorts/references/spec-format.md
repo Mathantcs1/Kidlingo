@@ -21,7 +21,7 @@ A number is seconds. A string is a word in the narration: `"stops"` (start of th
 ## Acts
 Each act has a `transition` (see `transitions.md`; default `wipe-up`) and a background preset (`night, mint, amber, violet, sunset, ink, paper, steel`, or any key you add in the kit `bgs`), starts at `from` (first act starts at 0) and arrives with a bottom-up wipe that begins `wipe` seconds earlier. Items belong to an act and fade out when the next act's wipe begins. Give an item `"to":"a4"` to keep it alive through later acts (the tug counter does this). `title` adds a pill chip; `rail` highlights an index of `kit.rail`.
 
-## Items (all take `act`, and optionally `until` = a time ref after which they fade)
+## Items (all take `act`, and optionally `until` = a time ref after which they fade; `gold`, `chip`, `stamp`, `banner` also take `instant:true` to appear with no pop-in animation)
 | type | fields |
 |---|---|
 | `gold` | big gold outlined text row: `y, size, parts:[{t, at, c?}]` |
@@ -33,6 +33,7 @@ Each act has a `transition` (see `transitions.md`; default `wipe-up`) and a back
 | `tug` | two money counters + split bar: `at, y, fmt, left:{label,color,keys}, right:{...}`; keys `[[ref, value],...]` |
 | `source` | small attribution pill (use for every sourced figure): `text, at, y (<= 1560), estimate:true` adds an ESTIMATE tag |
 | `bars` | growing metric bars (value labels in gold): `base` (baseline y), `h` (max height), `max`, `fmt` (`pct1`), `items:[{label,value,at,c?}]`, `accent`, `gap` |
+| `hook` | frame-0 headline, visible from the first frame (the conflict in 2-3 short lines): `lines:[{t,c?}], y (default 300), size (default 92)`; fade it with `until` |
 | `hit` | shake/flash on a word: `at, shake, flash` |
 
 `prop.enter`: `pop, rise, drop, slide-left, slide-right, none`. `talk:true` flaps the mouth while the narrator speaks (person only). `fmt` for money: `short` ($50K, $9M) or `full`/`plain`.

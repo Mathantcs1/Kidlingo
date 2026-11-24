@@ -1,0 +1,6 @@
+In two thousand fifteen, our testing plan was an Excel sheet with two hundred rows.
+Green meant pass. Red meant fail. Yellow meant, "I am not sure." A tester sat for two days, clicking every screen, one by one. And I stood behind him with a coffee, hoping the yellow cells would turn green. When something broke, he turned the screen and said, "Look. I clicked here, and it broke."
+Now it is two thousand twenty-six. The pipeline runs two hundred checks in a few minutes. No sheet. No waiting. That is a big improvement.
+But when one check fails, nobody is sitting beside me. The pipeline just says, "Failed." No face. No explanation. Just a red box. And I spend an hour finding out whether the bug is in my code, in the test, or in the environment.
+And there is another thing. Sometimes everything passes, and we feel safe. But a passing test only proves we tested what we thought of. Not what we forgot.
+So tell me, which one did you prefer? The sheet with a person, or the pipeline with a red box?

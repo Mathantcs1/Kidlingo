@@ -1,0 +1,17 @@
+{ "title": "IT LIFE · S05 THE TEST SHEET: character, location and property sheet",
+  "sections": [
+  { "name": "CHARACTERS", "items": [
+    { "id": "itpal", "opts": {"kind":"tester","pose":"point","mood":"smile"}, "scale": 0.75, "label": "TESTER (2015): headphones round the neck, glasses, lanyard, clicks every screen" },
+    { "id": "itdev", "opts": {"mood":"worry"}, "scale": 0.75, "label": "DEV, hoping behind him with a coffee" },
+    { "id": "itdev", "opts": {"mood":"worry","sweat":true}, "scale": 0.75, "label": "DEV (2026): staring at a red box" },
+    { "id": "itdev", "opts": {"mood":"smile"}, "scale": 0.75, "label": "DEV: the pipeline is fast" },
+    { "id": "itchair", "opts": {"color":"#9fb0c4"}, "scale": 0.9, "label": "THE EMPTY CHAIR where the tester sat" } ]},
+  { "name": "LOCATIONS", "items": [
+    { "id": "itqa", "opts": {}, "scale": 0.5, "label": "L1  2015 QA corner: window, CRT monitor showing the test sheet" },
+    { "id": "itdash", "opts": {}, "scale": 0.5, "label": "L2  2026 pipeline wall: dashboard frame on a navy wall" } ]},
+  { "name": "PROPERTIES", "items": [
+    { "id": "itcoffee", "opts": {}, "scale": 1.0, "label": "coffee (steam is animated)" },
+    { "id": "itmag", "opts": {}, "scale": 0.7, "label": "magnifier with a question mark" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "live: 200-cell test sheet, cells turn green / red / yellow one by one, yellow heals to green" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "live: six pipeline boxes with arrows, one turns red and blinks" } ]}
+ ] }

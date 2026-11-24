@@ -1,0 +1,802 @@
+{
+ "kitFile": "../../kits/it-life.json",
+ "tail": 3.2,
+ "kit": {
+  "caption": {
+   "y": 1475,
+   "size": 66
+  }
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "night"
+  },
+  {
+   "id": "a1",
+   "bg": "cream",
+   "from": "new#1-0.1",
+   "transition": "wipe-left"
+  },
+  {
+   "id": "a2",
+   "bg": "sunset",
+   "from": "remember-0.1",
+   "transition": "iris"
+  },
+  {
+   "id": "a3",
+   "bg": "mint",
+   "from": "fixed-0.2",
+   "transition": "push"
+  },
+  {
+   "id": "a4",
+   "bg": "violet",
+   "from": "understood-0.9",
+   "transition": "zoom"
+  },
+  {
+   "id": "a5",
+   "bg": "sunset",
+   "from": "So-0.1",
+   "transition": "iris"
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itnight",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.08,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 350,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry",
+    "sweat": true
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itrules",
+   "x": 540,
+   "y": 700,
+   "scale": 2.0,
+   "enter": "pop",
+   "at": "rule",
+   "opts": {
+    "order": "wrong"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 40,
+   "y": 300,
+   "w": 1000,
+   "h": 130,
+   "at": "wrong",
+   "bg": "#ffb0a0",
+   "enter": "pop",
+   "text": "WRONG ORDER. NOBODY KNOWS WHY.",
+   "size": 50,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#dfe8f7",
+    "floor": "#9fb0c4"
+   },
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itrules",
+   "x": 540,
+   "y": 470,
+   "scale": 1.8,
+   "enter": "none",
+   "at": "new",
+   "opts": {
+    "order": "wrong"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itpal",
+   "x": 150,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "pop",
+   "at": "new",
+   "opts": {
+    "kind": "fresher",
+    "mood": "curious"
+   },
+   "bob": 0.7
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itpal",
+   "x": 360,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "pop",
+   "at": "senior",
+   "opts": {
+    "kind": "senior",
+    "mood": "curious"
+   },
+   "bob": 0.7
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itdev",
+   "x": 820,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry",
+    "sweat": true
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itdoc",
+   "x": 150,
+   "y": 840,
+   "scale": 0.95,
+   "enter": "pop",
+   "at": "document",
+   "opts": {},
+   "bob": 0.5,
+   "until": "Then"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itdoc",
+   "x": 150,
+   "y": 840,
+   "scale": 0.95,
+   "enter": "none",
+   "at": "nothing",
+   "opts": {
+    "x": true
+   },
+   "bob": 0.5,
+   "until": "Then"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itwiki",
+   "x": 360,
+   "y": 840,
+   "scale": 1.0,
+   "enter": "pop",
+   "at": "old",
+   "opts": {},
+   "bob": 0.5,
+   "until": "Then"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 280,
+   "y": 640,
+   "w": 110,
+   "h": 100,
+   "at": "wiki#2",
+   "bg": "#e0543a",
+   "enter": "pop",
+   "text": "\u2717",
+   "size": 70,
+   "qa": false,
+   "radius": 50,
+   "color": "#fff",
+   "until": "Then"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 70,
+   "y": 700,
+   "w": 150,
+   "h": 130,
+   "at": "Then",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "?",
+   "size": 96,
+   "qa": false,
+   "radius": 65
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 290,
+   "y": 700,
+   "w": 150,
+   "h": 130,
+   "at": "Then+0.15",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "?",
+   "size": 96,
+   "qa": false,
+   "radius": 65
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 760,
+   "y": 640,
+   "w": 130,
+   "h": 110,
+   "at": "Then+0.3",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "?",
+   "size": 96,
+   "qa": false,
+   "radius": 65
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#f6dfb0",
+    "floor": "#c7803c"
+   },
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itboard",
+   "x": 540,
+   "y": 700,
+   "scale": 1.7,
+   "enter": "pop",
+   "at": "whiteboard",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itdev",
+   "x": 250,
+   "y": 1440,
+   "scale": 1.4,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itpal",
+   "x": 540,
+   "y": 1440,
+   "scale": 1.4,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "senior",
+    "mood": "flat"
+   },
+   "bob": 0.7
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itpal",
+   "x": 830,
+   "y": 1440,
+   "scale": 1.4,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "fresher",
+    "mood": "curious"
+   },
+   "bob": 0.7
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 70,
+   "y": 740,
+   "w": 940,
+   "h": 150,
+   "at": "chose",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "\u201cLET\u2019S KEEP THIS FIRST, OTHERWISE THE FLOW BREAKS.\u201d",
+   "size": 40,
+   "qa": false,
+   "radius": 40,
+   "bw": 5,
+   "until": "never"
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#d9f0e3",
+    "floor": "#8fd18a"
+   },
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itrules",
+   "x": 540,
+   "y": 520,
+   "scale": 1.8,
+   "enter": "none",
+   "at": "fixed",
+   "opts": {
+    "order": "wrong"
+   },
+   "bob": 0.5,
+   "until": "minutes"
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itrules",
+   "x": 540,
+   "y": 520,
+   "scale": 1.8,
+   "enter": "pop",
+   "at": "minutes",
+   "opts": {
+    "order": "right"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itcheck",
+   "x": 300,
+   "y": 760,
+   "scale": 1.4,
+   "enter": "pop",
+   "at": "minutes+0.3",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itdev",
+   "x": 280,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itpal",
+   "x": 610,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "senior",
+    "mood": "smile"
+   },
+   "bob": 0.7
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itpal",
+   "x": 910,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "fresher",
+    "mood": "smile"
+   },
+   "bob": 0.7
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itcoffee",
+   "x": 765,
+   "y": 1330,
+   "scale": 1.5,
+   "enter": "pop",
+   "at": "Everyone",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 470,
+   "y": 690,
+   "w": 570,
+   "h": 120,
+   "at": "Everyone",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "WOW, HOW DID YOU KNOW?",
+   "size": 42,
+   "qa": false,
+   "radius": 55,
+   "until": "answer"
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#e8e4f5",
+    "floor": "#c9c2e6"
+   },
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itdev",
+   "x": 300,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itdoc",
+   "x": 800,
+   "y": 1000,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "document#3",
+   "opts": {},
+   "bob": 0.5,
+   "zoom": {
+    "dur": 1.4,
+    "at": "guess",
+    "from": 2.2
+   }
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itbrain",
+   "x": 300,
+   "y": 840,
+   "scale": 2.1,
+   "enter": "pop",
+   "at": "real",
+   "opts": {},
+   "bob": 0.5,
+   "zoom": {
+    "dur": 1.6,
+    "at": "real",
+    "from": 0.35
+   },
+   "float": 6
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#ffe9d2",
+    "floor": "#f3c9a0"
+   },
+   "qa": false
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itlaptop",
+   "x": 760,
+   "y": 1380,
+   "scale": 1.5,
+   "enter": "pop",
+   "at": "wrote",
+   "opts": {
+    "glow": "#ffd98a"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itdev",
+   "x": 350,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a5",
+   "type": "typing",
+   "x": 90,
+   "y": 640,
+   "w": 900,
+   "h": 120,
+   "text": "WHY WE DID IT THIS WAY",
+   "at": "wrote",
+   "dur": 1.8,
+   "size": 52
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "Late",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "9:40 PM",
+   "size": 76,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "new",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "WHO KNOWS THIS?",
+   "size": 64,
+   "qa": false,
+   "color": "#14263d",
+   "until": "Then"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "Then",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "THEY ALL LOOK AT ME.",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "remember",
+   "bg": "#F2A33A",
+   "enter": "pop",
+   "text": "A DECISION FROM THREE YEARS AGO.",
+   "size": 42,
+   "qa": false,
+   "color": "#14263d",
+   "until": "chose"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "chose",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "ONE BANK PROCESS NEEDED IT FIRST.",
+   "size": 42,
+   "qa": false,
+   "color": "#14263d",
+   "until": "never"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "never",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "NEVER WRITTEN DOWN.",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "fixed",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "FIXED IN 2 MINUTES.",
+   "size": 62,
+   "qa": false,
+   "color": "#14263d",
+   "until": "honest"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "honest",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "\u201cI JUST REMEMBER.\u201d",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "document#3",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "THE DOCUMENT IS ONLY A GUESS.",
+   "size": 42,
+   "qa": false,
+   "color": "#14263d",
+   "until": "real"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "real",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "THE REAL SYSTEM LIVES IN PEOPLE.",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d",
+   "until": "leave"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "leave",
+   "bg": "#ffb0a0",
+   "enter": "pop",
+   "text": "WHEN THEY LEAVE, IT LEAVES.",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "Tell",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "THE THING ONLY YOU KNOW?",
+   "size": 54,
+   "qa": false,
+   "color": "#14263d"
+  }
+ ]
+}

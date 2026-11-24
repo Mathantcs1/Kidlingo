@@ -1,0 +1,147 @@
+{
+ "title": "THE VIRAL POST: reference sheet (fiction, Pride Parables)",
+ "sections": [
+  {
+   "name": "CHARACTERS",
+   "items": [
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#6a6f86",
+      "body2": "#4f5470",
+      "hair": "#3b2a20",
+      "band": "#e0543a",
+      "hood": true,
+      "mood": "smug",
+      "hold": "phone"
+     },
+     "scale": 0.8,
+     "label": "Ace: grey hoodie"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#6a6f86",
+      "body2": "#4f5470",
+      "hair": "#3b2a20",
+      "band": "#e0543a",
+      "hood": true,
+      "mood": "shock"
+     },
+     "scale": 0.8,
+     "label": "Ace, shocked"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#d9a35f",
+      "body2": "#b9853f",
+      "hair": "#cfd3dc",
+      "hairStyle": "grey",
+      "apron": "#fff6e4",
+      "skin": "#e8b890",
+      "mood": "happy",
+      "hold": "loaf"
+     },
+     "scale": 0.8,
+     "label": "Grandma Lata: grey bun, apron"
+    },
+    {
+     "id": "pride2",
+     "opts": {
+      "mood": "cackle"
+     },
+     "scale": 0.9,
+     "label": "Pride lit up"
+    },
+    {
+     "id": "pride2",
+     "opts": {
+      "mood": "smug",
+      "hold": "tea"
+     },
+     "scale": 0.9,
+     "label": "Pride, tea, windowsill"
+    }
+   ]
+  },
+  {
+   "name": "LOCATIONS",
+   "items": [
+    {
+     "id": "sofaroom",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Ace's sofa corner, night"
+    },
+    {
+     "id": "bakery",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Grandma Lata's kitchen"
+    }
+   ]
+  },
+  {
+   "name": "PROPS",
+   "items": [
+    {
+     "id": "bigphone",
+     "opts": {
+      "screen": "feed"
+     },
+     "scale": 0.3,
+     "label": "Post"
+    },
+    {
+     "id": "bigphone",
+     "opts": {
+      "screen": "replies"
+     },
+     "scale": 0.3,
+     "label": "Replies"
+    },
+    {
+     "id": "bigphone",
+     "opts": {
+      "screen": "call"
+     },
+     "scale": 0.3,
+     "label": "Boss calling"
+    },
+    {
+     "id": "ladder",
+     "opts": {},
+     "scale": 0.22,
+     "label": "View ladder"
+    },
+    {
+     "id": "marker",
+     "opts": {},
+     "scale": 0.8,
+     "label": "Marker"
+    },
+    {
+     "id": "loaf",
+     "opts": {},
+     "scale": 0.8,
+     "label": "Loaf"
+    },
+    {
+     "id": "loaf",
+     "opts": {
+      "burnt": true
+     },
+     "scale": 0.8,
+     "label": "Burnt loaf"
+    },
+    {
+     "id": "flourjar",
+     "opts": {},
+     "scale": 0.7,
+     "label": "Flour"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+Late evening. A rule is firing in the wrong order, and nobody in the team knows why.
+The new people check the document. The document says nothing. The senior people check the old wiki. The wiki says nothing. Then they all look at me. Because three years ago, I was in the room when that decision was made.
+I remember the whiteboard. I remember who said what. We chose that order because one bank process needed it first, otherwise a whole flow broke. We never wrote it down. We just agreed and moved on.
+I fixed it in two minutes. Everyone said, wow, how did you know? And I did not know how to answer. Because the honest answer is, I just remember.
+That night, I understood something. The document is only a guess. The real system lives in the heads of the people who built it. And when those people leave, a part of the system leaves with them.
+So I wrote it down that night. Tell me, what is the thing in your project that only you know?

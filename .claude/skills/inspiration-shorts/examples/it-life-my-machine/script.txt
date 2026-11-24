@@ -1,0 +1,6 @@
+Client demo. Ten o'clock. Everything worked perfectly last night, on my machine.
+I tested it five times. Every button worked. Every screen loaded. I even had a backup of the backup. I walked into that room like I was about to launch a rocket.
+I clicked the first button. A loader, spinning. Then an error. Five people leaned forward, looking at the screen. I said the sentence every engineer says at least once in their life. "It works on my machine."
+The client's environment had a different version of one small thing. Just one. Same code, different world. The manager smiled politely and said, "Let's reschedule." And I smiled back, with my whole body on fire inside.
+Since that day, my rule is simple. Never demo in your own world. Always test in the client's world first. At least once.
+Everyone has one of these stories. What was yours?

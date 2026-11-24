@@ -1,0 +1,111 @@
+{
+ "title": "CROCS: reference sheet (Brandwake; generic clog, no logos)",
+ "sections": [
+  {
+   "name": "CHARACTERS",
+   "items": [
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#e8a53a",
+      "body2": "#c4862a",
+      "hat": "#ffd21f",
+      "hair": "#2b2b33",
+      "mood": "worried",
+      "hold": "bag"
+     },
+     "scale": 0.8,
+     "label": "Factory worker"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#ff7ab8",
+      "body2": "#d9558f",
+      "hair": "#2b1c14",
+      "hairStyle": "curly",
+      "mood": "cheer",
+      "skin": "#c68642"
+     },
+     "scale": 0.8,
+     "label": "Shopper with charms"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#2b2f45",
+      "body2": "#1f2233",
+      "tie": "#7ed957",
+      "hair": "#9aa0b4",
+      "mood": "smug"
+     },
+     "scale": 0.8,
+     "label": "Executive (podium)"
+    }
+   ]
+  },
+  {
+   "name": "LOCATIONS",
+   "items": [
+    {
+     "id": "factorywall",
+     "opts": {},
+     "scale": 0.3,
+     "label": "Factory floor"
+    },
+    {
+     "id": "conveyor",
+     "opts": {},
+     "scale": 0.3,
+     "label": "Conveyor"
+    },
+    {
+     "id": "shoewall",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Shoe wall"
+    },
+    {
+     "id": "podium",
+     "opts": {},
+     "scale": 0.6,
+     "label": "Podium"
+    }
+   ]
+  },
+  {
+   "name": "PROPS",
+   "items": [
+    {
+     "id": "clog",
+     "opts": {},
+     "scale": 0.7,
+     "label": "Clog, lime"
+    },
+    {
+     "id": "clog",
+     "opts": {
+      "c": "#ff7ab8",
+      "charms": 4
+     },
+     "scale": 0.7,
+     "label": "Clog, pink + charms"
+    },
+    {
+     "id": "charm",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Charm"
+    },
+    {
+     "id": "clog",
+     "opts": {
+      "c": "#4aa8ff"
+     },
+     "scale": 0.7,
+     "label": "Clog, blue"
+    }
+   ]
+  }
+ ]
+}

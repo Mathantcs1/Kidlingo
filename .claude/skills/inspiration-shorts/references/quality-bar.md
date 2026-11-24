@@ -3,6 +3,9 @@
 Fail the video if any item is false. These are the failures that make Shorts feel "useless".
 
 ## Story
+- [ ] **Frame 0 shows the conflict** (a `hook` headline, not a calm scene or title) and voiceover line 1 states it; `QA_STRICT_HOOK=1 node scripts/qa.mjs` passes.
+- [ ] The first real payoff lands by about 20 s; every later beat adds a new reveal; the main payoff lands by about 75% of the runtime.
+- [ ] A question chip sits near the turn and one share line is in the lesson (most viewers never see the last 5 s).
 - [ ] A new open loop or turn lands at least every 12 s; a re-hook sits near 25 s.
 - [ ] First 3 seconds contain the irony or the final number, not a title or greeting.
 - [ ] Every beat adds a new number or a new fact. No beat repeats the previous one.

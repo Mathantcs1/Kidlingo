@@ -14,8 +14,14 @@ for (let t = 0; t < dur; t += 0.2) {
   for (const e of texts) if (e.x0 < 24 || e.x1 > 1056 || e.y0 < 60 || e.y1 > 1860) add(errors, `frame|${e.kind}|${e.text}`, `t=${t.toFixed(1)}s ${e.kind} "${e.text}" leaves the safe area (x ${e.x0 | 0}-${e.x1 | 0}, y ${e.y0 | 0}-${e.y1 | 0})`);
   for (let i = 0; i < texts.length; i++) for (let j = i + 1; j < texts.length; j++) { const a = texts[i], b = texts[j]; if (a.kind === 'gold' && b.kind === 'gold') continue; if (ov(a, b) > 200) add(errors, `tt|${a.text}|${b.text}`, `t=${t.toFixed(1)}s text overlaps text: "${a.text}" / "${b.text}"`); }
   for (const a of texts) for (const p of props) { const o = ov(a, p); if (o > 600) add(a.kind === 'stamp' ? warns : errors, `tp|${a.kind}|${a.text}`, `t=${t.toFixed(1)}s ${a.kind} "${a.text}" covers a prop (${o | 0}px²)`); }
-  const visibleNonCaption = texts.some(e => e.kind !== 'caption') || props.length > 0;
+  const visibleNonCaption = texts.some(e => e.kind !== 'caption') || props.length > 0 || els.some(e => e.kind === 'panel');
   quiet = visibleNonCaption ? 0 : quiet + 0.2; if (quiet >= 2.4) add(warns, 'dead' + (t | 0), `t=${t.toFixed(1)}s: ${quiet.toFixed(1)}s with nothing on screen but the caption (dead air)`);
+}
+// Frame-0 rule (from the Pride Parables analytics: about 45% swiped away): the conflict must be readable within the first 0.5 s.
+// Add a `hook` item (or `instant: true` on the first chip / gold). Warning by default; error with QA_STRICT_HOOK=1 (use it for new episodes).
+{
+  const early = (await page.evaluate(() => window.qa(0.5))).filter(e => e.settled && ['chip', 'gold', 'banner', 'stamp', 'counter', 'panel'].includes(e.kind));
+  if (!early.length) add(process.env.QA_STRICT_HOOK ? errors : warns, 'hook0', 'no hook text in the first 0.5 s: frame 0 shows no headline (add a `hook` item stating the conflict, or `instant:true` on the first chip / gold)');
 }
 await browser.close();
 console.log(`QA: ${errors.length} error(s), ${warns.length} warning(s)`);

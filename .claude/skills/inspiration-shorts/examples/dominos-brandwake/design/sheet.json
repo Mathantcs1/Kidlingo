@@ -1,0 +1,158 @@
+{
+ "title": "DOMINO'S: reference sheet (Brandwake; generic props, no logos)",
+ "sections": [
+  {
+   "name": "CHARACTERS",
+   "items": [
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#2f6fd6",
+      "body2": "#2557b0",
+      "hair": "#2b2b33",
+      "mood": "sad",
+      "hold": "paper"
+     },
+     "scale": 0.8,
+     "label": "Customer 1 (gagging)"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#c2456b",
+      "body2": "#9a3454",
+      "hair": "#5a3a22",
+      "hairStyle": "long",
+      "mood": "angry",
+      "skin": "#c68642"
+     },
+     "scale": 0.8,
+     "label": "Customer 2"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#e8a53a",
+      "body2": "#c4862a",
+      "hair": "#cfd3dc",
+      "hairStyle": "grey",
+      "stache": true,
+      "mood": "worried",
+      "hold": "paper"
+     },
+     "scale": 0.8,
+     "label": "Customer 3"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#fff",
+      "body2": "#e6e6e6",
+      "hat": "#fff",
+      "mood": "happy",
+      "stache": true,
+      "hair": "#3b2a20",
+      "hold": "spoon"
+     },
+     "scale": 0.8,
+     "label": "Chef"
+    }
+   ]
+  },
+  {
+   "name": "LOCATIONS",
+   "items": [
+    {
+     "id": "focusgroup",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Focus-group room"
+    },
+    {
+     "id": "kitchenline",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Pizza kitchen"
+    }
+   ]
+  },
+  {
+   "name": "PROPS",
+   "items": [
+    {
+     "id": "tvset",
+     "opts": {
+      "text": "ON AIR"
+     },
+     "scale": 0.5,
+     "label": "TV"
+    },
+    {
+     "id": "pizza",
+     "opts": {
+      "layers": 1
+     },
+     "scale": 0.4,
+     "label": "Pizza, dough"
+    },
+    {
+     "id": "pizza",
+     "opts": {
+      "layers": 2
+     },
+     "scale": 0.4,
+     "label": "Pizza, sauce"
+    },
+    {
+     "id": "pizza",
+     "opts": {
+      "layers": 3
+     },
+     "scale": 0.4,
+     "label": "Pizza, cheese"
+    },
+    {
+     "id": "pizza",
+     "opts": {
+      "layers": 4,
+      "slices": 1
+     },
+     "scale": 0.4,
+     "label": "Pizza, herbs, sliced"
+    },
+    {
+     "id": "crate",
+     "opts": {},
+     "scale": 0.6,
+     "label": "Sauce"
+    },
+    {
+     "id": "crate",
+     "opts": {
+      "kind": "cheese",
+      "label": "CHEESE",
+      "c": "#ffd96a"
+     },
+     "scale": 0.6,
+     "label": "Cheese"
+    },
+    {
+     "id": "crate",
+     "opts": {
+      "kind": "herb",
+      "label": "HERBS",
+      "c": "#2f9a4a"
+     },
+     "scale": 0.6,
+     "label": "Herbs"
+    },
+    {
+     "id": "pizzabox",
+     "opts": {},
+     "scale": 0.6,
+     "label": "Box"
+    }
+   ]
+  }
+ ]
+}

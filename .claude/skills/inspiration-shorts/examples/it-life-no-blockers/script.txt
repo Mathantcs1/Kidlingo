@@ -1,0 +1,5 @@
+Daily standup. Six people. Everybody says the same sentence. "No blockers."
+Yesterday I worked on the module. Today I will continue the module. No blockers. The next person says it. And the next. By the sixth person, it sounds like a prayer.
+But after the call, something funny happens. My phone starts buzzing. "Hey, are you also waiting for access?" "Do you have test data?" "Is the VPN down for you too?" We all had blockers. We just did not want to be the one who said it first.
+The real standup happens after the standup. In private chats, in the corridor, with the one person we trust. Because saying "I am blocked" in front of everyone can feel like saying "I am slow." And that is not true.
+Next time, try saying it out loud. I bet you are not the only one. What was your last real blocker?

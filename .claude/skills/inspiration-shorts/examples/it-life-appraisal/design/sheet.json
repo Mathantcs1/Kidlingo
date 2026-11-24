@@ -1,0 +1,19 @@
+{ "title": "IT LIFE · S01 APPRAISAL: character, location and materials sheet",
+  "sections": [
+  { "name": "CHARACTERS (same Dev and Manager as every episode)", "items": [
+    { "id": "itdev", "opts": {"mood":"smile"}, "scale": 0.8, "label": "DEV, 2015: relaxed, ticking things off" },
+    { "id": "itdev", "opts": {"mood":"worry","sweat":true}, "scale": 0.8, "label": "DEV, 2026: more tired with every step back" },
+    { "id": "itdev", "opts": {"mood":"sad"}, "scale": 0.8, "label": "DEV in space, still typing" },
+    { "id": "itdev", "opts": {"hood":"#e0a030","pocket":"#b8801c","tie":"#e0543a","tablet":true,"tall":1.12,"mood":"flat"}, "scale": 0.8, "label": "MANAGER: neutral, sympathetic, tablet. Tiny in space, shrugging" } ]},
+  { "name": "LOCATIONS", "items": [
+    { "id": "itmeet", "opts": {"era":"2015"}, "scale": 0.5, "label": "L1  Meeting room 2015: whiteboard, paper calendar, amber" },
+    { "id": "itmeet", "opts": {"era":"2026"}, "scale": 0.5, "label": "L2  Same room 2026: huge wall screen with charts, teal and navy" },
+    { "id": "itscale", "opts": {"level":"building"}, "scale": 0.5, "label": "L3  The industry (building)" },
+    { "id": "itscale", "opts": {"level":"city"}, "scale": 0.5, "label": "L4  The market (city)" },
+    { "id": "itscale", "opts": {"level":"planet"}, "scale": 0.5, "label": "L5  The planet" },
+    { "id": "itscale", "opts": {"level":"space"}, "scale": 0.5, "label": "L6  The entire universe (Dev stays the same size in every step)" } ]},
+  { "name": "MATERIALS", "items": [
+    { "id": "itbug", "opts": {}, "scale": 0.8, "label": "The one bug" },
+    { "id": "itfolder", "opts": {}, "scale": 0.8, "label": "Project folder" },
+    { "id": "itlaptop", "opts": {}, "scale": 0.6, "label": "Laptop (still typing in space)" } ]}
+ ] }

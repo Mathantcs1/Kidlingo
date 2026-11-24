@@ -54,3 +54,13 @@ Rules for minute-plus Shorts
 - Vary beat length (6 s, 10 s, 4 s). Even pacing reads as a lecture.
 - Use silence or a hit before the turn; the sound change re-grabs attention.
 - Check retention honestly: after publishing, use YouTube Studio "stayed to watch" and the retention curve; every cliff in the curve is a sentence to cut or a beat to re-hook.
+
+## Evidence from the first analytics (The Pride Parables, 16-24 Nov 2026) and what changed
+Data: 188 views, 88 engaged views, 75 unique viewers in 8 days; two Shorts got 77% of the views; stayed-to-watch 54.5% overall (about 45% swiped away at once); average view 30 s of 58 s and 19 s of 52 s on the two best Shorts; 3 comments, 0 shares; the 4-minute video got 0 views; four videos went out on one day; one story was uploaded twice. The IT Life channel showed the same shape (61.7% swiped away, average view 27 s of 72 s). Samples are tiny, so treat these as reasons to run experiments, not as proof.
+Rules for every channel (new episodes):
+1. **Frame 0 shows the conflict.** Use a `hook` item (2-3 short lines, readable from the first frame) and make line 1 of the voiceover the same conflict. `QA_STRICT_HOOK=1 node scripts/qa.mjs <proj>` fails a spec with no headline in the first 0.5 s. A calm room, a logo or a title card is not a hook.
+2. **Front-load the payoff.** Half the viewers who stay are gone by 20-30 s, so the twist or first real payoff must land by about 20 s, not 50 s. The rest of a 60-90 s Short is bonus depth: every beat after 20 s must add a new reveal, number or turn. Land the main payoff by about 75% of the runtime.
+3. **Put the comment question and a share line before the end.** Most viewers never reach the last 5 s. Add a question chip around the turn (about 55-65% in) and one line like "send this to someone who..." with the lesson. Keep a final question too.
+4. **Test length, not just stories.** Run the same style at about 58-64 s (tight) and 75-90 s (extended) and compare average % viewed in the weekly report. The owner's floor is 60 s; do not pad to reach it, trim the middle.
+5. **One upload per channel per day; never upload the same story twice**; no hashtags inside titles; no long videos until Shorts are stable.
+6. **Weekly loop:** export the Studio table, run `python3 scripts/analytics.py <folder> --out report.md`, pick the next week's experiments from the report.

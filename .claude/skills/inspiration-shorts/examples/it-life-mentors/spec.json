@@ -1,0 +1,915 @@
+{
+ "kitFile": "../../kits/it-life.json",
+ "tail": 3.2,
+ "kit": {
+  "caption": {
+   "y": 1475
+  }
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "cream"
+  },
+  {
+   "id": "a1",
+   "bg": "cream",
+   "from": "the-0.1",
+   "transition": "wipe-left"
+  },
+  {
+   "id": "a2",
+   "bg": "navy",
+   "from": "now-0.1",
+   "transition": "iris"
+  },
+  {
+   "id": "a3",
+   "bg": "navy",
+   "from": "in#3-0.1",
+   "transition": "push"
+  },
+  {
+   "id": "a4",
+   "bg": "mint",
+   "from": "teach-0.5",
+   "transition": "wipe-up"
+  },
+  {
+   "id": "a5",
+   "bg": "violet",
+   "from": "he#3-0.1",
+   "transition": "iris"
+  },
+  {
+   "id": "a6",
+   "bg": "sunset",
+   "from": "tell-0.1",
+   "transition": "zoom"
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itoffice",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2015"
+   },
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "day",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "DAY ONE: 2015",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d",
+   "until": "senior"
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "come",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "\"COME, I WILL SHOW YOU EVERYTHING\"",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itpal",
+   "x": 48,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "fresher",
+    "mood": "grin"
+   },
+   "bob": 0.9,
+   "move": {
+    "x": 324,
+    "dur": 2.8
+   }
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itpal",
+   "x": 780,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "senior",
+    "pose": "pat",
+    "mood": "smile"
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itchair",
+   "x": 948,
+   "y": 1430,
+   "scale": 1.375,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itoffice",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2015"
+   },
+   "qa": false,
+   "zoom": {
+    "from": 1.5,
+    "dur": 1.4
+   }
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "senior#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "SENIOR TEACHES. FRESHER LISTENS.",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itpal",
+   "x": 180,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "senior",
+    "pose": "point",
+    "mood": "smile"
+   },
+   "bob": 0.9,
+   "float": 5
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itpal",
+   "x": 564,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "fresher",
+    "pose": "hold",
+    "mood": "smile"
+   },
+   "bob": 0.9,
+   "float": 7
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itcoffee",
+   "x": 936,
+   "y": 862,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0.2
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itnotebook",
+   "x": 684,
+   "y": 1074,
+   "scale": 0.875,
+   "enter": "pop",
+   "at": "notebook",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 600,
+   "y": 474,
+   "w": 440,
+   "h": 100,
+   "at": "code",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "</> THE CODE",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 600,
+   "y": 624,
+   "w": 440,
+   "h": 100,
+   "at": "shortcuts",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "SHORTCUTS",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 600,
+   "y": 774,
+   "w": 440,
+   "h": 100,
+   "at": "questions",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "WHICH QUESTIONS TO ASK",
+   "size": 34,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itoffice",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2026"
+   },
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "clockspin",
+   "x": 540,
+   "y": 900,
+   "size": 460,
+   "at": "now",
+   "dur": 1.3
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "thousand#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "DAY ONE: 2026",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d",
+   "until": "another"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "five",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "FIVE TOOLS I HAVEN'T OPENED",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itpal",
+   "x": 972,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "fresher",
+    "pose": "hold",
+    "mood": "grin"
+   },
+   "bob": 0.9,
+   "move": {
+    "x": 288,
+    "dur": 3.0
+   }
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itlaptop",
+   "x": 1068,
+   "y": 1236,
+   "scale": 0.75,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "glow": "#2ee6d0",
+    "screen": "#1F9CA8"
+   },
+   "bob": 0.3,
+   "move": {
+    "x": 420,
+    "dur": 3.0
+   }
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itpal",
+   "x": 780,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "senior",
+    "pose": "mug",
+    "mug": true,
+    "mood": "curious"
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itbadge",
+   "x": 120,
+   "y": 724,
+   "scale": 0.875,
+   "enter": "drop",
+   "at": "five",
+   "opts": {
+    "kind": "gear"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itbadge",
+   "x": 330,
+   "y": 724,
+   "scale": 0.875,
+   "enter": "drop",
+   "at": "tools",
+   "opts": {
+    "kind": "chat"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itbadge",
+   "x": 540,
+   "y": 724,
+   "scale": 0.875,
+   "enter": "drop",
+   "at": "tools+0.3",
+   "opts": {
+    "kind": "cloud"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itbadge",
+   "x": 750,
+   "y": 724,
+   "scale": 0.875,
+   "enter": "drop",
+   "at": "not",
+   "opts": {
+    "kind": "branch"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itbadge",
+   "x": 960,
+   "y": 724,
+   "scale": 0.875,
+   "enter": "drop",
+   "at": "opened",
+   "opts": {
+    "kind": "term"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#12304a",
+    "floor": "#1c4d6b"
+   },
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "ten",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "10 MINUTES  vs  A WEEK",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itlaptop",
+   "x": 540,
+   "y": 1299,
+   "scale": 1.5,
+   "enter": "pop",
+   "at": "minutes",
+   "opts": {
+    "glow": "#2ee6d0",
+    "screen": "#1F9CA8"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itcheck",
+   "x": 420,
+   "y": 1049,
+   "scale": 1.125,
+   "enter": "pop",
+   "at": "minutes",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itcheck",
+   "x": 540,
+   "y": 1049,
+   "scale": 1.125,
+   "enter": "pop",
+   "at": "tool",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itcheck",
+   "x": 660,
+   "y": 1049,
+   "scale": 1.125,
+   "enter": "pop",
+   "at": "week",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itpal",
+   "x": 240,
+   "y": 1430,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "fresher",
+    "pose": "point",
+    "mood": "grin"
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itpal",
+   "x": 840,
+   "y": 1430,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "senior",
+    "pose": "rest",
+    "mood": "curious"
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itpantry",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 480,
+   "w": 520,
+   "h": 90,
+   "at": "read",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "HOW TO READ A MEETING",
+   "size": 38,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 520,
+   "y": 536,
+   "w": 520,
+   "h": 90,
+   "at": "copy",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "WHO TO COPY ON AN EMAIL",
+   "size": 38,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 520,
+   "y": 649,
+   "w": 520,
+   "h": 90,
+   "at": "no",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "HOW TO SAY NO POLITELY",
+   "size": 38,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 761,
+   "w": 560,
+   "h": 90,
+   "at": "client",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "WHAT NOT TO SAY ON A CLIENT CALL",
+   "size": 34,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itpal",
+   "x": 288,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "fresher",
+    "pose": "rest",
+    "mood": "curious"
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itpal",
+   "x": 732,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "senior",
+    "pose": "point",
+    "mood": "smile"
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "qa": false
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "gives",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "DIFFERENT STRENGTHS",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 60,
+   "y": 410,
+   "w": 420,
+   "h": 100,
+   "at": "tools#2",
+   "bg": "#F2A33A",
+   "enter": "pop",
+   "text": "TOOLS",
+   "size": 44,
+   "qa": false,
+   "color": "#fff"
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 560,
+   "y": 410,
+   "w": 460,
+   "h": 100,
+   "at": "guide",
+   "bg": "#1F9CA8",
+   "enter": "pop",
+   "text": "SURVIVAL GUIDE",
+   "size": 40,
+   "qa": false,
+   "color": "#fff"
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itpal",
+   "x": 192,
+   "y": 1430,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "fresher",
+    "pose": "hold",
+    "mood": "smile"
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itpal",
+   "x": 888,
+   "y": 1430,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "senior",
+    "pose": "hold",
+    "mood": "smile",
+    "flip": true
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itpuzzle",
+   "x": 276,
+   "y": 1074,
+   "scale": 1.25,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "side": "left"
+   },
+   "bob": 0.4,
+   "move": {
+    "x": 402,
+    "dur": 0.9,
+    "at": "fair"
+   }
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itpuzzle",
+   "x": 804,
+   "y": 1074,
+   "scale": 1.25,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "side": "right"
+   },
+   "bob": 0.4,
+   "move": {
+    "x": 677,
+    "dur": 0.9,
+    "at": "fair"
+   }
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#ffe9d2",
+    "floor": "#f3c9a0"
+   },
+   "qa": false
+  },
+  {
+   "act": "a6",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 150,
+   "at": "who",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "WHO TAUGHT YOU SOMETHING THIS YEAR?",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itpal",
+   "x": 372,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "fresher",
+    "pose": "fist",
+    "mood": "grin"
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itpal",
+   "x": 708,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "senior",
+    "pose": "fist",
+    "mood": "grin",
+    "flip": true
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itheart",
+   "x": 540,
+   "y": 774,
+   "scale": 1.625,
+   "enter": "pop",
+   "at": "year",
+   "opts": {},
+   "bob": 1.2
+  },
+  {
+   "act": "a2",
+   "type": "steam",
+   "x": 856,
+   "y": 1055,
+   "at": 0,
+   "n": 5,
+   "h": 120
+  },
+  {
+   "act": "a4",
+   "type": "steam",
+   "x": 736,
+   "y": 850,
+   "at": 0,
+   "n": 6,
+   "h": 140
+  },
+  {
+   "act": "a1",
+   "type": "steam",
+   "x": 936,
+   "y": 790,
+   "at": 0,
+   "n": 4,
+   "h": 80
+  },
+  {
+   "act": "a6",
+   "type": "steam",
+   "x": 540,
+   "y": 1000,
+   "at": 0,
+   "n": 7,
+   "h": 230,
+   "c": "rgba(255,255,255,.8)"
+  }
+ ]
+}

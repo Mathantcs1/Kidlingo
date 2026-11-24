@@ -17,9 +17,13 @@ The look is **inspired by** a reference format the user supplied (counter + chip
 4. **Script.** `script.txt`, one short sentence per fact, numbers spelled as words (the screen carries digits). About 150-190 words for 65-80 s.
 5. **Voice.** `python3 scripts/tts.py <project>` -> `vo.mp3` + `words.json` (word timings, pauses tightened). Voice comes from the kit. Re-run if a line sounds wrong.
 6. **Spec.** Write `spec.json` (acts, items, counters, transitions); format in `references/spec-format.md`. Time everything to words (`"eighty#2"`, `"stops+0.2"`), never hand-typed seconds, so a re-recorded voice cannot desync the picture. Start from `examples/ego-trap/` (two-sided tug counter) or `examples/lemonade/` (single counter, hero + stand).
-7. **Build.** `sh scripts/build.sh <project>`: layout QA first (fails on off-frame text, text over text, text over props), then sound design, frames, mux, loudness and black-frame checks. Fix every QA error; read the warnings.
+7. **Build.** Start with a `hook` item at frame 0 and run `QA_STRICT_HOOK=1 node scripts/qa.mjs <project>`. Then `sh scripts/build.sh <project>`: layout QA first (fails on off-frame text, text over text, text over props), then sound design, frames, mux, loudness and black-frame checks. Fix every QA error; read the warnings.
 8. **Review.** Contact stills (`node scripts/render.mjs <project> stills 1,5,9`) at phone size, including frames *inside* each transition; check `references/quality-bar.md`. One fix round, then deliver.
-9. **Deliver**: `out/short.mp4`, `out/poster.jpg`, `FACTS.md` if any, and upload metadata (hook-first title under 60 chars, 2-line description, 3 hashtags, pinned-comment question). Remind the user to answer YouTube's AI-narration / synthetic-content question truthfully. Never upload or publish without an explicit go-ahead.
+9. **Package.** Titles, descriptions, tags and pinned comments follow `references/youtube-packaging.md` (no hashtags in the title).
+10. **Deliver**: `out/short.mp4`, `out/poster.jpg`, `FACTS.md` if any, and upload metadata (hook-first title under 60 chars, 2-line description, 3 hashtags, pinned-comment question). Remind the user to answer YouTube's AI-narration / synthetic-content question truthfully. Never upload or publish without an explicit go-ahead.
+
+## Weekly loop (from the owner's analytics)
+When the owner shares a YouTube Studio export, run `python3 scripts/analytics.py <folder> --out report.md` (Table data.csv, optionally Chart data.csv and Totals.csv) and change the process with it: the evidence and the resulting rules are in `references/story-craft.md` ("Evidence from the first analytics"). Low counts prove little; use the report to pick experiments.
 
 ## Transitions: use them, and make each one mean something
 
@@ -39,11 +43,11 @@ Node 20+, ffmpeg, Python 3 + numpy, Playwright with Chromium (preinstalled in Cl
 
 ## Channel kits
 
-`kits/<channel>.json`: ink colour, gold gradient, caption colours, background presets, default transition, voice id. Reference with `"kitFile": "../../kits/pride-parables.json"`. New channel = copy a kit, change palette and voice; keep ink + gold + one accent per act. `kits/brandwake.json` is built for Brandwake (why brands rise and fall; sourced figures): read `references/brandwake-episode.md` before writing any Brandwake episode, including the sourcing rules. Use `source` items for every real figure.
+`kits/<channel>.json`: ink colour, gold gradient, caption colours, background presets, default transition, voice id. Reference with `"kitFile": "../../kits/pride-parables.json"`. New channel = copy a kit, change palette and voice; keep ink + gold + one accent per act. `kits/it-life.json` = the IT Life channel (stick figures, locations, cards): read `references/it-life-episode.md` first (it has the episode workflow v2: beat sheet with gestures/walks tied to spoken words, cinematic camera transitions, retention rules). `kits/brandwake.json` is built for Brandwake (why brands rise and fall; sourced figures): read `references/brandwake-episode.md` before writing any Brandwake episode, including the sourcing rules. Use `source` items for every real figure.
 
 ## Hard rules
 
-- Hook inside 3 s; something new on screen every 1-2 s; never more than ~2.4 s with only the caption showing.
+- Frame 0 shows the conflict (a `hook` headline) and the payoff is first teased by about 20 s; something new on screen every 1-2 s; never more than ~2.4 s with only the caption showing.
 - A minute-plus Short needs a new open loop (a question the viewer wants answered) every 8-12 s and a re-hook near 25 s; see `references/story-craft.md` "60-90 second structure".
 - One accent colour per act; text never on a same-colour background; all text inside the safe area (QA enforces).
 - Spoken and on-screen numbers are real and consistent; do the arithmetic before building.

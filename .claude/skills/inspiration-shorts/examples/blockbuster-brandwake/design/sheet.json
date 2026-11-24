@@ -1,0 +1,112 @@
+{
+ "title": "BLOCKBUSTER: reference sheet (Brandwake; generic props, no logos)",
+ "sections": [
+  {
+   "name": "CHARACTERS",
+   "items": [
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#2f6fd6",
+      "body2": "#2557b0",
+      "hair": "#2b2b33",
+      "mood": "neutral",
+      "hold": "paper"
+     },
+     "scale": 0.8,
+     "label": "Clerk"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#7a52d9",
+      "body2": "#5b36b8",
+      "hair": "#5a3a22",
+      "mood": "shock",
+      "hold": "paper"
+     },
+     "scale": 0.8,
+     "label": "Customer with overdue tape"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#e0543a",
+      "body2": "#b9402a",
+      "hair": "#1c1c24",
+      "hairStyle": "long",
+      "mood": "happy",
+      "skin": "#c68642"
+     },
+     "scale": 0.8,
+     "label": "Viewer (reaction)"
+    }
+   ]
+  },
+  {
+   "name": "LOCATIONS",
+   "items": [
+    {
+     "id": "videoaisle",
+     "opts": {},
+     "scale": 0.3,
+     "label": "Video aisle (parallax)"
+    },
+    {
+     "id": "counter",
+     "opts": {},
+     "scale": 0.5,
+     "label": "Return counter"
+    }
+   ]
+  },
+  {
+   "name": "PROPS",
+   "items": [
+    {
+     "id": "receipt",
+     "opts": {
+      "rows": 8
+     },
+     "scale": 0.4,
+     "label": "Receipt"
+    },
+    {
+     "id": "tape",
+     "opts": {},
+     "scale": 0.6,
+     "label": "Overdue tape"
+    },
+    {
+     "id": "vhsbox",
+     "opts": {},
+     "scale": 0.6,
+     "label": "Box"
+    },
+    {
+     "id": "vhsbox",
+     "opts": {
+      "c": "#2f6fd6",
+      "c2": "#fff"
+     },
+     "scale": 0.6,
+     "label": "Box 2"
+    },
+    {
+     "id": "magnifier",
+     "opts": {},
+     "scale": 0.5,
+     "label": "Magnifier"
+    },
+    {
+     "id": "scale",
+     "opts": {
+      "tilt": -8
+     },
+     "scale": 0.35,
+     "label": "Scale"
+    }
+   ]
+  }
+ ]
+}

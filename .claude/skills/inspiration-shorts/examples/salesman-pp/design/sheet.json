@@ -1,0 +1,147 @@
+{
+ "title": "THE SALESMAN WHO NEVER ASKED: reference sheet (fiction, Pride Parables)",
+ "sections": [
+  {
+   "name": "CHARACTERS",
+   "items": [
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#3a4a9f",
+      "body2": "#2c3a80",
+      "hair": "#3b2a20",
+      "band": "#e0543a",
+      "tie": "#ffd21f",
+      "hold": "case",
+      "mood": "smug"
+     },
+     "scale": 0.8,
+     "label": "Ace: suit, tie, case"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#3a4a9f",
+      "body2": "#2c3a80",
+      "hair": "#3b2a20",
+      "band": "#e0543a",
+      "tie": "#ffd21f",
+      "mood": "sad"
+     },
+     "scale": 0.8,
+     "label": "Ace, embarrassed"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#b5482f",
+      "body2": "#8f361f",
+      "hair": "#2b2b33",
+      "glasses": true,
+      "skin": "#c68642",
+      "hold": "pad",
+      "hairStyle": "bun",
+      "mood": "neutral"
+     },
+     "scale": 0.8,
+     "label": "Coach Mira: glasses, notepad"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#f0e6d2",
+      "body2": "#d9ccb0",
+      "hair": "#2b1c14",
+      "apron": "#139f7d",
+      "hairStyle": "curly",
+      "skin": "#c68642",
+      "mood": "worried"
+     },
+     "scale": 0.8,
+     "label": "Priya: caf\u00e9 owner, apron"
+    },
+    {
+     "id": "pride2",
+     "opts": {
+      "mood": "smug",
+      "hold": "flag"
+     },
+     "scale": 0.9,
+     "label": "Pride with flag"
+    },
+    {
+     "id": "pride2",
+     "opts": {
+      "mood": "hiss"
+     },
+     "scale": 0.9,
+     "label": "Pride hissing"
+    }
+   ]
+  },
+  {
+   "name": "LOCATIONS",
+   "items": [
+    {
+     "id": "cafe",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Caf\u00e9 interior"
+    },
+    {
+     "id": "streetcafes",
+     "opts": {},
+     "scale": 0.25,
+     "label": "Street of caf\u00e9s (parallax)"
+    },
+    {
+     "id": "skyline",
+     "opts": {},
+     "scale": 0.25,
+     "label": "Far skyline"
+    }
+   ]
+  },
+  {
+   "name": "PROPS",
+   "items": [
+    {
+     "id": "notepad",
+     "opts": {
+      "marks": 12
+     },
+     "scale": 0.4,
+     "label": "Mira's notepad"
+    },
+    {
+     "id": "contract",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Contract"
+    },
+    {
+     "id": "slidebig",
+     "opts": {
+      "title": "SLIDE 9",
+      "num": "9",
+      "c": "#139f7d"
+     },
+     "scale": 0.35,
+     "label": "Slide"
+    },
+    {
+     "id": "queue",
+     "opts": {},
+     "scale": 0.5,
+     "label": "Queue"
+    },
+    {
+     "id": "laptop",
+     "opts": {},
+     "scale": 0.5,
+     "label": "Laptop"
+    }
+   ]
+  }
+ ]
+}

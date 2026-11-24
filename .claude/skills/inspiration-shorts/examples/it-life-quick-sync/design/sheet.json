@@ -1,0 +1,18 @@
+{ "title": "IT LIFE · S02 THE QUICK SYNC: character, location and materials sheet",
+  "sections": [
+  { "name": "CHARACTERS (identical in every episode; thin-line stick figures)", "items": [
+    { "id": "itdev", "opts": {"mood":"flat"}, "scale": 0.8, "label": "DEV: narrator stand-in. Dark hoodie, two dot eyes, one-line mouth" },
+    { "id": "itdev", "opts": {"mood":"worry","sweat":true}, "scale": 0.8, "label": "DEV worried (guessing game)" },
+    { "id": "itdev", "opts": {"mood":"shock"}, "scale": 0.8, "label": "DEV shocked (team lunch)" },
+    { "id": "itdev", "opts": {"mood":"smile"}, "scale": 0.8, "label": "DEV relieved (ending)" },
+    { "id": "itdev", "opts": {"hood":"#e0a030","pocket":"#b8801c","tie":"#e0543a","tablet":true,"tall":1.12,"mood":"smile"}, "scale": 0.8, "label": "MANAGER: taller, tie, tablet. Neutral to kind, never a villain" } ]},
+  { "name": "LOCATIONS", "items": [
+    { "id": "itroom", "opts": {"h":4,"m":45}, "scale": 0.5, "label": "L1  Dev's desk, Friday 4:45 PM (amber 2015-warm light, low sun, sticky note FRIDAY)" },
+    { "id": "itroom", "opts": {"h":6,"m":15,"wall":"#cfd8e3","sky":"#2b3f63","sun":false,"night":true,"desk":"#8a6b4a"}, "scale": 0.5, "label": "L2  Same desk, 6:15 PM, evening (quick = 90 minutes)" },
+    { "id": "itcall", "opts": {}, "scale": 0.5, "label": "L3  The call: manager + three question marks" },
+    { "id": "itcall", "opts": {"tiles":[{"c":"#bfe6ea","f":"smile"},{"c":"#f9e0b0","f":"smile"},{"c":"#d9d2f0","f":"smile"},{"c":"#ffd9d9","f":"smile"}]}, "scale": 0.5, "label": "L4  The call: everyone smiling (team lunch)" } ]},
+  { "name": "MATERIALS", "items": [
+    { "id": "itlaptop", "opts": {}, "scale": 0.7, "label": "Laptop (open / closed)" },
+    { "id": "itcloud", "opts": {}, "scale": 0.7, "label": "Storm cloud: the feeling" },
+    { "id": "itroom", "opts": {"h":4,"m":45,"note":"QUICK SYNC"}, "scale": 0.25, "label": "Calendar invite card, thought bubbles, split 2015 amber / 2026 teal cards (drawn as flat cards in the spec)" } ]}
+ ] }

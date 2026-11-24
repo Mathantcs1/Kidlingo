@@ -37,6 +37,12 @@
   };
   const deepMerge = (a, b) => { const o = Object.assign({}, a); for (const k in (b || {})) o[k] = (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k]) ? deepMerge(a[k], b[k]) : b[k]; return o; };
 
+  // in-scene camera (spec.cam keyframes, spec.focus rack-focus, per-item depth = parallax factor); HUD types are never moved
+  const WORLD = new Set(['prop', 'rect', 'grid', 'bars', 'tug', 'coins', 'lines', 'typing', 'cells', 'pipeline', 'logview', 'clockface', 'spinner', 'sparkles', 'steam', 'confetti', 'clockspin', 'starfield']);
+  let CAM = { x: 0, y: 0, s: 1, fx: 540, fy: 960 }, CAMK = null, FOC = [];
+  const camAt = t => { if (!CAMK) return CAM; const o = { x: 0, y: 0, s: 1, fx: 540, fy: 960 };
+    for (const ch of ['x', 'y', 's', 'fx', 'fy']) { const ks = CAMK.filter(k => k[ch] !== undefined); if (ks.length) o[ch] = interp(ks.map(k => [k.t, k[ch]]), t); }
+    if (S.camDrift) { const d = S.camDrift; o.x += Math.sin(t * .7) * d + Math.sin(t * 1.9) * d * .35; o.y += Math.cos(t * .55) * d * .7 + Math.sin(t * 1.3) * d * .3; o.s *= 1 + Math.sin(t * .4) * d * .0006; } return o; };
   let flashEl, S, WORDS = [], KIT, stage, ACTS = [], ITEMS = [], EV = [], CH = [], capEl, railEl, counterEl, svgDefs;
   const norm = s => s.toLowerCase().replace(/[^a-z0-9']/g, '');
 
@@ -56,6 +62,7 @@
   const money = (v, mode) => {
     if (mode === 'usd2') return '$' + v.toFixed(2);
     if (mode === 'dec1') return v.toFixed(1);
+    if (mode === 'clock') { const m = ((Math.round(v) % 1440) + 1440) % 1440, h = Math.floor(m / 60), mm = String(m % 60).padStart(2, '0'); return ((h % 12) || 12) + ':' + mm + (h < 12 ? ' AM' : ' PM'); }
     if (mode === 'usdb') return '$' + (v / 1e9).toFixed(1) + 'B';
     if (mode === 'pct1') return v.toFixed(1) + '%';
     if (mode === 'pct0') return Math.round(v) + '%';
@@ -87,8 +94,8 @@
     const rp = b.ripples ? Array.from({ length: b.ripples.n || 4 }, (_, i) => el('', '', `position:absolute;left:0;top:0;border-radius:50%;border:${b.ripples.w || 4}px solid ${b.ripples.c || '#fff'}`, wrap)) : [];
     wrap._anim = (t) => {
       rp.forEach((d, i) => { const n = rp.length, per = b.ripples.period || 6, f = ((t / per) + i / n) % 1, r = 120 + f * (b.ripples.max || 1100); d.style.width = d.style.height = r * 2 + 'px'; d.style.transform = `translate(${(b.ripples.x ?? 540) - r}px,${(b.ripples.y ?? 1000) - r}px)`; d.style.opacity = String((b.ripples.o ?? .22) * (1 - f) * Math.min(1, f * 6)); });
-      blobs.forEach(({ o, i, d }) => d.style.transform = `translate(${o.x - o.r + Math.sin(t * (o.s || .3) + i * 2) * (o.dx || 60)}px,${o.y - o.r + Math.cos(t * (o.s || .3) * .8 + i) * (o.dy || 40)}px)`);
-      hills.forEach(({ d, i }) => d.style.transform = `translateX(${Math.sin(t * (.25 + i * .12) + i) * (30 + i * 16)}px)`);
+      blobs.forEach(({ o, i, d }) => d.style.transform = `translate(${-CAM.x * .12 + o.x - o.r + Math.sin(t * (o.s || .3) + i * 2) * (o.dx || 60)}px,${o.y - o.r + Math.cos(t * (o.s || .3) * .8 + i) * (o.dy || 40)}px)`);
+      hills.forEach(({ d, i }) => d.style.transform = `translateX(${-CAM.x * (.2 + i * .12)}px) translateX(${Math.sin(t * (.25 + i * .12) + i) * (30 + i * 16)}px)`);
     };
     return wrap;
   }
@@ -104,7 +111,7 @@
       // gradient + outline live on each span: background-clip:text ignores a child's transform, so a per-part pop needs its own clip
       const parts = it.parts.map(p => { const s = document.createElement('span'); s.textContent = p.t; s.style.cssText = p.c ? `display:inline-block;font-weight:800;line-height:1;color:${p.c};filter:drop-shadow(0 8px 0 #3a1f08) drop-shadow(0 0 3px #3a1f08)` : `display:inline-block;${goldCss()}`; sp.appendChild(s); return { s, at: R(p.at) }; });
       parts.forEach(p => EV.push({ t: p.at, type: 'pop' }));
-      return { el: w, base: it, update(t) { parts.forEach(p => { const k = pop(t, p.at, .45); p.s.style.transform = `scale(${k})`; p.s.style.opacity = clamp(k * 2); }); } };
+      return { el: w, base: it, update(t) { parts.forEach(p => { const k = it.instant ? (t < p.at ? 0 : 1) : pop(t, p.at, .45); p.s.style.transform = `scale(${k})`; p.s.style.opacity = clamp(k * 2); }); } };
     },
     chip(it) {
       const w = row(it.y); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'chip'; c.style.cssText = chipCss(it.bg || '#fff', it.color || KIT.ink, it.size || 60, it.pad || '12px 40px') + (it.border ? `;border-color:${it.border}` : ''); w.appendChild(c);
@@ -114,37 +121,53 @@
         const shown = parts.filter(p => t >= p.at);
         c.innerHTML = shown.map(p => `<span style="${p.c ? 'color:' + p.c : ''}">${p.t}</span>`).join(' ');
         const t0 = parts[0].at, lastIdx = shown.length - 1;
-        let k = pop(t, t0, .35); if (lastIdx > 0) k *= 1 + .1 * Math.sin(clamp((t - shown[lastIdx].at) / .3) * Math.PI);
+        let k = it.instant ? (t < t0 ? 0 : 1) : pop(t, t0, .35); if (lastIdx > 0) k *= 1 + .1 * Math.sin(clamp((t - shown[lastIdx].at) / .3) * Math.PI);
         w.style.transform = `scale(${k})`;
       } };
     },
     stamp(it) {
       const w = row(it.y, `transform:rotate(${it.rot ?? -6}deg)`); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'stamp'; c.style.cssText = chipCss('#fff', it.color || '#e11d48', it.size || 64, '10px 36px') + `;border-color:${it.color || '#e11d48'}`; c.textContent = it.text; w.appendChild(c);
       const at = R(it.at); EV.push({ t: at, type: 'thud' }); (it.hit !== false) && HITS.push({ t: at, shake: it.shake ?? .35, flash: .35 });
-      return { el: w, base: it, update(t) { const f = clamp((t - at) / .25); w.style.transform = `rotate(${it.rot ?? -6}deg) scale(${t < at ? 0 : 1 + (1 - eOut(f)) * 1.6})`; } };
+      return { el: w, base: it, update(t) { const f = clamp((t - at) / .25); w.style.transform = `rotate(${it.rot ?? -6}deg) scale(${t < at ? 0 : (it.instant ? 1 : 1 + (1 - eOut(f)) * 1.6)})`; } };
     },
     banner(it) {
       const w = row(it.y); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'banner'; c.style.cssText = chipCss('#fff', it.color || KIT.ink, it.size || 46, '12px 28px') + ';border-radius:16px;border-width:5px'; c.textContent = it.text; w.appendChild(c);
       const at = R(it.at); EV.push({ t: at, type: 'whoosh2' });
-      return { el: w, base: it, update(t) { w.style.transform = `translateX(${(1 - eOut(clamp((t - at) / .4))) * 1200}px)`; } };
+      return { el: w, base: it, update(t) { w.style.transform = `translateX(${it.instant ? (t < at ? 1200 : 0) : (1 - eOut(clamp((t - at) / .4))) * 1200}px)`; } };
     },
     prop(it) {
       const mk = window.PROPS[it.id]; if (!mk) throw new Error('unknown prop ' + it.id);
       const p = mk(it.opts || {}); const w = el('it', p.svg, `position:absolute;left:0;top:0;width:${p.w}px;height:${p.h}px;transform-origin:0 0;will-change:transform,opacity`);
+      const mAt = it.move && it.move.at !== undefined ? R(it.move.at) : R(it.at); // move.at: when the glide starts (default = the prop's own `at`)
+      const zAt = it.zoom ? R(it.zoom.at ?? it.at) : 0; // optional continuous pull-back: zoom {from: 1.5, dur: 1.2, at?} scales from `from`x down to 1x about the prop's bottom-centre
       const at = R(it.at), gray = it.grayAt ? R(it.grayAt) : null, pourA = it.armAt ? R(it.armAt) : null, pourB = it.armUntil ? R(it.armUntil) : 1e9;
-      const mouth = w.querySelector('.mouth'), arm = w.querySelector('.arm');
-      const qaEl = w.firstChild; qaEl.classList.add('qa'); qaEl.dataset.kind = 'prop';
+      const TW = it.talkWin ? it.talkWin.map(w => [R(w[0]), R(w[1])]) : null; const mouth = w.querySelector('.mouth'), arm = w.querySelector('.arm');
+      const RG = {}; ['armL', 'armR', 'legL', 'legR', 'head'].forEach(n => { const g = w.querySelector('.' + n); if (g) RG[n] = g; }); const rigOn = Object.keys(RG).length > 0; const GES = (it.gest || []).map(g => Object.assign({}, g, { t0: R(g.at) })); const WALK = it.walk ? { a: R(it.walk.at), b: R(it.walk.until) } : null; const ph0 = (it.phase || 0);
+      const setRot = (n, deg) => { const g = RG[n]; if (g) g.setAttribute('transform', `rotate(${deg.toFixed(2)} ${g.dataset.px} ${g.dataset.py})`); };
+      const qaEl = w.firstChild; if (it.qa !== false) { qaEl.classList.add('qa'); qaEl.dataset.kind = 'prop'; }
       if (it.enter !== 'none') EV.push({ t: at, type: 'whoosh2' });
       return { el: w, base: it, update(t) {
         const d = it.enter === 'pop' ? .45 : .55; const k = it.enter === 'none' ? 1 : pop(t, at, d);
-        const sc = it.scale ?? 1; let ox = 0, oy = 0, s = 1;
+        const sc = (it.scale ?? 1) * (it.zoom ? lerp(it.zoom.from, 1, eInOut(clamp((t - zAt) / (it.zoom.dur || 1)))) : 1); let ox = 0, oy = 0, s = 1;
         const dist = it.dist || 600;
         if (it.enter === 'slide-left') ox = -(1 - k) * dist; else if (it.enter === 'slide-right') ox = (1 - k) * dist; else if (it.enter === 'rise') oy = (1 - k) * dist; else if (it.enter === 'drop') oy = -(1 - k) * dist; else if (it.enter !== 'none') s = k;
+        if (it.move) { const f = eInOut(clamp((t - mAt) / (it.move.dur || 5))); ox += ((it.move.x ?? it.x) - it.x) * f; oy += ((it.move.y ?? it.y) - it.y) * f; } // move:{x,y,dur}: glide to (x,y)
+        if (it.float) { ox += Math.sin(t * 1.1 + (it.phase || 0)) * it.float; oy += Math.cos(t * .8 + (it.phase || 0)) * it.float * .7; } // float: slow weightless drift (px)
         oy += it.bob ? Math.sin(t * 3 + (it.phase || 0)) * 8 * it.bob : 0; if (it.jitter) ox += Math.sin(t * 38 + (it.phase || 0)) * it.jitter * (t > at ? 1 : 0);
         const rot = it.rot ? it.rot + Math.sin(t * 2) * 3 : 0;
         w.style.transform = `translate(${it.x + ox}px,${it.y + oy}px) rotate(${rot}deg) scale(${sc * s}) translate(${-p.w / 2}px,${-p.h}px)`;
         w.style.opacity = t < at ? 0 : 1; qaEl.dataset.settled = (it.enter === 'none' || k >= .995) ? '1' : '0';
-        if (mouth) mouth.setAttribute('d', (it.talk && speaking(t) && Math.sin(t * 22) > -.25) ? 'M-20 70 q20 26 40 0 q-20 -7 -40 0Z' : (mouth.dataset.closed || 'M-18 72 q18 12 36 0'));
+        if (mouth) mouth.setAttribute('d', (it.talk && speaking(t) && (!TW || TW.some(w => t >= w[0] && t <= w[1])) && Math.sin(t * 22) > -.25) ? 'M-20 70 q20 26 40 0 q-20 -7 -40 0Z' : (mouth.dataset.closed || 'M-18 72 q18 12 36 0'));
+        if (rigOn) { // articulated figure: idle sway, walk cycle while gliding, timed gestures (wave/point/raise/nod/shrug/shake/lean)
+          const mvA = it.move ? mAt : 1e9, mvB = it.move ? mAt + (it.move.dur || 5) : -1; const walking = (t > mvA && t < mvB) || (WALK && t > WALK.a && t < WALK.b);
+          let aL = Math.sin(t * 1.7 + ph0) * 2.5, aR = -aL, lL = 0, lR = 0, hd = Math.sin(t * 1.3 + ph0) * 2;
+          if (walking) { const sw = Math.sin(t * 10 + ph0); lL = sw * 24; lR = -sw * 24; aL = -sw * 20; aR = sw * 20; oy -= Math.abs(sw) * 7; }
+          for (const g of GES) { const d = g.dur || 1.2, u = (t - g.t0) / d; if (u < 0 || u > 1) continue; const env = Math.sin(Math.PI * Math.min(1, u)) ** .6, osc = Math.sin((t - g.t0) * 14);
+            if (g.kind === 'wave') aR = -150 * env + osc * 14 * env; else if (g.kind === 'raise') aR = -160 * env; else if (g.kind === 'raiseL') aL = 160 * env; else if (g.kind === 'point') aR = -85 * env;
+            else if (g.kind === 'nod') hd = Math.sin((t - g.t0) * 12) * 9 * env; else if (g.kind === 'shake') hd = Math.sin((t - g.t0) * 14) * 12 * env;
+            else if (g.kind === 'shrug') { aL = 35 * env; aR = -35 * env; hd = 5 * env; } else if (g.kind === 'cheer') { aL = 150 * env + osc * 8; aR = -150 * env - osc * 8; } else if (g.kind === 'lean') hd = 12 * env; }
+          setRot('armL', aL); setRot('armR', aR); setRot('legL', lL); setRot('legR', lR); setRot('head', hd);
+          w.style.transform = `translate(${it.x + ox}px,${it.y + oy}px) rotate(${rot}deg) scale(${sc * s}) translate(${-p.w / 2}px,${-p.h}px)`; }
         if (arm) arm.style.transform = `rotate(${(t > pourA && t < pourB) ? Math.sin(t * 6) * 10 - 8 : Math.sin(t * 2) * 4}deg)`;
         if (gray !== null) { const g = clamp((t - gray) / .6); w.style.filter = `grayscale(${g * .85}) brightness(${1 - g * .25})`; }
       } };
@@ -153,6 +176,103 @@
       const at = R(it.at), n = it.n || 9; const cs = Array.from({ length: n }, () => el('it', window.PROPS.coin().svg, 'position:absolute;left:0;top:0'));
       EV.push({ t: at, type: 'coin' }); EV.push({ t: at + .3, type: 'coin' });
       return { el: null, base: it, extra: cs, update(t) { cs.forEach((c, i) => { const f = clamp((t - (at + i * .09)) / .55); const x = it.x + Math.sin(i * 2.1) * 50, y = lerp(it.y0, it.y1, f * f); c.style.transform = `translate(${x}px,${y}px) rotate(${f * 360}deg)`; c.style.opacity = (f > 0 && f < 1) ? 1 : 0; }); } };
+    },
+    clockspin(it) { // time-flip: a clock whose hands spin (2 turns) then fades; x,y centre, size, at, dur
+      const at = R(it.at), d = it.dur || 1.2, S = it.size || 460;
+      const w = el('it', '', `position:absolute;left:${it.x - S / 2}px;top:${it.y - S / 2}px;width:${S}px;height:${S}px`);
+      const ticks = [...Array(12).keys()].map(i => `<path d="M100 14 V28" stroke="#14263d" stroke-width="6" stroke-linecap="round" transform="rotate(${i * 30} 100 100)"/>`).join('');
+      w.innerHTML = `<svg width="${S}" height="${S}" viewBox="0 0 200 200" style="opacity:0"><circle cx="100" cy="100" r="92" fill="#fff" stroke="#14263d" stroke-width="8"/>${ticks}<g class="hh"><path d="M100 100 V52" stroke="#14263d" stroke-width="9" stroke-linecap="round"/></g><g class="mh"><path d="M100 100 V30" stroke="#14263d" stroke-width="6" stroke-linecap="round"/></g><circle cx="100" cy="100" r="7" fill="#14263d"/></svg>`;
+      const sv = w.firstChild, hh = w.querySelector('.hh'), mh = w.querySelector('.mh'); EV.push({ t: at, type: 'whoosh2' });
+      return { el: w, base: it, update(t) { const f = clamp((t - at) / d); sv.style.opacity = f <= 0 || f >= 1 ? 0 : Math.min(1, f / .12, (1 - f) / .2); const a = eInOut(f); hh.setAttribute('transform', `rotate(${a * 120} 100 100)`); mh.setAttribute('transform', `rotate(${a * 720} 100 100)`); sv.style.transform = `scale(${.85 + .15 * Math.min(1, f * 4)})`; } };
+    },
+    starfield(it) { // animated space: drifting parallax stars (twinkle) + shooting stars; at, n, h (visible height), speed (px/s), shoot (seconds between streaks)
+      const at = R(it.at), n = it.n || 70, H = it.h || 1500, sp = it.speed || 40, ev = it.shoot || 4.2;
+      const w = el('it', '', `position:absolute;left:0;top:0;width:1080px;height:${H}px;overflow:hidden;pointer-events:none`);
+      const rnd = i => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+      const neb = [['#2ee6d0', 160, 420], ['#a06bff', 800, 900], ['#ff7ab8', 300, 1250]].map(([c, x, y], i) => { const d = document.createElement('div'); d.style.cssText = `position:absolute;left:0;top:0;width:640px;height:640px;border-radius:50%;background:radial-gradient(circle,${c}55 0%,${c}00 68%)`; w.appendChild(d); return { d, x: x - 320, y: y - 320, i }; });
+      const stars = Array.from({ length: n }, (_, i) => { const l = .3 + rnd(i + 5) * 1.1, sz = 3 + l * 5, d = document.createElement('div'); d.style.cssText = `position:absolute;left:0;top:0;width:${sz}px;height:${sz}px;border-radius:50%;background:#fff`; w.appendChild(d); return { d, x: rnd(i) * 1080, y: rnd(i + 99) * H, l, ph: rnd(i + 7) * 6 }; });
+      const shoot = Array.from({ length: 3 }, () => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;left:0;top:0;width:220px;height:6px;border-radius:3px;background:linear-gradient(90deg,rgba(255,255,255,0),#fff);opacity:0;transform-origin:100% 50%'; w.appendChild(d); return d; });
+      return { el: w, base: it, update(t) {
+        const tt = Math.max(0, t - at);
+        neb.forEach(o => { o.d.style.transform = `translate(${o.x + Math.sin(tt * .25 + o.i * 2) * 90}px,${o.y + Math.cos(tt * .2 + o.i) * 70}px) scale(${1 + .12 * Math.sin(tt * .4 + o.i)})`; });
+        stars.forEach(o => { const y = ((o.y + tt * sp * o.l) % H + H) % H, x = o.x + Math.sin(tt * .6 + o.ph) * 10 * o.l; o.d.style.transform = `translate(${x}px,${y}px)`; o.d.style.opacity = .45 + .55 * (.5 + .5 * Math.sin(tt * 2.4 + o.ph)); });
+        shoot.forEach((d, k) => { const per = ev * (1 + k * .37), f = ((tt + k * 1.7) % per) / .8; if (f >= 0 && f <= 1) { const x0 = 100 + rnd(Math.floor((tt + k * 1.7) / per) + k * 9) * 700, y0 = 80 + rnd(Math.floor((tt + k * 1.7) / per) + k * 5 + 40) * 500; d.style.opacity = Math.sin(f * Math.PI); d.style.transform = `translate(${x0 + f * 520}px,${y0 + f * 300}px) rotate(30deg)`; } else d.style.opacity = 0; });
+      } };
+    },
+    steam(it) { // rising wisps (tea mug, kettle): x,y source, at, n, h (rise height), c colour
+      const at = R(it.at), n = it.n || 5, h = it.h || 110; const w = el('it', '', 'position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none');
+      const ps = Array.from({ length: n }, (_, i) => { const d = document.createElement('div'); d.style.cssText = `position:absolute;left:0;top:0;width:${22 + i % 3 * 8}px;height:${30 + i % 3 * 8}px;border-radius:50%;background:${it.c || 'rgba(255,255,255,.85)'}`; w.appendChild(d); return { d, i }; });
+      return { el: w, base: it, update(t) { ps.forEach(o => { const f = (((t - at) * .6 + o.i / n) % 1 + 1) % 1; o.d.style.transform = `translate(${it.x + Math.sin(f * 7 + o.i * 2) * 14}px,${it.y - f * h}px) scale(${.6 + f * .9})`; o.d.style.opacity = t < at ? 0 : Math.sin(f * Math.PI) * .9; }); } };
+    },
+    lines(it) { // animated connecting lines: segs [{x1,y1,x2,y2,at}], c colour, w width, dur
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('width', 1080); svg.setAttribute('height', 1920); svg.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none';
+      const segs = it.segs.map(g => { const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', `M${g.x1} ${g.y1} L${g.x2} ${g.y2}`); p.setAttribute('stroke', it.c || '#ffd21f'); p.setAttribute('stroke-width', it.w || 8); p.setAttribute('stroke-linecap', 'round'); p.setAttribute('fill', 'none'); const len = Math.hypot(g.x2 - g.x1, g.y2 - g.y1); p.style.strokeDasharray = len; p.style.strokeDashoffset = len; svg.appendChild(p); const at = R(g.at); EV.push({ t: at, type: 'tick' }); return { p, len, at }; });
+      const w = el('it', '', 'position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none'); w.appendChild(svg);
+      return { el: w, base: it, update(t) { segs.forEach(o => { const f = eOut(clamp((t - o.at) / (it.dur || .5))); o.p.style.strokeDashoffset = o.len * (1 - f); }); } };
+    },
+    typing(it) { // text typed into a box: x,y,w,h,text,at,dur,size,bg
+      const at = R(it.at), n = it.text.length; const w = el('it', '', `position:absolute;left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px;border:6px solid ${KIT.ink};border-radius:${it.radius ?? 28}px;background:${it.bg || '#fff'};box-shadow:0 10px 0 rgba(0,0,0,.28);display:flex;align-items:center;padding:0 28px;font-weight:800;font-size:${it.size || 56}px;color:${it.color || KIT.ink}`);
+      w.dataset.d = 'flex';
+      return { el: w, base: it, update(t) { const k = Math.floor(clamp((t - at) / (it.dur || 1.2)) * n); w.textContent = it.text.slice(0, k) + ((t > at && Math.floor(t * 3) % 2 === 0) ? '|' : ' '); w.style.opacity = t < at ? 0 : 1; } };
+    },
+    confetti(it) { // falling confetti: at, n, x0, x1, y0, y1, dur
+      const at = R(it.at), n = it.n || 50; const cols = ['#ffd21f', '#ff7a5c', '#1F9CA8', '#a06bff', '#3ec97a', '#ff7ab8']; const w = el('it', '', 'position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none');
+      const rnd = i => { const v = Math.sin(i * 91.7 + 13.3) * 43758.5453; return v - Math.floor(v); };
+      const ps = Array.from({ length: n }, (_, i) => { const d = document.createElement('div'); d.style.cssText = `position:absolute;left:0;top:0;width:${10 + rnd(i) * 10}px;height:${16 + rnd(i + 3) * 12}px;background:${cols[i % cols.length]};border-radius:3px`; w.appendChild(d); return { d, i, x: lerp(it.x0 ?? 40, it.x1 ?? 1040, rnd(i + 9)), dl: rnd(i + 17) * (it.spread ?? 1.2) }; });
+      return { el: w, base: it, update(t) { ps.forEach(o => { const f = clamp((t - at - o.dl) / (it.dur || 2.4)); o.d.style.opacity = f > 0 && f < 1 ? 1 : 0; o.d.style.transform = `translate(${o.x + Math.sin(f * 9 + o.i) * 40}px,${lerp(it.y0 ?? 300, it.y1 ?? 1400, f)}px) rotate(${f * 720 + o.i * 40}deg)`; }); } };
+    },
+    cells(it) { // test-sheet grid: cells fill one by one (green pass / red fail / yellow unsure); x,y,w,h,cols,rows,at,dur,heal (yellow -> green)
+      const at = R(it.at), N = it.cols * it.rows, dur = it.dur || 4, heal = it.heal !== undefined ? R(it.heal) : 1e9;
+      const rnd = i => { const v = Math.sin(i * 91.3 + (it.seed || 3) * 17.7) * 43758.5453; return v - Math.floor(v); };
+      const w = el('it', '', `position:absolute;left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px;display:grid;grid-template-columns:repeat(${it.cols},1fr);grid-template-rows:repeat(${it.rows},1fr);gap:${it.gap ?? 4}px;padding:${it.gap ?? 4}px;background:#fff;border:6px solid ${KIT.ink};border-radius:14px;box-shadow:0 10px 0 rgba(0,0,0,.28)`);
+      const cs = Array.from({ length: N }, (_, i) => { const d = document.createElement('div'); d.style.cssText = `border:3px solid ${KIT.ink}44;border-radius:5px;background:#ece6d6;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${it.lsize || 26}px;color:${KIT.ink}`; if (it.labels) d.textContent = 'TC-' + String(Math.round(1 + i * 199 / Math.max(1, N - 1))).padStart(3, '0'); w.appendChild(d); const r = rnd(i); return { d, i, kind: r < .07 ? 'r' : r < .2 ? 'y' : 'g', hd: heal + rnd(i + 50) * 1.2 }; });
+      w.classList.add('qa'); w.dataset.kind = 'panel'; w.dataset.d = 'grid'; // the engine resets display from data-d when an item becomes visible
+      for (let i = 0; i < N; i += Math.ceil(N / 8)) EV.push({ t: at + dur * i / N, type: 'tick' });
+      return { el: w, base: it, update(t) { cs.forEach(o => { const f = at + dur * o.i / N; let c = '#ece6d6'; if (t >= f) c = o.kind === 'g' ? '#3ec97a' : o.kind === 'r' ? '#e0543a' : (t >= o.hd ? '#3ec97a' : '#ffd21f'); o.d.style.background = c; }); w.style.opacity = t < at - .3 ? 0 : 1; } };
+    },
+    pipeline(it) { // CI boxes in a snake: nodes[], cols, x,y,w,h, pass[] (times), fail (index), failAt, heal; at = first appear
+      const at = R(it.at), nodes = it.nodes, cols = it.cols || 3, rows = Math.ceil(nodes.length / cols), gapX = it.gapX ?? 70, gapY = it.gapY ?? 90, bw = (it.w - gapX * (cols - 1)) / cols, bh = (it.h - gapY * (rows - 1)) / rows;
+      const w = el('it', '', `position:absolute;left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px`);
+      const pos = nodes.map((_, i) => ({ x: (i % cols) * (bw + gapX), y: Math.floor(i / cols) * (bh + gapY) }));
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('width', it.w); svg.setAttribute('height', it.h); svg.style.cssText = 'position:absolute;left:0;top:0;overflow:visible'; w.appendChild(svg);
+      nodes.forEach((_, i) => { if (i === 0) return; const a = pos[i - 1], b = pos[i], p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); const same = a.y === b.y; p.setAttribute('d', same ? `M${a.x + bw + 6} ${a.y + bh / 2} H${b.x - 8}` : `M${a.x + bw / 2} ${a.y + bh + 6} V${a.y + bh + gapY / 2} H${b.x + bw / 2} V${b.y - 8}`); p.setAttribute('stroke', it.ec || '#cfe8ff'); p.setAttribute('stroke-width', 8); p.setAttribute('fill', 'none'); p.setAttribute('stroke-linecap', 'round'); svg.appendChild(p); });
+      const ns = nodes.map((lab, i) => { const d = document.createElement('div'); d.style.cssText = `position:absolute;left:${pos[i].x}px;top:${pos[i].y}px;width:${bw}px;height:${bh}px;border:6px solid ${KIT.ink};border-radius:22px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:${it.size || 34}px;color:${KIT.ink};box-shadow:0 8px 0 rgba(0,0,0,.28);background:#9fb0c4`; d.textContent = lab; w.appendChild(d); return d; });
+      const pass = (it.pass || []).map(x => x === null ? null : R(x)), failAt = it.failAt !== undefined ? R(it.failAt) : 1e9, heal = it.heal !== undefined ? R(it.heal) : 1e9;
+      w.classList.add('qa'); w.dataset.kind = 'panel';
+      pass.forEach(x => { if (x !== null) EV.push({ t: x, type: 'tick' }); }); if (it.failAt !== undefined) EV.push({ t: failAt, type: 'thud' });
+      return { el: w, base: it, update(t) { ns.forEach((d, i) => { const k = pop(t, at + i * .12, .4); d.style.transform = `scale(${k})`; let c = '#9fb0c4'; if (pass[i] !== null && pass[i] !== undefined && t >= pass[i]) c = '#3ec97a'; if (i === it.fail) { if (t >= heal) c = '#3ec97a'; else if (t >= failAt) c = Math.floor(t * 3) % 2 === 0 ? '#e0543a' : '#ff9a8a'; } d.style.background = c; }); svg.style.opacity = t < at ? 0 : 1; } };
+    },
+    logview(it) { // scrolling log with one line that gets highlighted, zoomed, then fixed; x,y,w,h,lines[],hi,at,hiAt,fixAt,fixText
+      const at = R(it.at), hiAt = R(it.hiAt), fixAt = it.fixAt !== undefined ? R(it.fixAt) : 1e9, lh = it.lh || 52;
+      const w = el('it', '', `position:absolute;left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px;overflow:hidden;background:#0d1626;border:6px solid ${KIT.ink};border-radius:20px;box-shadow:0 10px 0 rgba(0,0,0,.28)`);
+      const inner = document.createElement('div'); inner.style.cssText = `position:absolute;left:0;top:0;width:${it.w}px;font:700 ${it.size || 30}px monospace;color:#9fe8a8;transform-origin:50% 0`; w.appendChild(inner);
+      const rows = it.lines.map((tx, i) => { const d = document.createElement('div'); d.style.cssText = `height:${lh}px;line-height:${lh}px;padding:0 24px;white-space:nowrap`; d.textContent = tx; inner.appendChild(d); return d; });
+      w.dataset.d = 'block'; w.classList.add('qa'); w.dataset.kind = 'panel';
+      const target = it.hi * lh - it.h / 2 + lh / 2;
+      return { el: w, base: it, update(t) {
+        const f = clamp((t - at) / Math.max(.1, hiAt - at - .4)), sc = target * eInOut(f);
+        const z = 1 + (it.zoom ?? .4) * eOut(clamp((t - hiAt) / .5));
+        inner.style.transformOrigin = `0% ${it.hi * lh + lh / 2}px`; inner.style.transform = `translateY(${-sc}px) scale(${z})`;
+        rows.forEach((d, i) => { if (i === it.hi) { if (t >= fixAt) { d.style.background = '#3ec97a'; d.style.color = '#0d1626'; d.textContent = it.fixText; } else if (t >= hiAt) { d.style.background = '#ffd21f'; d.style.color = '#0d1626'; } else { d.style.background = ''; d.style.color = ''; } } else { d.style.color = (i % 7 === 3) ? '#ffd21f' : ''; } });
+        w.style.opacity = t < at - .3 ? 0 : 1; } };
+    },
+    clockface(it) { // wall clock with a ticking second hand; pulse:true sends a ring out on every tick (the "countdown"); x,y centre, size, at
+      const at = R(it.at), S = it.size || 240; const w = el('it', '', `position:absolute;left:${it.x - S / 2}px;top:${it.y - S / 2}px;width:${S}px;height:${S}px`);
+      const ticks = [...Array(12).keys()].map(i => `<path d="M100 14 V26" stroke="#14263d" stroke-width="6" stroke-linecap="round" transform="rotate(${i * 30} 100 100)"/>`).join('');
+      w.innerHTML = `<div class="ring" style="position:absolute;inset:0;border-radius:50%;border:8px solid ${it.rc || '#ff7a5c'};opacity:0"></div><svg width="${S}" height="${S}" viewBox="0 0 200 200" style="position:absolute;left:0;top:0;overflow:visible"><circle cx="100" cy="100" r="92" fill="#fff" stroke="#14263d" stroke-width="8"/>${ticks}<g class="hh"><path d="M100 100 V56" stroke="#14263d" stroke-width="9" stroke-linecap="round"/></g><g class="mh"><path d="M100 100 V34" stroke="#14263d" stroke-width="6" stroke-linecap="round"/></g><g class="sh"><path d="M100 112 V22" stroke="#e0543a" stroke-width="4" stroke-linecap="round"/></g><circle cx="100" cy="100" r="7" fill="#14263d"/></svg>`;
+      const hh = w.querySelector('.hh'), mh = w.querySelector('.mh'), sh = w.querySelector('.sh'), ring = w.querySelector('.ring'); w.dataset.d = 'block';
+      if (it.tickFrom !== undefined) { const t0 = R(it.tickFrom), t1 = R(it.tickTo); for (let tt = t0; tt < t1; tt += 1) EV.push({ t: tt, type: 'tick' }); } // audible countdown: one tick a second
+      return { el: w, base: it, update(t) { const tt = Math.max(0, t - at), sec = Math.floor(tt), fr = tt - sec, snap = fr < .12 ? Math.sin(fr / .12 * Math.PI * .5) : 1; sh.setAttribute('transform', `rotate(${(sec % 60 + snap * 0) * 6 + (fr < .12 ? 6 * (fr / .12) : 6)} 100 100)`); mh.setAttribute('transform', `rotate(${(it.m0 ?? 270) + tt * .1} 100 100)`); hh.setAttribute('transform', `rotate(${(it.h0 ?? 130) + tt * .008} 100 100)`);
+        if (it.pulse) { ring.style.opacity = t < at ? 0 : (1 - fr) * .8; ring.style.transform = `scale(${1 + fr * .55})`; } else ring.style.opacity = 0; } };
+    },
+    spinner(it) { // loading ring: x,y centre, size, at; fade with until
+      const at = R(it.at), S = it.size || 130; const w = el('it', '', `position:absolute;left:${it.x - S / 2}px;top:${it.y - S / 2}px;width:${S}px;height:${S}px;border-radius:50%;border:${Math.round(S / 9)}px solid ${it.c2 || '#ffffff55'};border-top-color:${it.c || '#fff'}`);
+      return { el: w, base: it, update(t) { w.style.transform = `rotate(${(t - at) * 420}deg)`; w.style.opacity = t < at ? 0 : 1; } };
+    },
+    sparkles(it) { // twinkling stars around a point: x,y,r radius,n,at
+      const at = R(it.at), n = it.n || 8; const w = el('it', '', 'position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none');
+      const ps = Array.from({ length: n }, (_, i) => { const d = document.createElement('div'); d.textContent = '✦'; d.style.cssText = `position:absolute;left:0;top:0;font-size:${34 + (i % 3) * 14}px;color:${i % 2 ? '#ffd21f' : '#fff'};text-shadow:0 0 12px #ffd21f`; w.appendChild(d); return { d, i, a: i / n * 6.283, ph: i * 1.7 }; });
+      return { el: w, base: it, update(t) { ps.forEach(o => { const tw = .5 + .5 * Math.sin((t - at) * 4 + o.ph), r = (it.r || 120) * (.8 + .3 * Math.sin(o.i)); o.d.style.transform = `translate(${it.x + Math.cos(o.a + (t - at) * .5) * r}px,${it.y + Math.sin(o.a + (t - at) * .5) * r * .6}px) scale(${.5 + tw})`; o.d.style.opacity = t < at ? 0 : .35 + tw * .65; }); } };
     },
     tug(it) { // two money counters + a split bar that shows who is winning
       const at = R(it.at); const w = el('it', '', `position:absolute;left:0;width:1080px;top:${it.y}px`);
@@ -183,8 +303,9 @@
     },
     rect(it) { // panel / bubble: x,y = top-left, w,h, bg, border, radius, text, size, color, at, enter (pop|rise|slide-left|slide-right)
       const w = el('it', '', `position:absolute;left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px;will-change:transform,opacity;transform-origin:50% 50%`);
-      const b = document.createElement('div'); b.style.cssText = `position:absolute;inset:0;border:${it.bw ?? 6}px solid ${KIT.ink};border-radius:${it.radius ?? 28}px;background:${it.bg || '#fff'};box-shadow:0 10px 0 rgba(0,0,0,.28);opacity:${it.alpha ?? 1}`; w.appendChild(b);
+      const b = document.createElement('div'); b.style.cssText = `position:absolute;inset:0;border:${it.bw ?? 6}px solid ${it.bc || KIT.ink};border-radius:${it.radius ?? 28}px;background:${it.bg || '#fff'};box-shadow:${it.flat ? 'none' : '0 10px 0 rgba(0,0,0,.28)'};opacity:${it.alpha ?? 1}`; w.appendChild(b);
       if (it.text) { const tx = document.createElement('div'); if (it.qa !== false) { tx.className = 'qa'; tx.dataset.kind = 'chip'; } tx.style.cssText = `position:absolute;inset:0;display:flex;align-items:${it.valign || 'center'};justify-content:center;text-align:center;padding:${typeof it.pad === 'string' ? it.pad : (it.pad ?? 16) + 'px'};font-weight:800;font-size:${it.size || 44}px;line-height:1.1;color:${it.color || KIT.ink}`; tx.innerHTML = it.text; w.appendChild(tx); }
+      if (it.qa === false) { w.classList.add('qa'); w.dataset.kind = 'panel'; } // counted for dead-air only, not for overlap checks
       const at = R(it.at); EV.push({ t: at, type: 'pop' });
       return { el: w, base: it, update(t) { const k = pop(t, at, .45); let ox = 0, oy = 0, s = 1; const d = it.dist || 500;
         if (it.enter === 'rise') oy = (1 - k) * d; else if (it.enter === 'slide-left') ox = -(1 - k) * d; else if (it.enter === 'slide-right') ox = (1 - k) * d; else s = .6 + .4 * k;
@@ -199,6 +320,12 @@
       return { el: w, base: it, update(t) { const k = pop(t, at0, .5); w.style.opacity = clamp(k * 2); w.style.transform = `scale(${.9 + .1 * k})`;
         cells.forEach((d, i) => { let fill = null, r1 = null, r2 = null; for (const g of groups) { if (i < g.from || i >= g.from + g.count) continue; const rt = g.at + (g.count > 1 ? (i - g.from) / (g.count - 1) : 0) * (g.end - g.at); if (t < rt) continue; if (g.ring === 2) r2 = g.c; else if (g.ring) r1 = g.c; else fill = g.c; }
           d.style.background = fill || base; d.style.boxShadow = [r1 ? `inset 0 0 0 7px ${r1}` : '', r2 ? `inset 0 0 0 14px ${r2}` : ''].filter(Boolean).join(',') || 'none'; }); } };
+    },
+    hook(it) { // frame-0 headline (2-3 short lines) that states the conflict; visible from the very first frame. Fade it with `until`.
+      const w = row(it.y ?? 300); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'banner';
+      c.style.cssText = `text-align:center;font-weight:800;line-height:1.08;font-size:${it.size || 92}px;max-width:940px;text-transform:uppercase;color:#fff;text-shadow:0 6px 0 ${KIT.ink},0 0 14px ${KIT.ink},0 0 4px ${KIT.ink}`;
+      c.innerHTML = it.lines.map(l => `<div style="color:${l.c || '#fff'}">${l.t}</div>`).join(''); w.appendChild(c);
+      return { el: w, base: it, update(t) { w.style.transform = 'scale(1)'; } };
     },
     hit(it) { HITS.push({ t: R(it.at), shake: it.shake ?? .3, flash: it.flash ?? .3 }); EV.push({ t: R(it.at), type: 'thud' }); return null; }
   };
@@ -224,13 +351,14 @@
     S = spec; WORDS = words; KIT = deepMerge(DEFAULT_KIT, spec.kit || {});
     stage = document.getElementById('stage'); stage.innerHTML = '';
     stage.insertAdjacentHTML('beforeend', `<svg width="0" height="0" style="position:absolute"><defs>${window.PROPS.defs}</defs></svg>`);
+    CAMK = S.cam ? S.cam.map(k => Object.assign({}, k, { t: R(k.at) })).sort((a, b) => a.t - b.t) : null; FOC = (S.focus || []).map(f => Object.assign({}, f, { t0: R(f.at), t1: R(f.until) }));
     ACTS = S.acts.map((a, i) => ({ ...a, start: i === 0 ? 0 : R(a.from), bgEl: null, i }));
-    ACTS.forEach((a, i) => { const tr = typeof a.transition === 'string' ? { type: a.transition } : (a.transition || (KIT.transition ? (typeof KIT.transition === 'string' ? { type: KIT.transition } : KIT.transition) : { type: 'wipe-up' })); a.tr = Object.assign({ type: 'wipe-up' }, tr); a.wipeLead = a.tr.type === 'cut' ? 0 : (a.tr.lead ?? a.wipe ?? .28);
-      if (i > 0 && a.tr.type === 'cut') HITS.push({ t: a.start, shake: .25, flash: .5 }); a.wipeAt = i === 0 ? -1 : a.start - a.wipeLead; a.next = ACTS[i + 1]; a.bgEl = buildBg(a.bg); if (i > 0) EV.push({ t: a.wipeAt + .05, type: a.tr.type === 'cut' ? 'thud' : (a.tr.type === 'shutters' ? 'whoosh2' : 'whoosh') }); });
+    ACTS.forEach((a, i) => { const tr = typeof a.transition === 'string' ? { type: a.transition } : (a.transition || (KIT.transition ? (typeof KIT.transition === 'string' ? { type: KIT.transition } : KIT.transition) : { type: 'wipe-up' })); a.tr = Object.assign({ type: 'wipe-up' }, tr); a.tr.cam = /^(whip|tilt|push-in)/.test(a.tr.type); a.wipeLead = (a.tr.type === 'cut' || a.tr.cam) ? 0 : (a.tr.lead ?? a.wipe ?? .28);
+      if (i > 0 && a.tr.type === 'cut') HITS.push({ t: a.start, shake: .25, flash: .5 }); a.wipeAt = i === 0 ? -1 : a.start - a.wipeLead; a.next = ACTS[i + 1]; a.bgEl = buildBg(a.bg); if (i > 0) EV.push({ t: a.wipeAt + .05 - (a.tr.cam ? .25 : 0), type: a.tr.type === 'cut' ? 'thud' : (a.tr.type === 'shutters' ? 'whoosh2' : 'whoosh') }); });
     S.items.forEach(it => {
       const act = ACTS.find(a => a.id === it.act); if (!act) throw new Error('item act not found: ' + it.act);
       const mk = MAKERS[it.type]; if (!mk) throw new Error('unknown item type ' + it.type);
-      const o = mk(it); if (o) { if (it.until !== undefined) o.untilT = R(it.until); o.act = act; o.last = it.to ? ACTS.find(a => a.id === it.to) : act; if (!o.last) throw new Error('item to-act not found: ' + it.to); ITEMS.push(o); }
+      const o = mk(it); if (o && o.el && WORLD.has(it.type) && it.hud !== true) { const wr = document.createElement('div'); wr.className = 'it'; wr.style.cssText = 'position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none'; o.el.parentNode.insertBefore(wr, o.el); wr.appendChild(o.el); o.wr = wr; o.depth = it.depth ?? 1; o.tag = it.tag; } if (o) { if (it.until !== undefined) o.untilT = R(it.until); o.act = act; o.last = it.to ? ACTS.find(a => a.id === it.to) : act; if (!o.last) throw new Error('item to-act not found: ' + it.to); ITEMS.push(o); }
     });
     // title chips per act + counter + rail
     ACTS.forEach(a => { if (a.title) { const t = a.title; const w = row(t.y ?? 362); const c = document.createElement('div'); c.className = 'qa'; c.dataset.kind = 'chip'; c.style.cssText = chipCss(t.bg || '#ff5d73', '#fff', 46, '12px 38px'); c.textContent = t.text; w.appendChild(c); const at = R(t.at ?? a.from); EV.push({ t: at, type: 'pop' }); ITEMS.push({ el: w, act: a, base: { type: 'title' }, update(tt) { w.style.transform = `scale(${pop(tt, at, .4)})`; } }); } });
@@ -248,12 +376,21 @@
   function renderAt(t) {
     // shake / flash
     let sh = 0, fl = 0; for (const h of HITS) if (t > h.t && t < h.t + h.shake) sh += Math.sin(t * 90) * 14 * (1 - (t - h.t) / h.shake); for (const h of HITS) if (t > h.t && t < h.t + .12) fl = h.flash;
-    stage.style.transform = `translate(${sh}px,${sh * .5}px)`;
+    let cam = '', capInv = 'none', blurX = 0, blurY = 0;
+    for (const a of ACTS) if (a.i > 0 && a.tr.cam) { const d = t - a.start, ty = a.tr.type, PRE = .3, POST = .5; let k = 0, sgn = 1;
+      if (d > -PRE && d < 0) { k = Math.pow((d + PRE) / PRE, 2.2); sgn = -1; } else if (d >= 0 && d < POST) { k = Math.pow(1 - d / POST, 3); sgn = 1; }
+      if (k > 0) { const ax = ty === 'whip-left' ? -1 : ty === 'whip-right' ? 1 : 0, ay = ty === 'tilt-up' ? -1 : ty === 'tilt-down' ? 1 : 0;
+        const sc = ty === 'push-in' ? 1 + .75 * k : 1 + .35 * k; const mag = sgn < 0 ? k : -k; // out: toward direction, in: from the opposite side
+        cam = `translate(${ax * 180 * mag}px,${ay * 320 * mag}px) scale(${sc})`; capInv = `scale(${1 / sc}) translate(${-ax * 180 * mag}px,${-ay * 320 * mag}px)`; blurX = ax ? 46 * k : (ty === 'push-in' ? 16 * k : 0); blurY = ay ? 52 * k : (ty === 'push-in' ? 16 * k : 0); } }
+    window._camMoving = cam !== ''; stage.style.transform = `translate(${sh}px,${sh * .5}px) ${cam}`;
+    if (!window._cb) { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('width', '0'); sv.setAttribute('height', '0'); sv.style.position = 'absolute'; sv.innerHTML = '<filter id="camblur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur id="camgb" stdDeviation="0 0"/></filter>'; document.body.appendChild(sv); window._cb = sv.querySelector('#camgb'); }
+    capEl.style.transformOrigin = `50% ${960 - KIT.caption.y}px`; capEl.style.transform = capInv;
+    window._cb.setAttribute('stdDeviation', `${blurX} ${blurY}`); stage.style.filter = (blurX || blurY) ? 'url(#camblur)' : 'none';
     // backgrounds: each act's layer wipes in from the bottom
     ACTS.forEach(a => {
       a.bgEl._anim(t); const b = a.bgEl.style; if (a.i === 0) { b.clipPath = 'none'; b.zIndex = 0; return; }
       b.zIndex = a.i; b.transform = 'none'; b.opacity = '1'; b.clipPath = 'none'; b.webkitMaskImage = 'none';
-      const type = a.tr.type, p = type === 'cut' ? (t >= a.start ? 1 : 0) : eInOut(clamp((t - a.wipeAt) / (a.wipeLead + .14)));
+      const type = a.tr.type, p = (type === 'cut' || a.tr.cam) ? (t >= a.start ? 1 : 0) : eInOut(clamp((t - a.wipeAt) / (a.wipeLead + .14)));
       if (p >= 1) return;
       const q = (1 - p) * 100;
       if (type === 'wipe-up') b.clipPath = `inset(${q}% 0 0 0)`;
@@ -265,15 +402,18 @@
       else if (type === 'shutters') { const n = a.tr.bars || 160; b.webkitMaskImage = `linear-gradient(#000 ${p * 100}%, transparent ${p * 100}%)`; b.webkitMaskSize = `100% ${n}px`; }
       else if (type === 'push') b.transform = `translateX(${q}%)`;
       else if (type === 'zoom') { b.opacity = String(clamp(p * 1.6)); b.transform = `scale(${lerp(1.5, 1, p)})`; }
-      else if (type === 'cut') b.opacity = '0';
+      else if (type === 'cut' || a.tr.cam) b.opacity = '0';
       else throw new Error('unknown transition ' + type);
     });
     // items
+    const C0 = camAt(t); CAM = C0;
+    ITEMS.forEach(o => { if (!o.wr) return; const d = o.depth, sc = 1 + (C0.s - 1) * d; o.wr.style.transformOrigin = `${C0.fx}px ${C0.fy}px`; o.wr.style.transform = `translate(${-C0.x * d}px,${-C0.y * d}px) scale(${sc})`;
+      let bl = 0; for (const f of FOC) { const k = clamp((t - f.t0) / .5) * (1 - clamp((t - f.t1) / .5)); const keep = (f.keep || []).includes(o.tag); bl = Math.max(bl, keep ? 0 : k * (f.blur ?? 9)); } o.wr.style.filter = bl > .2 ? `blur(${bl.toFixed(1)}px)` : 'none'; });
     ITEMS.forEach(o => {
       const a = o.act, nxt = (o.last || o.act).next; const nw = nxt ? nxt.wipeAt : 1e9;
-      const out = 1 - eInOut(clamp((t - (nw - .1)) / .3)); const gone = nxt && t > nw + .5;
+      const camN = nxt && nxt.tr.cam, camA = a.tr.cam; const out = camN ? 1 : 1 - eInOut(clamp((t - (nw - .1)) / .3)); const gone = nxt && (camN ? t >= nxt.start : t > nw + .5);
       const uf = o.untilT === undefined ? 1 : 1 - clamp((t - o.untilT) / .25); const ugone = o.untilT !== undefined && t > o.untilT + .3;
-      if (gone || ugone || t < (a.start - a.wipeLead * 0.4)) { if (o.el) o.el.style.display = 'none'; if (o.extra) o.extra.forEach(c => c.style.opacity = 0); return; }
+      if (gone || ugone || t < (camA ? a.start : a.start - a.wipeLead * 0.4)) { if (o.el) o.el.style.display = 'none'; if (o.extra) o.extra.forEach(c => c.style.opacity = 0); return; }
       if (o.el) { o.el.style.display = o.el.dataset.d || ''; }
       if (o.el && o.base.type !== 'prop') o.el.style.opacity = '';
       o.update(t);
@@ -291,7 +431,7 @@
 
   // QA: visible text/prop rects at time t (used by scripts/qa.mjs)
   window.qa = (t) => {
-    renderAt(t); const out = [];
+    renderAt(t); const out = []; if (window._camMoving) return [{ kind: 'panel', x0: 0, y0: 0, x1: 1, y1: 1, text: '', settled: true }]; // camera transition in flight: positions are meaningless
     stage.querySelectorAll('.qa').forEach(n => {
       let e = n, vis = true, op = 1; while (e && e !== stage) { const cs = getComputedStyle(e); if (cs.display === 'none') { vis = false; break; } op *= parseFloat(cs.opacity); e = e.parentElement; }
       if (!vis || op < .6) return;

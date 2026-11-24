@@ -1,0 +1,6 @@
+I was one step out of the door for dinner when my phone started to buzz.
+A production issue. Eleven people on the bridge call. Everyone talking, nobody sure who owned it. I sat on the floor in my jacket and opened my laptop. My dinner reservation became a very long dinner at my own desk.
+After two hours, I found it. One line. One wrong value in a configuration. I changed it, we tested it, and the bridge went quiet. Someone said, "Thanks, everyone." And eleven people dropped off one by one.
+Nobody sent a message. Nobody remembered the one line. The only message I received was from home. "We ordered for you."
+In two thousand fifteen, you fixed it and told nobody. In two thousand twenty-six there is a chat thread, a ticket, a postmortem, and an AI summary of what happened. We document more now. But the feeling of being the one who fixed it at night has not changed.
+And the best part? Someone kept the food warm. Tell me, what was your longest night call?

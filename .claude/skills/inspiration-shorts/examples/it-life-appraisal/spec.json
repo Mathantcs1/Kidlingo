@@ -1,0 +1,1009 @@
+{
+ "kitFile": "../../kits/it-life.json",
+ "tail": 3.5,
+ "kit": {
+  "caption": {
+   "y": 1475
+  }
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "cream"
+  },
+  {
+   "id": "a1",
+   "bg": "cream",
+   "from": "that-0.1",
+   "transition": "wipe-left"
+  },
+  {
+   "id": "a2",
+   "bg": "navy",
+   "from": "now-0.1",
+   "transition": "iris"
+  },
+  {
+   "id": "a3",
+   "bg": "slate",
+   "from": "sorry-0.1",
+   "transition": "zoom"
+  },
+  {
+   "id": "a4",
+   "bg": "slate",
+   "from": "sorry#2-0.1",
+   "transition": "zoom"
+  },
+  {
+   "id": "a5",
+   "bg": "navy",
+   "from": "sorry#3-0.1",
+   "transition": "zoom"
+  },
+  {
+   "id": "a6",
+   "bg": "navy",
+   "from": "entire-0.1",
+   "transition": "zoom"
+  },
+  {
+   "id": "a7",
+   "bg": "navy",
+   "from": "be-0.3",
+   "transition": "wipe-up"
+  },
+  {
+   "id": "a8",
+   "bg": "navy",
+   "from": "so-0.1",
+   "transition": "cut"
+  },
+  {
+   "id": "a9",
+   "bg": "navy",
+   "from": "tell-0.1",
+   "transition": "iris"
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itmeet",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2015"
+   },
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "two",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "APPRAISAL: 2015",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 240,
+   "y": 1430,
+   "scale": 1.625,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "flat"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 852,
+   "y": 1430,
+   "scale": 1.625,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "hood": "#e0a030",
+    "pocket": "#b8801c",
+    "tie": "#e0543a",
+    "tablet": true,
+    "tall": 1.12,
+    "mood": "flat"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 60,
+   "y": 420,
+   "w": 960,
+   "h": 190,
+   "at": "focus",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "FOCUS ON THE PROBLEM<br>IN YOUR PROJECT",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itmeet",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2015"
+   },
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "one#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "ONE PROJECT. ONE PROBLEM.",
+   "size": 50,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itfolder",
+   "x": 468,
+   "y": 1311,
+   "scale": 1.25,
+   "enter": "pop",
+   "at": "project",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itbug",
+   "x": 468,
+   "y": 1024,
+   "scale": 1.25,
+   "enter": "drop",
+   "at": "problem#2",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itdev",
+   "x": 240,
+   "y": 1430,
+   "scale": 1.625,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 620,
+   "y": 824,
+   "w": 420,
+   "h": 100,
+   "at": "fixed",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "FIXED THE DEFECT",
+   "size": 38,
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 620,
+   "y": 974,
+   "w": 420,
+   "h": 100,
+   "at": "wrote",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "WROTE NOTES",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 620,
+   "y": 1124,
+   "w": 420,
+   "h": 100,
+   "at": "home",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "HOME ON TIME",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itmeet",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2026"
+   },
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "clockspin",
+   "x": 540,
+   "y": 900,
+   "size": 460,
+   "at": "now",
+   "dur": 1.3
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "thousand#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "APPRAISAL: 2026",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d",
+   "until": "same"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "same",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "SAME ROOM. SAME MANAGER.",
+   "size": 46,
+   "qa": false,
+   "color": "#14263d",
+   "until": "but"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "focus#2",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "FOCUS ON THE COMPANY",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itdev",
+   "x": 240,
+   "y": 1430,
+   "scale": 1.625,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itdev",
+   "x": 852,
+   "y": 1430,
+   "scale": 1.625,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "hood": "#e0a030",
+    "pocket": "#b8801c",
+    "tie": "#e0543a",
+    "tablet": true,
+    "tall": 1.12,
+    "mood": "flat"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itscale",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "level": "building"
+   },
+   "qa": false,
+   "zoom": {
+    "from": 1.6,
+    "dur": 1.3
+   }
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 150,
+   "at": "industry",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "THE INDUSTRY",
+   "size": 64,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itdev",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itscale",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "level": "city"
+   },
+   "qa": false,
+   "zoom": {
+    "from": 1.6,
+    "dur": 1.3
+   }
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 150,
+   "at": "market",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "THE MARKET",
+   "size": 64,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itdev",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry",
+    "sweat": true
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itscale",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "level": "planet"
+   },
+   "qa": false,
+   "zoom": {
+    "from": 1.6,
+    "dur": 1.3
+   }
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 150,
+   "at": "sorry#3",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "SORRY...",
+   "size": 64,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itdev",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "sad",
+    "sweat": true
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itscale",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "level": "space",
+    "void": true
+   },
+   "qa": false,
+   "zoom": {
+    "from": 1.7,
+    "dur": 1.3
+   }
+  },
+  {
+   "act": "a6",
+   "type": "starfield",
+   "at": 0,
+   "n": 80,
+   "h": 1500,
+   "speed": 46,
+   "shoot": 3.6
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itplanet",
+   "x": 912,
+   "y": 474,
+   "scale": 1.125,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "earth"
+   },
+   "move": {
+    "x": 828,
+    "y": 524,
+    "dur": 7
+   },
+   "qa": false
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itplanet",
+   "x": 36,
+   "y": 299,
+   "scale": 1.25,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "moon"
+   },
+   "move": {
+    "x": 1032,
+    "y": 199,
+    "dur": 9
+   },
+   "qa": false
+  },
+  {
+   "act": "a6",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 150,
+   "at": "universe",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "THE ENTIRE UNIVERSE",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itdev",
+   "x": 540,
+   "y": 1320,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "sad"
+   },
+   "bob": 0.5,
+   "float": 16,
+   "rot": 3
+  },
+  {
+   "act": "a6",
+   "type": "rect",
+   "x": 140,
+   "y": 599,
+   "w": 800,
+   "h": 130,
+   "at": "last",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "LAST YEAR: ONE BUG",
+   "size": 48,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itbug",
+   "x": 876,
+   "y": 899,
+   "scale": 1.125,
+   "enter": "pop",
+   "at": "bug",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "itscale",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "level": "space",
+    "void": true
+   },
+   "qa": false,
+   "zoom": {
+    "from": 1.25,
+    "dur": 9
+   }
+  },
+  {
+   "act": "a7",
+   "type": "starfield",
+   "at": 0,
+   "n": 80,
+   "h": 1500,
+   "speed": 46,
+   "shoot": 3.6
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "itplanet",
+   "x": 828,
+   "y": 524,
+   "scale": 1.125,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "earth"
+   },
+   "move": {
+    "x": 732,
+    "y": 574,
+    "dur": 8
+   },
+   "qa": false
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "itplanet",
+   "x": 1032,
+   "y": 236,
+   "scale": 1.25,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "moon"
+   },
+   "move": {
+    "x": 36,
+    "y": 349,
+    "dur": 9
+   },
+   "qa": false
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 140,
+   "at": "above",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "SAME MESSAGE. FROM ABOVE.",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "itdev",
+   "x": 852,
+   "y": 748,
+   "scale": 0.91,
+   "enter": "pop",
+   "at": "manager",
+   "opts": {
+    "hood": "#e0a030",
+    "pocket": "#b8801c",
+    "tie": "#e0543a",
+    "tablet": true,
+    "tall": 1.12,
+    "mood": "smile"
+   },
+   "bob": 0.5,
+   "float": 10,
+   "rot": 3
+  },
+  {
+   "act": "a7",
+   "type": "prop",
+   "id": "itdev",
+   "x": 372,
+   "y": 1320,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "flat"
+   },
+   "bob": 0.5,
+   "float": 16,
+   "rot": 3
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 40,
+   "y": 470,
+   "w": 420,
+   "h": 90,
+   "at": "bigger",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "THINK BIGGER",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 40,
+   "y": 536,
+   "w": 420,
+   "h": 90,
+   "at": "fewer",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "FEWER PEOPLE",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 40,
+   "y": 661,
+   "w": 420,
+   "h": 90,
+   "at": "less",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "LESS TIME",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "itscale",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "level": "space",
+    "void": true
+   },
+   "qa": false,
+   "zoom": {
+    "from": 1.25,
+    "dur": 9
+   }
+  },
+  {
+   "act": "a8",
+   "type": "starfield",
+   "at": 0,
+   "n": 80,
+   "h": 1500,
+   "speed": 46,
+   "shoot": 3.6
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "itplanet",
+   "x": 732,
+   "y": 574,
+   "scale": 1.125,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "earth"
+   },
+   "move": {
+    "x": 660,
+    "y": 499,
+    "dur": 8
+   },
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "itplanet",
+   "x": 36,
+   "y": 349,
+   "scale": 1.25,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "moon"
+   },
+   "move": {
+    "x": 1068,
+    "y": 249,
+    "dur": 9
+   },
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "itdev",
+   "x": 540,
+   "y": 1320,
+   "scale": 1.625,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.5,
+   "float": 16,
+   "rot": 3
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "itlaptop",
+   "x": 252,
+   "y": 1299,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0.3
+  },
+  {
+   "act": "a8",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 450,
+   "h": 130,
+   "at": "fix",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "FIX MY BUG",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a8",
+   "type": "rect",
+   "x": 60,
+   "y": 410,
+   "w": 960,
+   "h": 130,
+   "at": "understand",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "+ UNDERSTAND THE UNIVERSE",
+   "size": 42,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "itscale",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "level": "space",
+    "void": true
+   },
+   "qa": false,
+   "zoom": {
+    "from": 1.2,
+    "dur": 9
+   }
+  },
+  {
+   "act": "a9",
+   "type": "starfield",
+   "at": 0,
+   "n": 80,
+   "h": 1500,
+   "speed": 46,
+   "shoot": 3.6
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "itplanet",
+   "x": 660,
+   "y": 499,
+   "scale": 1.125,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "earth"
+   },
+   "move": {
+    "x": 876,
+    "y": 449,
+    "dur": 8
+   },
+   "qa": false
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "itplanet",
+   "x": 1068,
+   "y": 249,
+   "scale": 1.25,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "moon"
+   },
+   "move": {
+    "x": 72,
+    "y": 199,
+    "dur": 9
+   },
+   "qa": false
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "itdev",
+   "x": 540,
+   "y": 1320,
+   "scale": 1.69,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile",
+    "raise": true
+   },
+   "bob": 0.5,
+   "float": 16,
+   "rot": 3
+  },
+  {
+   "act": "a9",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 190,
+   "at": "what",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "WHAT DID YOUR APPRAISAL<br>ASK YOU TO OWN?",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d"
+  }
+ ]
+}

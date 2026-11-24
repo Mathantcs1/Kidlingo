@@ -1,0 +1,130 @@
+{
+ "title": "IT LIFE \u00b7 S07 THE BENCH: character, location and property sheet",
+ "sections": [
+  {
+   "name": "CHARACTERS",
+   "items": [
+    {
+     "id": "itdev",
+     "opts": {
+      "mood": "smile"
+     },
+     "scale": 0.75,
+     "label": "DEV, 2015: walks in calm"
+    },
+    {
+     "id": "itdev",
+     "opts": {
+      "sit": "chair",
+      "mood": "smile"
+     },
+     "scale": 0.75,
+     "label": "DEV on the bench, learning (2015)"
+    },
+    {
+     "id": "itdev",
+     "opts": {
+      "sit": "chair",
+      "mood": "worry",
+      "sweat": true
+     },
+     "scale": 0.75,
+     "label": "DEV, 2026: very still, the countdown"
+    },
+    {
+     "id": "itsil",
+     "opts": {
+      "c": "#5a6a86"
+     },
+     "scale": 0.6,
+     "label": "THE OTHERS: grey, faceless, on their phones (hoodie up)"
+    },
+    {
+     "id": "itsil",
+     "opts": {
+      "c": "#7a6a8a",
+      "v": 2
+     },
+     "scale": 0.6,
+     "label": "(second silhouette: cap, two-handed scroll)"
+    }
+   ]
+  },
+  {
+   "name": "LOCATIONS",
+   "items": [
+    {
+     "id": "itwait",
+     "opts": {
+      "era": "2015"
+     },
+     "scale": 0.5,
+     "label": "L1  2015 waiting room: calendar with a smiley, door sign RESOURCE MANAGEMENT, plant (amber)"
+    },
+    {
+     "id": "itwait",
+     "opts": {
+      "era": "2026"
+     },
+     "scale": 0.5,
+     "label": "L2  The same room, 2026: cool and dim, calendar without the smiley"
+    },
+    {
+     "id": "itwait",
+     "opts": {
+      "era": "2026",
+      "wall": "#7ba3bf"
+     },
+     "scale": 0.5,
+     "label": "L3  The same room, a little lighter (the ending)"
+    }
+   ]
+  },
+  {
+   "name": "PROPERTIES",
+   "items": [
+    {
+     "id": "itchair",
+     "opts": {
+      "color": "#9fb0c4"
+     },
+     "scale": 0.8,
+     "label": "waiting-room chair"
+    },
+    {
+     "id": "itbook",
+     "opts": {},
+     "scale": 0.9,
+     "label": "thick book"
+    },
+    {
+     "id": "itcoffee",
+     "opts": {},
+     "scale": 1.0,
+     "label": "coffee (steam animated)"
+    },
+    {
+     "id": "itlaptop",
+     "opts": {
+      "glow": "#ffd978",
+      "screen": "#fff8d8"
+     },
+     "scale": 0.5,
+     "label": "laptop with a warm light (the turn)"
+    },
+    {
+     "id": "itcheck",
+     "opts": {},
+     "scale": 0.0001,
+     "label": "live: wall clock whose second hand ticks, ring pulses every second in 2026"
+    },
+    {
+     "id": "itcheck",
+     "opts": {},
+     "scale": 0.0001,
+     "label": "live: dim shade over the room that lifts when the laptop lights up; LEARN / BUILD / SHARE cards"
+    }
+   ]
+  }
+ ]
+}

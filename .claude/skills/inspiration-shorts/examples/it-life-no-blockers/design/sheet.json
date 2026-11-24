@@ -1,0 +1,18 @@
+{ "title": "IT LIFE · S04 NO BLOCKERS: character, location and property sheet",
+  "sections": [
+  { "name": "CHARACTERS: the six on the call (each in their own room)", "items": [
+    { "id": "ittile", "opts": {"bg":"#dff0d8","deco":"plant","hair":"beanie","hc":"#26334a","shirt":"#4a6a9a"}, "scale": 0.55, "label": "DEV (blue-grey hoodie, beanie), plant corner" },
+    { "id": "ittile", "opts": {"bg":"#ffe3c8","deco":"shelf","hair":"bun","hc":"#2a2233","shirt":"#e0543a","skin":"#e8b88a"}, "scale": 0.55, "label": "PRIYA: bun, red top, bookshelf" },
+    { "id": "ittile", "opts": {"bg":"#d9e8ff","deco":"window","hair":"cap","hc":"#1F9CA8","shirt":"#2f6fd6"}, "scale": 0.55, "label": "MARC: teal cap, window" },
+    { "id": "ittile", "opts": {"bg":"#f1dcff","deco":"poster","hair":"long","hc":"#5a3a22","shirt":"#1F9CA8","skin":"#f0c9a0"}, "scale": 0.55, "label": "SANA: long hair, poster wall" },
+    { "id": "ittile", "opts": {"bg":"#fff2b8","deco":"curtain","hair":"curly","hc":"#3b2a20","shirt":"#a06bff","skin":"#c68642"}, "scale": 0.55, "label": "LEO: curls, purple curtain" },
+    { "id": "ittile", "opts": {"bg":"#d8f0ea","deco":"lamp","hair":"bald","shirt":"#7c8f5a","skin":"#e8c8a0","glasses":true}, "scale": 0.55, "label": "RAVI: glasses, lamp" } ]},
+  { "name": "LOCATIONS", "items": [
+    { "id": "itapp", "opts": {}, "scale": 0.32, "label": "L1  The standup call window (title bar, controls)" },
+    { "id": "ittile", "opts": {"bg":"#dff0d8","deco":"plant","hair":"beanie","hc":"#26334a","shirt":"#4a6a9a","mood":"worry"}, "scale": 0.8, "label": "L2  Six small rooms inside the call, one per person" } ]},
+  { "name": "PROPERTIES (drawn live by the engine)", "items": [
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "yellow speaking ring + 'NO BLOCKERS.' bubble, one tile per second" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "thought bubbles (access, VPN, test data...) and private-chat messages" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "yellow web lines that draw between the tiles" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "typed message 'I'M BLOCKED.' + falling confetti + cheering mini tiles" } ]}
+ ] }

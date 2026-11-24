@@ -1,0 +1,26 @@
+{ "title": "IT LIFE · S03 WHO MENTORS WHO?: character, location and property sheet",
+  "sections": [
+  { "name": "CHARACTERS (new cast for this episode: Fresher + Senior; Senior is the narrator)", "items": [
+    { "id": "itpal", "opts": {"kind":"fresher","mood":"grin"}, "scale": 0.75, "label": "FRESHER: shorter, coral tee, blue backpack, spiky hair, always keen" },
+    { "id": "itpal", "opts": {"kind":"senior","pose":"mug","mug":true,"mood":"smile"}, "scale": 0.75, "label": "SENIOR: grey swoosh, glasses, olive cardigan, tea mug" },
+    { "id": "itpal", "opts": {"kind":"senior","pose":"pat","mood":"smile"}, "scale": 0.75, "label": "SENIOR pats the chair (2015)" },
+    { "id": "itpal", "opts": {"kind":"senior","pose":"point","mood":"curious"}, "scale": 0.75, "label": "SENIOR points / learns (2026)" },
+    { "id": "itpal", "opts": {"kind":"fresher","pose":"fist","mood":"smile"}, "scale": 0.75, "label": "FRESHER fist-bump (ending)" } ]},
+  { "name": "LOCATIONS (four new places)", "items": [
+    { "id": "itoffice", "opts": {"era":"2015"}, "scale": 0.5, "label": "L1  2015 office: open door, CRT desk, paper sheet" },
+    { "id": "itoffice", "opts": {"era":"2026"}, "scale": 0.5, "label": "L2  2026 office: glass wall, plants, two glowing screens" },
+    { "id": "itpantry", "opts": {}, "scale": 0.5, "label": "L3  Tea corner: where the survival guide is whispered" },
+    { "id": "itplain", "opts": {}, "scale": 0.5, "label": "L4  Soft stage: puzzle and fist-bump" } ]},
+  { "name": "PROPERTIES", "items": [
+    { "id": "itbadge", "opts": {"kind":"gear"}, "scale": 0.6, "label": "tool 1" },
+    { "id": "itbadge", "opts": {"kind":"chat"}, "scale": 0.6, "label": "tool 2" },
+    { "id": "itbadge", "opts": {"kind":"cloud"}, "scale": 0.6, "label": "tool 3" },
+    { "id": "itbadge", "opts": {"kind":"branch"}, "scale": 0.6, "label": "tool 4" },
+    { "id": "itbadge", "opts": {"kind":"term"}, "scale": 0.6, "label": "tool 5" },
+    { "id": "itlaptop", "opts": {"glow":"#2ee6d0","screen":"#1F9CA8"}, "scale": 0.5, "label": "glowing 2026 laptop" },
+    { "id": "itnotebook", "opts": {}, "scale": 0.7, "label": "paper notebook" },
+    { "id": "itpuzzle", "opts": {"side":"left"}, "scale": 0.45, "label": "puzzle half: tools" },
+    { "id": "itpuzzle", "opts": {"side":"right"}, "scale": 0.45, "label": "puzzle half: survival guide" },
+    { "id": "itcheck", "opts": {}, "scale": 0.7, "label": "tick" },
+    { "id": "itheart", "opts": {}, "scale": 0.5, "label": "heart cloud" } ]}
+ ] }

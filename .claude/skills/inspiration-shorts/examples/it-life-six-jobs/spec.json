@@ -1,0 +1,1290 @@
+{
+ "kitFile": "../../kits/it-life.json",
+ "tail": 3.2,
+ "kit": {
+  "caption": {
+   "y": 1475,
+   "size": 66
+  }
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "cream"
+  },
+  {
+   "id": "a1",
+   "bg": "mint",
+   "from": "one#2-0.1",
+   "transition": "wipe-left"
+  },
+  {
+   "id": "a2",
+   "bg": "navy",
+   "from": "in#2-0.1",
+   "transition": "iris"
+  },
+  {
+   "id": "a3",
+   "bg": "night",
+   "from": "front-0.2",
+   "transition": "push"
+  },
+  {
+   "id": "a4",
+   "bg": "violet",
+   "from": "but-0.1",
+   "transition": "zoom"
+  },
+  {
+   "id": "a5",
+   "bg": "sunset",
+   "from": "tell-0.1",
+   "transition": "iris"
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#f6dfb0",
+    "floor": "#c7803c"
+   },
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 90,
+   "y": 420,
+   "w": 900,
+   "h": 420,
+   "at": "title",
+   "bg": "#fffaf0",
+   "enter": "pop",
+   "text": "",
+   "size": 10,
+   "qa": false,
+   "radius": 14,
+   "rot": -3
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 110,
+   "y": 440,
+   "w": 26,
+   "h": 380,
+   "at": "title",
+   "bg": "#F2A33A",
+   "enter": "pop",
+   "text": "",
+   "size": 10,
+   "qa": false,
+   "radius": 8,
+   "rot": -3,
+   "bw": 3,
+   "flat": true
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 150,
+   "y": 500,
+   "w": 820,
+   "h": 170,
+   "at": "title",
+   "bg": "rgba(0,0,0,0)",
+   "enter": "pop",
+   "text": "Developer",
+   "size": 130,
+   "qa": false,
+   "radius": 0,
+   "rot": -3,
+   "bw": 0,
+   "flat": true
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 160,
+   "y": 700,
+   "w": 800,
+   "h": 80,
+   "at": "title",
+   "bg": "rgba(0,0,0,0)",
+   "enter": "pop",
+   "text": "YOUR NAME \u00b7 YOUR COMPANY",
+   "size": 42,
+   "qa": false,
+   "radius": 0,
+   "rot": -3,
+   "bw": 0,
+   "flat": true,
+   "color": "#5a6a86"
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 830,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "ithat",
+   "x": 830,
+   "y": 853,
+   "scale": 0.6,
+   "enter": "pop",
+   "at": "title",
+   "opts": {
+    "kind": "cap",
+    "c": "#2f6fd6"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#bfe6ff",
+    "floor": "#8fd18a"
+   },
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "ittower",
+   "x": 830,
+   "y": 1420,
+   "scale": 1.5,
+   "enter": "rise",
+   "at": "one#2",
+   "opts": {
+    "label": "PLATFORM"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itdev",
+   "x": 540,
+   "y": 1440,
+   "scale": 1.6,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.6,
+   "float": 3,
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itpal",
+   "x": -120,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "qa": false,
+   "opts": {
+    "kind": "fresher",
+    "mood": "curious"
+   },
+   "bob": 0.8,
+   "move": {
+    "x": 140,
+    "dur": 1.8,
+    "at": "people"
+   }
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itpal",
+   "x": -120,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "qa": false,
+   "opts": {
+    "kind": "tester",
+    "mood": "curious"
+   },
+   "bob": 0.8,
+   "move": {
+    "x": 330,
+    "dur": 2.0,
+    "at": "exactly"
+   }
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 70,
+   "y": 640,
+   "w": 160,
+   "h": 130,
+   "at": "came",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "?",
+   "size": 96,
+   "qa": false,
+   "radius": 65,
+   "until": "knew"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 270,
+   "y": 640,
+   "w": 160,
+   "h": 130,
+   "at": "exactly",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "?",
+   "size": 96,
+   "qa": false,
+   "radius": 65,
+   "until": "knew"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 440,
+   "y": 520,
+   "w": 190,
+   "h": 140,
+   "at": "knew",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "\u2713",
+   "size": 100,
+   "qa": false,
+   "radius": 70
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#12304a",
+    "floor": "#1c4d6b"
+   },
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 90,
+   "y": 420,
+   "w": 900,
+   "h": 420,
+   "at": "thousand#2",
+   "bg": "#1F9CA8",
+   "enter": "pop",
+   "text": "",
+   "size": 10,
+   "qa": false,
+   "radius": 14,
+   "rot": 3
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 110,
+   "y": 440,
+   "w": 26,
+   "h": 380,
+   "at": "thousand#2",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "",
+   "size": 10,
+   "qa": false,
+   "radius": 8,
+   "rot": 3,
+   "bw": 3,
+   "flat": true
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 150,
+   "y": 500,
+   "w": 820,
+   "h": 170,
+   "at": "thousand#2",
+   "bg": "rgba(0,0,0,0)",
+   "enter": "pop",
+   "text": "Developer",
+   "size": 130,
+   "qa": false,
+   "radius": 0,
+   "rot": 3,
+   "color": "#fff",
+   "bw": 0,
+   "flat": true
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 160,
+   "y": 700,
+   "w": 800,
+   "h": 80,
+   "at": "thousand#2",
+   "bg": "rgba(0,0,0,0)",
+   "enter": "pop",
+   "text": "YOUR NAME \u00b7 YOUR COMPANY",
+   "size": 42,
+   "qa": false,
+   "radius": 0,
+   "rot": 3,
+   "color": "#cfe8ff",
+   "bw": 0,
+   "flat": true
+  },
+  {
+   "act": "a2",
+   "type": "clockspin",
+   "x": 540,
+   "y": 800,
+   "size": 460,
+   "at": "in#2",
+   "dur": 1.3
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itdev",
+   "x": 830,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "flat"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "ithat",
+   "x": 830,
+   "y": 853,
+   "scale": 0.6,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "cap",
+    "c": "#2f6fd6"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#10243a",
+    "floor": "#1c3550"
+   },
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itdev",
+   "x": 330,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry",
+    "sweat": true
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 853,
+   "scale": 1.2,
+   "enter": "drop",
+   "at": "front",
+   "opts": {
+    "kind": "cap",
+    "c": "#2f6fd6"
+   },
+   "bob": 0.9
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 540,
+   "y": 749,
+   "w": 510,
+   "h": 82,
+   "at": "front",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "FRONT END",
+   "size": 48,
+   "qa": false,
+   "radius": 41
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 773,
+   "scale": 1.2,
+   "enter": "drop",
+   "at": "back",
+   "opts": {
+    "kind": "hard",
+    "c": "#F2A33A"
+   },
+   "bob": 1.02
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 540,
+   "y": 669,
+   "w": 510,
+   "h": 82,
+   "at": "back",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "BACK END",
+   "size": 48,
+   "qa": false,
+   "radius": 41
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 693,
+   "scale": 1.2,
+   "enter": "drop",
+   "at": "database",
+   "opts": {
+    "kind": "db",
+    "c": "#3ec97a"
+   },
+   "bob": 1.1400000000000001
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 540,
+   "y": 589,
+   "w": 510,
+   "h": 82,
+   "at": "database",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "DATABASE",
+   "size": 48,
+   "qa": false,
+   "radius": 41
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 613,
+   "scale": 1.2,
+   "enter": "drop",
+   "at": "cloud",
+   "opts": {
+    "kind": "cloud",
+    "c": "#cfe8ff"
+   },
+   "bob": 1.26
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 540,
+   "y": 509,
+   "w": 510,
+   "h": 82,
+   "at": "cloud",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "CLOUD",
+   "size": 48,
+   "qa": false,
+   "radius": 41
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 533,
+   "scale": 1.2,
+   "enter": "drop",
+   "at": "pipelines",
+   "opts": {
+    "kind": "pipe",
+    "c": "#a06bff"
+   },
+   "bob": 1.38
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 540,
+   "y": 429,
+   "w": 510,
+   "h": 82,
+   "at": "pipelines",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "PIPELINES",
+   "size": 48,
+   "qa": false,
+   "radius": 41
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 453,
+   "scale": 1.2,
+   "enter": "drop",
+   "at": "security",
+   "opts": {
+    "kind": "shield",
+    "c": "#e0543a"
+   },
+   "bob": 1.5
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 540,
+   "y": 349,
+   "w": 510,
+   "h": 82,
+   "at": "security",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "SECURITY",
+   "size": 48,
+   "qa": false,
+   "radius": 41
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 373,
+   "scale": 1.2,
+   "enter": "drop",
+   "at": "ai",
+   "opts": {
+    "kind": "wizard",
+    "c": "#1F9CA8"
+   },
+   "bob": 1.62
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 540,
+   "y": 269,
+   "w": 510,
+   "h": 82,
+   "at": "ai",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "AI ON THE SIDE",
+   "size": 48,
+   "qa": false,
+   "radius": 41
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 600,
+   "y": 1090,
+   "w": 450,
+   "h": 230,
+   "at": "ten",
+   "bg": "#fffaf0",
+   "enter": "pop",
+   "text": "WANTED:<br>10 YEARS EXPERIENCE<br>IN A 3-YEAR-OLD TECH",
+   "size": 36,
+   "qa": false,
+   "radius": 8,
+   "rot": 3
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#e8e4f5",
+    "floor": "#c9c2e6"
+   },
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itdev",
+   "x": 330,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 853,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "cap",
+    "c": "#2f6fd6"
+   },
+   "bob": 0.6,
+   "until": "but+0.55",
+   "move": {
+    "y": 1250,
+    "dur": 0.7,
+    "at": "but+0.05"
+   }
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 773,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "hard",
+    "c": "#F2A33A"
+   },
+   "bob": 0.6,
+   "until": "but+0.65",
+   "move": {
+    "y": 1250,
+    "dur": 0.7,
+    "at": "but+0.15"
+   }
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 693,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "db",
+    "c": "#3ec97a"
+   },
+   "bob": 0.6,
+   "until": "but+0.75",
+   "move": {
+    "y": 1250,
+    "dur": 0.7,
+    "at": "but+0.25"
+   }
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 613,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "cloud",
+    "c": "#cfe8ff"
+   },
+   "bob": 0.6,
+   "until": "but+0.85",
+   "move": {
+    "y": 1250,
+    "dur": 0.7,
+    "at": "but+0.35"
+   }
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 533,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "pipe",
+    "c": "#a06bff"
+   },
+   "bob": 0.6,
+   "until": "but+0.95",
+   "move": {
+    "y": 1250,
+    "dur": 0.7,
+    "at": "but+0.45"
+   }
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 453,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "shield",
+    "c": "#e0543a"
+   },
+   "bob": 0.6,
+   "until": "but+1.05",
+   "move": {
+    "y": 1250,
+    "dur": 0.7,
+    "at": "but+0.55"
+   }
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 373,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "kind": "wizard",
+    "c": "#1F9CA8"
+   },
+   "bob": 0.6,
+   "until": "but+1.15",
+   "move": {
+    "y": 1250,
+    "dur": 0.7,
+    "at": "but+0.65"
+   }
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 853,
+   "scale": 2.0,
+   "enter": "drop",
+   "at": "depth#2",
+   "opts": {
+    "kind": "hard",
+    "c": "#F2A33A"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "ithat",
+   "x": 330,
+   "y": 668,
+   "scale": 0.95,
+   "enter": "drop",
+   "at": "wide",
+   "opts": {
+    "kind": "cap",
+    "c": "#2f6fd6"
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 560,
+   "y": 520,
+   "w": 440,
+   "h": 90,
+   "at": "deep",
+   "bg": "#F2A33A",
+   "enter": "pop",
+   "text": "ONE DEEP SKILL",
+   "size": 42,
+   "qa": false,
+   "radius": 45,
+   "color": "#fff"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 560,
+   "y": 630,
+   "w": 440,
+   "h": 90,
+   "at": "wide",
+   "bg": "#2f6fd6",
+   "enter": "pop",
+   "text": "A WIDE BASE",
+   "size": 42,
+   "qa": false,
+   "radius": 45,
+   "color": "#fff"
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#ffe9d2",
+    "floor": "#f3c9a0"
+   },
+   "qa": false
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itdev",
+   "x": 400,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile",
+    "raise": true
+   },
+   "bob": 0.6
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "ithat",
+   "x": 400,
+   "y": 853,
+   "scale": 1.4,
+   "enter": "drop",
+   "at": "tell",
+   "opts": {
+    "kind": "hard",
+    "c": "#F2A33A"
+   },
+   "bob": 1.0
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "ithat",
+   "x": 400,
+   "y": 743,
+   "scale": 1.1,
+   "enter": "drop",
+   "at": "tell+0.3",
+   "opts": {
+    "kind": "cloud",
+    "c": "#cfe8ff"
+   },
+   "bob": 1.0
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "ithat",
+   "x": 400,
+   "y": 653,
+   "scale": 0.9,
+   "enter": "drop",
+   "at": "tell+0.6",
+   "opts": {
+    "kind": "wizard",
+    "c": "#1F9CA8"
+   },
+   "bob": 1.0
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 580,
+   "y": 820,
+   "w": 460,
+   "h": 260,
+   "at": "tell+0.2",
+   "bg": "#1F9CA8",
+   "enter": "pop",
+   "text": "Developer",
+   "size": 70,
+   "qa": false,
+   "radius": 12,
+   "rot": -5,
+   "color": "#fff"
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 140,
+   "y": 130,
+   "w": 800,
+   "h": 130,
+   "at": "two",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "2015: DEVELOPER",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "one#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "ONE PLATFORM.",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d",
+   "until": "people"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "people",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "PEOPLE CAME TO ME.",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d",
+   "until": "depth"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "depth",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "DEPTH WAS THE CAREER PLAN.",
+   "size": 46,
+   "qa": false,
+   "color": "#14263d",
+   "until": "good"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "good",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "GOOD AT ONE THING = SAFE",
+   "size": 48,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 140,
+   "y": 130,
+   "w": 800,
+   "h": 130,
+   "at": "in#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "2026: DEVELOPER",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d",
+   "until": "title#3"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "title#3",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "THE TITLE DID NOT CHANGE.",
+   "size": 46,
+   "qa": false,
+   "color": "#14263d",
+   "until": "job#3"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "job#3",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "THE JOB DID.",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "front",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "ONE TITLE. SIX JOBS\u2026",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d",
+   "until": "little"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "little",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "\u2026AND A LITTLE AI = SEVEN.",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d",
+   "until": "description"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "description",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "ONE JOB DESCRIPTION. SEVEN JOBS.",
+   "size": 42,
+   "qa": false,
+   "color": "#14263d",
+   "until": "ten"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "ten",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "JOB POST: TEN YEARS OF EXPERIENCE",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d",
+   "until": "three"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "three",
+   "bg": "#e0543a",
+   "enter": "pop",
+   "text": "IN A TECHNOLOGY THREE YEARS OLD.",
+   "size": 40,
+   "qa": false,
+   "color": "#fff"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "depth#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "DEPTH DID NOT LOSE ITS VALUE.",
+   "size": 42,
+   "qa": false,
+   "color": "#14263d",
+   "until": "enough"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "enough",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "IT IS NOT ENOUGH ALONE.",
+   "size": 48,
+   "qa": false,
+   "color": "#14263d",
+   "until": "deep"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "deep",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "DEEP + A LITTLE WIDE",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d",
+   "until": "depth#3"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "depth#3",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "DEPTH GOT ME HERE. BREADTH KEEPS ME HERE.",
+   "size": 34,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "tell",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "HOW MANY JOBS IS YOUR TITLE DOING?",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d"
+  }
+ ]
+}

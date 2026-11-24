@@ -1,0 +1,128 @@
+{
+ "title": "THE LOAN HE HID: reference sheet (fiction, Pride Parables)",
+ "sections": [
+  {
+   "name": "CHARACTERS",
+   "items": [
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#f0e6d2",
+      "body2": "#d9ccb0",
+      "hair": "#3b2a20",
+      "band": "#e0543a",
+      "apron": "#e8a53a",
+      "mood": "happy",
+      "hold": "candle"
+     },
+     "scale": 0.8,
+     "label": "Ace: candle-maker apron"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#f0e6d2",
+      "body2": "#d9ccb0",
+      "hair": "#3b2a20",
+      "band": "#e0543a",
+      "apron": "#e8a53a",
+      "mood": "worried",
+      "sweat": true
+     },
+     "scale": 0.8,
+     "label": "Ace, hiding it"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#1e6b57",
+      "body2": "#14513f",
+      "hair": "#1c1c24",
+      "hairStyle": "long",
+      "mood": "worried"
+     },
+     "scale": 0.8,
+     "label": "Sam: cardigan"
+    },
+    {
+     "id": "pride2",
+     "opts": {
+      "mood": "smirk"
+     },
+     "scale": 0.7,
+     "label": "Pride: pocket-size"
+    },
+    {
+     "id": "pride2",
+     "opts": {
+      "mood": "cackle"
+     },
+     "scale": 0.7,
+     "label": "Pride, tallying"
+    }
+   ]
+  },
+  {
+   "name": "LOCATIONS",
+   "items": [
+    {
+     "id": "workshop",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Candle workshop"
+    },
+    {
+     "id": "tilefloor",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Kitchen floor"
+    },
+    {
+     "id": "livingroom",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Sam's living room"
+    }
+   ]
+  },
+  {
+   "name": "PROPS",
+   "items": [
+    {
+     "id": "ledger",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Ledger"
+    },
+    {
+     "id": "candle",
+     "opts": {
+      "h": 150
+     },
+     "scale": 0.9,
+     "label": "Candle"
+    },
+    {
+     "id": "jar",
+     "opts": {
+      "label": "SAVED"
+     },
+     "scale": 0.6,
+     "label": "Savings jar"
+    },
+    {
+     "id": "cheque",
+     "opts": {},
+     "scale": 0.5,
+     "label": "Cheque"
+    },
+    {
+     "id": "envelope",
+     "opts": {},
+     "scale": 0.5,
+     "label": "Final notice"
+    }
+   ]
+  }
+ ]
+}

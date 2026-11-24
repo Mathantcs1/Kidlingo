@@ -1,0 +1,1305 @@
+{
+ "kitFile": "../../kits/pride-parables.json",
+ "kit": {
+  "bgs": {
+   "night": {
+    "angle": 180,
+    "stops": [
+     "#0b1038",
+     "#171a4a",
+     "#1d2150"
+    ],
+    "dots": {
+     "o": 0.05
+    }
+   },
+   "dawn": {
+    "angle": 180,
+    "stops": [
+     "#c2456b",
+     "#e0765a",
+     "#ffd7a8"
+    ]
+   },
+   "end": {
+    "angle": 180,
+    "stops": [
+     "#1d2150",
+     "#2b2467",
+     "#3b2a8a"
+    ],
+    "blobs": [
+     {
+      "c": "#7a52d9",
+      "x": 540,
+      "y": 900,
+      "r": 700,
+      "s": 0.2,
+      "dx": 60,
+      "dy": 40,
+      "o": 0.4
+     }
+    ]
+   }
+  },
+  "caption": {
+   "y": 1475
+  }
+ },
+ "tail": 1.0,
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "night"
+  },
+  {
+   "id": "setup",
+   "bg": "night",
+   "transition": {
+    "type": "whip-right"
+   },
+   "from": "Three"
+  },
+  {
+   "id": "reels",
+   "bg": "night",
+   "transition": {
+    "type": "push-in"
+   },
+   "from": "Reel"
+  },
+  {
+   "id": "night",
+   "bg": "night",
+   "transition": {
+    "type": "tilt-down"
+   },
+   "from": "one#2"
+  },
+  {
+   "id": "kitchen",
+   "bg": "dawn",
+   "transition": {
+    "type": "whip-left"
+   },
+   "from": "kitchen"
+  },
+  {
+   "id": "dawn",
+   "bg": "dawn",
+   "transition": {
+    "type": "tilt-up"
+   },
+   "from": "They"
+  },
+  {
+   "id": "end",
+   "bg": "end",
+   "transition": {
+    "type": "whip-right"
+   },
+   "from": "Pride#4"
+  },
+  {
+   "id": "close",
+   "bg": "end",
+   "transition": {
+    "type": "tilt-up"
+   },
+   "from": "What"
+  }
+ ],
+ "counter": {
+  "act": "hook",
+  "keys": [
+   [
+    0,
+    1574
+   ],
+   [
+    "earlier",
+    1574
+   ],
+   [
+    "earlier+1.2",
+    1387
+   ],
+   [
+    "midnight",
+    1440
+   ],
+   [
+    "one#2",
+    1500
+   ],
+   [
+    "Two",
+    1574
+   ],
+   [
+    "four",
+    1680
+   ],
+   [
+    "presented",
+    1980
+   ]
+  ],
+  "prefix": "",
+  "fmt": "clock",
+  "until": "Humility",
+  "y": 160,
+  "size": 130
+ },
+ "items": [
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "bedroom",
+   "x": 540,
+   "y": 1620,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "actor",
+   "x": 240,
+   "y": 1500,
+   "scale": 1.75,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": null,
+    "band": "#e0543a",
+    "hood": true,
+    "mood": "tired",
+    "hold": "phone",
+    "glow": "#7fe3ff"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "Seven",
+     "kind": "lean",
+     "dur": 1.4
+    },
+    {
+     "at": "fourteen",
+     "kind": "shake",
+     "dur": 1.2
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "bed",
+   "x": 520,
+   "y": 1615,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "pride2",
+   "x": 840,
+   "y": 1360,
+   "scale": 1.0,
+   "enter": "rise",
+   "at": 0.6,
+   "opts": {
+    "mood": "smug",
+    "hold": "popcorn"
+   },
+   "bob": 0,
+   "dist": 300,
+   "tag": "pride"
+  },
+  {
+   "act": "hook",
+   "type": "chip",
+   "y": 470,
+   "size": 60,
+   "bg": "#7fe3ff",
+   "parts": [
+    {
+     "t": "7 MINUTES?",
+     "at": "Seven"
+    }
+   ],
+   "color": "#0b1038"
+  },
+  {
+   "act": "setup",
+   "type": "prop",
+   "id": "bedroom",
+   "x": 540,
+   "y": 1620,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "setup",
+   "type": "prop",
+   "id": "laptop",
+   "x": 230,
+   "y": 1425,
+   "scale": 1.1,
+   "enter": "slide-left",
+   "at": "earlier",
+   "opts": {},
+   "bob": 0,
+   "dist": 700
+  },
+  {
+   "act": "setup",
+   "type": "prop",
+   "id": "actor",
+   "x": 240,
+   "y": 1500,
+   "scale": 1.75,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": null,
+    "band": "#e0543a",
+    "hood": true,
+    "mood": "worried"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "plan",
+     "kind": "point",
+     "dur": 1.2
+    },
+    {
+     "at": "presentation",
+     "kind": "nod",
+     "dur": 1.0
+    }
+   ]
+  },
+  {
+   "act": "setup",
+   "type": "prop",
+   "id": "bed",
+   "x": 520,
+   "y": 1615,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false,
+   "until": "work",
+   "move": {
+    "x": -400,
+    "dur": 1.0,
+    "at": "work"
+   }
+  },
+  {
+   "act": "setup",
+   "type": "prop",
+   "id": "slidecard",
+   "x": 840,
+   "y": 930,
+   "scale": 1.5,
+   "enter": "drop",
+   "at": "presentation",
+   "opts": {},
+   "bob": 0,
+   "dist": 500,
+   "until": "Pride"
+  },
+  {
+   "act": "setup",
+   "type": "grid",
+   "x": 140,
+   "y": 345,
+   "w": 800,
+   "h": 64,
+   "cols": 10,
+   "rows": 1,
+   "at": "ten",
+   "groups": [],
+   "base": "rgba(255,255,255,.35)"
+  },
+  {
+   "act": "setup",
+   "type": "chip",
+   "y": 435,
+   "size": 40,
+   "bg": "#ffd21f",
+   "parts": [
+    {
+     "t": "SLIDES DONE: 0 / 10",
+     "at": "ten"
+    }
+   ]
+  },
+  {
+   "act": "setup",
+   "type": "prop",
+   "id": "bigphone",
+   "x": 600,
+   "y": 1400,
+   "scale": 0.85,
+   "enter": "rise",
+   "at": "reels",
+   "opts": {
+    "screen": "blank"
+   },
+   "bob": 0,
+   "dist": 500
+  },
+  {
+   "act": "setup",
+   "type": "prop",
+   "id": "pride2",
+   "x": 880,
+   "y": 1360,
+   "scale": 1.0,
+   "enter": "rise",
+   "at": "settled",
+   "opts": {
+    "mood": "smug",
+    "hold": "popcorn"
+   },
+   "bob": 0,
+   "dist": 300,
+   "tag": "pride"
+  },
+  {
+   "act": "setup",
+   "type": "chip",
+   "y": 1110,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "YOU'RE IN CONTROL",
+     "at": "obviously"
+    }
+   ]
+  },
+  {
+   "act": "reels",
+   "type": "prop",
+   "id": "bedroom",
+   "x": 540,
+   "y": 1620,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "reels",
+   "type": "prop",
+   "id": "actor",
+   "x": 220,
+   "y": 1500,
+   "scale": 1.75,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": null,
+    "band": "#e0543a",
+    "hood": true,
+    "mood": "happy"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "cat",
+     "kind": "cheer",
+     "dur": 1.0
+    },
+    {
+     "at": "stop",
+     "kind": "point",
+     "dur": 1.2
+    }
+   ]
+  },
+  {
+   "act": "reels",
+   "type": "prop",
+   "id": "bed",
+   "x": 520,
+   "y": 1615,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "reels",
+   "type": "prop",
+   "id": "pride2",
+   "x": 880,
+   "y": 1360,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smug",
+    "hold": "popcorn"
+   },
+   "bob": 0,
+   "gest": [],
+   "tag": "pride"
+  },
+  {
+   "act": "reels",
+   "type": "prop",
+   "id": "bigphone",
+   "x": 600,
+   "y": 1400,
+   "scale": 0.85,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "screen": "reel1"
+   },
+   "bob": 0,
+   "until": "nine",
+   "tag": "phone"
+  },
+  {
+   "act": "reels",
+   "type": "prop",
+   "id": "bigphone",
+   "x": 600,
+   "y": 1400,
+   "scale": 0.85,
+   "enter": "rise",
+   "at": "nine",
+   "opts": {
+    "screen": "reel2"
+   },
+   "bob": 0,
+   "dist": 700,
+   "tag": "phone"
+  },
+  {
+   "act": "reels",
+   "type": "chip",
+   "y": 435,
+   "size": 44,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "REEL 1",
+     "at": "Reel"
+    },
+    {
+     "t": " > REEL 9",
+     "at": "nine",
+     "c": "#ff7ab8"
+    }
+   ]
+  },
+  {
+   "act": "reels",
+   "type": "stamp",
+   "text": "12:00 AM",
+   "at": "midnight",
+   "y": 620,
+   "hit": true,
+   "color": "#e0543a",
+   "size": 64
+  },
+  {
+   "act": "reels",
+   "type": "hit",
+   "at": "midnight",
+   "shake": 0.25,
+   "flash": 0.15
+  },
+  {
+   "act": "reels",
+   "type": "chip",
+   "y": 1110,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "I CAN STOP WHENEVER I WANT",
+     "at": "stop"
+    }
+   ],
+   "until": "nodded"
+  },
+  {
+   "act": "night",
+   "type": "prop",
+   "id": "bedroom",
+   "x": 540,
+   "y": 1620,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "night",
+   "type": "prop",
+   "id": "actor",
+   "x": 220,
+   "y": 1500,
+   "scale": 1.75,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": null,
+    "band": "#e0543a",
+    "hood": true,
+    "mood": "tired"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "habits",
+     "kind": "nod",
+     "dur": 1.4
+    },
+    {
+     "at": "buzzed",
+     "kind": "raise",
+     "dur": 1.0
+    },
+    {
+     "at": "answer",
+     "kind": "shake",
+     "dur": 1.4
+    }
+   ]
+  },
+  {
+   "act": "night",
+   "type": "prop",
+   "id": "bed",
+   "x": 520,
+   "y": 1615,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "night",
+   "type": "prop",
+   "id": "pride2",
+   "x": 880,
+   "y": 1360,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "cackle",
+    "hold": "popcorn"
+   },
+   "bob": 0,
+   "tag": "pride"
+  },
+  {
+   "act": "night",
+   "type": "prop",
+   "id": "bigphone",
+   "x": 600,
+   "y": 1400,
+   "scale": 0.85,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "screen": "sleep"
+   },
+   "bob": 0,
+   "until": "buzzed",
+   "tag": "phone"
+  },
+  {
+   "act": "night",
+   "type": "prop",
+   "id": "bigphone",
+   "x": 600,
+   "y": 1400,
+   "scale": 0.85,
+   "enter": "none",
+   "at": "buzzed",
+   "opts": {
+    "screen": "chat"
+   },
+   "bob": 0,
+   "jitter": 5,
+   "tag": "phone"
+  },
+  {
+   "act": "night",
+   "type": "grid",
+   "x": 140,
+   "y": 345,
+   "w": 800,
+   "h": 64,
+   "cols": 10,
+   "rows": 1,
+   "at": 0,
+   "groups": [
+    {
+     "from": 0,
+     "count": 10,
+     "c": "rgba(224,84,58,.0)",
+     "at": "zero"
+    }
+   ],
+   "base": "rgba(255,255,255,.35)"
+  },
+  {
+   "act": "night",
+   "type": "chip",
+   "y": 435,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "SLIDES DONE: 0 / 10",
+     "at": "zero",
+     "c": "#ff7a7a"
+    }
+   ]
+  },
+  {
+   "act": "night",
+   "type": "stamp",
+   "text": "0 / 10",
+   "at": "zero",
+   "y": 640,
+   "hit": true,
+   "color": "#e0543a",
+   "size": 72
+  },
+  {
+   "act": "night",
+   "type": "chip",
+   "y": 1110,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "SAM: LIGHT ON?",
+     "at": "Sam"
+    }
+   ],
+   "until": "Pride#3",
+   "at": "Sam"
+  },
+  {
+   "act": "night",
+   "type": "prop",
+   "id": "actor",
+   "x": -250,
+   "y": 1622,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#1e6b57",
+    "body2": "#14513f",
+    "hair": "#1c1c24",
+    "hood": true,
+    "hairStyle": "long"
+   },
+   "bob": 0,
+   "move": {
+    "x": 720,
+    "dur": 1.6,
+    "at": "walked"
+   },
+   "until": "took"
+  },
+  {
+   "act": "night",
+   "type": "prop",
+   "id": "actor",
+   "x": 720,
+   "y": 1622,
+   "scale": 1.5,
+   "enter": "none",
+   "at": "took",
+   "opts": {
+    "body": "#1e6b57",
+    "body2": "#14513f",
+    "hair": "#1c1c24",
+    "hood": true,
+    "hairStyle": "long",
+    "hold": "phone",
+    "glow": "#7fe3ff"
+   },
+   "bob": 0,
+   "move": {
+    "x": 1350,
+    "dur": 1.5,
+    "at": "put"
+   }
+  },
+  {
+   "act": "night",
+   "type": "chip",
+   "y": 1110,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "DON'T ANSWER",
+     "at": "whispered"
+    }
+   ],
+   "until": "typed"
+  },
+  {
+   "act": "night",
+   "type": "typing",
+   "x": 240,
+   "y": 700,
+   "w": 600,
+   "h": 120,
+   "text": "Help",
+   "at": "typed",
+   "dur": 0.5,
+   "size": 60,
+   "bg": "#fff"
+  },
+  {
+   "act": "kitchen",
+   "type": "prop",
+   "id": "kitchenette",
+   "x": 540,
+   "y": 1620,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "kitchen",
+   "type": "prop",
+   "id": "kettle",
+   "x": 760,
+   "y": 1220,
+   "scale": 1.1,
+   "enter": "drop",
+   "at": "kettle",
+   "opts": {
+    "steam": true
+   },
+   "bob": 0,
+   "dist": 600
+  },
+  {
+   "act": "kitchen",
+   "type": "prop",
+   "id": "actor",
+   "x": -250,
+   "y": 1622,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#1e6b57",
+    "body2": "#14513f",
+    "hair": "#1c1c24",
+    "hood": true,
+    "hairStyle": "long",
+    "hold": "phone",
+    "glow": "#7fe3ff"
+   },
+   "bob": 0,
+   "move": {
+    "x": 420,
+    "dur": 1.4,
+    "at": "kitchen+0.2"
+   },
+   "gest": [
+    {
+     "at": "kettle",
+     "kind": "point",
+     "dur": 1.3
+    }
+   ],
+   "until": "put"
+  },
+  {
+   "act": "kitchen",
+   "type": "prop",
+   "id": "actor",
+   "x": 420,
+   "y": 1622,
+   "scale": 1.5,
+   "enter": "none",
+   "at": "put",
+   "opts": {
+    "body": "#1e6b57",
+    "body2": "#14513f",
+    "hair": "#1c1c24",
+    "hood": true,
+    "hairStyle": "long"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "seven#4",
+     "kind": "wave",
+     "dur": 1.4
+    }
+   ]
+  },
+  {
+   "act": "kitchen",
+   "type": "prop",
+   "id": "bigphone",
+   "x": 640,
+   "y": 1220,
+   "scale": 0.28,
+   "enter": "drop",
+   "at": "put",
+   "opts": {
+    "screen": "reel1"
+   },
+   "bob": 0,
+   "dist": 500
+  },
+  {
+   "act": "kitchen",
+   "type": "chip",
+   "y": 420,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "SEE YOU AT 7",
+     "at": "Come"
+    }
+   ],
+   "at": "Come"
+  },
+  {
+   "act": "dawn",
+   "type": "prop",
+   "id": "kitchenette",
+   "x": 540,
+   "y": 1620,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "dawn",
+   "type": "prop",
+   "id": "laptop",
+   "x": 700,
+   "y": 1220,
+   "scale": 1.1,
+   "enter": "slide-right",
+   "at": "They",
+   "opts": {},
+   "bob": 0,
+   "dist": 600
+  },
+  {
+   "act": "dawn",
+   "type": "prop",
+   "id": "actor",
+   "x": 300,
+   "y": 1622,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#1e6b57",
+    "body2": "#14513f",
+    "hair": "#1c1c24",
+    "hood": true,
+    "hairStyle": "long"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "four",
+     "kind": "nod",
+     "dur": 1.0
+    }
+   ]
+  },
+  {
+   "act": "dawn",
+   "type": "prop",
+   "id": "actor",
+   "x": 1350,
+   "y": 1622,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": null,
+    "band": "#e0543a",
+    "hood": true,
+    "mood": "happy"
+   },
+   "bob": 0,
+   "move": {
+    "x": 860,
+    "dur": 1.3,
+    "at": "They"
+   },
+   "gest": [
+    {
+     "at": "presented",
+     "kind": "cheer",
+     "dur": 1.6
+    }
+   ]
+  },
+  {
+   "act": "dawn",
+   "type": "grid",
+   "x": 140,
+   "y": 345,
+   "w": 800,
+   "h": 64,
+   "cols": 10,
+   "rows": 1,
+   "at": "They",
+   "groups": [
+    {
+     "from": 0,
+     "count": 10,
+     "c": "#32c88a",
+     "at": "ten",
+     "end": "four"
+    }
+   ],
+   "base": "rgba(255,255,255,.35)"
+  },
+  {
+   "act": "dawn",
+   "type": "chip",
+   "y": 435,
+   "size": 40,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "SLIDES DONE: 10 / 10",
+     "at": "four",
+     "c": "#139f7d"
+    }
+   ],
+   "at": "four"
+  },
+  {
+   "act": "end",
+   "type": "prop",
+   "id": "bedroom",
+   "x": 540,
+   "y": 1620,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "end",
+   "type": "prop",
+   "id": "bed",
+   "x": 520,
+   "y": 1615,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0,
+   "qa": false
+  },
+  {
+   "act": "end",
+   "type": "prop",
+   "id": "pride2",
+   "x": 560,
+   "y": 1350,
+   "scale": 1.6,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "offended"
+   },
+   "bob": 0,
+   "gest": [],
+   "tag": "pride"
+  },
+  {
+   "act": "end",
+   "type": "stamp",
+   "text": "0 REELS",
+   "at": "Not",
+   "y": 560,
+   "hit": true,
+   "color": "#7fe3ff",
+   "size": 72
+  },
+  {
+   "act": "end",
+   "type": "banner",
+   "text": "PUT IT IN THE KITCHEN",
+   "at": "Humility",
+   "y": 700,
+   "size": 52,
+   "until": "What"
+  },
+  {
+   "act": "close",
+   "type": "prop",
+   "id": "actor",
+   "x": 190,
+   "y": 1622,
+   "scale": 1.9,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#3a4a9f",
+    "body2": "#2c3a80",
+    "hair": "#3b2a20",
+    "tie": null,
+    "band": "#e0543a",
+    "hood": true,
+    "mood": "happy"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "Every",
+     "kind": "wave",
+     "dur": 1.4
+    }
+   ]
+  },
+  {
+   "act": "close",
+   "type": "prop",
+   "id": "actor",
+   "x": 540,
+   "y": 1622,
+   "scale": 1.9,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "body": "#1e6b57",
+    "body2": "#14513f",
+    "hair": "#1c1c24",
+    "hood": true,
+    "hairStyle": "long"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "fall",
+     "kind": "nod",
+     "dur": 1.0
+    }
+   ]
+  },
+  {
+   "act": "close",
+   "type": "prop",
+   "id": "pride2",
+   "x": 890,
+   "y": 1622,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "sulk"
+   },
+   "bob": 0,
+   "gest": [],
+   "tag": "pride"
+  },
+  {
+   "act": "close",
+   "type": "chip",
+   "y": 440,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "WHAT WOULD YOU HAND",
+     "at": "What"
+    }
+   ]
+  },
+  {
+   "act": "close",
+   "type": "chip",
+   "y": 550,
+   "size": 48,
+   "bg": "#fff",
+   "parts": [
+    {
+     "t": "A FRIEND AT 2 A.M.?",
+     "at": "friend"
+    }
+   ]
+  },
+  {
+   "act": "close",
+   "type": "gold",
+   "y": 650,
+   "size": 76,
+   "parts": [
+    {
+     "t": "EVERY FALL BEGINS",
+     "at": "Every"
+    }
+   ]
+  },
+  {
+   "act": "close",
+   "type": "gold",
+   "y": 745,
+   "size": 60,
+   "parts": [
+    {
+     "t": "WITH ONE PROUD DECISION",
+     "at": "one#3"
+    }
+   ]
+  }
+ ],
+ "camDrift": 4,
+ "cam": [
+  {
+   "at": 0,
+   "s": 1.0,
+   "x": 0,
+   "y": 0,
+   "fx": 300,
+   "fy": 1000
+  },
+  {
+   "at": "earlier",
+   "s": 1.12
+  },
+  {
+   "at": "Reel",
+   "s": 1.0,
+   "fx": 560,
+   "fy": 1000
+  },
+  {
+   "at": "midnight",
+   "s": 1.22
+  },
+  {
+   "at": "Two",
+   "s": 1.3,
+   "fx": 560,
+   "fy": 1050
+  },
+  {
+   "at": "zero",
+   "s": 1.0,
+   "fx": 540,
+   "fy": 960
+  },
+  {
+   "at": "buzzed",
+   "s": 1.18,
+   "fx": 560,
+   "fy": 1000
+  },
+  {
+   "at": "whispered",
+   "s": 1.1,
+   "fx": 450,
+   "fy": 1000
+  },
+  {
+   "at": "took",
+   "s": 1.0
+  },
+  {
+   "at": "Pride#4",
+   "s": 1.0,
+   "fx": 560,
+   "fy": 1180
+  },
+  {
+   "at": "Humility",
+   "s": 1.25,
+   "fx": 560,
+   "fy": 1180
+  },
+  {
+   "at": "What",
+   "s": 1.0,
+   "fx": 540,
+   "fy": 960
+  }
+ ],
+ "focus": [
+  {
+   "at": "stop",
+   "until": "rush",
+   "keep": [
+    "pride"
+   ],
+   "blur": 7
+  }
+ ]
+}

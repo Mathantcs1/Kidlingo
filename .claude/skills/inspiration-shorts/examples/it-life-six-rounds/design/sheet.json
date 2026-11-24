@@ -1,0 +1,19 @@
+{ "title": "IT LIFE · S11 SIX ROUNDS: character, location and property sheet",
+  "sections": [
+  { "name": "CHARACTERS", "items": [
+    { "id": "itdev", "opts": {"mood":"smile"}, "scale": 0.75, "label": "DEV (2015): clean shirt, easy smile" },
+    { "id": "itdev", "opts": {"tie":"#e0543a","tall":1.12,"mood":"smile"}, "scale": 0.75, "label": "INTERVIEWER (2015)" },
+    { "id": "itdev", "opts": {"mood":"sad","sweat":true}, "scale": 0.75, "label": "DEV (2026): after six rounds" },
+    { "id": "itdev", "opts": {"hood":"#5a6a86","mood":"flat"}, "scale": 0.6, "label": "THE 200: grey applicants in line" } ]},
+  { "name": "LOCATIONS", "items": [
+    { "id": "itplain", "opts": {"wall":"#2a1d3a","floor":"#3c2c52"}, "scale": 0.4, "label": "L1  Rejection hallway (dark)" },
+    { "id": "itplain", "opts": {"wall":"#f6dfb0","floor":"#c7803c"}, "scale": 0.4, "label": "L2  2015: amber interview room" },
+    { "id": "itplain", "opts": {"wall":"#10243a","floor":"#1c3550"}, "scale": 0.4, "label": "L3  2026: teal door hall" },
+    { "id": "itplain", "opts": {"wall":"#e8e4f5","floor":"#c9c2e6"}, "scale": 0.4, "label": "L4  Calm: what I learned" } ]},
+  { "name": "PROPERTIES", "items": [
+    { "id": "itdoor", "opts": {"c":"#c7803c"}, "scale": 0.4, "label": "2015 door (amber, no locks)" },
+    { "id": "itdoor", "opts": {"c":"#1F9CA8"}, "scale": 0.4, "label": "2026 door (teal)" },
+    { "id": "itdoor", "opts": {"c":"#1F9CA8","w":170}, "scale": 0.4, "label": "the narrower door" },
+    { "id": "itlock", "opts": {}, "scale": 0.8, "label": "one lock per round" },
+    { "id": "itpaper", "opts": {}, "scale": 0.7, "label": "design on paper" } ]}
+ ] }

@@ -1,0 +1,13 @@
+{"title":"ONE MORE REEL: reference sheet (fiction, Pride Parables)","sections":[
+{"name":"CHARACTERS","items":[
+ {"id":"actor","opts":{"body":"#3a4a9f","body2":"#2c3a80","hair":"#3b2a20","band":"#e0543a","hood":true,"mood":"tired"},"scale":0.9,"label":"Ace: hoodie, headband. Moods: tired, shock, happy, worried"},
+ {"id":"actor","opts":{"body":"#3a4a9f","body2":"#2c3a80","hair":"#3b2a20","band":"#e0543a","hood":true,"mood":"shock","hold":"phone"},"scale":0.9,"label":"Ace, shocked, holding the phone"},
+ {"id":"actor","opts":{"body":"#1e6b57","body2":"#14513f","hair":"#1c1c24","hood":true,"mood":"worried","hairStyle":"long"},"scale":0.9,"label":"Sam: green hoodie, long hair"},
+ {"id":"pride2","opts":{"mood":"smug","hold":"popcorn"},"scale":1.0,"label":"Pride: smug, popcorn"},
+ {"id":"pride2","opts":{"mood":"cackle"},"scale":1.0,"label":"Pride: cackle"},
+ {"id":"pride2","opts":{"mood":"offended"},"scale":1.0,"label":"Pride: offended (final shot)"}]},
+{"name":"LOCATIONS","items":[
+ {"id":"bedroom","scale":0.42,"label":"Bedroom at night"},{"id":"kitchenette","scale":0.42,"label":"Kitchenette at dawn"},{"id":"bed","scale":0.5,"label":"Bed (foreground)"}]},
+{"name":"PROPS","items":[
+ {"id":"bigphone","opts":{"screen":"reel1"},"scale":0.3,"label":"Reel 1: cat"},{"id":"bigphone","opts":{"screen":"reel2"},"scale":0.3,"label":"Reel 9: staircase"},{"id":"bigphone","opts":{"screen":"sleep"},"scale":0.3,"label":"Five habits for better sleep"},{"id":"bigphone","opts":{"screen":"chat"},"scale":0.3,"label":"Sam's message"},
+ {"id":"kettle","opts":{"steam":true},"scale":0.8,"label":"Kettle"},{"id":"slidecard","scale":0.7,"label":"Slide card"},{"id":"laptop","scale":0.5,"label":"Laptop"}]}]}

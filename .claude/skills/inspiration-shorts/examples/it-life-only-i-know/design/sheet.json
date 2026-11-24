@@ -1,0 +1,21 @@
+{ "title": "IT LIFE · S10 ONLY I KNOW THIS: character, location and property sheet",
+  "sections": [
+  { "name": "CHARACTERS", "items": [
+    { "id": "itdev", "opts": {"mood":"worry","sit":"chair"}, "scale": 0.75, "label": "DEV, 9:40 PM: alone with the rules" },
+    { "id": "itpal", "opts": {"kind":"fresher","mood":"curious"}, "scale": 0.75, "label": "NEW PERSON: checks the document" },
+    { "id": "itpal", "opts": {"kind":"senior","mood":"flat"}, "scale": 0.75, "label": "SENIOR: checks the old wiki" },
+    { "id": "itdev", "opts": {"mood":"smile"}, "scale": 0.75, "label": "DEV, fixed: 'I just remember'" } ]},
+  { "name": "LOCATIONS", "items": [
+    { "id": "itnight", "opts": {}, "scale": 0.4, "label": "L1  Night office: one desk lamp" },
+    { "id": "itplain", "opts": {"wall":"#dfe8f7","floor":"#9fb0c4"}, "scale": 0.4, "label": "L2  The team gathers" },
+    { "id": "itplain", "opts": {"wall":"#f6dfb0","floor":"#c7803c"}, "scale": 0.4, "label": "L3  Flashback, amber: the whiteboard room" },
+    { "id": "itplain", "opts": {"wall":"#ffe9d2","floor":"#f3c9a0"}, "scale": 0.4, "label": "L4  Warm ending" } ]},
+  { "name": "PROPERTIES", "items": [
+    { "id": "itrules", "opts": {"order":"wrong"}, "scale": 0.5, "label": "rules in the wrong order" },
+    { "id": "itrules", "opts": {"order":"right"}, "scale": 0.5, "label": "rules fixed" },
+    { "id": "itboard", "opts": {}, "scale": 0.6, "label": "the whiteboard" },
+    { "id": "itwiki", "opts": {}, "scale": 0.5, "label": "old wiki" },
+    { "id": "itdoc", "opts": {"x":true}, "scale": 0.5, "label": "document: says nothing" },
+    { "id": "itbrain", "opts": {}, "scale": 0.5, "label": "the real system" },
+    { "id": "itcoffee", "opts": {}, "scale": 0.8, "label": "a mug of tea" } ]}
+ ] }

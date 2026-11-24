@@ -1,0 +1,978 @@
+{
+ "kitFile": "../../kits/it-life.json",
+ "tail": 3.2,
+ "kit": {
+  "caption": {
+   "y": 1475,
+   "size": 66
+  }
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "night"
+  },
+  {
+   "id": "a1",
+   "bg": "cream",
+   "from": "In",
+   "transition": "whip-left"
+  },
+  {
+   "id": "a2",
+   "bg": "navy",
+   "from": "Now-0.05",
+   "transition": "push-in"
+  },
+  {
+   "id": "a3",
+   "bg": "violet",
+   "from": "used-0.3",
+   "transition": "tilt-up"
+  },
+  {
+   "id": "a4",
+   "bg": "sunset",
+   "from": "Tell-0.1",
+   "transition": "whip-right"
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#2a1d3a",
+    "floor": "#3c2c52"
+   },
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdoor",
+   "x": 190,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": "Six",
+   "opts": {
+    "c": "#1F9CA8"
+   },
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 520,
+   "y": 1440,
+   "scale": 1.6,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "sad",
+    "sweat": true
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "email+0.4",
+     "kind": "shake",
+     "dur": 1.6
+    },
+    {
+     "at": "email+2.4",
+     "kind": "shrug",
+     "dur": 1.2
+    }
+   ]
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itlock",
+   "x": 190,
+   "y": 760,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "Six+0.00",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itlock",
+   "x": 190,
+   "y": 860,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "Six+0.08",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itlock",
+   "x": 190,
+   "y": 960,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "Six+0.16",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itlock",
+   "x": 190,
+   "y": 1060,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "Six+0.24",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itlock",
+   "x": 190,
+   "y": 1160,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "Six+0.32",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itlock",
+   "x": 190,
+   "y": 1260,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "Six+0.40",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 1300,
+   "y": 1440,
+   "scale": 0.95,
+   "enter": "none",
+   "at": "hundred+0.00",
+   "opts": {
+    "hood": "#5a6a86",
+    "mood": "flat"
+   },
+   "bob": 0,
+   "qa": false,
+   "phase": 0.0,
+   "move": {
+    "x": 700,
+    "dur": 1.1,
+    "at": "hundred+0.00"
+   }
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 1300,
+   "y": 1440,
+   "scale": 0.95,
+   "enter": "none",
+   "at": "hundred+0.12",
+   "opts": {
+    "hood": "#5a6a86",
+    "mood": "flat"
+   },
+   "bob": 0,
+   "qa": false,
+   "phase": 1.3,
+   "move": {
+    "x": 768,
+    "dur": 1.1,
+    "at": "hundred+0.12"
+   }
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 1300,
+   "y": 1440,
+   "scale": 0.95,
+   "enter": "none",
+   "at": "hundred+0.24",
+   "opts": {
+    "hood": "#5a6a86",
+    "mood": "flat"
+   },
+   "bob": 0,
+   "qa": false,
+   "phase": 2.6,
+   "move": {
+    "x": 836,
+    "dur": 1.1,
+    "at": "hundred+0.24"
+   }
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 1300,
+   "y": 1440,
+   "scale": 0.95,
+   "enter": "none",
+   "at": "hundred+0.36",
+   "opts": {
+    "hood": "#5a6a86",
+    "mood": "flat"
+   },
+   "bob": 0,
+   "qa": false,
+   "phase": 3.9000000000000004,
+   "move": {
+    "x": 904,
+    "dur": 1.1,
+    "at": "hundred+0.36"
+   }
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 1300,
+   "y": 1440,
+   "scale": 0.95,
+   "enter": "none",
+   "at": "hundred+0.48",
+   "opts": {
+    "hood": "#5a6a86",
+    "mood": "flat"
+   },
+   "bob": 0,
+   "qa": false,
+   "phase": 5.2,
+   "move": {
+    "x": 972,
+    "dur": 1.1,
+    "at": "hundred+0.48"
+   }
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 40,
+   "y": 320,
+   "w": 1000,
+   "h": 300,
+   "at": "email",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "\u2709  \u201cWe have decided to move forward with other candidates.\u201d",
+   "size": 48,
+   "qa": false,
+   "radius": 24,
+   "bw": 6
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#f6dfb0",
+    "floor": "#c7803c"
+   },
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 330,
+   "y": 1235,
+   "w": 420,
+   "h": 34,
+   "at": "In",
+   "bg": "#8a5a2c",
+   "enter": "none",
+   "text": "",
+   "size": 10,
+   "qa": false,
+   "radius": 6
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itpaper",
+   "x": 540,
+   "y": 1245,
+   "scale": 1.1,
+   "enter": "pop",
+   "at": "design",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itdev",
+   "x": 230,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "design",
+     "kind": "point",
+     "dur": 1.4
+    },
+    {
+     "at": "Can+0.5",
+     "kind": "cheer",
+     "dur": 1.2
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itdev",
+   "x": 850,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "tie": "#e0543a",
+    "tall": 1.12,
+    "mood": "smile"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "projects",
+     "kind": "nod",
+     "dur": 1.0
+    },
+    {
+     "at": "Can",
+     "kind": "wave",
+     "dur": 1.6
+    }
+   ]
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 470,
+   "y": 640,
+   "w": 560,
+   "h": 150,
+   "at": "Can",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "\u201cCAN YOU JOIN IN TWO WEEKS?\u201d",
+   "size": 42,
+   "qa": false,
+   "radius": 40,
+   "bw": 5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#10243a",
+    "floor": "#1c3550"
+   },
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itdoor",
+   "x": 270,
+   "y": 1440,
+   "scale": 1.6,
+   "enter": "none",
+   "at": "Now",
+   "opts": {
+    "c": "#1F9CA8"
+   },
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itdev",
+   "x": 840,
+   "y": 1440,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry",
+    "sweat": true
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "culture+0.3",
+     "kind": "shrug",
+     "dur": 1.4
+    }
+   ]
+  },
+  {
+   "act": "a2",
+   "type": "clockspin",
+   "x": 540,
+   "y": 760,
+   "size": 300,
+   "at": "Now+0.15",
+   "dur": 1.2
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itlock",
+   "x": 270,
+   "y": 760,
+   "scale": 0.9,
+   "enter": "pop",
+   "at": "online",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 540,
+   "y": 330,
+   "w": 500,
+   "h": 90,
+   "at": "online",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "ONLINE TEST",
+   "size": 44,
+   "qa": false,
+   "radius": 45,
+   "bw": 5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itlock",
+   "x": 270,
+   "y": 860,
+   "scale": 0.9,
+   "enter": "pop",
+   "at": "coding",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 540,
+   "y": 435,
+   "w": 500,
+   "h": 90,
+   "at": "coding",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "CODING ROUND",
+   "size": 44,
+   "qa": false,
+   "radius": 45,
+   "bw": 5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itlock",
+   "x": 270,
+   "y": 960,
+   "scale": 0.9,
+   "enter": "pop",
+   "at": "system",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 540,
+   "y": 540,
+   "w": 500,
+   "h": 90,
+   "at": "system",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "SYSTEM DESIGN",
+   "size": 44,
+   "qa": false,
+   "radius": 45,
+   "bw": 5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itlock",
+   "x": 270,
+   "y": 1060,
+   "scale": 0.9,
+   "enter": "pop",
+   "at": "behavioral",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 540,
+   "y": 645,
+   "w": 500,
+   "h": 90,
+   "at": "behavioral",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "BEHAVIORAL",
+   "size": 44,
+   "qa": false,
+   "radius": 45,
+   "bw": 5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itlock",
+   "x": 270,
+   "y": 1160,
+   "scale": 0.9,
+   "enter": "pop",
+   "at": "takehome",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 540,
+   "y": 750,
+   "w": 500,
+   "h": 90,
+   "at": "takehome",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "TAKE-HOME TASK",
+   "size": 44,
+   "qa": false,
+   "radius": 45,
+   "bw": 5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itlock",
+   "x": 270,
+   "y": 1260,
+   "scale": 0.9,
+   "enter": "pop",
+   "at": "culture",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 540,
+   "y": 855,
+   "w": 500,
+   "h": 90,
+   "at": "culture",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "CULTURE FIT",
+   "size": 44,
+   "qa": false,
+   "radius": 45,
+   "bw": 5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#e8e4f5",
+    "floor": "#c9c2e6"
+   },
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itdev",
+   "x": 250,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "sad",
+    "sweat": true
+   },
+   "bob": 0,
+   "until": "But",
+   "gest": [
+    {
+     "at": "worse",
+     "kind": "shake",
+     "dur": 1.4
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itdev",
+   "x": 250,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": "But",
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "But+0.2",
+     "kind": "nod",
+     "dur": 1.2
+    },
+    {
+     "at": "explaining",
+     "kind": "point",
+     "dur": 1.6
+    }
+   ]
+  },
+  {
+   "act": "a3",
+   "type": "typing",
+   "x": 40,
+   "y": 620,
+   "w": 580,
+   "h": 110,
+   "text": "WHAT I LEARNED",
+   "at": "think",
+   "dur": 1.3,
+   "size": 46
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itdoor",
+   "x": 850,
+   "y": 1440,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "c": "#1F9CA8"
+   },
+   "qa": false,
+   "until": "narrower"
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itdoor",
+   "x": 850,
+   "y": 1440,
+   "scale": 1.2,
+   "enter": "pop",
+   "at": "narrower",
+   "opts": {
+    "c": "#1F9CA8",
+    "w": 170
+   },
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itpaper",
+   "x": 560,
+   "y": 1330,
+   "scale": 1.0,
+   "enter": "pop",
+   "at": "explaining",
+   "opts": {},
+   "bob": 0.5,
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itplain",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.2,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "wall": "#ffe9d2",
+    "floor": "#f3c9a0"
+   },
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itdoor",
+   "x": 790,
+   "y": 1440,
+   "scale": 1.4,
+   "enter": "pop",
+   "at": "Tell",
+   "opts": {
+    "c": "#1F9CA8"
+   },
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itdev",
+   "x": -150,
+   "y": 1440,
+   "scale": 1.5,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0,
+   "gest": [
+    {
+     "at": "Tell+2.5",
+     "kind": "wave",
+     "dur": 1.6
+    }
+   ],
+   "move": {
+    "x": 320,
+    "dur": 1.3,
+    "at": "Tell"
+   }
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "Six",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "6 ROUNDS. 200 PEOPLE.",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "In",
+   "bg": "#F2A33A",
+   "enter": "pop",
+   "text": "2015: ONE ROUND. MAYBE TWO.",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d",
+   "until": "We#2"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "We#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "TWO ENGINEERS. ONE CONVERSATION.",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d",
+   "until": "If"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "If",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "KNOW YOUR WORK = A REAL CHANCE.",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "Same",
+   "bg": "#1F9CA8",
+   "enter": "pop",
+   "text": "2026. SAME DOOR.",
+   "size": 60,
+   "qa": false,
+   "color": "#fff"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "think",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "MAYBE I GOT WORSE?",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d",
+   "until": "But"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "But",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "I DID NOT GET WORSE.",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d",
+   "until": "door#2"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "door#2",
+   "bg": "#ffb0a0",
+   "enter": "pop",
+   "text": "THE DOOR GOT NARROWER.",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d",
+   "until": "preparing"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "preparing",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "BETTER AT EXPLAINING MY WORK.",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "Tell",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "HOW MANY ROUNDS WAS YOUR LONGEST?",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d"
+  }
+ ]
+}

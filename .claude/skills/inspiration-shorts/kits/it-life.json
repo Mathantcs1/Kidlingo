@@ -1,0 +1,14 @@
+{
+  "_note": "IT Life Shorts ('IT life moments you thought only happened to you'). 2015 = amber on warm cream, 2026 = teal on deep navy, neutral = slate grey. Dev is a plain stick figure (prop 'dev'). Voice fPIfC3elMLbN9tNwMXkw chosen by the owner (23 Nov 2026).",
+  "ink": "#1b2430",
+  "gold": ["#fff4c2", "#ffd21f", "#d99a10"],
+  "caption": { "hl": "#ffd21f", "bg": "rgba(16,24,36,.86)", "size": 74, "y": 1262 },
+  "rail": null,
+  "transition": "wipe-up",
+  "voice": { "id": "fPIfC3elMLbN9tNwMXkw", "name": "Owner-chosen ElevenLabs voice for IT Life" },
+  "bgs": {
+    "slate": { "angle": 165, "stops": ["#4a5567", "#323b4b", "#202733"] },
+    "cream": { "angle": 160, "stops": ["#fff3dc", "#f9e0b0", "#f2c07a"] },
+    "navy": { "angle": 160, "stops": ["#0d1b2e", "#10304a", "#17566a"] }
+  }
+}

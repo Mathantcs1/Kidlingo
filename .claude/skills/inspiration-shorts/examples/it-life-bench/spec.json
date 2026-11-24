@@ -1,0 +1,1044 @@
+{
+ "kitFile": "../../kits/it-life.json",
+ "tail": 3.2,
+ "kit": {
+  "caption": {
+   "y": 1475,
+   "size": 66
+  }
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "cream"
+  },
+  {
+   "id": "a1",
+   "bg": "cream",
+   "from": "bench-0.3",
+   "transition": "wipe-left"
+  },
+  {
+   "id": "a2",
+   "bg": "navy",
+   "from": "now-0.1",
+   "transition": "iris"
+  },
+  {
+   "id": "a3",
+   "bg": "slate",
+   "from": "but#2-0.1",
+   "transition": "shutters"
+  },
+  {
+   "id": "a4",
+   "bg": "night",
+   "from": "do-0.3",
+   "transition": "push"
+  },
+  {
+   "id": "a5",
+   "bg": "sunset",
+   "from": "bench#4-0.3",
+   "transition": "zoom"
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itwait",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.45,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2015"
+   },
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "clockface",
+   "x": 462,
+   "y": 600,
+   "size": 240,
+   "at": 0,
+   "pulse": false
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itchair",
+   "x": 240,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itchair",
+   "x": 880,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 140,
+   "y": 130,
+   "w": 800,
+   "h": 130,
+   "at": "two",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "2015 \u2014 THE BENCH",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 760,
+   "y": 1420,
+   "scale": 1.6,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.5,
+   "float": 4,
+   "move": {
+    "x": 330,
+    "dur": 3.8
+   }
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 140,
+   "y": 300,
+   "w": 800,
+   "h": 110,
+   "at": "resource",
+   "bg": "#ffe27a",
+   "enter": "pop",
+   "text": "RESOURCE MANAGEMENT",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d",
+   "until": "felt"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itwait",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.45,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2015"
+   },
+   "qa": false
+  },
+  {
+   "act": "a1",
+   "type": "clockface",
+   "x": 462,
+   "y": 600,
+   "size": 240,
+   "at": 0,
+   "pulse": false
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itchair",
+   "x": 240,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itchair",
+   "x": 880,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "bench",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "A WAITING ROOM.",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d",
+   "until": "maybe"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "maybe",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "MAYBE NEXT WEEK. MAYBE NEXT MONTH.",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d",
+   "until": "so"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "so",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "SO I LEARNED SOMETHING NEW",
+   "size": 48,
+   "qa": false,
+   "color": "#14263d",
+   "until": "honestly"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "honestly",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "MY BEST SKILLS CAME FROM THE BENCH",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 520,
+   "y": 262,
+   "w": 520,
+   "h": 80,
+   "at": "tool",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "A TOOL",
+   "size": 46,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 520,
+   "y": 352,
+   "w": 520,
+   "h": 80,
+   "at": "certification",
+   "bg": "#ffe27a",
+   "enter": "pop",
+   "text": "A CERTIFICATION",
+   "size": 42,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 520,
+   "y": 442,
+   "w": 520,
+   "h": 80,
+   "at": "platform",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "A PLATFORM FEATURE",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itdev",
+   "x": 250,
+   "y": 1450,
+   "scale": 1.4,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "sit": "chair",
+    "mood": "smile"
+   },
+   "bob": 0.5,
+   "float": 2
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itbook",
+   "x": 560,
+   "y": 1440,
+   "scale": 1.3,
+   "enter": "pop",
+   "at": "bench",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itlaptop",
+   "x": 720,
+   "y": 1440,
+   "scale": 0.8,
+   "enter": "pop",
+   "at": "learned",
+   "opts": {
+    "screen": "#cfe8ff"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itcoffee",
+   "x": 900,
+   "y": 1440,
+   "scale": 1.4,
+   "enter": "pop",
+   "at": "bench",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a1",
+   "type": "steam",
+   "x": 900,
+   "y": 1320,
+   "at": "bench",
+   "n": 4,
+   "h": 80
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itwait",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.45,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2026"
+   },
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": -20,
+   "y": 0,
+   "w": 1120,
+   "h": 1430,
+   "at": 0,
+   "bg": "rgba(8,18,30,0.3)",
+   "enter": "pop",
+   "text": "",
+   "size": 10,
+   "qa": false,
+   "radius": 0,
+   "bw": 0,
+   "flat": true
+  },
+  {
+   "act": "a2",
+   "type": "clockface",
+   "x": 462,
+   "y": 600,
+   "size": 240,
+   "at": 0,
+   "pulse": false
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itchair",
+   "x": 240,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itchair",
+   "x": 570,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itchair",
+   "x": 880,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "a2",
+   "type": "clockspin",
+   "x": 540,
+   "y": 800,
+   "size": 460,
+   "at": "now",
+   "dur": 1.3
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "thousand#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "2026 \u2014 THE SAME ROOM",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d",
+   "until": "but#2"
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itdev",
+   "x": 250,
+   "y": 1450,
+   "scale": 1.4,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "sit": "chair",
+    "mood": "flat"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itwait",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.45,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2026"
+   },
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": -20,
+   "y": 0,
+   "w": 1120,
+   "h": 1430,
+   "at": 0,
+   "bg": "rgba(8,18,30,0.4)",
+   "enter": "pop",
+   "text": "",
+   "size": 10,
+   "qa": false,
+   "radius": 0,
+   "bw": 0,
+   "flat": true
+  },
+  {
+   "act": "a3",
+   "type": "clockface",
+   "x": 462,
+   "y": 600,
+   "size": 290,
+   "at": 0,
+   "pulse": true,
+   "tickFrom": "but#2",
+   "tickTo": "do"
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itchair",
+   "x": 240,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "countdown",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "THE COUNTDOWN.",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d",
+   "until": "everyone"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "everyone",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "EVERYONE IS QUIET.",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d",
+   "until": "everyone#2"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "everyone#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "EVERYONE IS CHECKING THEIR PHONE.",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d",
+   "until": "nobody"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "nobody",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "NOBODY SAYS IT OUT LOUD.",
+   "size": 48,
+   "qa": false,
+   "color": "#14263d",
+   "until": "waiting#2"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "waiting#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "STILL A WAITING ROOM?",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d",
+   "until": "notice"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "notice",
+   "bg": "#e0543a",
+   "enter": "pop",
+   "text": "OR NOTICE PERIOD?",
+   "size": 56,
+   "qa": false,
+   "color": "#fff"
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itdev",
+   "x": 250,
+   "y": 1450,
+   "scale": 1.4,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "sit": "chair",
+    "mood": "worry",
+    "sweat": true
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itsil",
+   "x": 570,
+   "y": 1450,
+   "scale": 1.4,
+   "enter": "pop",
+   "at": "everyone",
+   "opts": {
+    "c": "#5a6a86",
+    "v": 1
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itsil",
+   "x": 880,
+   "y": 1450,
+   "scale": 1.4,
+   "enter": "pop",
+   "at": "quiet",
+   "opts": {
+    "c": "#7a6a8a",
+    "v": 2
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itwait",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.45,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2026"
+   },
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": -20,
+   "y": 0,
+   "w": 1120,
+   "h": 1430,
+   "at": 0,
+   "bg": "rgba(8,18,30,0.42)",
+   "enter": "pop",
+   "text": "",
+   "size": 10,
+   "qa": false,
+   "radius": 0,
+   "bw": 0,
+   "flat": true,
+   "until": "use#2"
+  },
+  {
+   "act": "a4",
+   "type": "clockface",
+   "x": 462,
+   "y": 600,
+   "size": 240,
+   "at": 0,
+   "pulse": false
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itchair",
+   "x": 240,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "a4",
+   "type": "clockface",
+   "x": 462,
+   "y": 600,
+   "size": 240,
+   "at": 0,
+   "pulse": false
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 60,
+   "y": 980,
+   "w": 700,
+   "h": 700,
+   "at": "use#2",
+   "bg": "rgba(255,226,140,.35)",
+   "enter": "pop",
+   "text": "",
+   "size": 10,
+   "qa": false,
+   "radius": 350,
+   "bw": 0,
+   "flat": true
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "do",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "WHAT I CAN CONTROL",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d",
+   "until": "use#2"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "use#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "USE THE TIME.",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d",
+   "until": "learn"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "learn",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "LEARN ONE THING EVERY WEEK",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d",
+   "until": "skills#2"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "skills#2",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "SKILLS MOVE WITH YOU",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 520,
+   "y": 262,
+   "w": 520,
+   "h": 80,
+   "at": "learn",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "LEARN",
+   "size": 50,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 520,
+   "y": 352,
+   "w": 520,
+   "h": 80,
+   "at": "only",
+   "bg": "#ffe27a",
+   "enter": "pop",
+   "text": "BUILD",
+   "size": 50,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 520,
+   "y": 442,
+   "w": 520,
+   "h": 80,
+   "at": "next#3",
+   "bg": "#cfe8ff",
+   "enter": "pop",
+   "text": "SHARE",
+   "size": 50,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itdev",
+   "x": 250,
+   "y": 1450,
+   "scale": 1.4,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "sit": "chair",
+    "mood": "smile"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itlaptop",
+   "x": 520,
+   "y": 1430,
+   "scale": 0.9,
+   "enter": "pop",
+   "at": "use#2",
+   "opts": {
+    "glow": "#ffd978",
+    "screen": "#fff8d8"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itwait",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.45,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "era": "2026",
+    "wall": "#7ba3bf"
+   },
+   "qa": false
+  },
+  {
+   "act": "a5",
+   "type": "clockface",
+   "x": 462,
+   "y": 600,
+   "size": 240,
+   "at": 0,
+   "pulse": false
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itchair",
+   "x": 240,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itchair",
+   "x": 570,
+   "y": 1440,
+   "scale": 1.8,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "color": "#9fb0c4"
+   },
+   "bob": 0
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "bench#4",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "THE BENCH DID NOT CHANGE.",
+   "size": 48,
+   "qa": false,
+   "color": "#14263d",
+   "until": "confidence"
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "confidence",
+   "bg": "#62f0c8",
+   "enter": "pop",
+   "text": "THE CONFIDENCE DID.",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d",
+   "until": "what"
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 40,
+   "y": 130,
+   "w": 1000,
+   "h": 130,
+   "at": "what",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "WHAT DID YOU DO WITH YOUR BENCH TIME?",
+   "size": 38,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itdev",
+   "x": 250,
+   "y": 1420,
+   "scale": 1.6,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.5,
+   "move": {
+    "x": 760,
+    "dur": 4.2,
+    "at": "confidence"
+   }
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itlaptop",
+   "x": 330,
+   "y": 1230,
+   "scale": 0.45,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0.2,
+   "move": {
+    "x": 880,
+    "dur": 4.2,
+    "at": "confidence"
+   }
+  }
+ ]
+}

@@ -1,0 +1,22 @@
+{ "title": "IT LIFE · S09 ONE TITLE, SIX JOBS: character, location and property sheet",
+  "sections": [
+  { "name": "CHARACTERS", "items": [
+    { "id": "itdev", "opts": {"mood":"smile"}, "scale": 0.75, "label": "DEV: one title, one tiny cap (2015)" },
+    { "id": "itdev", "opts": {"mood":"worry","sweat":true}, "scale": 0.75, "label": "DEV (2026): under a growing stack of hats" },
+    { "id": "itpal", "opts": {"kind":"fresher","mood":"curious"}, "scale": 0.75, "label": "THE ONE WHO ASKS: walks up with a question" } ]},
+  { "name": "LOCATIONS", "items": [
+    { "id": "itplain", "opts": {"wall":"#f6dfb0","floor":"#c7803c"}, "scale": 0.4, "label": "L1  2015: amber desk with the business card" },
+    { "id": "itplain", "opts": {"wall":"#bfe6ff","floor":"#8fd18a"}, "scale": 0.4, "label": "L2  The plaza: one platform tower" },
+    { "id": "itplain", "opts": {"wall":"#10243a","floor":"#1c3550"}, "scale": 0.4, "label": "L3  2026: night stage for the hat stack" },
+    { "id": "itplain", "opts": {"wall":"#e8e4f5","floor":"#c9c2e6"}, "scale": 0.4, "label": "L4  Soft stage: deep + a little wide" } ]},
+  { "name": "PROPERTIES: seven role hats", "items": [
+    { "id": "ithat", "opts": {"kind":"cap","c":"#2f6fd6"}, "scale": 0.7, "label": "front end" },
+    { "id": "ithat", "opts": {"kind":"hard","c":"#F2A33A"}, "scale": 0.7, "label": "back end" },
+    { "id": "ithat", "opts": {"kind":"db","c":"#3ec97a"}, "scale": 0.7, "label": "database" },
+    { "id": "ithat", "opts": {"kind":"cloud","c":"#cfe8ff"}, "scale": 0.7, "label": "cloud" },
+    { "id": "ithat", "opts": {"kind":"pipe","c":"#a06bff"}, "scale": 0.7, "label": "pipelines" },
+    { "id": "ithat", "opts": {"kind":"shield","c":"#e0543a"}, "scale": 0.7, "label": "security" },
+    { "id": "ithat", "opts": {"kind":"wizard","c":"#1F9CA8"}, "scale": 0.7, "label": "AI" },
+    { "id": "ittower", "opts": {"label":"PLATFORM"}, "scale": 0.4, "label": "the one platform" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "business card: 'Developer' in amber (2015) and teal (2026); job post: 10 years in a 3-year-old technology" } ]}
+ ] }

@@ -1,0 +1,21 @@
+{ "title": "IT LIFE · S06 THE CALL BEFORE DINNER: character, location and property sheet",
+  "sections": [
+  { "name": "CHARACTERS", "items": [
+    { "id": "itdev", "opts": {"jacket":"#8a5a3a","keys":true,"mood":"smile"}, "scale": 0.75, "label": "DEV at 7:10 PM: brown jacket, keys in hand, dinner plans" },
+    { "id": "itdev", "opts": {"jacket":"#8a5a3a","sit":true,"mood":"worry","sweat":true}, "scale": 0.75, "label": "DEV on the floor, jacket still on" },
+    { "id": "itdev", "opts": {"jacket":"#8a5a3a","sit":true,"mood":"sad"}, "scale": 0.75, "label": "DEV in the silence after the fix" },
+    { "id": "ittile", "opts": {"bg":"#dff0d8","deco":"plant","hair":"beanie","hc":"#26334a","shirt":"#4a6a9a","mood":"worry"}, "scale": 0.45, "label": "the bridge: 11 colleagues, joining one by one (6 looks repeated)" },
+    { "id": "ittile", "opts": {"bg":"#ffe3c8","deco":"shelf","hair":"bun","hc":"#2a2233","shirt":"#e0543a","skin":"#e8b88a"}, "scale": 0.45, "label": "" },
+    { "id": "ittile", "opts": {"bg":"#fff2b8","deco":"curtain","hair":"curly","hc":"#3b2a20","shirt":"#a06bff","skin":"#c68642"}, "scale": 0.45, "label": "" } ]},
+  { "name": "LOCATIONS", "items": [
+    { "id": "ithall", "opts": {}, "scale": 0.5, "label": "L1  The hallway: candle-lit dining room through the arch, front door onto the night" },
+    { "id": "itlounge", "opts": {}, "scale": 0.5, "label": "L2  Living-room floor, lamp on (bridge call)" },
+    { "id": "itlounge", "opts": {"dark":true,"wall":"#141a2a"}, "scale": 0.5, "label": "L3  The same floor, lamp low (the quiet after)" },
+    { "id": "itdinner", "opts": {}, "scale": 0.5, "label": "L4  The dining room: candles, a covered plate, warm light" } ]},
+  { "name": "PROPERTIES", "items": [
+    { "id": "itphone", "opts": {}, "scale": 0.9, "label": "phone (buzzes at 7:10)" },
+    { "id": "itlaptop", "opts": {}, "scale": 0.5, "label": "laptop on the floor" },
+    { "id": "itfoil", "opts": {}, "scale": 0.8, "label": "plate under foil: someone kept it warm" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "live: scrolling log that highlights one wrong line, zooms, then turns green" },
+    { "id": "itcheck", "opts": {}, "scale": 0.0001, "label": "live: eleven dots that drop off one by one; chat messages from home; typed 'ALMOST THERE.'" } ]}
+ ] }

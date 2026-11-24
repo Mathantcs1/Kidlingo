@@ -1,0 +1,803 @@
+{
+ "kitFile": "../../kits/it-life.json",
+ "tail": 3.0,
+ "kit": {
+  "caption": {
+   "y": 1475
+  }
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "bg": "cream"
+  },
+  {
+   "id": "a1",
+   "bg": "navy",
+   "from": "no-0.1",
+   "transition": "zoom"
+  },
+  {
+   "id": "a2",
+   "bg": "slate",
+   "from": "already-0.3",
+   "transition": "shutters"
+  },
+  {
+   "id": "a3",
+   "bg": "navy",
+   "from": "so-0.1",
+   "transition": "push"
+  },
+  {
+   "id": "a4",
+   "bg": "slate",
+   "from": "open-0.3",
+   "transition": "wipe-left"
+  },
+  {
+   "id": "a5",
+   "bg": "navy",
+   "from": "join-0.2",
+   "transition": "iris"
+  },
+  {
+   "id": "a6",
+   "bg": "slate",
+   "from": "team#2-0.1",
+   "transition": "cut"
+  },
+  {
+   "id": "a7",
+   "bg": "cream",
+   "from": "in#2-0.1",
+   "transition": "wipe-left"
+  },
+  {
+   "id": "a8",
+   "bg": "navy",
+   "from": "so#2-0.1",
+   "transition": "push"
+  },
+  {
+   "id": "a9",
+   "bg": "cream",
+   "from": "tell-0.1",
+   "transition": "iris"
+  }
+ ],
+ "items": [
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itroom",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "h": 4,
+    "m": 45
+   },
+   "qa": false
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 150,
+   "at": "friday",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "FRIDAY 4:45 PM",
+   "size": 64,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itlaptop",
+   "x": 828,
+   "y": 1311,
+   "scale": 1.0,
+   "enter": "none",
+   "at": 0,
+   "opts": {},
+   "bob": 0.2
+  },
+  {
+   "act": "hook",
+   "type": "prop",
+   "id": "itdev",
+   "x": 240,
+   "y": 1430,
+   "scale": 1.69,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "flat"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "hook",
+   "type": "rect",
+   "x": 190,
+   "y": 470,
+   "w": 700,
+   "h": 140,
+   "at": "title",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "QUICK SYNC",
+   "size": 64,
+   "qa": false,
+   "color": "#14263d",
+   "rot": -3
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 60,
+   "y": 260,
+   "w": 960,
+   "h": 240,
+   "at": "description",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "NO AGENDA.<br>NO DESCRIPTION.",
+   "size": 56,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "rect",
+   "x": 60,
+   "y": 499,
+   "w": 960,
+   "h": 100,
+   "at": "no",
+   "bg": "#cfe8ff",
+   "enter": "pop",
+   "text": "QUICK SYNC \u00b7 FRI 4:45",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a1",
+   "type": "prop",
+   "id": "itcall",
+   "x": 540,
+   "y": 1314,
+   "scale": 1.1,
+   "enter": "pop",
+   "at": "agenda",
+   "opts": {},
+   "bob": 0.2
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itroom",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "h": 4,
+    "m": 50,
+    "wall": "#cfd8e3",
+    "sky": "#51607d",
+    "sun": false,
+    "desk": "#8a6b4a",
+    "note": "FRIDAY"
+   },
+   "qa": false
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itcloud",
+   "x": 540,
+   "y": 699,
+   "scale": 1.75,
+   "enter": "pop",
+   "at": "storm",
+   "opts": {},
+   "bob": 0.5
+  },
+  {
+   "act": "a2",
+   "type": "prop",
+   "id": "itdev",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.625,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry",
+    "sweat": true
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a2",
+   "type": "rect",
+   "x": 60,
+   "y": 260,
+   "w": 960,
+   "h": 130,
+   "at": "going",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "NOT GOING TO BE QUICK",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itroom",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "h": 6,
+    "m": 15,
+    "wall": "#cfd8e3",
+    "sky": "#2b3f63",
+    "sun": false,
+    "night": true,
+    "desk": "#8a6b4a",
+    "note": "FRIDAY"
+   },
+   "qa": false
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 130,
+   "at": "game",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "QUICK = 90 MINUTES",
+   "size": 60,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 699,
+   "w": 540,
+   "h": 120,
+   "at": "production",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "PRODUCTION ISSUE?",
+   "size": 40,
+   "qa": false,
+   "radius": 60
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 500,
+   "y": 874,
+   "w": 540,
+   "h": 120,
+   "at": "deadline",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "NEW DEADLINE?",
+   "size": 44,
+   "qa": false,
+   "radius": 60
+  },
+  {
+   "act": "a3",
+   "type": "rect",
+   "x": 40,
+   "y": 1049,
+   "w": 540,
+   "h": 120,
+   "at": "reorganization",
+   "bg": "#ffd9d9",
+   "enter": "pop",
+   "text": "REORG?",
+   "size": 56,
+   "qa": false,
+   "radius": 60
+  },
+  {
+   "act": "a3",
+   "type": "prop",
+   "id": "itdev",
+   "x": 828,
+   "y": 1430,
+   "scale": 1.3,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itroom",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "h": 6,
+    "m": 20,
+    "wall": "#cfd8e3",
+    "sky": "#2b3f63",
+    "sun": false,
+    "night": true,
+    "desk": "#8a6b4a",
+    "note": "FRIDAY"
+   },
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 130,
+   "at": "email",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "EVERY EMAIL. JUST IN CASE.",
+   "size": 48,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 774,
+   "w": 660,
+   "h": 100,
+   "at": "week",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "RE: SPRINT NOTES",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 924,
+   "w": 660,
+   "h": 100,
+   "at": "last",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "FWD: LAST WEEK'S STATUS",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "rect",
+   "x": 40,
+   "y": 1074,
+   "w": 660,
+   "h": 100,
+   "at": "just",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "FW: FW: DEPLOY PLAN",
+   "size": 40,
+   "qa": false
+  },
+  {
+   "act": "a4",
+   "type": "prop",
+   "id": "itdev",
+   "x": 888,
+   "y": 1430,
+   "scale": 1.56,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry",
+    "sweat": true
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a5",
+   "type": "prop",
+   "id": "itcall",
+   "x": 540,
+   "y": 1216,
+   "scale": 1.1,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "tiles": [
+     {
+      "c": "#bfe6ea",
+      "f": "smile"
+     },
+     {
+      "c": "#f9e0b0",
+      "f": "smile"
+     },
+     {
+      "c": "#d9d2f0",
+      "f": "smile"
+     },
+     {
+      "c": "#ffd9d9",
+      "f": "smile"
+     }
+    ]
+   },
+   "bob": 0.2
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 120,
+   "at": "smiling",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "EVERYONE IS SMILING",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a5",
+   "type": "rect",
+   "x": 60,
+   "y": 1236,
+   "w": 960,
+   "h": 130,
+   "at": "date",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "SLIDE: TEAM LUNCH DATE",
+   "size": 48,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itroom",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "h": 6,
+    "m": 50,
+    "wall": "#cfd8e3",
+    "sky": "#2b3f63",
+    "sun": false,
+    "night": true,
+    "desk": "#8a6b4a",
+    "note": "FRIDAY"
+   },
+   "qa": false
+  },
+  {
+   "act": "a6",
+   "type": "prop",
+   "id": "itdev",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.95,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "shock"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a6",
+   "type": "rect",
+   "x": 140,
+   "y": 260,
+   "w": 800,
+   "h": 190,
+   "at": "lunch#2",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "TEAM LUNCH?!",
+   "size": 80,
+   "qa": false,
+   "color": "#14263d",
+   "rot": -3
+  },
+  {
+   "act": "a6",
+   "type": "rect",
+   "x": 60,
+   "y": 474,
+   "w": 960,
+   "h": 110,
+   "at": "racing",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "MY HEART WAS RACING",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 240,
+   "y": 150,
+   "w": 600,
+   "h": 130,
+   "at": "two",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "THEN VS NOW",
+   "size": 64,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 40,
+   "y": 300,
+   "w": 500,
+   "h": 200,
+   "at": "fifteen",
+   "bg": "#F2A33A",
+   "enter": "pop",
+   "text": "2015",
+   "size": 130,
+   "qa": false,
+   "color": "#fff"
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 40,
+   "y": 474,
+   "w": 500,
+   "h": 420,
+   "at": "issue#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "QUICK SYNC = PRODUCTION ISSUE",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 560,
+   "y": 300,
+   "w": 480,
+   "h": 200,
+   "at": "twentysix",
+   "bg": "#1F9CA8",
+   "enter": "pop",
+   "text": "2026",
+   "size": 130,
+   "qa": false,
+   "color": "#fff"
+  },
+  {
+   "act": "a7",
+   "type": "rect",
+   "x": 560,
+   "y": 474,
+   "w": 480,
+   "h": 420,
+   "at": "reorg",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "QUICK SYNC = MAYBE A REORG",
+   "size": 52,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "itroom",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "h": 6,
+    "m": 30,
+    "wall": "#cfd8e3",
+    "sky": "#2b3f63",
+    "sun": false,
+    "night": true,
+    "desk": "#8a6b4a",
+    "note": "FRIDAY"
+   },
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 130,
+   "at": "fear",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "A SMALL FEAR IN EVERY INVITE",
+   "size": 44,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a8",
+   "type": "rect",
+   "x": 40,
+   "y": 799,
+   "w": 540,
+   "h": 100,
+   "at": "every#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "DESIGN REVIEW",
+   "size": 42,
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "rect",
+   "x": 40,
+   "y": 949,
+   "w": 540,
+   "h": 100,
+   "at": "invite#2",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "BIRTHDAY CAKE",
+   "size": 42,
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "rect",
+   "x": 40,
+   "y": 1099,
+   "w": 540,
+   "h": 100,
+   "at": "harmless",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "TEAM PHOTO",
+   "size": 42,
+   "qa": false
+  },
+  {
+   "act": "a8",
+   "type": "prop",
+   "id": "itdev",
+   "x": 888,
+   "y": 1430,
+   "scale": 1.43,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "worry"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "itroom",
+   "x": 540,
+   "y": 1430,
+   "scale": 1.35,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "h": 4,
+    "m": 45
+   },
+   "qa": false
+  },
+  {
+   "act": "a9",
+   "type": "rect",
+   "x": 60,
+   "y": 250,
+   "w": 960,
+   "h": 130,
+   "at": "worst",
+   "bg": "#fff",
+   "enter": "pop",
+   "text": "YOUR WORST QUICK SYNC?",
+   "size": 48,
+   "qa": false,
+   "color": "#14263d"
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "itlaptop",
+   "x": 828,
+   "y": 1311,
+   "scale": 1.0,
+   "enter": "none",
+   "at": "turn",
+   "opts": {
+    "lines": false,
+    "screen": "#26334a"
+   },
+   "bob": 0.2
+  },
+  {
+   "act": "a9",
+   "type": "prop",
+   "id": "itdev",
+   "x": 240,
+   "y": 1430,
+   "scale": 1.69,
+   "enter": "none",
+   "at": 0,
+   "opts": {
+    "mood": "smile"
+   },
+   "bob": 0.5
+  },
+  {
+   "act": "a9",
+   "type": "rect",
+   "x": 60,
+   "y": 420,
+   "w": 960,
+   "h": 120,
+   "at": "turn",
+   "bg": "#ffd21f",
+   "enter": "pop",
+   "text": "DID IT TURN OUT TO BE LUNCH?",
+   "size": 40,
+   "qa": false,
+   "color": "#14263d"
+  }
+ ]
+}

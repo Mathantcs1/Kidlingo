@@ -1,0 +1,140 @@
+{
+ "title": "TOYS R US: reference sheet (Brandwake; generic props, no logos)",
+ "sections": [
+  {
+   "name": "CHARACTERS",
+   "items": [
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#e0543a",
+      "body2": "#b9402a",
+      "hair": "#3b2a20",
+      "hat": "#2f6fd6",
+      "mood": "happy",
+      "hold": "bag"
+     },
+     "scale": 0.6,
+     "label": "Kid shopper"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#139f7d",
+      "body2": "#0f7f62",
+      "hair": "#2b2b33",
+      "mood": "worried",
+      "hold": "bag"
+     },
+     "scale": 0.8,
+     "label": "Parent"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#2b2f45",
+      "body2": "#1f2233",
+      "tie": "#e0543a",
+      "hair": "#9aa0b4",
+      "mood": "smug",
+      "hold": "case"
+     },
+     "scale": 0.8,
+     "label": "Investor (suit)"
+    },
+    {
+     "id": "actor",
+     "opts": {
+      "body": "#3a3f55",
+      "body2": "#2b2f45",
+      "tie": "#ffd21f",
+      "hair": "#2b1c14",
+      "glasses": true,
+      "mood": "neutral",
+      "hold": "case"
+     },
+     "scale": 0.8,
+     "label": "Investor (suit) 2"
+    }
+   ]
+  },
+  {
+   "name": "LOCATIONS",
+   "items": [
+    {
+     "id": "toyaisle",
+     "opts": {},
+     "scale": 0.3,
+     "label": "Toy aisle (parallax pan)"
+    },
+    {
+     "id": "boardroom",
+     "opts": {},
+     "scale": 0.4,
+     "label": "Boardroom"
+    },
+    {
+     "id": "storefront",
+     "opts": {
+      "name": "TOY SHOP"
+     },
+     "scale": 0.5,
+     "label": "Store front"
+    }
+   ]
+  },
+  {
+   "name": "PROPS",
+   "items": [
+    {
+     "id": "register",
+     "opts": {},
+     "scale": 0.6,
+     "label": "Register"
+    },
+    {
+     "id": "vault",
+     "opts": {},
+     "scale": 0.5,
+     "label": "Vault"
+    },
+    {
+     "id": "moneybag",
+     "opts": {},
+     "scale": 0.7,
+     "label": "Debt bag"
+    },
+    {
+     "id": "toybox",
+     "opts": {},
+     "scale": 0.8,
+     "label": "Toy box"
+    },
+    {
+     "id": "teddy",
+     "opts": {},
+     "scale": 0.7,
+     "label": "Teddy"
+    },
+    {
+     "id": "robot",
+     "opts": {},
+     "scale": 0.7,
+     "label": "Robot"
+    },
+    {
+     "id": "blocks",
+     "opts": {},
+     "scale": 0.7,
+     "label": "Blocks"
+    },
+    {
+     "id": "cart",
+     "opts": {},
+     "scale": 0.6,
+     "label": "Cart"
+    }
+   ]
+  }
+ ]
+}
