@@ -1,0 +1,137 @@
+<!-- wp:paragraph -->
+<p>Download the kit, run the demo, and see an AI answer a real business question from your own data, then fail to delete it.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:buttons -->
+<div class="wp-block-buttons"><!-- wp:button -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/wp-content/themes/ideatoapps/assets/downloads/mcp-demo-kit.zip" download>Download the demo kit (zip)</a></div>
+<!-- /wp:button --></div>
+<!-- /wp:buttons -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">What you get</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>A 43-line MCP server in Python (official SDK 2.x, <code>MCPServer</code>)</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>A sample store database: 40 customers, 8 products, 500 orders (generated, not real data)</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>A plain-SQL check script, so you can verify every number the AI gives you</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>A raw JSON-RPC script, so you can see what an AI app actually sends</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Run it in five steps</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list"><!-- wp:list-item -->
+<li>Unzip the kit and run <code>bash setup.sh</code> (creates a virtual environment, installs <code>mcp</code> 2.3.0, builds <code>shop.db</code>). It uses <code>uv</code>, so install that first if you do not have it.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Run <code>.venv/bin/python truth.py</code> to see the ground truth: October 2026 revenue 18,764.70; top product 27in Monitor (5,229.00); top city Boston (4,469.46); 40 cancelled orders.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Run <code>.venv/bin/python raw_client.py</code> to watch the raw handshake and one tool call (count orders: 500).</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Connect it to Claude Code: <code>claude mcp add store -s project -- .venv/bin/python server.py</code>, then run <code>claude</code> and approve the new server.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Ask: &ldquo;Which product earned the most revenue from delivered orders in October 2026?&rdquo; Compare the answer with <code>truth.py</code>.</li>
+<!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">The whole server</h2>
+<!-- /wp:heading -->
+
+<!-- wp:code -->
+<pre class="wp-block-code"><code>import sqlite3
+from mcp.server import MCPServer
+
+mcp = MCPServer("store")
+
+# Safety layer 2: the connection itself is read-only, so even a bad query cannot change data.
+def db() -&gt; sqlite3.Connection:
+    """Open shop.db in read-only mode."""
+    return sqlite3.connect("file:shop.db?mode=ro", uri=True)
+
+@mcp.tool()
+def list_tables() -&gt; str:
+    """List the tables in the store database."""
+    with db() as c:
+        return "\n".join(r[0] for r in c.execute("select name from sqlite_master where type='table'"))
+
+@mcp.tool()
+def describe_table(table: str) -&gt; str:
+    """Show the columns of one table. Call this before writing SQL."""
+    with db() as c:
+        return "\n".join(f"{n} {t}" for n, t in c.execute("select name, type from pragma_table_info(?)", (table,)))
+
+@mcp.tool()
+def run_sql(query: str) -&gt; str:
+    """Run one read-only SQL SELECT query and return the rows."""
+    if not query.strip().lower().startswith("select"):  # Safety layer 1: only SELECT gets through
+        return "Blocked: this server only allows SELECT queries."
+    with db() as c:
+        return "\n".join(" | ".join(map(str, row)) for row in c.execute(query))
+
+# A resource is data to read; a prompt is a ready-made template.
+@mcp.resource("store://about")
+def about() -&gt; str:
+    """What is in this database."""
+    return "A sample online store: customers, products and orders. Orders have no price column."
+
+@mcp.prompt()
+def monthly_report(month: str) -&gt; str:
+    """A ready-made request for a monthly sales report."""
+    return f"Give me the {month} sales report: total revenue, top product and top city, delivered orders only."
+
+if __name__ == "__main__":
+    mcp.run()</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Two safety layers</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list"><!-- wp:list-item -->
+<li><strong>Server code:</strong> <code>run_sql</code> refuses anything that does not start with SELECT.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Database connection:</strong> <code>shop.db</code> is opened read-only (<code>mode=ro</code>), so even a bad query cannot change data.</li>
+<!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>Try it: ask the AI to delete the cancelled orders. The server answers &ldquo;Blocked: this server only allows SELECT queries&rdquo;, and a direct delete fails with &ldquo;attempt to write a readonly database&rdquo;. The 40 cancelled orders stay.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Things to know</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Python SDK 2.x uses <code>from mcp.server import MCPServer</code>. Many tutorials still use <code>FastMCP</code>, which no longer imports on current versions.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>MCP itself does not enforce security. The specification asks hosts to get explicit user consent, but your server&rsquo;s guardrails are your job.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>The AI&rsquo;s wording changes from run to run. The numbers come from SQL and should always match <code>truth.py</code>.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Everything uses sample data. Review any MCP server before pointing it at real data.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Sources</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>The MCP specification (security and consent principles) and the MCP Python SDK README (v2.x, <code>MCPServer</code>). Check them yourself before quoting.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p><em>Not career or security advice.</em></p>
+<!-- /wp:paragraph -->

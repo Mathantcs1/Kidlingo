@@ -25,6 +25,8 @@ export const SECRET_PATTERNS = SECRET_RULES.map(([, re]) => re);
 
 const SKIP_DIRS = new Set(['node_modules', 'vendor', 'tests', 'test', 'docs', 'screenshots']);
 const SKIP_EXT = /\.(?:log|bak|orig|swp|map|zip)$|~$/i;
+// The one place a .zip may ship: free public downloads (for example a blog post's demo kit). Zips anywhere else stay out.
+const DOWNLOADS_DIR = 'assets/downloads/';
 
 /** The only dotfile that ships: the plugin's deny file in front of the starter content (exact relative path). */
 const PLUGIN_DOTFILES = new Set(['content/.htaccess']);
@@ -40,8 +42,9 @@ function collect(dir, keepDot = new Set()) {
       if (e.isSymbolicLink() || lstatSync(p).isSymbolicLink()) throw new Error(`symbolic link not allowed in a package: ${relative(dir, p)}`);
       if (e.isDirectory()) {
         if (!SKIP_DIRS.has(e.name.toLowerCase())) visit(p);
-      } else if (e.isFile() && !SKIP_EXT.test(e.name)) {
-        found.push(relative(dir, p).split(sep).join('/'));
+      } else if (e.isFile()) {
+        const rel = relative(dir, p).split(sep).join('/');
+        if (!SKIP_EXT.test(e.name) || (rel.startsWith(DOWNLOADS_DIR) && /\.zip$/i.test(e.name))) found.push(rel);
       }
     }
   };

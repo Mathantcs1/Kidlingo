@@ -14,6 +14,15 @@
 .prose p, .prose li { overflow-wrap: anywhere; }
 .post-meta { margin: 0 0 var(--s-3); color: var(--muted); }
 
+/* Code and editor buttons inside long text (blog posts). Solid backgrounds; long lines wrap so no scroll region is needed. */
+.prose code { padding: 0.1em 0.35em; background: var(--bg-alt); border: 1px solid var(--line); border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; overflow-wrap: anywhere; }
+.prose pre { margin: 0 0 var(--s-3); padding: var(--s-2) var(--s-3); background: var(--bg-alt); border: 1px solid var(--line); border-radius: var(--radius-card); color: var(--ink); font-size: 0.875rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.prose pre code { padding: 0; background: none; border: 0; border-radius: 0; font-size: inherit; }
+.prose .wp-block-buttons { margin: 0 0 var(--s-3); }
+.prose .wp-block-button__link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 24px; border-radius: var(--radius-ctl); background: var(--primary); color: var(--on-primary); font-weight: 600; line-height: 1.2; text-decoration: none; }
+.prose .wp-block-button__link:hover { background: var(--primary-hover); }
+.prose .wp-block-button__link:active { background: var(--primary-active); }
+
 /* Draft legal banner and owner-to-confirm placeholders */
 .draft-banner { margin-bottom: var(--s-4); padding: var(--s-2) var(--s-3); background: var(--bg-alt); border: 1px solid var(--line); border-left: 6px solid var(--warning); border-radius: var(--radius-card); }
 .draft-banner p { margin: 0; }

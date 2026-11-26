@@ -1,0 +1,8 @@
+Title: Build your first MCP server (Python, 43 lines), plus the delete test
+Slug: build-your-first-mcp-server
+Excerpt: Download the kit, run the demo, and see an AI answer a real business question from your own data, then fail to delete it.
+Category: (none needed)
+Status: publish when the owner is ready
+Body: mcp-demo-kit.html (WordPress block markup; paste into Posts > Add New > three-dots menu > Code editor)
+Download file: wp-content/themes/ideatoapps/assets/downloads/mcp-demo-kit.zip (ships inside the theme zip; link is relative so it works on any domain)
+Not included on purpose: the companion video link (none supplied yet). When there is one, add it under the download button, and add the video in the admin under Videos so it also shows in Learn.

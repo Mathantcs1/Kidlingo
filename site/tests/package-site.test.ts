@@ -53,6 +53,15 @@ describe('the real packages', () => {
     }
   });
 
+  it('ships the MCP demo kit as a public static file, and no other .zip', () => {
+    const zips = [...names(theme), ...names(core)].filter((n) => /\.zip$/i.test(n));
+    expect(zips).toEqual(['ideatoapps/assets/downloads/mcp-demo-kit.zip']);
+    const kit = join(work, 'kit-extracted.zip');
+    writeFileSync(kit, execFileSync('unzip', ['-p', theme, 'ideatoapps/assets/downloads/mcp-demo-kit.zip'], { maxBuffer: 16 * 1024 * 1024 }));
+    const inner = names(kit);
+    for (const f of ['mcp-demo-kit/README.md', 'mcp-demo-kit/server.py', 'mcp-demo-kit/setup.sh', 'mcp-demo-kit/truth.py']) expect(inner).toContain(f);
+  });
+
   it('contains no secret-looking strings (sk_live, sk_test, whsec_, ...)', () => {
     for (const zip of [theme, core]) {
       for (const n of names(zip)) {
@@ -127,6 +136,23 @@ describe('fixture trees (packaging rules and the secret scan)', () => {
     const f = fixture('deny', { 'plugin/content/.htaccess': 'Require all denied', 'plugin/content/.env': 'X=1', 'plugin/content/sub/.htaccess': 'x' });
     const r = await buildPackages(f);
     expect(names(r.coreZip).sort()).toEqual(['ideatoapps-core/content/.htaccess', 'ideatoapps-core/fixture.php']);
+  });
+
+  it('ships a .zip only from the theme downloads folder (public free downloads); other zips stay out', async () => {
+    const f = fixture('downloads-zip', {
+      'theme/assets/downloads/kit.zip': 'PK-fixture',
+      'theme/assets/other/stray.zip': 'PK-stray',
+      'theme/assets/keep.css': 'a{}',
+      'plugin/includes/stray.zip': 'PK-plugin',
+    });
+    const r = await buildPackages(f);
+    expect(names(r.themeZip).sort()).toEqual(['ideatoapps/assets/downloads/kit.zip', 'ideatoapps/assets/keep.css', 'ideatoapps/style.css']);
+    expect(names(r.coreZip).sort()).toEqual(['ideatoapps-core/fixture.php']);
+  });
+
+  it('still scans a downloads zip for secrets', async () => {
+    const f = fixture('downloads-secret', { 'theme/assets/downloads/kit.zip': 'PK sk_live_' + 'a1B2c3D4e5F6g7H8i9J0k1L2' });
+    await expect(buildPackages(f)).rejects.toThrow(/secret/i);
   });
 
   it('does not scan excluded files (a key in docs/ or tests/ does not fail the build)', async () => {
