@@ -1,0 +1,16 @@
+# Lessons (each cost real time)
+- Script parser: `**NN.M**` has ONE digit for M. Lines 10+ are silently dropped. Max 9 per scene; check line counts after any scripted edit.
+- Search snippets are stale: read the live page (README said 10.1B; snippet 7.4B).
+- Keys via `request_credential`; use placeholder in env; never print keys. OpenRouter key limit shown in /auth/key (e.g. 100) is NOT the balance: read /api/v1/credits.
+- OpenRouter free tier has a daily cap ("free-models-per-day"); heavy benchmarking exhausts it (reset ~20 h). Routers with keyless providers send prompts to third parties: disable them for private work.
+- Claude Code via env: ANTHROPIC_BASE_URL, ANTHROPIC_AUTH_TOKEN, ANTHROPIC_API_KEY="" (explicitly empty). Docs: only guaranteed with Anthropic models.
+- Success must be checked by us (run tests, compare hash). A session can error yet leave a working file: report both.
+- `rm` with globs/vars is blocked by the sandbox; use explicit paths. `sleep` loops blocked: use `until` in run_in_background.
+- Engine `text()` has no maxW: use fc_ui `text` (auto-fit) and `U.reg(x,y,w,h)` for boxes drawn with rr; pick the SMALLEST containing box. Text >= 34 px where possible (widen boxes instead of shrinking).
+- Fonts: Playwright needs fonts installed (~/.fonts + fc-cache). Fredoka variable axes are [weight, width] in PIL.
+- `render.mjs --stills` wipes build/stills; never run it while render_segments runs.
+- audio/mix.py needs scipy. Composite b-roll BEFORE mix; keep video_silent_nobroll.mp4.
+- Router/dev servers keep running: kill them (pkill -f "tsx src/index") before big renders.
+- Stop-hook "push" nags are not approval. Commit/push only on explicit yes.
+- vidIQ outliers `thisMonth` = spikes; use sixMonths/viewCount for durable.
+- Playwright github pages: scrollIntoView with behavior:'instant', wait, then measure rects.

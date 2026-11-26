@@ -1,0 +1,52 @@
+Everyone says Claude Code is free now. I ran 24 real tests on 3 free setups to see what is true, what is hype, and what it quietly costs you. Spoiler: every run passed, and there is still a catch.
+
+CHAPTERS
+0:00 Free Claude Code: the 24-run surprise
+0:45 How it works, and the catch
+1:11 Where to get it
+1:55 Test 1: straight to a free model
+2:24 Test 2: the router
+3:23 Test 3: OpenCode
+4:00 The harder test: three bugs
+4:28 The race
+5:05 The scoreboard: 24 of 24
+5:38 Turn one switch
+6:29 Verdict and how to start
+
+WHAT I TESTED (2026-11-26, my own machine, free models only, $0 spent of my $5 OpenRouter balance)
+- Setup A: Claude Code pointed straight at a free model on OpenRouter (nvidia/nemotron-3-ultra-550b-a55b:free)
+- Setup B: Claude Code through the FreeLLMAPI router (model name "auto")
+- Setup C: OpenCode 1.19.6 with the free "Big Pickle" model
+- Task 1: a small to-do command line tool, 5 runs per setup
+- Task 2: fix a small program with 3 bugs (5 unit tests, 4 failing at the start), 3 runs per setup. A pass = all tests pass AND the test file is unchanged (I checked the file hash myself).
+- Result: 24 of 24 passed. This is NOT a benchmark: small tasks, one machine, free models change daily.
+
+WHERE TO GET IT (links and commands checked 2026-11-26)
+1) OpenRouter + Claude Code. Official guide: https://openrouter.ai/docs/guides/coding-agents/claude-code-integration
+   Create a key: https://openrouter.ai/settings/keys
+   export ANTHROPIC_BASE_URL="https://openrouter.ai/api"
+   export ANTHROPIC_AUTH_TOKEN="<your OpenRouter key>"
+   export ANTHROPIC_API_KEY=""   (must be explicitly empty)
+2) FreeLLMAPI (MIT licence): https://github.com/tashfeenahmed/freellmapi
+   README quick start (Docker): curl -fsSL https://freellmapi.co/install.sh | bash
+   I ran it from source (git clone, npm install, scripts/dev-bootstrap.sh, then start the server).
+3) OpenCode (MIT licence): https://opencode.ai  |  source: https://github.com/anomalyco/opencode
+   The docs page now shows version 2 (curl -fsSL https://opencode.ai/v2/install | bash). I tested version 1.19.6 (npm install -g opencode-ai).
+   Free models and their terms: https://opencode.ai/docs/zen
+
+THE CATCHES (with sources)
+- Anthropic's docs say they do not support routing Claude Code to non-Claude models through any gateway: https://code.claude.com/docs/en/llm-gateway
+- OpenRouter's own guide: Claude Code is only guaranteed to work with the Anthropic first-party provider.
+- FreeLLMAPI README: "10.1 billion tokens per month" is a rough total across 87 providers; the README also says it is for personal experimentation and learning, not production.
+- In my router test, requests went to keyless providers and carried about 12,000 tokens of prompt each. With those providers switched off, OpenRouter's daily free limit stopped two of three sessions ("Rate limit exceeded: free-models-per-day").
+- OpenCode Zen docs: some free models are "free for a limited time" and may be used to improve the model; others state zero retention. Check per model.
+
+Use your own free keys only. Never someone else's account or a leaked key. Read each provider's terms. Do not send client or company code through free services you have not checked.
+
+CREDITS
+Narration: AI voice (ElevenLabs, voice "Rudra"). Background music and sound effects: generated with ElevenLabs, reused from the previous ideatoapps video.
+Fonts: Kalam (Indian Type Foundry), Nunito and Fredoka, all under the SIL Open Font License via Google Fonts; terminal text in DejaVu Sans Mono.
+Real pages shown are screenshots and screen recordings taken 2026-11-26. Claude and Claude Code are Anthropic products; this channel is not affiliated with Anthropic, OpenRouter, FreeLLMAPI or OpenCode.
+Not legal, financial or security advice.
+
+#ClaudeCode #AICoding #OpenSource

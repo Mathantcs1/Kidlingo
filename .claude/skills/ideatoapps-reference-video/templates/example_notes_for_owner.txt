@@ -1,0 +1,4 @@
+1. YouTube Studio: answer the altered/synthetic content question truthfully (AI voice). The AI-voice note is in the description even though it is not in the video.
+2. Please confirm the music/sfx credit line (they were reused from the previous ideatoapps video; I believe they were made with ElevenLabs Music/Sound Effects).
+3. Thumbnails: two A/B options in this folder (no logos, no faces).
+4. Description check at upload: links were read on 2026-11-26; re-check before posting if days pass.

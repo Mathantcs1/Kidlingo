@@ -1,0 +1,25 @@
+<!doctype html><meta charset=utf-8><link rel=stylesheet href="node_modules/@xterm/xterm/css/xterm.css">
+<style>
+ html,body{margin:0;background:#1c1b19;height:100%;overflow:hidden;font-family:"DejaVu Sans",sans-serif}
+ #bar{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;color:#f2e9d8;background:#2a2824;border-bottom:3px solid #d9a441}
+ #title{font-size:34px;font-weight:700} #tag{font-size:24px;color:#d9a441}
+ #term{padding:20px 40px;height:calc(100% - 76px - 90px - 40px)}
+ #foot{position:fixed;bottom:0;left:0;right:0;height:90px;background:#2a2824;color:#c9bfa9;font-size:24px;display:flex;align-items:center;padding:0 40px;border-top:2px solid #3d3a34}
+ #card{position:fixed;inset:0;background:#1c1b19;color:#f2e9d8;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 160px}
+ #card h1{font-size:68px;margin:0 0 24px;color:#d9a441} #card p{font-size:36px;margin:0;line-height:1.4}
+</style>
+<div id=bar><span id=title></span><span id=tag>REAL RUN · replayed with its recorded timing</span></div>
+<div id=term></div>
+<div id=foot>Long waits shortened to 3 s on screen. The "done" line shows the real time. Sample task only. Free models.</div>
+<div id=card><h1></h1><p></p></div>
+<script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
+<script>
+const T=new Terminal({fontSize:27,fontFamily:'"DejaVu Sans Mono",monospace',cols:112,rows:26,theme:{background:'#1c1b19',foreground:'#f2e9d8'},convertEol:true,cursorBlink:false,disableStdin:true});
+T.open(document.getElementById('term'));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function card(h,p,ms){const c=document.getElementById('card');c.querySelector('h1').textContent=h;c.querySelector('p').textContent=p;c.style.display='flex';await sleep(ms);c.style.display='none';}
+// scene: {title, data:[[delaySec,"text"],...]}
+window.playScene=async(s)=>{document.getElementById('title').textContent=s.title;T.reset();
+ for(const [d,t] of s.data){await sleep(Math.min(d,3)*1000);T.write(t);} await sleep(2500);};
+window.showCard=card;
+</script>
